@@ -395,11 +395,11 @@ static void push_filled_ui_quad_not_centered(Renderer& renderer, math::Vec2 posi
 
 #if DEBUG
 #define push_debug_ui_quad_not_centered(renderer, position, size, clip, clip_rect, ui_scaling_flag) \
-{static r32 rand_r = (r32)(rand() % 255) / 255.0f;\
-    static r32 rand_g = (r32)(rand() % 255) / 255.0f;\
-    static r32 rand_b = (r32)(rand() % 255) / 255.0f;\
-    static math::Rgba color = math::Rgba(rand_r, rand_g, rand_b, 1.0f);\
-    _push_debug_ui_quad_not_centered(renderer, position, size, color, clip, clip_rect, ui_scaling_flag);}
+    {static r32 rand_r = (r32)(rand() % 255) / 255.0f;                  \
+        static r32 rand_g = (r32)(rand() % 255) / 255.0f;               \
+        static r32 rand_b = (r32)(rand() % 255) / 255.0f;               \
+        static math::Rgba color = math::Rgba(rand_r, rand_g, rand_b, 1.0f); \
+        _push_debug_ui_quad_not_centered(renderer, position, size, color, clip, clip_rect, ui_scaling_flag);}
 static void _push_debug_ui_quad_not_centered(Renderer& renderer, math::Vec2 position, math::Vec2 size, math::Rgba color, b32 clip = false, math::Rect clip_rect = math::Rect(0, 0, 0, 0), u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)
 {
     push_filled_ui_quad_not_centered(renderer, position, false, size, math::Vec3(), color, 0, false, 1.0f, COLOR_WHITE, 0, 500, clip, clip_rect, ui_scaling_flag);
@@ -427,11 +427,11 @@ static void push_filled_ui_quad(Renderer& renderer, math::Vec2 position, b32 fli
 
 #if DEBUG
 #define push_debug_ui_quad(renderer, position, size, clip, clip_rect, ui_scaling_flag) \
-{static r32 rand_r = (r32)(rand() % 255) / 255.0f;\
-    static r32 rand_g = (r32)(rand() % 255) / 255.0f;\
-    static r32 rand_b = (r32)(rand() % 255) / 255.0f;\
-    static math::Rgba color = math::Rgba(rand_r, rand_g, rand_b, 1.0f);\
-    _push_debug_ui_quad(renderer, position, size, color, clip, clip_rect, ui_scaling_flag);}
+    {static r32 rand_r = (r32)(rand() % 255) / 255.0f;                  \
+        static r32 rand_g = (r32)(rand() % 255) / 255.0f;               \
+        static r32 rand_b = (r32)(rand() % 255) / 255.0f;               \
+        static math::Rgba color = math::Rgba(rand_r, rand_g, rand_b, 1.0f); \
+        _push_debug_ui_quad(renderer, position, size, color, clip, clip_rect, ui_scaling_flag);}
 static void _push_debug_ui_quad(Renderer& renderer, math::Vec2 position, math::Vec2 size, math::Rgba color, b32 clip = false, math::Rect clip_rect = math::Rect(0, 0, 0, 0), u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)
 {
     push_filled_ui_quad(renderer, position, false, size, math::Vec3(), color, 0, 1.0f, COLOR_WHITE, false,  0, false, math::Vec2(0.0f), 500, clip, clip_rect, ui_scaling_flag);
@@ -499,40 +499,40 @@ static RelativeUIQuadInfo get_relative_info(Renderer& renderer, math::Vec2 posit
     
     switch(relative)
     {
-        case RELATIVE_TOP:
+    case RELATIVE_TOP:
+    {
+        relative_pos.y += (i32)scaled_size.y / factor_y;
+    }
+    break;
+    case RELATIVE_LEFT:
+    {
+        if(origin.x == 0.0f)
         {
-            relative_pos.y += (i32)scaled_size.y / factor_y;
+            relative_pos.x -= (i32)scaled_size.x / factor_x;
         }
-        break;
-        case RELATIVE_LEFT:
+        else
         {
-            if(origin.x == 0.0f)
-            {
-                relative_pos.x -= (i32)scaled_size.x / factor_x;
-            }
-            else
-            {
-                relative_pos.x -= (i32)scaled_size.x / factor_x + new_size.x;
-            }
+            relative_pos.x -= (i32)scaled_size.x / factor_x + new_size.x;
         }
-        break;
-        case RELATIVE_RIGHT:
+    }
+    break;
+    case RELATIVE_RIGHT:
+    {
+        if(origin.x == 0.0f)
         {
-            if(origin.x == 0.0f)
-            {
-                relative_pos.x += (i32)scaled_size.x / factor_x;
-            }
-            else
-            {
-                relative_pos.x += (i32)scaled_size.x / factor_x + scaled_size.x;
-            }
+            relative_pos.x += (i32)scaled_size.x / factor_x;
         }
-        break;
-        case RELATIVE_BOTTOM:
+        else
         {
-            relative_pos.y -= (i32)scaled_size.y / factor_y - scaled_size.y + new_size.y;
+            relative_pos.x += (i32)scaled_size.x / factor_x + scaled_size.x;
         }
-        break;
+    }
+    break;
+    case RELATIVE_BOTTOM:
+    {
+        relative_pos.y -= (i32)scaled_size.y / factor_y - scaled_size.y + new_size.y;
+    }
+    break;
     }
     
     math::Vec2 ui_position = math::Vec2(0, 0);
@@ -1182,25 +1182,25 @@ static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Ve
 }
 
 /*
-static void push_model(Renderer& renderer, Model& model, MemoryArena* arena)
-{
-RenderCommand* render_command = push_next_command(renderer, false);
-render_command->type = RENDER_COMMAND_MODEL;
-render_command->position = model.position;
-render_command->scale = model.scale;
-render_command->orientation = model.orientation;
-render_command->model.buffer_handle = model.buffer_handle;
+  static void push_model(Renderer& renderer, Model& model, MemoryArena* arena)
+  {
+  RenderCommand* render_command = push_next_command(renderer, false);
+  render_command->type = RENDER_COMMAND_MODEL;
+  render_command->position = model.position;
+  render_command->scale = model.scale;
+  render_command->orientation = model.orientation;
+  render_command->model.buffer_handle = model.buffer_handle;
 
-for(i32 index = 0; index < model.material_count; index++)
-{
-if(model.materials[index].diffuse_texture.has_data && model.materials[index].diffuse_texture.texture_handle == -1 && strlen(model.materials[index].diffuse_texture.texture_name) > 0)
-{
-model.materials[index].diffuse_texture.texture_handle = renderer.texture_map[model.materials[index].diffuse_texture.texture_name]->handle;
-}
-}
+  for(i32 index = 0; index < model.material_count; index++)
+  {
+  if(model.materials[index].diffuse_texture.has_data && model.materials[index].diffuse_texture.texture_handle == -1 && strlen(model.materials[index].diffuse_texture.texture_name) > 0)
+  {
+  model.materials[index].diffuse_texture.texture_handle = renderer.texture_map[model.materials[index].diffuse_texture.texture_name]->handle;
+  }
+  }
 
-memcpy(&render_command->model.meshes, model.meshes, sizeof(model.meshes));
-memcpy(&render_command->model.materials, model.materials, sizeof(model.materials));
+  memcpy(&render_command->model.meshes, model.meshes, sizeof(model.meshes));
+  memcpy(&render_command->model.materials, model.materials, sizeof(model.materials));
 
 // @Incomplete: Check if the texture handle has been set for the materials
 render_command->model.type = model.type;
@@ -1289,7 +1289,7 @@ static void load_material(Renderer &renderer, char *file_path, MaterialHandle *m
         material.diffuse_texture = { 0 };
         material.ambient_texture = { 0 };
         material.specular_texture = { 0 };
-	material.dissolve = 1.0f;
+        material.dissolve = 1.0f;
         
         while((fgets(buffer, sizeof(buffer), mtl_file) != NULL))
         {
@@ -1865,7 +1865,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
     renderer.view_matrix = scene.camera.view_matrix;
     renderer.projection_matrix = scene.camera.projection_matrix;
     
-    InstancedRenderCommand instanced_commands[MAX_INSTANCING_PAIRS];
+    QueuedRenderCommand queued_commands[MAX_INSTANCING_PAIRS];
     i32 command_count = 0;
 
     i32 particles_to_push[64];
@@ -1873,7 +1873,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
     
     for(i32 i = 0; i < 128; i++)
     {
-        instanced_commands[i].count = 0;
+        queued_commands[i].instanced.count = 0;
     }
     
     for(i32 ent_index = 0; ent_index < scene.entity_count; ent_index++)
@@ -1902,51 +1902,60 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                     t.rotation = rotation;
                     t.scale = scale;
                     
-                    rendering::push_buffer(renderer, render.v2.buffer_handle, render.v2.material_handle, t);
+					QueuedRenderCommand &command = queued_commands[command_count++];
+                    
+                    queued_commands[command_index].type = QueuedRenderCommandType::NORMAL;
+					command.normal.transform = t;
+					command.normal.buffer_handle = render.v2.buffer_handle;
+					command.normal.material_handle = render.v2.material_handle;
                 }
                 else
                 {
                     Material material = scene.material_instances[render.material_handle.handle];
                 
-                // Instancing stuff
+                    // Instancing stuff
                 
-                for (i32 i = 0; i < command_count; i++)
-                {
-                    if (instanced_commands[i].mesh_handle == render.mesh_handle.handle && instanced_commands[i].original_material_handle == material.source_handle.handle)
+                    for (i32 i = 0; i < command_count; i++)
                     {
-                        command_index = i;
-                        break;
+                        if(queued_commands[i].type == QueuedRenderCommandType::INSTANCED)
+                        {
+                            if (queued_commands[i].instanced.mesh_handle == render.mesh_handle.handle && queued_commands[i].instanced.original_material_handle == material.source_handle.handle)
+							{
+								command_index = i;
+								break;
+							}
+                        }
                     }
-                }
                 
-                if (command_index == -1)
-                {
-                    command_index = command_count++;
-                    instanced_commands[command_index].mesh_handle = render.mesh_handle.handle;
-                    instanced_commands[command_index].material_handle = render.material_handle.handle;
-                    instanced_commands[command_index].original_material_handle = material.source_handle.handle;
-                    instanced_commands[command_index].scale = math::Vec3(1, 1, 1);
-                    instanced_commands[command_index].receives_shadows = render.receives_shadows;
-                    instanced_commands[command_index].cast_shadows = render.cast_shadows;
-                }
+                    if (command_index == -1)
+                    {
+                        command_index = command_count++;
+                        queued_commands[command_index].type = QueuedRenderCommandType::INSTANCED;
+                        queued_commands[command_index].instanced.mesh_handle = render.mesh_handle.handle;
+                        queued_commands[command_index].instanced.material_handle = render.material_handle.handle;
+                        queued_commands[command_index].instanced.original_material_handle = material.source_handle.handle;
+                        queued_commands[command_index].instanced.scale = math::Vec3(1, 1, 1);
+                        queued_commands[command_index].instanced.receives_shadows = render.receives_shadows;
+                        queued_commands[command_index].instanced.cast_shadows = render.cast_shadows;
+                    }
                 
-                InstancedRenderCommand &command = instanced_commands[command_index];
+                    InstancedRenderCommand &command = queued_commands[command_index].instanced;
                 
-                if(IS_COMP_HANDLE_VALID(transform.parent_handle))
-                {
-                    scene::TransformComponent &parent_transform = scene.transform_components[transform.parent_handle.handle];
-                    position += parent_transform.position;
-                    rotation += parent_transform.rotation;
-                    scale *= parent_transform.scale;
-                }
+                    if(IS_COMP_HANDLE_VALID(transform.parent_handle))
+                    {
+                        scene::TransformComponent &parent_transform = scene.transform_components[transform.parent_handle.handle];
+                        position += parent_transform.position;
+                        rotation += parent_transform.rotation;
+                        scale *= parent_transform.scale;
+                    }
 				
-                positions[command_index * 1024 + command.count] = position;
-                rotations[command_index * 1024 + command.count] = rotation * DEGREE_IN_RADIANS;
-                scalings[command_index * 1024 + command.count] = scale;
-                colors[command_index * 1024 + command.count] = material.diffuse_color;
-                command.count++;
+                    positions[command_index * 1024 + command.count] = position;
+                    rotations[command_index * 1024 + command.count] = rotation * DEGREE_IN_RADIANS;
+                    scalings[command_index * 1024 + command.count] = scale;
+                    colors[command_index * 1024 + command.count] = material.diffuse_color;
+                    command.count++;
                 
-                assert(command_index < MAX_INSTANCING_PAIRS);
+                    assert(command_index < MAX_INSTANCING_PAIRS);
                 }
                 
             }
@@ -1980,30 +1989,30 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
         }
     }
 
-    //@Cleanup: Figure out particle rendering order
-    // for(i32 i = 0; i < particles_count; i++)
-    // {
-    // 	i32 _internal_handle = renderer.particles._internal_handles[particles_to_push[i] - 1];
-    // 	ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
-    // 	push_particle_system(renderer, system, particles_to_push[i]);
-    // }
-    
     for(i32 com_index = 0; com_index < command_count; com_index++)
     {
-        InstancedRenderCommand command = instanced_commands[com_index];
-        Material material = scene.material_instances[command.material_handle];
-        MeshInfo mesh_info = {};
-        mesh_info.transform.scale = command.scale;
-        Mesh &mesh = renderer.meshes[command.mesh_handle];
-        mesh_info.instance_offset_buffer_handle = mesh.instance_offset_buffer_handle;
-        mesh_info.instance_rotation_buffer_handle = mesh.instance_rotation_buffer_handle;
-        mesh_info.instance_color_buffer_handle = mesh.instance_color_buffer_handle;
-        mesh_info.instance_scale_buffer_handle = mesh.instance_scale_buffer_handle;
-        mesh_info.material = material;
-        mesh_info.mesh_handle = command.mesh_handle;
-        mesh_info.receives_shadows = command.receives_shadows;
-        mesh_info.cast_shadows = command.cast_shadows;
-        push_mesh_instanced(renderer, mesh_info, &positions[com_index * 1024], &colors[com_index * 1024], &rotations[com_index * 1024], &scalings[com_index * 1024], command.count);
+		QueuedRenderCommand &render_command = queued_commands[com_index];
+		if(render_command.type == QueuedRenderCommandType::NORMAL)
+		{
+			rendering::push_buffer(renderer, render_command.normal.buffer_handle, render_command.normal.material_handle, render_command.normal.transform);
+		}
+		else if(render_command.type == QueuedRenderCommandType::INSTANCED)
+		{
+			InstancedRenderCommand command = render_command.instanced;
+			Material material = scene.material_instances[command.material_handle];
+			MeshInfo mesh_info = {};
+			mesh_info.transform.scale = command.scale;
+			Mesh &mesh = renderer.meshes[command.mesh_handle];
+			mesh_info.instance_offset_buffer_handle = mesh.instance_offset_buffer_handle;
+			mesh_info.instance_rotation_buffer_handle = mesh.instance_rotation_buffer_handle;
+			mesh_info.instance_color_buffer_handle = mesh.instance_color_buffer_handle;
+			mesh_info.instance_scale_buffer_handle = mesh.instance_scale_buffer_handle;
+			mesh_info.material = material;
+			mesh_info.mesh_handle = command.mesh_handle;
+			mesh_info.receives_shadows = command.receives_shadows;
+			mesh_info.cast_shadows = command.cast_shadows;
+			push_mesh_instanced(renderer, mesh_info, &positions[com_index * 1024], &colors[com_index * 1024], &rotations[com_index * 1024], &scalings[com_index * 1024], command.count);
+		}
     }
     
     for(i32 i = 0; i < particles_count; i++)

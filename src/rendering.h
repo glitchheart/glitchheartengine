@@ -23,93 +23,93 @@
 
 struct TrueTypeFontInfo
 {
-    i32 ascent;
-    i32 descent;
-    i32 line_gap;
-    r32 line_height;
-    r32 scale;
-    i32 baseline;
-    i32 first_char;
-    i32 char_count;
-    i32 size;
-    i32 atlas_width;
-    i32 atlas_height;
-    u32 oversample_x;
-    u32 oversample_y;
-    r32 largest_character_height;
-    stbtt_fontinfo info;
-    stbtt_packedchar char_data['~' - ' '];
+	i32 ascent;
+	i32 descent;
+	i32 line_gap;
+	r32 line_height;
+	r32 scale;
+	i32 baseline;
+	i32 first_char;
+	i32 char_count;
+	i32 size;
+	i32 atlas_width;
+	i32 atlas_height;
+	u32 oversample_x;
+	u32 oversample_y;
+	r32 largest_character_height;
+	stbtt_fontinfo info;
+	stbtt_packedchar char_data['~' - ' '];
 };
 
 struct FontData
 {
-    char* path;
-    i32 size;
-    char* name;
+	char* path;
+	i32 size;
+	char* name;
 };
 
 // @Cleanup: Clean up lighting code
 struct Spotlight
 {
-    r32 position[4];
-    r32 direction[4];
+	r32 position[4];
+	r32 direction[4];
     
-    r32 cut_off;
-    r32 outer_cut_off;
-    r32 p; // Padding
-    r32 p1; // Padding
+	r32 cut_off;
+	r32 outer_cut_off;
+	r32 p; // Padding
+	r32 p1; // Padding
     
-    r32 ambient[4];
-    r32 diffuse[4];
-    r32 specular[4];
+	r32 ambient[4];
+	r32 diffuse[4];
+	r32 specular[4];
     
-    r32 constant;
-    r32 linear;
-    r32 quadratic;
-    r32 p3; // Padding
+	r32 constant;
+	r32 linear;
+	r32 quadratic;
+	r32 p3; // Padding
 };
 
 struct DirectionalLight
 {
-    r32 direction[4];
-    r32 ambient[4];
-    r32 diffuse[4];
-    r32 specular[4];
+	r32 direction[4];
+	r32 ambient[4];
+	r32 diffuse[4];
+	r32 specular[4];
 };
 
 struct PointLight
 {
-    r32 position[4];
+	r32 position[4];
     
-    r32 constant;
-    r32 linear;
-    r32 quadratic;
-    r32 padding;
+	r32 constant;
+	r32 linear;
+	r32 quadratic;
+	r32 padding;
     
-    r32 ambient[4];
-    r32 diffuse[4];
-    r32 specular[4];
+	r32 ambient[4];
+	r32 diffuse[4];
+	r32 specular[4];
 };
 
 struct SpotlightData
 {
-    i32 num_lights; // GLSL: 16, x64: 4: We need 12 bytes of padding
-    math::Vec3 padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
-    Spotlight *spotlights;
+	i32 num_lights; // GLSL: 16, x64: 4: We need 12 bytes of padding
+	math::Vec3 padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
+	Spotlight *spotlights;
 };
 
 struct DirectionalLightData // GLSL: 96, x64: 68 -> 96 - 68 = 24
 {
-    i32 num_lights; // GLSL: 16, x64: 4: We need 12 bytes of padding
-    math::Vec3 padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
-    DirectionalLight *directional_lights;
+	i32 num_lights; // GLSL: 16, x64: 4: We need 12 bytes of padding
+	math::Vec3 padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
+	DirectionalLight *directional_lights;
 };
 
 struct PointLightData
 {
-    i32 num_lights; // GLSL: 16, x64: 4: We need 12 bytes of padding
-    math::Vec3 padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
-    PointLight *point_lights;
+	i32 num_lights; // GLSL: 16, x64: 4: We need 12 bytes of padding
+	math::Vec3 padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
+	PointLight *point_lights;
 };
 // @Cleanup END
 
@@ -182,17 +182,17 @@ enum Alignment
 
 struct VertexInfo
 {
-    math::Vec3 position;
-    math::Vec2 uv;
-    math::Vec3 normal;
-    math::Rgba color;
+	math::Vec3 position;
+	math::Vec2 uv;
+	math::Vec3 normal;
+	math::Rgba color;
 };
 
 struct RelativeUIQuadInfo
 {
-    math::Vec2 position;
-    math::Vec2 scale;
-    math::Vec2 ui_position;
+	math::Vec2 position;
+	math::Vec2 scale;
+	math::Vec2 ui_position;
 };
 
 r32 plane_vertices[] =
@@ -427,16 +427,16 @@ r32 tetrahedron_normals[] =
 
 struct Vertex
 {
-    math::Vec3 position;
-    math::Vec2 uv;
-    math::Vec3 normal;
-    math::Rgba color;
+	math::Vec3 position;
+	math::Vec2 uv;
+	math::Vec3 normal;
+	math::Rgba color;
 };
 
 struct Face
 {
-    u16 indices[3];
-    math::Vec3 normal;
+	u16 indices[3];
+	math::Vec3 normal;
 };
 
 enum RenderMaterialType
@@ -448,97 +448,124 @@ enum RenderMaterialType
 
 struct Mesh
 {
-    i32 buffer_handle;
+	i32 buffer_handle;
     
-    Vertex* vertices;
-    i32 vertex_count;
+	Vertex* vertices;
+	i32 vertex_count;
     
-    Face* faces;
-    i32 face_count;
+	Face* faces;
+	i32 face_count;
     
-    i32 instance_offset_buffer_handle;
-    i32 instance_color_buffer_handle;
-    i32 instance_rotation_buffer_handle;
-    i32 instance_scale_buffer_handle;
+	i32 instance_offset_buffer_handle;
+	i32 instance_color_buffer_handle;
+	i32 instance_rotation_buffer_handle;
+	i32 instance_scale_buffer_handle;
 };
 
 struct InstancedRenderCommand
 {
-    i32 mesh_handle;
-    i32 material_handle;
-    i32 original_material_handle;
-    i32 count;
-    math::Vec3 scale;
+	i32 mesh_handle;
+	i32 material_handle;
+	i32 original_material_handle;
+	i32 count;
+	math::Vec3 scale = math::Vec3(1, 1, 1);
 
-    b32 has_particles;
-    i32 particle_systems[256];
-    u32 particle_count;
+	b32 has_particles;
+	i32 particle_systems[256];
+	u32 particle_count;
     
-    b32 receives_shadows;
-    b32 cast_shadows;
+	b32 receives_shadows;
+	b32 cast_shadows;
+
+    InstancedRenderCommand () {}
+};
+
+struct NormalRenderCommand
+{
+	rendering::Transform transform;
+	rendering::BufferHandle buffer_handle;
+	rendering::MaterialInstanceHandle material_handle;
+};
+
+enum QueuedRenderCommandType
+{
+    NORMAL,
+    INSTANCED
+};
+
+struct QueuedRenderCommand
+{
+	QueuedRenderCommandType type;
+	union
+	{
+		InstancedRenderCommand instanced = {};
+		NormalRenderCommand normal;
+	};
+
+    QueuedRenderCommand () {}
 };
 
 struct TextureInfo
 {
-    b32 has_data;
-    char texture_name[50];
-    i32 texture_handle;
+	b32 has_data;
+	char texture_name[50];
+	i32 texture_handle;
 };
 
 struct Vec3Keys
 {
-    i32 num_keys;
-    r32* time_stamps;
-    math::Vec3* values;
+	i32 num_keys;
+	r32* time_stamps;
+	math::Vec3* values;
 };
 
 struct QuatKeys
 {
-    i32 num_keys;
-    r32* time_stamps;
-    math::Quat* values;
+	i32 num_keys;
+	r32* time_stamps;
+	math::Quat* values;
 };
 
 struct BoneChannel
 {
-    i32 bone_index;
-    Vec3Keys position_keys;
-    QuatKeys rotation_keys;
-    Vec3Keys scaling_keys;
+	i32 bone_index;
+	Vec3Keys position_keys;
+	QuatKeys rotation_keys;
+	Vec3Keys scaling_keys;
 };
 
 struct SkeletalAnimation
 {
-    char* name;
-    r32 duration;
-    i32 num_bone_channels;
-    BoneChannel* bone_channels;
+	char* name;
+	r32 duration;
+	i32 num_bone_channels;
+	BoneChannel* bone_channels;
 };
 
 struct SkeletalAnimationState
 {
-    b32 playing;
-    b32 loop;
-    r32 current_time;
+	b32 playing;
+	b32 loop;
+	r32 current_time;
 };
 
 struct Bone
 {
-    char name[30];
-    i32 parent_id;
-    u32 children[MAX_CHILDREN];
-    i32 child_count;
+	char name[30];
+	i32 parent_id;
+	u32 children[MAX_CHILDREN];
+	i32 child_count;
     
-    math::Mat4 transformation;
-    math::Mat4 bone_offset;
+	math::Mat4 transformation;
+	math::Mat4 bone_offset;
 };
 
 struct MeshData
 {
-    i32 base_vertex;
-    i32 base_index;
-    i32 material_index;
-    i32 num_indices;
+	i32 base_vertex;
+	i32 base_index;
+	i32 material_index;
+	i32 num_indices;
 };
 
 enum ModelType
@@ -549,9 +576,9 @@ enum ModelType
 
 struct TransformInfo
 { 
-    math::Vec3 position;
-    math::Vec3 scale;
-    math::Vec3 rotation;
+	math::Vec3 position;
+	math::Vec3 scale;
+	math::Vec3 rotation;
 };
 
 enum ShaderAttributeType
@@ -567,59 +594,59 @@ enum ShaderAttributeType
 
 struct ShaderAttribute
 {
-    ShaderAttributeType type;
-    char name[32];
-    union
-    {
-        r32 float_var;
-        math::Vec2 float2_var;
-        math::Vec3 float3_var;
-        math::Vec4 float4_var;
-        i32 integer_var;
-        b32 boolean_var;
-        math::Mat4 matrix4_var;
-    };
+	ShaderAttributeType type;
+	char name[32];
+	union
+	{
+		r32 float_var;
+		math::Vec2 float2_var;
+		math::Vec3 float3_var;
+		math::Vec4 float4_var;
+		i32 integer_var;
+		b32 boolean_var;
+		math::Mat4 matrix4_var;
+	};
 };
 
 struct ShaderInfo
 {
-    i32 shader_handle;
-    ShaderAttribute* shader_attributes;
-    i32 shader_attribute_count;
+	i32 shader_handle;
+	ShaderAttribute* shader_attributes;
+	i32 shader_attribute_count;
 };
 
 struct MaterialHandle
 {
-    i32 handle;
+	i32 handle;
 };
 
 struct TextureHandle
 {
-    i32 handle;
+	i32 handle;
 };
 
 struct MeshHandle
 {
-    i32 handle;
+	i32 handle;
 };
 
 struct Material
 {
-    RenderMaterialType type;
+	RenderMaterialType type;
     
-    MaterialHandle source_handle;
-    ShaderInfo shader;
+	MaterialHandle source_handle;
+	ShaderInfo shader;
 
-    math::Rgba ambient_color;
-    math::Rgba diffuse_color;
-    math::Rgba specular_color;
-    r32 dissolve;
-    r32 specular_exponent;
+	math::Rgba ambient_color;
+	math::Rgba diffuse_color;
+	math::Rgba specular_color;
+	r32 dissolve;
+	r32 specular_exponent;
     
-    TextureHandle ambient_texture;
-    TextureHandle diffuse_texture;
-    TextureHandle specular_texture;
-    TextureHandle specular_intensity_texture;
+	TextureHandle ambient_texture;
+	TextureHandle diffuse_texture;
+	TextureHandle specular_texture;
+	TextureHandle specular_intensity_texture;
 };
 
 enum WireframeType
@@ -631,63 +658,63 @@ enum WireframeType
 
 struct MeshInfo
 {
-    i32 mesh_handle;
-    i32 instance_offset_buffer_handle;
-    i32 instance_color_buffer_handle;
-    i32 instance_rotation_buffer_handle;
-    i32 instance_scale_buffer_handle;
+	i32 mesh_handle;
+	i32 instance_offset_buffer_handle;
+	i32 instance_color_buffer_handle;
+	i32 instance_rotation_buffer_handle;
+	i32 instance_scale_buffer_handle;
     
-    TransformInfo transform;
-    Material material;
+	TransformInfo transform;
+	Material material;
     
-    WireframeType wireframe_type;
-    math::Rgba wireframe_color;
+	WireframeType wireframe_type;
+	math::Rgba wireframe_color;
     
-    b32 cast_shadows;
-    b32 receives_shadows;
+	b32 cast_shadows;
+	b32 receives_shadows;
 };
 
 struct RenderInfo
 {
-    b32 is_ui;
+	b32 is_ui;
     
-    b32 with_origin;
-    math::Vec2 origin;
-    math::Rgba color;
+	b32 with_origin;
+	math::Vec2 origin;
+	math::Rgba color;
 };
 
 struct QuadTextureInfo
 {
-    i32 texture_handle;
-    math::Vec2i frame_size;
-    math::Vec2 texture_offset;
+	i32 texture_handle;
+	math::Vec2i frame_size;
+	math::Vec2 texture_offset;
 };
 
 struct QuadInfo
 {
-    TransformInfo transform_info;
-    ShaderInfo shader_info;
-    RenderInfo render_info;
-    QuadTextureInfo texture_info;
+	TransformInfo transform_info;
+	ShaderInfo shader_info;
+	RenderInfo render_info;
+	QuadTextureInfo texture_info;
     
-    r32 border_width;
-    math::Rgba border_color;
-    b32 rounded;
-    b32 flipped;
-    i32 animation_controller_handle;
-    b32 clip;
-    math::Rect clip_rect;
+	r32 border_width;
+	math::Rgba border_color;
+	b32 rounded;
+	b32 flipped;
+	i32 animation_controller_handle;
+	b32 clip;
+	math::Rect clip_rect;
 };
 
 struct TextInfo
 {
-    math::Vec3 position;
-    RenderInfo render_info;
+	math::Vec3 position;
+	RenderInfo render_info;
     
-    i32 font_handle;
-    u64 alignment_flags;
-    char* text;
-    r32 scale;
+	i32 font_handle;
+	u64 alignment_flags;
+	char* text;
+	r32 scale;
 };
 
 enum CommandBlendMode
@@ -708,197 +735,197 @@ enum CursorType
 
 struct RenderCommand
 {
-    RenderCommandType type;
-    ShaderType shader_type;
-    b32 is_ui;
+	RenderCommandType type;
+	ShaderType shader_type;
+	b32 is_ui;
     
-    math::Vec3 position;
-    math::Vec3 scale;
-    math::Vec3 rotation;
-    math::Quat orientation;
-    b32 with_origin;
-    math::Vec2 origin;
-    math::Rgba color;
+	math::Vec3 position;
+	math::Vec3 scale;
+	math::Vec3 rotation;
+	math::Quat orientation;
+	b32 with_origin;
+	math::Vec2 origin;
+	math::Rgba color;
     
-    i32 shader_handle;
-    ShaderAttribute* shader_attributes;
-    i32 shader_attribute_count;
+	i32 shader_handle;
+	ShaderAttribute* shader_attributes;
+	i32 shader_attribute_count;
     
-    b32 cast_shadows;
-    b32 receives_shadows;
+	b32 cast_shadows;
+	b32 receives_shadows;
     
-    b32 clip;
-    math::Rect clip_rect;
+	b32 clip;
+	math::Rect clip_rect;
     
-    union
-    {
-        struct
-        {
-            math::Vec3 point1;
-            math::Vec3 point2;
-            r32 line_width;
-            math::Rgba color; // @Cleanup: REMOVE!
-        } line;
-        struct
-        {
-            char text[512];
-            math::Vec3 position;
-            i32 font_handle;
-            math::Rgba color; // @Cleanup: REMOVE!
-            u64 alignment_flags;
-            r32 scale;
-            i32 z_layer;
-        } text;
-        struct
-        {
-            char text[512];
-            i32 font_handle;
-            u64 alignment_flags;
-            math::Rgba color; // @Cleanup: REMOVE!
-        } text_3d;
-        struct
-        {
-            math::Rgba color;
-        } sprite;
-        struct
-        {
-            i32 texture_handle;
-            b32 flipped;
-            b32 rounded;
-            math::Rgba color; // @Cleanup: REMOVE!
-            b32 outlined;
-            r32 line_width;
-            b32 for_animation;
-            math::Vec2 texture_size;
-            math::Vec2i frame_size;
-            math::Vec2 texture_offset;
-            r32 border_width;
-            math::Rgba border_color;
-        } quad;
-        struct
-        {
-            math::Vec3 direction;
-            r32 cut_off;
-            r32 outer_cut_off;
-            math::Vec3 ambient;
-            math::Vec3 diffuse;
-            math::Vec3 specular;
+	union
+	{
+		struct
+		{
+			math::Vec3 point1;
+			math::Vec3 point2;
+			r32 line_width;
+			math::Rgba color; // @Cleanup: REMOVE!
+		} line;
+		struct
+		{
+			char text[512];
+			math::Vec3 position;
+			i32 font_handle;
+			math::Rgba color; // @Cleanup: REMOVE!
+			u64 alignment_flags;
+			r32 scale;
+			i32 z_layer;
+		} text;
+		struct
+		{
+			char text[512];
+			i32 font_handle;
+			u64 alignment_flags;
+			math::Rgba color; // @Cleanup: REMOVE!
+		} text_3d;
+		struct
+		{
+			math::Rgba color;
+		} sprite;
+		struct
+		{
+			i32 texture_handle;
+			b32 flipped;
+			b32 rounded;
+			math::Rgba color; // @Cleanup: REMOVE!
+			b32 outlined;
+			r32 line_width;
+			b32 for_animation;
+			math::Vec2 texture_size;
+			math::Vec2i frame_size;
+			math::Vec2 texture_offset;
+			r32 border_width;
+			math::Rgba border_color;
+		} quad;
+		struct
+		{
+			math::Vec3 direction;
+			r32 cut_off;
+			r32 outer_cut_off;
+			math::Vec3 ambient;
+			math::Vec3 diffuse;
+			math::Vec3 specular;
             
-            r32 constant;
-            r32 linear;
-            r32 quadratic;
-        } spotlight;
-        struct 
-        {
-            math::Vec3 direction;
-            math::Vec3 ambient;
-            math::Vec3 diffuse;
-            math::Vec3 specular;
-        } directional_light;
-        struct
-        {
-            math::Vec3 ambient;
-            math::Vec3 diffuse;
-            math::Vec3 specular;
+			r32 constant;
+			r32 linear;
+			r32 quadratic;
+		} spotlight;
+		struct 
+		{
+			math::Vec3 direction;
+			math::Vec3 ambient;
+			math::Vec3 diffuse;
+			math::Vec3 specular;
+		} directional_light;
+		struct
+		{
+			math::Vec3 ambient;
+			math::Vec3 diffuse;
+			math::Vec3 specular;
             
-            r32 constant;
-            r32 linear;
-            r32 quadratic;
-        } point_light;
-        struct
-        {
-            i32 buffer_handle;
-            i32 texture_handle;
-        } buffer;
-        struct
-        {
-            ModelType type;
-            i32 buffer_handle;
-            MeshData *meshes;
-            i32 mesh_count;
-            Material materials[10];
-            i32 material_count;
-            math::Rgba color;
-            math::Mat4* bone_transforms;
-            i32 bone_count;
-        } model;
-        struct
-        {
-            i32 buffer_handle;
-            RenderMaterialType material_type;
-            i32 diffuse_texture;
-            i32 specular_texture;
-            i32 ambient_texture;
-            i32 specular_intensity_texture;
-            math::Rgba diffuse_color;
-            math::Rgba specular_color;
-            math::Rgba ambient_color;
-            r32 specular_exponent;
-            WireframeType wireframe_type;
-            math::Rgba wireframe_color;
-        } mesh;
-        struct
-        {
-            i32 buffer_handle;
-            i32 instance_offset_buffer_handle;
-            i32 instance_color_buffer_handle;
-            i32 instance_rotation_buffer_handle;
-            i32 instance_scale_buffer_handle;
+			r32 constant;
+			r32 linear;
+			r32 quadratic;
+		} point_light;
+		struct
+		{
+			i32 buffer_handle;
+			i32 texture_handle;
+		} buffer;
+		struct
+		{
+			ModelType type;
+			i32 buffer_handle;
+			MeshData *meshes;
+			i32 mesh_count;
+			Material materials[10];
+			i32 material_count;
+			math::Rgba color;
+			math::Mat4* bone_transforms;
+			i32 bone_count;
+		} model;
+		struct
+		{
+			i32 buffer_handle;
+			RenderMaterialType material_type;
+			i32 diffuse_texture;
+			i32 specular_texture;
+			i32 ambient_texture;
+			i32 specular_intensity_texture;
+			math::Rgba diffuse_color;
+			math::Rgba specular_color;
+			math::Rgba ambient_color;
+			r32 specular_exponent;
+			WireframeType wireframe_type;
+			math::Rgba wireframe_color;
+		} mesh;
+		struct
+		{
+			i32 buffer_handle;
+			i32 instance_offset_buffer_handle;
+			i32 instance_color_buffer_handle;
+			i32 instance_rotation_buffer_handle;
+			i32 instance_scale_buffer_handle;
             
-            RenderMaterialType material_type;
-            i32 diffuse_texture;
-            i32 specular_texture;
-            i32 ambient_texture;
-            i32 specular_intensity_texture;
-            math::Rgba diffuse_color;
-            math::Rgba specular_color;
-            math::Rgba ambient_color;
-	    r32 dissolve;
-            r32 specular_exponent;
-            WireframeType wireframe_type;
-            math::Rgba wireframe_color;
-            math::Vec3 *offsets;
-            math::Rgba *colors;
-            math::Vec3 *rotations;
-            math::Vec3 *scalings;
-            i32 offset_count;
-        } mesh_instanced;
-        struct
-        {
-            b32 on;
-        } depth_test;
-        struct
-        {
-            CursorType type;
-        } cursor;
-        struct
-        {
-            i32 handle;
-            i32 buffer_handle;
-            i32 offset_buffer_handle;
-            i32 color_buffer_handle;
-            i32 size_buffer_handle;
-            i32 angle_buffer_handle;
-            RenderMaterialType material_type;
-            i32 diffuse_texture;
+			RenderMaterialType material_type;
+			i32 diffuse_texture;
+			i32 specular_texture;
+			i32 ambient_texture;
+			i32 specular_intensity_texture;
+			math::Rgba diffuse_color;
+			math::Rgba specular_color;
+			math::Rgba ambient_color;
+			r32 dissolve;
+			r32 specular_exponent;
+			WireframeType wireframe_type;
+			math::Rgba wireframe_color;
+			math::Vec3 *offsets;
+			math::Rgba *colors;
+			math::Vec3 *rotations;
+			math::Vec3 *scalings;
+			i32 offset_count;
+		} mesh_instanced;
+		struct
+		{
+			b32 on;
+		} depth_test;
+		struct
+		{
+			CursorType type;
+		} cursor;
+		struct
+		{
+			i32 handle;
+			i32 buffer_handle;
+			i32 offset_buffer_handle;
+			i32 color_buffer_handle;
+			i32 size_buffer_handle;
+			i32 angle_buffer_handle;
+			RenderMaterialType material_type;
+			i32 diffuse_texture;
             
-            i32 particle_count;
-            math::Vec3 *offsets;
-            math::Vec4 *colors;
-            math::Vec2 *sizes;
-            r32* angles;
-            i32 texture_handle;
+			i32 particle_count;
+			math::Vec3 *offsets;
+			math::Vec4 *colors;
+			math::Vec2 *sizes;
+			r32* angles;
+			i32 texture_handle;
             
-            CommandBlendMode blend_mode;
-        } particles;
-        struct
-        {
-            math::Rgba specular_color;
-            math::Rgba diffuse_color;
-            math::Rgba ambient_color;
-            math::Vec3 position;
-        } sun_light;
-    };
+			CommandBlendMode blend_mode;
+		} particles;
+		struct
+		{
+			math::Rgba specular_color;
+			math::Rgba diffuse_color;
+			math::Rgba ambient_color;
+			math::Vec3 position;
+		} sun_light;
+	};
 };
 
 enum FadingMode
@@ -925,207 +952,207 @@ enum TextureFiltering
 
 struct TextureData
 {
-    TextureFiltering filtering;
-    i32 handle;
-    char* name;
-    i32 width;
-    i32 height;
-    unsigned char* image_data;
+	TextureFiltering filtering;
+	i32 handle;
+	char* name;
+	i32 width;
+	i32 height;
+	unsigned char* image_data;
 };
 
 struct ShaderData
 {
-    i32 handle;
-    char name[512];
-    char* vertex_shader_content;
-    char* fragment_shader_content;
+	i32 handle;
+	char name[512];
+	char* vertex_shader_content;
+	char* fragment_shader_content;
 };
 
 struct UIRenderInfo
 {
-    b32 rendered = true;
+	b32 rendered = true;
     
-    i32 texture_handle;
-    math::Vec2 texture_offset;
-    math::Vec2 frame_size;
-    u32 shader_index;
-    math::Vec2 size = math::Vec2(1, 1);
-    math::Vec4 color = math::Vec4(1, 1, 1, 1);
+	i32 texture_handle;
+	math::Vec2 texture_offset;
+	math::Vec2 frame_size;
+	u32 shader_index;
+	math::Vec2 size = math::Vec2(1, 1);
+	math::Vec4 color = math::Vec4(1, 1, 1, 1);
 };
 
 struct BufferData
 {
-    r32* vertex_buffer;
-    i32 vertex_buffer_size;
-    u16* index_buffer;
-    i32 index_buffer_count;
-    i32 index_buffer_size;
-    b32 has_normals;
-    b32 has_uvs;
-    b32 skinned;
+	r32* vertex_buffer;
+	i32 vertex_buffer_size;
+	u16* index_buffer;
+	i32 index_buffer_count;
+	i32 index_buffer_size;
+	b32 has_normals;
+	b32 has_uvs;
+	b32 skinned;
     
-    ShaderType shader_type;
-    i32 existing_handle = -1;
+	ShaderType shader_type;
+	i32 existing_handle = -1;
     
-    b32 for_instancing;
-    size_t instance_buffer_size;
+	b32 for_instancing;
+	size_t instance_buffer_size;
 };
 
 struct ShadowMapMatrices
 {
-    math::Mat4 depth_projection_matrix;
-    math::Mat4 depth_model_matrix;
-    math::Mat4 depth_view_matrix;
-    math::Mat4 depth_bias_matrix;
+	math::Mat4 depth_projection_matrix;
+	math::Mat4 depth_model_matrix;
+	math::Mat4 depth_view_matrix;
+	math::Mat4 depth_bias_matrix;
 };
 
 struct Resolution
 {
-    i32 width;
-    i32 height;
+	i32 width;
+	i32 height;
 };
 
 struct ParticleSystemInfo;
 
 struct Renderer
 {
-    b32 should_close;
-    r64 fps;
-    r64 average_fps;
-    r64 fps_sum;
-    u64 current_frame;
-    i32 pixels_per_unit;
-    i32 frame_lock;
+	b32 should_close;
+	r64 fps;
+	r64 average_fps;
+	r64 fps_sum;
+	u64 current_frame;
+	i32 pixels_per_unit;
+	i32 frame_lock;
     
-    WindowMode window_mode;
+	WindowMode window_mode;
 
-    math::Mat4 view_matrix;
-    math::Mat4 projection_matrix;
+	math::Mat4 view_matrix;
+	math::Mat4 projection_matrix;
     
-    RenderCommand *commands;
-    i32 command_count;
+	RenderCommand *commands;
+	i32 command_count;
     
-    RenderCommand *ui_commands;
-    i32 ui_command_count;
+	RenderCommand *ui_commands;
+	i32 ui_command_count;
     
-    MemoryArena command_arena;
+	MemoryArena command_arena;
     
-    MemoryArena light_commands;
-    i32 light_command_count;
+	MemoryArena light_commands;
+	i32 light_command_count;
     
-    BufferData *buffers;
-    i32 buffer_count;
+	BufferData *buffers;
+	i32 buffer_count;
     
-    i32 *_internal_buffer_handles;
-    i32 _current_internal_buffer_handle;
+	i32 *_internal_buffer_handles;
+	i32 _current_internal_buffer_handle;
     
-    i32 *updated_buffer_handles;
-    i32 updated_buffer_handle_count;
+	i32 *updated_buffer_handles;
+	i32 updated_buffer_handle_count;
     
-    i32 *removed_buffer_handles;
-    i32 removed_buffer_handle_count;
+	i32 *removed_buffer_handles;
+	i32 removed_buffer_handle_count;
     
-    Material *materials;
-    i32 material_count;
+	Material *materials;
+	i32 material_count;
     
-    Mesh *meshes;
-    i32 mesh_count;
+	Mesh *meshes;
+	i32 mesh_count;
     
-    struct
-    {
-        i32 *_internal_handles;
-        i32 *_tagged_removed;
-        i32 _tagged_removed_count;
-        i32 _current_internal_handle;
-        i32 _max_particle_system_count;
+	struct
+	{
+		i32 *_internal_handles;
+		i32 *_tagged_removed;
+		i32 _tagged_removed_count;
+		i32 _current_internal_handle;
+		i32 _max_particle_system_count;
         
-        ParticleSystemInfo *particle_systems;
-        i32 particle_system_count;
+		ParticleSystemInfo *particle_systems;
+		i32 particle_system_count;
         
-        RandomSeries entropy;
-    } particles;
+		RandomSeries entropy;
+	} particles;
     
-    TextureData *texture_data;
-    i32 texture_count;
+	TextureData *texture_data;
+	i32 texture_count;
     
-    ShaderData* shader_data;
-    i32 shader_count;
+	ShaderData* shader_data;
+	i32 shader_count;
     
-    // Shadow map
-    ShadowMapMatrices shadow_map_matrices;
+	// Shadow map
+	ShadowMapMatrices shadow_map_matrices;
     
-    math::Mat4 ui_projection_matrix;
-    i32 current_camera_handle;
+	math::Mat4 ui_projection_matrix;
+	i32 current_camera_handle;
     
-    AnimationController* animation_controllers;
-    i32 animation_controller_count;
+	AnimationController* animation_controllers;
+	i32 animation_controller_count;
     
-    SpritesheetAnimation *spritesheet_animations;
-    i32 spritesheet_animation_count;
+	SpritesheetAnimation *spritesheet_animations;
+	i32 spritesheet_animation_count;
     
-    union
-    {
-        i32 viewport[4];
-        math::Vec4i v;
-        struct
-        {
-            i32 viewport_x;
-            i32 viewport_y;
-            i32 viewport_width;
-            i32 viewport_height;
-        };
-    };
+	union
+	{
+		i32 viewport[4];
+		math::Vec4i v;
+		struct
+		{
+			i32 viewport_x;
+			i32 viewport_y;
+			i32 viewport_width;
+			i32 viewport_height;
+		};
+	};
     
-    union
-    {
-        Resolution resolution;
-        struct
-        {
-            i32 window_width;
-            i32 window_height;
-        };
-    };
+	union
+	{
+		Resolution resolution;
+		struct
+		{
+			i32 window_width;
+			i32 window_height;
+		};
+	};
     
-    Resolution *available_resolutions;
-    i32 available_resolutions_count;
-    i32 current_resolution_index;
+	Resolution *available_resolutions;
+	i32 available_resolutions_count;
+	i32 current_resolution_index;
     
-    Resolution ui_reference_resolution;
+	Resolution ui_reference_resolution;
     
-    r32 scale_x;
-    r32 scale_y;
+	r32 scale_x;
+	r32 scale_y;
     
-    math::Rgba clear_color;
-    r32 line_width;
+	math::Rgba clear_color;
+	r32 line_width;
     
-    b32 show_mouse_cursor;
+	b32 show_mouse_cursor;
     
-    FontData *fonts;
-    i32 font_count;
+	FontData *fonts;
+	i32 font_count;
     
-    TrueTypeFontInfo *tt_font_infos;
-    i32 tt_font_count;
+	TrueTypeFontInfo *tt_font_infos;
+	i32 tt_font_count;
     
-    i32 framebuffer_width;
-    i32 framebuffer_height;
+	i32 framebuffer_width;
+	i32 framebuffer_height;
     
-    MemoryArena mesh_arena;
-    MemoryArena texture_arena;
-    MemoryArena animation_arena;
-    MemoryArena font_arena;
-    MemoryArena particle_arena;
-    MemoryArena buffer_arena;
-    MemoryArena shader_arena;
+	MemoryArena mesh_arena;
+	MemoryArena texture_arena;
+	MemoryArena animation_arena;
+	MemoryArena font_arena;
+	MemoryArena particle_arena;
+	MemoryArena buffer_arena;
+	MemoryArena shader_arena;
     
-    MemoryArena temp_arena;
+	MemoryArena temp_arena;
 
-    struct
-    {
+	struct
+	{
 		rendering::Shader *shaders;
 		i32 shader_count;
 
-        i32 shaders_to_reload[8];
-        i32 shaders_to_reload_count;
+		i32 shaders_to_reload[8];
+		i32 shaders_to_reload_count;
 	
 		rendering::Material *materials;
 		i32 material_count;
@@ -1145,197 +1172,197 @@ struct Renderer
 		i32 *removed_buffer_handles;
 		i32 removed_buffer_handle_count;
 
-        rendering::RenderCommand *render_commands;
-        i32 render_command_count;
-    } render;
+		rendering::RenderCommand *render_commands;
+		i32 render_command_count;
+	} render;
 };
 
 static math::Vec2i get_scale(Renderer& renderer)
 {
-    return {renderer.framebuffer_width, renderer.framebuffer_height};
+	return {renderer.framebuffer_width, renderer.framebuffer_height};
 }
 
 static math::Vec3 to_ui(Renderer& renderer, math::Vec2 coord)
 {
-    math::Vec2i scale = get_scale(renderer);
-    math::Vec3 res;
-    res.x = ((r32)coord.x / (r32)scale.x) * UI_COORD_DIMENSION;
-    res.y = ((r32)coord.y / (r32)scale.y) * UI_COORD_DIMENSION;
-    res.z = 0.0f;
-    return res;
+	math::Vec2i scale = get_scale(renderer);
+	math::Vec3 res;
+	res.x = ((r32)coord.x / (r32)scale.x) * UI_COORD_DIMENSION;
+	res.y = ((r32)coord.y / (r32)scale.y) * UI_COORD_DIMENSION;
+	res.z = 0.0f;
+	return res;
 }
 
 math::Vec2 from_ui(Renderer& renderer, math::Vec3 coord)
 {
-    math::Vec2i scale = get_scale(renderer);
-    math::Vec2 res(0.0f);
-    res.x = (((r32)coord.x / (r32)UI_COORD_DIMENSION) * scale.x);
-    res.y = (((r32)coord.y / (r32)UI_COORD_DIMENSION) * scale.y);
-    return res;
+	math::Vec2i scale = get_scale(renderer);
+	math::Vec2 res(0.0f);
+	res.x = (((r32)coord.x / (r32)UI_COORD_DIMENSION) * scale.x);
+	res.y = (((r32)coord.y / (r32)UI_COORD_DIMENSION) * scale.y);
+	return res;
 }
 
 r32 from_ui(Renderer& renderer, i32 scale, r32 coord)
 {
-    return ((r32)coord / (r32)UI_COORD_DIMENSION) * (r32)scale;
+	return ((r32)coord / (r32)UI_COORD_DIMENSION) * (r32)scale;
 }
 
 r32 to_ui(Renderer& renderer, i32 scale, r32 coord)
 {
-    return (coord / (r32)scale) * (r32)UI_COORD_DIMENSION;
+	return (coord / (r32)scale) * (r32)UI_COORD_DIMENSION;
 }
 
 #define MAX_LINES 16
 
 struct LineData
 {
-    math::Vec2 line_sizes[MAX_LINES];
-    i32 line_count;
-    r32 total_height;
-    r32 line_spacing;
+	math::Vec2 line_sizes[MAX_LINES];
+	i32 line_count;
+	r32 total_height;
+	r32 line_spacing;
 };
 
 static LineData get_line_size_data(const char *text, TrueTypeFontInfo font)
 {
-    math::Vec2 size;
-    r32 placeholder_y = 0.0;
+	math::Vec2 size;
+	r32 placeholder_y = 0.0;
     
-    LineData line_data = {};
-    line_data.total_height = 0.0f;
-    line_data.line_count = 1;
+	LineData line_data = {};
+	line_data.total_height = 0.0f;
+	line_data.line_count = 1;
     
-    line_data.line_spacing = (r32)font.size + font.line_gap * font.scale;
+	line_data.line_spacing = (r32)font.size + font.line_gap * font.scale;
     
-    for(u32 i = 0; i < strlen(text); i++)
+	for(u32 i = 0; i < strlen(text); i++)
     {
-		if(text[i] != '\n' && text[i] != '\r')
-		{
-			stbtt_aligned_quad quad;
-			stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
-								text[i] - font.first_char, &line_data.line_sizes[line_data.line_count - 1].x, &placeholder_y, &quad, 1);
+        if(text[i] != '\n' && text[i] != '\r')
+        {
+            stbtt_aligned_quad quad;
+            stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
+                                text[i] - font.first_char, &line_data.line_sizes[line_data.line_count - 1].x, &placeholder_y, &quad, 1);
         
-			if(quad.y1 - quad.y0 > size.y)
-			{
-				line_data.line_sizes[line_data.line_count - 1].y = quad.y1 - quad.y0;
-			}
+            if(quad.y1 - quad.y0 > size.y)
+            {
+                line_data.line_sizes[line_data.line_count - 1].y = quad.y1 - quad.y0;
+            }
         
-			i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
-			line_data.line_sizes[line_data.line_count - 1].x += (r32)kerning * font.scale;
-		}
-		else
-		{
-			line_data.line_count++;
-		}
+            i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
+            line_data.line_sizes[line_data.line_count - 1].x += (r32)kerning * font.scale;
+        }
+        else
+        {
+            line_data.line_count++;
+        }
     }
 
-    if(line_data.line_count == 1)
+	if(line_data.line_count == 1)
     {
-		line_data.total_height = line_data.line_sizes[0].y;
+        line_data.total_height = line_data.line_sizes[0].y;
     }
-    else
+	else
 		line_data.total_height = (line_data.line_count - 1) * line_data.line_spacing;
     
-    return line_data;
+	return line_data;
 }
 
 #define get_texture_size(handle) texture_size(handle, renderer)
 static math::Vec2i texture_size(i32 texture_handle, Renderer& renderer)
 {
-    if(texture_handle <= renderer.texture_count)
+	if(texture_handle <= renderer.texture_count)
     {
         TextureData data = renderer.texture_data[texture_handle - 1];
         return math::Vec2i(data.width, data.height);
     }
-    return math::Vec2i();
+	return math::Vec2i();
 }
 
 static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo font)
 {
-    math::Vec2 size;
-    r32 placeholder_y = 0.0;
+	math::Vec2 size;
+	r32 placeholder_y = 0.0;
 
-    i32 lines = 1;
+	i32 lines = 1;
 
-    r32 current_width = 0.0f;
+	r32 current_width = 0.0f;
     
-    for(u32 i = 0; i < strlen(text); i++)
+	for(u32 i = 0; i < strlen(text); i++)
     {
-	if(text[i] != '\n' && text[i] != '\r')
-	{
-	    stbtt_aligned_quad quad;
-	    stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
-				text[i] - font.first_char, &size.x, &placeholder_y, &quad, 1);
+        if(text[i] != '\n' && text[i] != '\r')
+        {
+            stbtt_aligned_quad quad;
+            stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
+                                text[i] - font.first_char, &size.x, &placeholder_y, &quad, 1);
         
-	    if(quad.y1 - quad.y0 > size.y)
-	    {
-		size.y = quad.y1 - quad.y0;
-	    }
+            if(quad.y1 - quad.y0 > size.y)
+            {
+                size.y = quad.y1 - quad.y0;
+            }
         
-	    i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
-	    current_width += (r32)kerning * font.scale;
-	}
-	else
-	{
-	    if(size.x > current_width)
-		current_width = size.x;
+            i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
+            current_width += (r32)kerning * font.scale;
+        }
+        else
+        {
+            if(size.x > current_width)
+                current_width = size.x;
 
-	    size.x = 0.0f;
-	    lines++;
-	}
+            size.x = 0.0f;
+            lines++;
+        }
     }
 
-    return math::Vec2(current_width, size.y * lines * (lines - 1));
+	return math::Vec2(current_width, size.y * lines * (lines - 1));
 }
 
 static TrueTypeFontInfo get_tt_font_info(Renderer& renderer, i32 handle)
 {
-    assert(handle >= 0 && handle < renderer.tt_font_count);
-    return renderer.tt_font_infos[handle];
+	assert(handle >= 0 && handle < renderer.tt_font_count);
+	return renderer.tt_font_infos[handle];
 }
 
 static math::Vec2 get_text_size_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo font, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
 {
-    LineData line_data = get_line_size_data(text, font);
-    math::Vec2 font_size = line_data.line_sizes[0];
-    math::Vec2 result(0.0f);
+	LineData line_data = get_line_size_data(text, font);
+	math::Vec2 font_size = line_data.line_sizes[0];
+	math::Vec2 result(0.0f);
     
-    math::Vec2i scale = get_scale(renderer);
+	math::Vec2i scale = get_scale(renderer);
     
-    result.x = (font_size.x / (r32)scale.x) * UI_COORD_DIMENSION;
+	result.x = (font_size.x / (r32)scale.x) * UI_COORD_DIMENSION;
     
-    if(scaling_flags & UIScalingFlag::KEEP_ASPECT_RATIO)
+	if(scaling_flags & UIScalingFlag::KEEP_ASPECT_RATIO)
     {
         r32 ratio = font_size.y / font_size.x;
         result.y = font_size.x * ratio;
     }
-    else
+	else
     {
         result.y = (font_size.y / (r32)scale.y) * UI_COORD_DIMENSION;
     }
     
-    return result;
+	return result;
 }
 
 struct TextLengthInfo
 {
-    size_t length;
+	size_t length;
     
-    r32* widths;
+	r32* widths;
 };
 
 // Gets an array of text widths for each character
 // Remember to free
 static TextLengthInfo get_char_widths_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo &font, MemoryArena* arena)
 {
-    TextLengthInfo info = {};
+	TextLengthInfo info = {};
     
-    info.length = strlen(text);
-    info.widths = push_array(arena, info.length, r32);//(r32*)calloc(info.length, sizeof(r32));
+	info.length = strlen(text);
+	info.widths = push_array(arena, info.length, r32);//(r32*)calloc(info.length, sizeof(r32));
     
-    r32 placeholder_y = 0.0f;
+	r32 placeholder_y = 0.0f;
     
-    math::Vec2i scale = get_scale(renderer);
+	math::Vec2i scale = get_scale(renderer);
     
-    for(size_t i = 0; i < info.length; i++)
+	for(size_t i = 0; i < info.length; i++)
     {
         stbtt_aligned_quad quad;
         stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
@@ -1347,7 +1374,7 @@ static TextLengthInfo get_char_widths_scaled(Renderer& renderer, const char* tex
         info.widths[i] = ((r32)info.widths[i] / (r32)scale.x) * UI_COORD_DIMENSION;
     }
     
-    return info;
+	return info;
 }
 
 #endif
