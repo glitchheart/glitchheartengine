@@ -1,7 +1,12 @@
 #ifndef MATH_H
 #define MATH_H
 
+#ifdef __linux
+#include <math.h>
+#else
 #include <cmath>
+#endif
+
 
 namespace math
 {
@@ -1841,7 +1846,7 @@ namespace math
     
     inline i32 floor(r32 v)
     {
-        return (i32)std::floor(v);
+        return (i32)::floor(v);
     }
     
     
@@ -1864,12 +1869,12 @@ namespace math
     
     inline i32 ceil(r32 v)
     {
-        return (i32)std::ceil(v);
+        return (i32)::ceil(v);
     }
     
     inline r32 ceilf(r32 v)
     {
-        return std::ceil(v);
+        return (r32)::ceil(v);
     }
     
     inline Vec2 ceil(Vec2 v)
@@ -1934,22 +1939,22 @@ namespace math
     
     inline r32 pow(r32 v, i32 e)
     {
-        return (r32)std::pow(v, e);
+        return (r32)::pow(v, e);
     }
     
     inline r32 sin(r32 v)
     {
-        return (r32)std::sin(v);
+        return (r32)::sin(v);
     }
     
     inline r32 cos(r32 v)
     {
-        return (r32)std::cos(v);
+        return (r32)::cos(v);
     }
     
     inline r32 acos(r32 v)
     {
-        return (r32)std::acos(v);
+        return (r32)::acos(v);
     }
     
     inline i32 multiple_of_number(i32 n, i32 mul)

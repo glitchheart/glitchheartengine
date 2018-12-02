@@ -37,6 +37,20 @@ struct ParticleSpawnInfo
 #define EMITTER_FUNC(name) ParticleSpawnInfo name(RandomSeries& series, r32 min, r32 max)
 typedef EMITTER_FUNC(EmitterFunc);
 
+enum EmissionFuncType
+{
+    DIRECTION,
+    RANDOM_DIRECTION,
+    SQUARE_2D,
+    SQUARE_2D_RANDOM,
+    SQUARE,
+    SQUARE_RANDOM,
+    DISC,
+    DISC_RANDOM,
+    CIRCLE,
+    CIRCLE_RANDOM
+};
+
 struct EmissionModule
 {
     EmissionType type;
@@ -51,8 +65,8 @@ struct EmissionModule
     r32 min;
     r32 max;
     r32 rate_over_distance;
-    
-    EmitterFunc* emitter_func;
+
+    EmissionFuncType emitter_func_type;
 };
 
 struct ParticleSystemAttributes

@@ -323,17 +323,17 @@ namespace scene
 			}
                         else if(starts_with(buffer, "life_time"))
                         {
-			    if(attributes.start_life_time_type != StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
-			    {
-				sscanf(buffer, "life_time: %lf", &attributes.life.constant.life_time);
-				attributes.start_life_time_type = StartParameterType::CONSTANT;
-			    }
+                            if(attributes.start_life_time_type != StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
+                            {
+                                sscanf(buffer, "life_time: %lf", &attributes.life.constant.life_time);
+                                attributes.start_life_time_type = StartParameterType::CONSTANT;
+                            }
                         }
-			else if(starts_with(buffer, "random_life_time"))
-			{
-			    sscanf(buffer, "random_life_time: %lf %lf", &attributes.life.random_between_two_constants.l0, &attributes.life.random_between_two_constants.l1);
-			    attributes.start_life_time_type = StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS;
-			}
+                        else if(starts_with(buffer, "random_life_time"))
+                        {
+                            sscanf(buffer, "random_life_time: %lf %lf", &attributes.life.random_between_two_constants.l0, &attributes.life.random_between_two_constants.l1);
+                            attributes.start_life_time_type = StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS;
+                        }
                         else if(starts_with(buffer, "per_second"))
                         {
                             sscanf(buffer, "per_second: %d", &attributes.particles_per_second);
@@ -361,47 +361,47 @@ namespace scene
                             char func_name[32];
                             sscanf(buffer, "emitter_func: %s", func_name);
 
-                            attributes.emission_module.emitter_func = emit_random_dir;
+                            attributes.emission_module.emitter_func_type = EmissionFuncType::RANDOM_DIRECTION;
                             if(starts_with(func_name, "2d_square_random"))
                             {
-                                attributes.emission_module.emitter_func = emit_from_2D_square_random;
+                                attributes.emission_module.emitter_func_type = EmissionFuncType::SQUARE_2D_RANDOM;
                             }
-			    else if(starts_with(func_name, "2d_square"))
-			    {
-				attributes.emission_module.emitter_func = emit_from_2D_square;
-			    }
-			    else if(starts_with(func_name, "random_dir"))
-			    {
-				attributes.emission_module.emitter_func = emit_random_dir;
-			    }
-			    else if(starts_with(func_name, "dir"))
-			    {
-				attributes.emission_module.emitter_func = emit_dir;
-			    }
-			    else if(starts_with(func_name, "square"))
-			    {
-				attributes.emission_module.emitter_func = emit_from_square;
-			    }
-			    else if(starts_with(func_name, "square_random"))
-			    {
-				attributes.emission_module.emitter_func = emit_from_square_random;
-			    }
-			    else if(starts_with(func_name, "disc"))
-			    {
-				attributes.emission_module.emitter_func = emit_from_disc;
-			    }
-			    else if(starts_with(func_name, "disc_random"))
-			    {
-				attributes.emission_module.emitter_func = emit_from_disc_random;
-			    }
-			    else if(starts_with(func_name, "circle"))
-			    {
-				attributes.emission_module.emitter_func = emit_from_circle;
-			    }
-			    else if(starts_with(func_name, "circle_random"))
-			    {
-				attributes.emission_module.emitter_func = emit_from_circle_random;
-			    }
+                            else if(starts_with(func_name, "2d_square"))
+                            {
+                                attributes.emission_module.emitter_func_type = EmissionFuncType::SQUARE_2D;
+                            }
+                            else if(starts_with(func_name, "random_dir"))
+                            {
+                                attributes.emission_module.emitter_func_type = EmissionFuncType::RANDOM_DIRECTION;
+                            }
+                            else if(starts_with(func_name, "dir"))
+                            {
+                                attributes.emission_module.emitter_func_type = EmissionFuncType::DIRECTION;
+                            }
+                            else if(starts_with(func_name, "square"))
+                            {
+                                attributes.emission_module.emitter_func_type = EmissionFuncType::SQUARE;
+                            }
+                            else if(starts_with(func_name, "square_random"))
+                            {
+                                attributes.emission_module.emitter_func_type = EmissionFuncType::SQUARE_RANDOM;
+                            }
+                            else if(starts_with(func_name, "disc"))
+                            {
+                                attributes.emission_module.emitter_func_type = EmissionFuncType::DISC;
+                            }
+                            else if(starts_with(func_name, "disc_random"))
+                            {
+                                attributes.emission_module.emitter_func_type = EmissionFuncType::DISC_RANDOM;
+                            }
+                            else if(starts_with(func_name, "circle"))
+                            {
+                                attributes.emission_module.emitter_func_type = EmissionFuncType::CIRCLE;
+                            }
+                            else if(starts_with(func_name, "circle_random"))
+                            {
+                                attributes.emission_module.emitter_func_type = EmissionFuncType::CIRCLE_RANDOM;
+                            }
                         }
                         else if(starts_with(buffer, "emission_min"))
                         {
@@ -436,30 +436,30 @@ namespace scene
                         }
                         else if(starts_with(buffer, "color_key"))
                         {
-			    b32 keep_start_color = false;
-			    for(size_t i = 0; i < strlen(buffer); i++)
-			    {
-				if(buffer[i] == '-')
-				{
-				    keep_start_color = true;
-				    break;
-				}
-			    }
+                            b32 keep_start_color = false;
+                            for(size_t i = 0; i < strlen(buffer); i++)
+                            {
+                                if(buffer[i] == '-')
+                                {
+                                    keep_start_color = true;
+                                    break;
+                                }
+                            }
 
                             math::Rgba &value = templ.particles.color_over_lifetime.values[templ.particles.color_over_lifetime.value_count];
                             r64 &key = templ.particles.color_over_lifetime.keys[templ.particles.color_over_lifetime.value_count];
 
-			    if(keep_start_color)
-			    {
-				sscanf(buffer, "color_key: %lf - %f", &key, &value.a);
-				value.r = attributes.start_color.r;
-				value.g = attributes.start_color.g;
-				value.b = attributes.start_color.b;
-			    }
-			    else
-			    {
-				sscanf(buffer, "color_key: %lf %f %f %f %f", &key, &value.r, &value.g, &value.b, &value.a);
-			    }
+                            if(keep_start_color)
+                            {
+                                sscanf(buffer, "color_key: %lf - %f", &key, &value.a);
+                                value.r = attributes.start_color.r;
+                                value.g = attributes.start_color.g;
+                                value.b = attributes.start_color.b;
+                            }
+                            else
+                            {
+                                sscanf(buffer, "color_key: %lf %f %f %f %f", &key, &value.r, &value.g, &value.b, &value.a);
+                            }
                             
                             templ.particles.color_over_lifetime.value_count++;
                         }
@@ -533,12 +533,12 @@ namespace scene
                 add_speed_key(*ps, key, value);
             }
 
-	    if(templ.comp_flags & COMP_TRANSFORM)
-	    {
-		ps->transform.position = ps->attributes.base_position + templ.transform.position;
-		ps->transform.scale = templ.transform.position;
-		ps->transform.rotation = templ.transform.rotation;
-	    }
+            if(templ.comp_flags & COMP_TRANSFORM)
+            {
+                ps->transform.position = ps->attributes.base_position + templ.transform.position;
+                ps->transform.scale = templ.transform.position;
+                ps->transform.rotation = templ.transform.rotation;
+            }
 	    
             if(templ.particles.started)
                 start_particle_system(ps_comp.handle, *scene.renderer);

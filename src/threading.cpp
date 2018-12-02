@@ -33,10 +33,10 @@ THREAD_PROC(thread_proc)
 	
     for(;;)
     {
-	if(do_next_work_queue_entry(thread_info->queue))
-	{
-	    wait_for_semaphore(thread_info->queue->semaphore_handle);
-	}
+        if(do_next_work_queue_entry(thread_info->queue))
+        {
+            wait_for_semaphore(thread_info->queue->semaphore_handle);
+        }
     }
 }
 
