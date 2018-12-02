@@ -97,7 +97,7 @@ union r32_4x
         p = _mm_set1_ps(0.0f);
     }
     
-    explicit r32_4x(r32 _p) 
+    r32_4x(r32 _p) 
     {
         p = _mm_set1_ps(_p);
     }
@@ -901,16 +901,6 @@ inline r32_4x operator/(r64_4x a, r32_4x b)
     res = r32_4x((float)_v[0], (float)_v[1], (float)_v[2], (float)_v[3]) / b;
     
     return res;
-}
-
-inline r64 operator-(r64 left, r64_4x right)
-{
-    return left - right.e[0];
-}
-
-inline r32 operator-(r32 left, r64_4x right)
-{
-    return left - (r32)right.e[0];
 }
 
 inline r64_4x simd_min(r64_4x left, r64_4x right)

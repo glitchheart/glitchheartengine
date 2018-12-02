@@ -639,7 +639,6 @@ int main(int argc, char **args)
         // @Incomplete: Fix this!
         delta_time = math::clamp(0.0, delta_time, 0.9);
         game_memory.core.delta_time = delta_time;
-        debug("delta: %f\n", game_memory.core.delta_time);
         last_frame = end_counter;
     }
 
