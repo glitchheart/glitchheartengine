@@ -1874,7 +1874,7 @@ namespace math
     
     inline r32 ceilf(r32 v)
     {
-        return ::ceil(v);
+        return (r32)::ceil(v);
     }
     
     inline Vec2 ceil(Vec2 v)
