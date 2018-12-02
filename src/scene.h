@@ -65,6 +65,13 @@ namespace scene
         
         b32 cast_shadows;
         b32 receives_shadows;
+
+        b32 is_new_version;
+        struct
+        {
+            rendering::BufferHandle buffer_handle;
+            rendering::MaterialInstanceHandle material_handle;
+        } v2;
     };
     
     struct ParticleSystemComponent
@@ -96,6 +103,14 @@ namespace scene
             
             b32 cast_shadows;
             b32 receives_shadows;
+
+            
+            b32 is_new_version;
+            struct
+            {
+                rendering::BufferHandle buffer_handle;
+                rendering::MaterialHandle material_handle;
+            } v2;
         } render;
         struct
         {

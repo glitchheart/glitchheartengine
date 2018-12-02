@@ -1121,13 +1121,16 @@ struct Renderer
 
     struct
     {
-		rendering::Shader shaders[32];
+		rendering::Shader *shaders;
 		i32 shader_count;
+
+        i32 shaders_to_reload[8];
+        i32 shaders_to_reload_count;
 	
-		rendering::Material materials[64];
+		rendering::Material *materials;
 		i32 material_count;
 
-		rendering::Material material_instances[64];
+		rendering::Material *material_instances;
 		i32 material_instance_count;
 		
 		rendering::RegisterBufferInfo *buffers;
@@ -1141,6 +1144,9 @@ struct Renderer
     
 		i32 *removed_buffer_handles;
 		i32 removed_buffer_handle_count;
+
+        rendering::RenderCommand *render_commands;
+        i32 render_command_count;
     } render;
 };
 

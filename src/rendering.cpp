@@ -1894,8 +1894,19 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
             if (ent.comp_flags & scene::COMP_RENDER)
             {
                 scene::RenderComponent &render = scene.render_components[ent.render_handle.handle];
-                
-                Material material = scene.material_instances[render.material_handle.handle];
+
+                if(render.is_new_version)
+                {
+                    rendering::Transform t;
+                    t.position = position;
+                    t.rotation = rotation;
+                    t.scale = scale;
+                    
+                    rendering::push_buffer(renderer, render.v2.buffer_handle, render.v2.material_handle, t);
+                }
+                else
+                {
+                    Material material = scene.material_instances[render.material_handle.handle];
                 
                 // Instancing stuff
                 
@@ -1936,6 +1947,8 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 command.count++;
                 
                 assert(command_index < MAX_INSTANCING_PAIRS);
+                }
+                
             }
             else if(ent.comp_flags & scene::COMP_PARTICLES)
             {

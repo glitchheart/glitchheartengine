@@ -313,7 +313,7 @@ struct GameMemory
 #endif
 };
 
-#define UPDATE(name)void name(r64 delta_time, GameMemory* game_memory, Renderer& renderer, scene::EntityTemplateState &template_state, InputController* input_controller, SoundSystem* sound_system, TimerController& timer_controller)
+#define UPDATE(name)void name(r64 delta_time, r64 current_time, GameMemory* game_memory, Renderer& renderer, scene::EntityTemplateState &template_state, InputController* input_controller, SoundSystem* sound_system, TimerController& timer_controller)
 typedef UPDATE(Update);
 UPDATE(update_stub)
 {

@@ -309,7 +309,17 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
     }
 }
 
-static void init_renderer(Renderer &renderer)
+static void check_shader_files(WorkQueue *queue, void *data)
+{
+    // @Incomplete: We might want to sleep
+    while(true)
+    {
+        Renderer *renderer = (Renderer *)data;
+        rendering::check_for_shader_file_changes(*renderer);
+    }
+}
+
+static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInfo *reload_thread)
 {
     renderer.pixels_per_unit = global_pixels_per_unit;
     renderer.frame_lock = 0;
@@ -353,6 +363,34 @@ static void init_renderer(Renderer &renderer)
         renderer._internal_buffer_handles[index] = -1;
     }
     renderer.removed_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
+
+    // NEW RENDER PIPELIN
+    renderer.render.render_commands = push_array(&renderer.command_arena, global_max_render_commands, rendering::RenderCommand);
+    renderer.render.buffers = push_array(&renderer.buffer_arena, global_max_custom_buffers, rendering::RegisterBufferInfo);
+    renderer.render.updated_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
+    renderer.render.material_count = 0;
+    
+    //@Incomplete: Make these dynamically allocated?
+    renderer.render.materials = push_array(&renderer.mesh_arena, global_max_materials, rendering::Material);
+    renderer.render.material_instances = push_array(&renderer.mesh_arena, global_max_materials, rendering::Material);
+    renderer.render.shaders = push_array(&renderer.mesh_arena, global_max_shaders, rendering::Shader);
+    renderer.render._internal_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
+    renderer.render._current_internal_buffer_handle = 0;
+    for(i32 index = 0; index < global_max_custom_buffers; index++)
+    {
+        renderer.render._internal_buffer_handles[index] = -1;
+    }
+    renderer.render.removed_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
+
+
+#if DEBUG
+    renderer.render.shader_count = 0;
+    renderer.render.shaders_to_reload_count = 0;
+    *reload_queue = {};
+    *reload_thread = {};
+    make_queue(reload_queue, 1, reload_thread);
+    platform.add_entry(reload_queue, check_shader_files, &renderer);
+#endif
 }
 
 void process_analytics_events(AnalyticsEventState &analytics_state, WorkQueue *queue)
@@ -466,8 +504,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     Renderer renderer = {};
     
     b32 do_save_config = false;
+
+    WorkQueue reload_queue;
+    ThreadInfo reload_thread;
+    init_renderer(renderer, &reload_queue, &reload_thread);
     
-    init_renderer(renderer);
     if constexpr(global_graphics_api == GRAPHICS_VULKAN)
                 {
 #if defined(__linux) || defined(_WIN32)
@@ -488,12 +529,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     load_game_code(game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
     TimerController timer_controller;
     timer_controller.timer_count = 0;
-    
-    //setup asset reloading
-    //AssetManager asset_manager = {};
-    //startup_file_time_checks(&platform_state->perm_arena, &asset_manager, game_library_path);
-    
-    //u32 frame_counter_for_asset_check = 0;
     
     SoundDevice sound_device = {};
     sound_device.system = nullptr;
@@ -568,13 +603,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         
         show_mouse_cursor(render_state, renderer.show_mouse_cursor);
         
-        //reload_assets(render_state, &asset_manager, &platform_state->perm_arena);
 //#if DEBUG
         reload_libraries(&game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
 //#endif
         //auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
 
-        game.update(delta_time, &game_memory, renderer, template_state, &input_controller, &sound_system, timer_controller);
+        game.update(delta_time, get_time(), &game_memory, renderer, template_state, &input_controller, &sound_system, timer_controller);
         update_particle_systems(renderer, delta_time);
 #if ENABLE_ANALYTICS
         process_analytics_events(analytics_state, &analytics_queue);
@@ -601,7 +635,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             controller_keys(GLFW_JOYSTICK_1);
         }
 
-        //update_log();
+        update_log();
         
         swap_buffers(render_state);
 
@@ -614,7 +648,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         }
 #endif
         
-
         frames++;
         r64 end_counter = get_time();
         if(end_counter - last_second_check >= 1.0)

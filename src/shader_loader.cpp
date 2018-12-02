@@ -1,3 +1,5 @@
+#include <sys/stat.h>
+
 namespace rendering
 {
     
@@ -188,6 +190,7 @@ namespace rendering
 						}
 						c++;
 					}
+                    
 					if(m_c > 0)
 					{
 						//@Note: Check for correct indices
@@ -321,14 +324,48 @@ namespace rendering
 		return result;
     }
     
-    static ShaderHandle load_shader(Renderer& renderer, const char* file_path)
+    // Shader reload
+    static b32 check_dirty(Shader &shader)
     {
-		assert(renderer.render.shader_count + 1 < 64);
-		Shader& shader = renderer.render.shaders[renderer.render.shader_count];
+        struct stat sb;
+        stat(shader.path, &sb);
+    
+        time_t last_loaded = shader.last_loaded;
+        time_t time_new = sb.st_mtime;
+    
+        shader.last_loaded = time_new;
+    
+        if(last_loaded != 0 && last_loaded < time_new)
+        {
+            return true;
+        }
 
+        return false;
+    }
+
+    static void set_last_loaded(Shader &shader)
+    {
+        struct stat sb1;
+        stat(shader.path, &sb1);
+        shader.last_loaded =  sb1.st_mtime;
+    }
+
+    static void check_for_shader_file_changes(Renderer &renderer)
+    {
+        for(i32 i = 0; i < renderer.render.shader_count; i++)
+        {
+            if(check_dirty(renderer.render.shaders[i]))
+            {
+                renderer.render.shaders_to_reload[renderer.render.shaders_to_reload_count++] = i;
+            }
+        }
+    }
+
+    static void load_shader(Renderer &renderer, Shader &shader)
+    {
 		// @Incomplete: LOAD STUFF
 	
-		FILE* file = fopen(file_path, "r");
+		FILE* file = fopen(shader.path, "r");
 
 		if(file)
 		{
@@ -337,60 +374,46 @@ namespace rendering
 	    
 			shader.vert_shader = nullptr;
 			shader.frag_shader = nullptr;
-
-			strncpy(shader.path, file_path, strlen(file_path));
-			
+			 
 			for(size_t i = 0; i < size; i++)
 			{
 				if(starts_with(&source[i], "#vert"))
 				{
-					shader.vert_shader = load_shader_text(&renderer.shader_arena, &source[i + strlen("#vert") + 1], shader, file_path, &i);
+					shader.vert_shader = load_shader_text(&renderer.shader_arena, &source[i + strlen("#vert") + 1], shader, shader.path, &i);
 				}
 				else if(starts_with(&source[i], "#frag"))
 				{
-					shader.frag_shader = load_shader_text(&renderer.shader_arena, &source[i + strlen("#frag") + 1], shader, file_path, &i);
+					shader.frag_shader = load_shader_text(&renderer.shader_arena, &source[i + strlen("#frag") + 1], shader, shader.path, &i);
 				}
 			}
 
 			assert(shader.vert_shader && shader.frag_shader);
 
-#if DEBUG
-			FILE* shd = fopen("../out.shd", "w");
-			fwrite(shader.vert_shader, strlen(shader.vert_shader), 1, shd);
-			fwrite(shader.frag_shader, strlen(shader.frag_shader), 1, shd);
-			fclose(shd);
-#endif
+// #if DEBUG
+// 			FILE* shd = fopen("../out.shd", "w");
+// 			fwrite(shader.vert_shader, strlen(shader.vert_shader), 1, shd);
+// 			fwrite(shader.frag_shader, strlen(shader.frag_shader), 1, shd);
+// 			fclose(shd);
+// #endif
 			fclose(file);
+            set_last_loaded(shader);
 		}
 		else
 		{
-			error("File not found", file_path);
+			error("File not found", shader.path);
 		}
-
+    }
+    
+    static ShaderHandle load_shader(Renderer& renderer, const char* file_path)
+    {
+		assert(renderer.render.shader_count + 1 < 64);
+		Shader& shader = renderer.render.shaders[renderer.render.shader_count];
+        strncpy(shader.path, file_path, strlen(file_path));
+                
+        load_shader(renderer, shader);
 		return { renderer.render.shader_count++ };
 	}
-
-	static MaterialHandle create_material(Renderer& renderer, ShaderHandle shader_handle)
-	{
-		Material& material = renderer.render.materials[renderer.render.material_count];
-		material.shader = shader_handle;
-
-		Shader& shader = renderer.render.shaders[shader_handle.handle];
-		
-		// @Incomplete: Get shader uniforms
-		for(i32 i = 0; i < shader.uniform_count; i++)
-		{
-			Uniform& u = shader.uniforms[i];
-			UniformValue& u_v = material.uniform_values[i];
-
-			u_v.uniform = u;
-
-			material.uniform_value_count++;
-		}
-
-		return { renderer.render.material_count++ };
-	}
-
+    
 	static UniformValue* mapping(Material& material, UniformMappingType type)
 	{
 		for(i32 i = 0; i < material.uniform_value_count; i++)
@@ -402,6 +425,113 @@ namespace rendering
 		}
 
 		return nullptr;
+	}
+
+    static UniformValue* get_value(Material& material, ValueType type, const char *name)
+	{
+		for(i32 i = 0; i < material.uniform_value_count; i++)
+		{
+            UniformValue &value = material.uniform_values[i];
+            
+			if(value.uniform.type == type && strcmp(value.uniform.name, name) == 0)
+			{
+				return &value;
+			}
+		}
+
+		return nullptr;
+	}
+
+    static void set_shader_values(Material &material, Shader &shader)
+    {
+		// @Incomplete: Get shader uniforms
+		for(i32 i = 0; i < shader.uniform_count; i++)
+		{
+			Uniform& u = shader.uniforms[i];
+			UniformValue& u_v = material.uniform_values[i];
+
+			u_v.uniform = u;
+
+			material.uniform_value_count++;
+		}
+    }
+
+static void set_old_material_values(Material &new_material, Material &old_material)
+{
+    for(i32 uniform_index = 0; uniform_index < new_material.uniform_value_count; uniform_index++)
+    {
+        UniformValue &value = new_material.uniform_values[uniform_index];
+                
+        if(UniformValue *old_value = get_value(old_material, value.uniform.type, value.uniform.name))
+        {
+            switch(value.uniform.type)
+            {
+            case ValueType::FLOAT:
+                value.float_val = old_value->float_val;
+                break;
+            case ValueType::FLOAT2:
+                value.float2_val = old_value->float2_val;
+                break;
+            case ValueType::FLOAT3:
+                value.float3_val = old_value->float3_val;
+                break;
+            case ValueType::FLOAT4:
+                value.float4_val = old_value->float4_val;
+                break;
+            case ValueType::INTEGER:
+                value.integer_val = old_value->integer_val;
+                break;
+            case ValueType::BOOL:
+                value.boolean_val = old_value->boolean_val;
+                break;
+            case ValueType::MAT4:
+                value.mat4_val = old_value->mat4_val;
+                break;
+            case ValueType::TEXTURE:
+                value.texture = old_value->texture;
+                break;
+            default:
+                assert(false);
+            }
+        }
+    }
+}
+
+static void get_updated_material(Material *new_material, Material &current_material, Shader &shader)
+{
+    set_shader_values(*new_material, shader);
+    set_old_material_values(*new_material, current_material);
+}
+
+    static void update_materials_with_shader(Renderer &renderer, Shader &shader)
+    {
+        for(i32 i = 0; i < renderer.render.material_count; i++)
+        {
+            Material &material = renderer.render.materials[i];
+            Material new_material = {};
+            get_updated_material(&new_material, material, shader);
+            renderer.render.materials[i] = new_material;
+        }
+
+        for(i32 i = 0; i < renderer.render.material_instance_count; i++)
+        {
+            Material &material = renderer.render.material_instances[i];
+            Material new_material = {};
+            get_updated_material(&new_material, material, shader);
+            renderer.render.materials[i] = new_material;
+        }
+    }
+    
+	static MaterialHandle create_material(Renderer& renderer, ShaderHandle shader_handle)
+	{
+		Material& material = renderer.render.materials[renderer.render.material_count];
+		material.shader = shader_handle;
+
+        Shader& shader = renderer.render.shaders[shader_handle.handle];
+        
+        set_shader_values(material, shader);
+		
+		return { renderer.render.material_count++ };
 	}
 
 	static void load_texture(const char* full_texture_path, Renderer& renderer, TextureFiltering filtering, i32* handle = 0)
@@ -437,7 +567,7 @@ namespace rendering
 	}
 
 
-	static void load_material_from_mtl(Renderer& renderer, MaterialInstanceHandle material_instance, const char* file_path)
+	static void load_material_from_mtl(Renderer& renderer, MaterialHandle material_handle, const char* file_path)
 	{
 		// @Incomplete: We need a better way to do this!
 		// Find the directory of the file
@@ -462,7 +592,7 @@ namespace rendering
 		{
 			char buffer[256];
 
-			Material& material = renderer.render.material_instances[material_instance.handle];			
+			Material& material = renderer.render.materials[material_handle.handle];			
 
 			while(fgets(buffer, sizeof(buffer), file))
 			{
@@ -579,8 +709,40 @@ namespace rendering
 	{
 		RegisterBufferInfo info = {};
 		info.vertex_attribute_count = 0;
+        info.stride = 0;
 		return info;
 	}
+
+    static size_t size_for_type(ValueType type)
+    {
+        switch(type)
+        {
+        default:
+        case ValueType::INVALID:
+        case ValueType::TEXTURE:
+            assert(false);
+        case ValueType::FLOAT:
+            return sizeof(r32);
+        case ValueType::FLOAT2:
+            return sizeof(r32) * 2;
+        case ValueType::FLOAT3:
+            return sizeof(r32) * 3;
+        case ValueType::INTEGER:
+        case ValueType::BOOL:
+            return sizeof(i32);
+        case ValueType::MAT4:
+            return sizeof(r32) * 16;
+        }
+    }
+
+    static void add_vertex_attrib(ValueType type, RegisterBufferInfo &info)
+    {
+        VertexAttribute attribute = {};
+        attribute.type = type;
+        info.vertex_attributes[info.vertex_attribute_count++] = attribute;
+        
+        info.stride += size_for_type(type);
+    }
 
 	static void generate_vertex_buffer(r32* vertex_buffer, Vertex* vertices, i32 vertex_count, i32 vertex_size, b32 has_normals, b32 has_uvs)
 	{
@@ -663,20 +825,24 @@ namespace rendering
 		return { unused_handle };
 	}
 
-	static void create_buffers_from_mesh(Renderer& renderer, Mesh& mesh, u64 vertex_data_flags, b32 has_normals, b32 has_uvs)
+	static BufferHandle create_buffers_from_mesh(Renderer& renderer, Mesh& mesh, u64 vertex_data_flags, b32 has_normals, b32 has_uvs)
 	{
 		assert(renderer.render.buffer_count + 1 < global_max_custom_buffers);
 		i32 vertex_size = 3;
 
 		RegisterBufferInfo info = create_register_buffer_info();
 
+        add_vertex_attrib(ValueType::FLOAT3, info);
+        
 		if(has_normals)
 		{
+            add_vertex_attrib(ValueType::FLOAT3, info);
 			vertex_size += 3;
 		}
 
 		if(has_uvs)
 		{
+            add_vertex_attrib(ValueType::FLOAT2, info);
 			vertex_size += 2;
 		}
 
@@ -695,7 +861,7 @@ namespace rendering
 		info.data.index_buffer = push_size(&renderer.mesh_arena, info.data.index_buffer_size, u16);
 		generate_index_buffer(info.data.index_buffer, mesh.faces, mesh.face_count);
 		
-		mesh.buffer_handle = register_buffer(renderer, info).handle;
+		return { register_buffer(renderer, info).handle };
 	}
 
 	static b32 vertex_equals(Vertex &v1, Vertex &v2)
@@ -725,7 +891,7 @@ namespace rendering
 		return (i32)current_size;
 	}
 
-	static void load_obj(Renderer& renderer, char* file_path, MeshHandle *mesh_handle = nullptr, MaterialHandle *material_handle = nullptr)
+	static BufferHandle load_obj(Renderer& renderer, char* file_path, MaterialHandle *material_handle)
 	{
 		FILE* file = fopen(file_path, "r");
 
@@ -753,175 +919,205 @@ namespace rendering
 		if(file)
 		{
 			char buffer[256];
-
-			if(starts_with(buffer, "g")) // we're starting with new geometry
+        
+            while((fgets(buffer, sizeof(buffer), file) != NULL))
             {
-                // @Incomplete: Save the name of the geometry
-            }
-            else if(starts_with(buffer, "mtllib")) // Material file
-            {
-                // Read the material file-name
-                sscanf(buffer, "mtllib %s", mtl_file_name);
-            }
-            else if(starts_with(buffer, "usemtl")) // Used material for geometry
-            {
-                has_mtl_file = true;
-                // Ignored, for now.
-                // This is only relevant when we've got multiple materials
-            }
-            else if(starts_with(buffer, "v ")) // vertex
-            {
-                Vertex vertex = {};
-                sscanf(buffer, "v %f %f %f", &vertex.position.x, &vertex.position.y, &vertex.position.z);
-                buf_push(vertices, vertex);
-                vert_index++;
-            }
-            else if(starts_with(buffer, "vn")) // vertex normal
-            {
-                with_normals = true;
-                math::Vec3 normal(0.0f);
-                sscanf(buffer, "vn %f %f %f", &normal.x, &normal.y, &normal.z);
-                buf_push(normals, normal);
-                normal_index++;
-            }
-            else if(starts_with(buffer, "vt")) // vertex uv
-            {
-                with_uvs = true;
-                math::Vec2 uv(0.0f);
-                sscanf(buffer, "vt %f %f", &uv.x, &uv.y);
-                uv.y = 1.0f - uv.y;
-                buf_push(uvs, uv);
-                uv_index++;
-            }
-            else if(starts_with(buffer, "f")) // face
-            {
-                Face face = {};
-                math::Vec3i normal_indices = {};
-                math::Vec3i uv_indices = {};
-                
-                if(with_uvs && with_normals)
+                if(starts_with(buffer, "g")) // we're starting with new geometry
                 {
-                    sscanf(buffer, "f %hd/%d/%d %hd/%d/%d %hd/%d/%d", &face.indices[0], &uv_indices.x, &normal_indices.x, &face.indices[1], &uv_indices.y, &normal_indices.y, &face.indices[2], &uv_indices.z, &normal_indices.z);
+                    // @Incomplete: Save the name of the geometry
                 }
-                else if(with_uvs)
+                else if(starts_with(buffer, "mtllib")) // Material file
                 {
-                    sscanf(buffer, "f %hd/%d %hd/%d %hd/%d", &face.indices[0], &uv_indices.x, &face.indices[1], &uv_indices.y, &face.indices[2], &uv_indices.z);
+                    // Read the material file-name
+                    sscanf(buffer, "mtllib %s", mtl_file_name);
                 }
-                
-                else if(with_normals)
+                else if(starts_with(buffer, "usemtl")) // Used material for geometry
                 {
-                    sscanf(buffer, "f %hd//%d %hd//%d %hd//%d", &face.indices[0], &normal_indices.x, &face.indices[1], &normal_indices.y, &face.indices[2], &normal_indices.z);
+                    has_mtl_file = true;
+                    // Ignored, for now.
+                    // This is only relevant when we've got multiple materials
                 }
-                
-                // The obj-format was made by geniuses and therefore the indices are not 0-indexed. Such wow.
-                face.indices[0] -= 1;
-                face.indices[1] -= 1;
-                face.indices[2] -= 1;
-                
-                b32 should_add = false;
-                Vertex v1 = vertices[face.indices[0]];
-                math::Vec2 uv1(0.0f);
-                math::Vec3 n1(0.0f);
-                
-                if(with_uvs)
+                else if(starts_with(buffer, "v ")) // vertex
                 {
-                    uv1 = uvs[uv_indices.x - 1];
+                    Vertex vertex = {};
+                    sscanf(buffer, "v %f %f %f", &vertex.position.x, &vertex.position.y, &vertex.position.z);
+                    buf_push(vertices, vertex);
+                    vert_index++;
                 }
-                
-                if(with_normals)
+                else if(starts_with(buffer, "vn")) // vertex normal
                 {
-                    n1 = normals[normal_indices.x - 1];
+                    with_normals = true;
+                    math::Vec3 normal(0.0f);
+                    sscanf(buffer, "vn %f %f %f", &normal.x, &normal.y, &normal.z);
+                    buf_push(normals, normal);
+                    normal_index++;
                 }
-                
-                face.indices[0] = (u16)check_for_identical_vertex(v1, uv1, n1, final_vertices, &should_add);
-                
-                if(should_add)
+                else if(starts_with(buffer, "vt")) // vertex uv
                 {
-                    buf_push(final_vertices, v1);
+                    with_uvs = true;
+                    math::Vec2 uv(0.0f);
+                    sscanf(buffer, "vt %f %f", &uv.x, &uv.y);
+                    uv.y = 1.0f - uv.y;
+                    buf_push(uvs, uv);
+                    uv_index++;
                 }
-                
-                should_add = false;
-                Vertex &v2 = vertices[face.indices[1]];
-                math::Vec2 uv2(0.0f);
-                math::Vec3 n2(0.0f);
-                
-                if(with_uvs)
+                else if(starts_with(buffer, "f")) // face
                 {
-                    uv2 = uvs[uv_indices.y - 1];
+                    Face face = {};
+                    math::Vec3i normal_indices = {};
+                    math::Vec3i uv_indices = {};
+                
+                    if(with_uvs && with_normals)
+                    {
+                        sscanf(buffer, "f %hd/%d/%d %hd/%d/%d %hd/%d/%d", &face.indices[0], &uv_indices.x, &normal_indices.x, &face.indices[1], &uv_indices.y, &normal_indices.y, &face.indices[2], &uv_indices.z, &normal_indices.z);
+                    }
+                    else if(with_uvs)
+                    {
+                        sscanf(buffer, "f %hd/%d %hd/%d %hd/%d", &face.indices[0], &uv_indices.x, &face.indices[1], &uv_indices.y, &face.indices[2], &uv_indices.z);
+                    }
+                
+                    else if(with_normals)
+                    {
+                        sscanf(buffer, "f %hd//%d %hd//%d %hd//%d", &face.indices[0], &normal_indices.x, &face.indices[1], &normal_indices.y, &face.indices[2], &normal_indices.z);
+                    }
+                
+                    // The obj-format was made by geniuses and therefore the indices are not 0-indexed. Such wow.
+                    face.indices[0] -= 1;
+                    face.indices[1] -= 1;
+                    face.indices[2] -= 1;
+                
+                    b32 should_add = false;
+                    Vertex v1 = vertices[face.indices[0]];
+                    math::Vec2 uv1(0.0f);
+                    math::Vec3 n1(0.0f);
+                
+                    if(with_uvs)
+                    {
+                        uv1 = uvs[uv_indices.x - 1];
+                    }
+                
+                    if(with_normals)
+                    {
+                        n1 = normals[normal_indices.x - 1];
+                    }
+                
+                    face.indices[0] = (u16)check_for_identical_vertex(v1, uv1, n1, final_vertices, &should_add);
+                
+                    if(should_add)
+                    {
+                        buf_push(final_vertices, v1);
+                    }
+                
+                    should_add = false;
+                    Vertex &v2 = vertices[face.indices[1]];
+                    math::Vec2 uv2(0.0f);
+                    math::Vec3 n2(0.0f);
+                
+                    if(with_uvs)
+                    {
+                        uv2 = uvs[uv_indices.y - 1];
+                    }
+                
+                    if(with_normals)
+                    {
+                        n2 = normals[normal_indices.y - 1];
+                    }
+                
+                    face.indices[1] = (u16)check_for_identical_vertex(v2, uv2, n2, final_vertices, &should_add);
+                
+                    if(should_add)
+                    {
+                        buf_push(final_vertices, v2);
+                    }
+                
+                    should_add = false;
+                    Vertex &v3 = vertices[face.indices[2]];
+                
+                    math::Vec2 uv3(0.0f);
+                    math::Vec3 n3(0.0f);
+                
+                    if(with_uvs)
+                    {
+                        uv3 = uvs[uv_indices.z - 1];
+                    }
+                
+                    if(with_normals)
+                    {
+                        n3 = normals[normal_indices.z - 1];
+                    }
+                
+                    face.indices[2] = (u16)check_for_identical_vertex(v3, uv3, n3, final_vertices,  &should_add);
+                
+                    if(should_add)
+                    {
+                        buf_push(final_vertices, v3);
+                    }
+                
+                    buf_push(faces, face);
                 }
-                
-                if(with_normals)
-                {
-                    n2 = normals[normal_indices.y - 1];
-                }
-                
-                face.indices[1] = (u16)check_for_identical_vertex(v2, uv2, n2, final_vertices, &should_add);
-                
-                if(should_add)
-                {
-                    buf_push(final_vertices, v2);
-                }
-                
-                should_add = false;
-                Vertex &v3 = vertices[face.indices[2]];
-                
-                math::Vec2 uv3(0.0f);
-                math::Vec3 n3(0.0f);
-                
-                if(with_uvs)
-                {
-                    uv3 = uvs[uv_indices.z - 1];
-                }
-                
-                if(with_normals)
-                {
-                    n3 = normals[normal_indices.z - 1];
-                }
-                
-                face.indices[2] = (u16)check_for_identical_vertex(v3, uv3, n3, final_vertices,  &should_add);
-                
-                if(should_add)
-                {
-                    buf_push(final_vertices, v3);
-                }
-                
-                buf_push(faces, face);
-            }
-			
+            }	
 			fclose(file);
-		}
-		assert(renderer.mesh_count + 1 < global_max_meshes);
+        
+            assert(renderer.mesh_count + 1 < global_max_meshes);
 
-		MeshHandle handle = { renderer.mesh_count++ };
-		Mesh &mesh = renderer.meshes[handle.handle];
-		mesh = {};
-
-		mesh.vertices = push_array(&renderer.mesh_arena, buf_len(final_vertices), Vertex);
-		mesh.faces = push_array(&renderer.mesh_arena, buf_len(faces), Face);
-		mesh.vertex_count = (i32)buf_len(final_vertices);
-		mesh.face_count = (i32)buf_len(faces);
+            Mesh mesh;
+            mesh.vertices = push_array(&renderer.mesh_arena, buf_len(final_vertices), Vertex);
+            mesh.faces = push_array(&renderer.mesh_arena, buf_len(faces), Face);
+            mesh.vertex_count = (i32)buf_len(final_vertices);
+            mesh.face_count = (i32)buf_len(faces);
     
-		memcpy(mesh.vertices, final_vertices, mesh.vertex_count * sizeof(Vertex));
-		memcpy(mesh.faces, faces, mesh.face_count * sizeof(Face));
+            memcpy(mesh.vertices, final_vertices, mesh.vertex_count * sizeof(Vertex));
+            memcpy(mesh.faces, faces, mesh.face_count * sizeof(Face));
     
-		buf_free(final_vertices);
-		buf_free(vertices);
-		buf_free(normals);
-		buf_free(uvs);
-		buf_free(faces);
+            buf_free(final_vertices);
+            buf_free(vertices);
+            buf_free(normals);
+            buf_free(uvs);
+            buf_free(faces);
 
-		
-		
+            // If we specified a material to load the data into
+            if(material_handle && has_mtl_file)
+            {
+                // Find the directory of the file
+                size_t index = 0;
+                for(size_t i = 0; i < strlen(file_path); i++)
+                {
+                    if(file_path[i] == '/')
+                    {
+                        index = i + 1;
+                    }
+                }
+        
+                auto temp_block = begin_temporary_memory(&renderer.temp_arena);
+        
+                char *dir = push_string(temp_block.arena, index);
+                strncpy(dir, file_path, index);
+        
+                dir[index] = 0;
+                char *material_file_path = concat(dir, mtl_file_name, &renderer.temp_arena);
+
+                load_material_from_mtl(renderer, *material_handle, material_file_path);
+        
+                end_temporary_memory(temp_block);
+            }
+
+            return { create_buffers_from_mesh(renderer, mesh, 0, with_normals, with_uvs) };
+
+        }
+        else
+        {
+            error("File not found", file_path);
+            return { 0 };
+        }
 	}
-
-
-	
-	
+    
 	static MaterialInstanceHandle create_material_instance(Renderer& renderer, MaterialHandle material_handle)
 	{
 		Material& material = renderer.render.materials[material_handle.handle];
-		renderer.render.material_instances[renderer.render.material_instance_count] = material;
 
+        renderer.render.material_instances[renderer.render.material_instance_count] = material;
+        renderer.render.material_instances[renderer.render.material_instance_count].source_material = material_handle;
+        
 		return { renderer.render.material_instance_count++ };
 	}
 
@@ -1043,5 +1239,16 @@ namespace rendering
 		// Find RegisterBufferInfo from handle
 		// Update data in info from new_data
 	}
-}
 
+    static void push_buffer(Renderer &renderer, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, Transform &transform)
+    {
+        assert(renderer.render.render_command_count < global_max_render_commands);
+        
+        RenderCommand render_command = {};
+        render_command.buffer = buffer_handle;
+        render_command.material = material_instance_handle;
+        render_command.transform = transform;
+
+        renderer.render.render_commands[renderer.render.render_command_count++] = render_command;
+    }
+}
