@@ -86,6 +86,7 @@ static void load_sound(SoundSystem *system, const char *file_path, SoundHandle *
 // to pass in different channel attributes.
 static void play_one_shot_sound(SoundSystem *system, SoundHandle handle, ChannelAttributes channel_attributes = get_default_channel_attributes())
 {
+    debug("handle: %d, coung: %d\n", handle.handle, system->sound_count);
     assert(handle.handle != 0 && handle.handle - 1 < system->sound_count);
     
     SoundCommand *command = push_next_command(system);
