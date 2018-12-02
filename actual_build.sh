@@ -14,6 +14,6 @@ CommonLinkerFlags="-L../libs/glad -L/usr/local/lib -L../libs/glfw/libglfw3.a -L.
 
 pushd build
 
-clang++ --std=c++17 -stdlib=libc++ -Weverything $WIGNORE -msse2  $DEBUG $CommonCompilerFlags $SYMBOLS $OPT ../src/main.cpp $CommonLinkerFlags -fno-exceptions
+clang --std=c++17 -stdlib=libstdc++ -Weverything $WIGNORE -msse2  $DEBUG $CommonCompilerFlags $SYMBOLS $OPT ../src/main.cpp $CommonLinkerFlags -fno-exceptions
 
 popd
