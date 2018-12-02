@@ -3,7 +3,6 @@
 
 #include <pthread.h>
 #include <semaphore.h>
-// #include <stdatomic.h>
 
 // Define platform-specific functions
 #define SemaphoreHandle sem_t
@@ -13,17 +12,12 @@ typedef void* (*ThreadProc)(void* parameters);
 
 static inline u32 interlocked_compare_exchange(u32 volatile *ptr, u32 next, u32 original)
 {
-    if(__sync_val_compare_and_swap((long volatile *)ptr, original, next))
-    {
-	return original;
-    }
-    
-    return next;
+    return __sync_val_compare_and_swap(ptr, original, next);
 }
 
 static inline void interlocked_increment(u32 volatile *ptr)
 {
-    __sync_fetch_and_add((long volatile *)ptr, 1);
+    __sync_fetch_and_add(ptr, 1);
 }
 
 static inline void release_semaphore(SemaphoreHandle& semaphore_handle)
@@ -45,8 +39,12 @@ static inline SemaphoreHandle create_semaphore(u32 initial_count, u32 thread_cou
 
 static inline void create_thread(ThreadProc thread_proc, void *parameter)
 {
+    pthread_attr_t attr;
     pthread_t thread;
-    pthread_create(&thread, NULL, thread_proc, parameter);
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    pthread_create(&thread, &attr, thread_proc, parameter);
+    pthread_attr_destroy(&attr);
 }
 
 #include "threading.h"
