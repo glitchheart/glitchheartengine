@@ -114,8 +114,8 @@ inline Vec2_4x random_from_disc(RandomSeries& series, r32 _radius)
     
     r32_4x angle = random_between_4x(series, 0.0f, 360.0f) * r32_4x(DEGREE_IN_RADIANS);
     r32_4x radius = random_between_4x(series, 0.0f, _radius);
-    result.x = (radius * r32_4x(cos(angle.e[0]),cos(angle.e[1]), cos(angle.e[2]), cos(angle.e[3])));
-    result.y = (radius * r32_4x(sin(angle.e[0]),sin(angle.e[1]), sin(angle.e[2]), sin(angle.e[3])));
+    result.x = (radius * r32_4x((r32)cos(angle.e[0]),(r32)cos(angle.e[1]), (r32)cos(angle.e[2]), (r32)cos(angle.e[3])));
+    result.y = (radius * r32_4x((r32)sin(angle.e[0]),(r32)sin(angle.e[1]), (r32)sin(angle.e[2]), (r32)sin(angle.e[3])));
     
     return result;
 }
@@ -126,8 +126,8 @@ inline Vec2_4x random_from_circle(RandomSeries& series, r32 _radius)
     
     r32_4x angle = random_between_4x(series, 0.0f, 360.0f) * r32_4x(DEGREE_IN_RADIANS);
     r32_4x radius = random_between_4x(series, _radius, _radius);
-    result.x = (radius * r32_4x(cos(angle.e[0]),cos(angle.e[1]), cos(angle.e[2]), cos(angle.e[3])));
-    result.y = (radius * r32_4x(sin(angle.e[0]),sin(angle.e[1]), sin(angle.e[2]), sin(angle.e[3])));
+    result.x = (radius * r32_4x((r32)cos(angle.e[0]), (r32)cos(angle.e[1]), (r32)cos(angle.e[2]), (r32)cos(angle.e[3])));
+    result.y = (radius * r32_4x((r32)sin(angle.e[0]), (r32)sin(angle.e[1]), (r32)sin(angle.e[2]), (r32)sin(angle.e[3])));
     
     return result;
 }
