@@ -65,6 +65,7 @@ namespace rendering
 		SPECULAR_INTENSITY,
 		SPECULAR_INTENSITY_TEX,
 		AMBIENT_COLOR,
+
 		AMBIENT_TEX,
 
 		DISSOLVE,
@@ -114,6 +115,8 @@ namespace rendering
 		char* frag_shader;
 
 		char path[256];
+
+        time_t last_loaded;
 		
 		Shader () {}
     };
@@ -121,10 +124,11 @@ namespace rendering
     struct Material
     {
 		ShaderHandle shader;
-
 		UniformValue uniform_values[32];
 		i32 uniform_value_count;
 
+        MaterialHandle source_material;
+        
 		Material () {}
     };
 
@@ -151,7 +155,7 @@ namespace rendering
 		VertexAttribute vertex_attributes[16];
 		i32 vertex_attribute_count;
 
-		u32 stride;
+		size_t stride;
 
 		BufferUsage usage;
 		
@@ -180,7 +184,6 @@ namespace rendering
     {
 		MaterialInstanceHandle material;
 		Transform transform;
-
 		BufferHandle buffer;
     };
 }

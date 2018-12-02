@@ -364,6 +364,39 @@ static GLuint load_shader(Renderer& renderer, rendering::Shader& shader, ShaderG
 	return GL_TRUE;
 }
 
+static void delete_shader_program(ShaderGL &shader)
+{
+    glDeleteProgram(shader.program);
+    glDeleteShader(shader.vert_program);
+    glDeleteShader(shader.frag_program);
+    shader.program = 0;
+    shader.vert_program = 0;
+    shader.frag_program = 0;
+}
+
+static void reload_shaders(RenderState &render_state, Renderer &renderer)
+{
+    if(renderer.render.shaders_to_reload_count > 0)
+    {
+        i32 shaders_to_reload[8];
+        i32 count = renderer.render.shaders_to_reload_count;
+        memcpy(shaders_to_reload, renderer.render.shaders_to_reload, sizeof(i32) * count);
+        renderer.render.shaders_to_reload_count = 0;
+
+        for(i32 i = 0; i < count; i++)
+        {
+            i32 index = shaders_to_reload[i];
+            rendering::Shader &shader = renderer.render.shaders[index];
+            ShaderGL &gl_shader = render_state.gl_shaders[index];
+
+            delete_shader_program(gl_shader);
+            rendering::load_shader(renderer, shader);
+            load_shader(renderer, shader, gl_shader);
+            debug("Reloaded shader: %s", shader.path);
+        }
+    }
+}
+
 static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena *arena)
 {
     TemporaryMemory temp_mem = begin_temporary_memory(arena);
@@ -1052,6 +1085,7 @@ static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
     render_state->frame_delta = 0.0f;
     
     render_state->buffers = push_array(render_state->perm_arena, global_max_custom_buffers, Buffer);
+    render_state->gl_buffers = push_array(render_state->perm_arena, global_max_custom_buffers, Buffer);
 }
 
 static GLuint load_texture(TextureData& data, Texture* texture)
@@ -2991,6 +3025,7 @@ static void unregister_buffers(RenderState& render_state, Renderer& renderer)
 
 static void register_buffers(RenderState& render_state, Renderer& renderer)
 {
+    
     for (i32 index = render_state.buffer_count; index < renderer.buffer_count; index++)
     {
         BufferData data = renderer.buffers[index];
@@ -3027,7 +3062,6 @@ static void register_buffers(RenderState& render_state, Renderer& renderer)
         else
         {
             register_buffers(render_state, data.vertex_buffer, data.vertex_buffer_size, data.index_buffer, data.index_buffer_count, data.index_buffer_size, data.has_normals, data.has_uvs, data.skinned, data.existing_handle);
-            
         }
     }
     
@@ -3036,6 +3070,9 @@ static void register_buffers(RenderState& render_state, Renderer& renderer)
 
 static void register_buffer(Buffer& buffer, rendering::RegisterBufferInfo info)
 {
+    buffer.vertex_buffer_size = info.data.vertex_buffer_size;
+    buffer.index_buffer_count = info.data.index_buffer_count;
+    
 	glGenVertexArrays(1, &buffer.vao);
 	glBindVertexArray(buffer.vao);
 
@@ -3130,7 +3167,7 @@ static void register_buffer(Buffer& buffer, rendering::RegisterBufferInfo info)
 		break;
 		}
 
-		vertex_attrib_pointer(i, count, type, info.stride, (void*)offset);
+		vertex_attrib_pointer(i, count, type, (u32)info.stride, (void*)offset);
 
 		offset += type_size;
 	}
@@ -3210,15 +3247,19 @@ static void set_uniform(RenderState& render_state, Renderer& renderer, GLuint pr
 	}
 }
 
-static void render_buffer(rendering::RenderCommand& command, RenderState& render_state, Renderer& renderer, math::Mat4 view_matrix, math::Mat4 projection_matrix)
+static void render_buffer(rendering::RenderCommand& command, RenderState& render_state, Renderer& renderer, math::Mat4 projection_matrix, math::Mat4 view_matrix)
 {
-	Buffer& buffer = render_state.gl_buffers[command.buffer.handle];
+    i32 handle = renderer.render._internal_buffer_handles[command.buffer.handle - 1];
+	Buffer& buffer = render_state.gl_buffers[handle];
 	
 	glBindVertexArray(buffer.vao);
 
 	rendering::Material& material = renderer.render.material_instances[command.material.handle];
 	ShaderGL& gl_shader = render_state.gl_shaders[material.shader.handle];
 
+    if(!gl_shader.program)
+        return;
+    
 	glUseProgram(gl_shader.program);
 
 	i32 texture_count = 0;
@@ -3327,6 +3368,17 @@ static void render_shadows(RenderState &render_state, Renderer &renderer, Frameb
     
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glCullFace(GL_BACK);
+}
+
+static void render_new_commands(RenderState &render_state, Renderer &renderer)
+{
+    for(i32 i = 0; i < renderer.render.render_command_count; i++)
+    {
+        rendering::RenderCommand &command = renderer.render.render_commands[i];
+        render_buffer(command, render_state, renderer, renderer.projection_matrix, renderer.view_matrix);
+    }
+
+    renderer.render.render_command_count = 0;
 }
 
 static void render_commands(RenderState &render_state, Renderer &renderer)
@@ -3627,8 +3679,6 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         render_state.window_height = renderer.window_height;
         *save_config = true;
         
-        
-        
         if(renderer.window_mode != render_state.window_mode)
         {
             const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
@@ -3673,6 +3723,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
     }
     
     load_extra_shaders(render_state, renderer);
+    reload_shaders(render_state, renderer);
     load_textures(render_state, renderer);
     
     render_state.current_extra_shader = -1;
@@ -3691,6 +3742,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
     renderer.ui_projection_matrix = math::ortho(0.0f, (r32)renderer.framebuffer_width, 0.0f, (r32)renderer.framebuffer_height, -500.0f, 500.0f);
     
     register_buffers(render_state, renderer);
+    register_new_buffers(render_state, renderer);
     
     if(should_render)
     {
@@ -3711,6 +3763,8 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         glClearColor(renderer.clear_color.r, renderer.clear_color.g, renderer.clear_color.b, renderer.clear_color.a);
         
         render_commands(render_state, renderer);
+        render_new_commands(render_state, renderer);
+        
         render_state.bound_texture = 0;
         
         // We have to reset the bound texture to nothing, since we're about to bind other textures

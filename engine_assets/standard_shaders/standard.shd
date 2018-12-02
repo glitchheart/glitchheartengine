@@ -18,12 +18,13 @@ void main()
 #frag
 #version 330 core
 
-uniform vec4 col0;
-
+uniform vec4 col0 : DIFFUSE_COLOR;
+uniform sampler2D tex0 : DIFFUSE_TEX;
+    
 in vec2 uv0;
 out vec4 outColor;
 
 void main()
 {
-    outColor = col0;
+    outColor = col0 * texture(tex0, uv0);
 }

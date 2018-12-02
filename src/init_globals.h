@@ -18,5 +18,5 @@ static constexpr i32 global_max_sound_commands = 1024;
 static constexpr i32 global_max_custom_buffers = 2048;
 static constexpr i32 global_max_textures = 128;
 static constexpr i32 global_max_materials = 128;
-static constexpr i32 global_max_shaders = 16;
+static constexpr i32 global_max_shaders = 32;
 static constexpr i32 global_max_entity_templates = 64;

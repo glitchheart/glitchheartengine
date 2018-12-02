@@ -27,6 +27,8 @@ namespace scene
     // @Incomplete: We need to make sure that we can grow in size if we need more than what we allocated at any point in time.
     static Scene create_scene(Renderer &renderer, EntityTemplateState &template_state, i32 initial_entity_array_size = 1024)
     {
+        renderer.render.material_instance_count = 0;
+        
         Scene scene = {};
         scene.template_state = &template_state;
         scene.renderer = &renderer;
@@ -192,10 +194,16 @@ namespace scene
             sprintf(templ.file_path, "%s", path);
             
             char buffer[256];
+
+            b32 is_new_version = false;
             
             while(fgets(buffer, 256, file))
             {
-                if(starts_with(buffer, "-transform"))
+                if(starts_with(buffer, "v2"))
+                {
+                    is_new_version = true;
+                }
+                else if(starts_with(buffer, "-transform"))
                 {
                     templ.comp_flags |= COMP_TRANSFORM;
                     templ.transform.position = math::Vec3();
@@ -230,6 +238,13 @@ namespace scene
                     
                     while(fgets(buffer, 256, file) && !starts_with(buffer, "-"))
                     {
+                        if(starts_with(buffer, "shd"))
+                        {
+                            char shader_file[256];
+                            sscanf(buffer, "shd: %s", shader_file);
+                            rendering::ShaderHandle shader_handle = rendering::load_shader(*scene.renderer, shader_file);
+                            templ.render.v2.material_handle = rendering::create_material(*scene.renderer, shader_handle);
+                        }
                         if(starts_with(buffer, "receives shadows"))
                         {
                             sscanf(buffer, "receives shadows: %d\n", &templ.render.receives_shadows);
@@ -242,19 +257,44 @@ namespace scene
                         {
                             char obj_file[256];
                             sscanf(buffer, "obj: %s", obj_file);
-                            
-                            load_obj(*scene.renderer, obj_file, &templ.render.mesh_handle, &templ.render.material_handle);
+
+                            if(is_new_version)
+                            {
+                                templ.render.is_new_version = true;
+                                templ.render.v2.buffer_handle = rendering::load_obj(*scene.renderer, obj_file, &templ.render.v2.material_handle);
+                            }
+                            else
+                                load_obj(*scene.renderer, obj_file, &templ.render.mesh_handle, &templ.render.material_handle);
                         }
                         else if(starts_with(buffer, "prim"))
                         {
+                            if(is_new_version)
+                                assert(false);
+                            
                             char *prim_type = buffer + sizeof(char) * 6;
+
                             if(starts_with(prim_type, "cube"))
                             {
-                                create_cube(*scene.renderer, &templ.render.mesh_handle);
+                                if(is_new_version)
+                                {
+                                    //templ.render.v2.buffer_handle = rendering::create_plane(*scene.renderer);
+                                }
+                                else
+                                {
+                                    create_cube(*scene.renderer, &templ.render.mesh_handle);
+                                }
+                                
                             }
                             else if(starts_with(prim_type, "plane"))
                             {
-                                create_plane(*scene.renderer, &templ.render.mesh_handle.handle);
+                                if(is_new_version)
+                                {
+                                    //templ.render.v2.buffer_handle = rendering::create_plane(*scene.renderer);
+                                }
+                                else
+                                {
+                                    create_plane(*scene.renderer, &templ.render.mesh_handle.handle);
+                                }
                             }
                         }
                         else if(starts_with(buffer, "mtl"))
@@ -266,7 +306,15 @@ namespace scene
 
                             char mtl_file[256];
                             sscanf(buffer, "mtl: %s", mtl_file);
-                            load_material(*scene.renderer, mtl_file, &templ.render.material_handle);
+
+                            if(is_new_version)
+                            {
+                                rendering::load_material_from_mtl(*scene.renderer, templ.render.v2.material_handle, mtl_file);
+                            }
+                            else
+                            {
+                                load_material(*scene.renderer, mtl_file, &templ.render.material_handle);
+                            }
                         }
                     }
                 }
@@ -500,10 +548,19 @@ namespace scene
         if(templ.comp_flags & COMP_RENDER)
         {
             RenderComponent &render = get_render_comp(handle, scene);
-            render.mesh_handle = templ.render.mesh_handle;
-            render.material_handle = create_material(templ.render.material_handle, scene);
-            render.receives_shadows = templ.render.receives_shadows;
-            render.cast_shadows = templ.render.cast_shadows;
+            if(templ.render.is_new_version)
+            {
+                render.is_new_version = true;
+                render.v2.buffer_handle = templ.render.v2.buffer_handle;
+                render.v2.material_handle = rendering::create_material_instance(*scene.renderer, templ.render.v2.material_handle);
+            }
+            else
+            {
+                render.mesh_handle = templ.render.mesh_handle;
+                render.material_handle = create_material(templ.render.material_handle, scene);
+                render.receives_shadows = templ.render.receives_shadows;
+                render.cast_shadows = templ.render.cast_shadows;
+            }
         }
         
         if(templ.comp_flags & COMP_PARTICLES)
@@ -764,4 +821,46 @@ namespace scene
         Entity &entity = scene.entities[internal_handle];
         return scene.material_instances[entity.render_handle.handle];
     }
+
+	static void set_uniform_value(EntityHandle handle, const char* name, r32 value, Scene &scene)
+	{
+        RenderComponent &render = get_render_comp(handle, scene);
+        rendering::set_uniform_value(*scene.renderer, render.v2.material_handle, name, value);
+	}
+
+	static void set_uniform_value(EntityHandle handle, const char* name, math::Vec2 value, Scene &scene)
+	{
+        RenderComponent &render = get_render_comp(handle, scene);
+        rendering::set_uniform_value(*scene.renderer, render.v2.material_handle, name, value);
+	}
+
+	static void set_uniform_value(EntityHandle handle, const char* name, math::Vec3 value, Scene &scene)
+	{
+        RenderComponent &render = get_render_comp(handle, scene);
+        rendering::set_uniform_value(*scene.renderer, render.v2.material_handle, name, value);
+	}
+
+	static void set_uniform_value(EntityHandle handle, const char* name, math::Vec4 value, Scene &scene)
+	{
+        RenderComponent &render = get_render_comp(handle, scene);
+        rendering::set_uniform_value(*scene.renderer, render.v2.material_handle, name, value);
+	}
+
+	static void set_uniform_value(EntityHandle handle, const char* name, i32 value, Scene &scene)
+	{
+        RenderComponent &render = get_render_comp(handle, scene);
+        rendering::set_uniform_value(*scene.renderer, render.v2.material_handle, name, value);
+	}
+
+	static void set_uniform_value(EntityHandle handle, const char* name, math::Mat4 value, Scene &scene)
+	{
+        RenderComponent &render = get_render_comp(handle, scene);
+        rendering::set_uniform_value(*scene.renderer, render.v2.material_handle, name, value);
+	}
+
+	static void set_uniform_value(EntityHandle handle, const char* name, rendering::TextureHandle value, Scene &scene)
+	{
+        RenderComponent &render = get_render_comp(handle, scene);
+        rendering::set_uniform_value(*scene.renderer, render.v2.material_handle, name, value);
+	}
 }
