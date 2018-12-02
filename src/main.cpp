@@ -518,6 +518,8 @@ int main(int argc, char **args)
 
     render_state.font_arena = {};
     render_state.string_arena = {};
+    render_state.gl_shader_count = 0;
+    render_state.gl_buffer_count = 0;
     Renderer renderer = {};
 
     b32 do_save_config = false;
