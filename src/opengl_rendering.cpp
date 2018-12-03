@@ -3744,6 +3744,10 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
     
     load_extra_shaders(render_state, renderer);
     reload_shaders(render_state, renderer);
+    
+    // @Speed: Do we have to clear this every frame?
+    clear(&renderer.shader_arena);
+    
     load_textures(render_state, renderer);
     
     render_state.current_extra_shader = -1;
