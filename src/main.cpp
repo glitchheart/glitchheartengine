@@ -397,7 +397,6 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     }
     renderer.render.removed_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
 
-
 #if DEBUG
     renderer.render.shader_count = 0;
     renderer.render.shaders_to_reload_count = 0;
@@ -406,6 +405,8 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     make_queue(reload_queue, 1, reload_thread);
     platform.add_entry(reload_queue, check_shader_files, &renderer);
 #endif
+
+    rendering::set_fallback_shader(renderer, "../engine_assets/standard_shaders/fallback.shd");
 }
 
 #if ENABLE_ANALYTICS
