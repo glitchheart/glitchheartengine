@@ -9,11 +9,10 @@ namespace rendering
 		debug_log("ERROR: %s in %s", msg, file);
     }
 
-    static ValueType get_value_type(char** value, const char* file_path)
+    static ValueType parse_type(char *type, const char *file_path)
     {
-		ValueType result;
-		char type[16];
-		sscanf(*value, "%s", type);
+        ValueType result;
+        
 		if(starts_with(type, "float"))
 		{
 			result = ValueType::FLOAT;
@@ -51,12 +50,112 @@ namespace rendering
 			result = ValueType::INVALID;
 			error("invalid value type", file_path);
 		}
-		    
-		*value += strlen(type);
+
+        return result;
+    }
+
+    static void eat_spaces_and_newlines(char **source)
+    {
+        while(*source[0] == ' ' || *source[0] == '\n')
+            (*source)++;
+    }
+    
+    static ValueType get_value_type(char** value, const char* file_path)
+    {
+		ValueType result;
+		char type[16];
+		sscanf(*value, "%s", type);
+
+        result = parse_type(type, file_path);
+        *value += strlen(type);
 		return result;
     }
 
-    static char* load_shader_text(MemoryArena* arena, char* source, Shader& shader, const char* file_path, size_t* file_size = nullptr)
+    // Eats a word and ignores new-lines
+    static void parse_word(char **source, char *buffer)
+    {
+        i32 index = 0;
+        
+        while(*source[0] != ' ' && *source[0] != '\n' && *source[0] != ';')
+        {
+            buffer[index++] = **source;
+            (*source)++;
+        }
+
+        buffer[index] = '\0';
+    }
+
+    static void parse_structure_values(char **source, Structure &structure, const char *file_path)
+    {
+		char buffer[256];
+        
+		while(read_line(buffer, 256, source))
+        {
+            if(!starts_with(buffer, "{") && !starts_with(buffer, "\n"))
+            {
+                char *rest = &buffer[0];
+                eat_spaces_and_newlines(&rest);
+
+                if(starts_with(rest, "}"))
+                    return;
+                
+                char type_str[32];
+                parse_word(&rest, type_str);
+                           
+                ValueType type = parse_type(type_str, file_path);
+                if(type != ValueType::INVALID)
+                {
+                    eat_spaces_and_newlines(&rest);
+                    
+                    char name[32];
+                    parse_word(&rest, name);
+                    structure.types[structure.value_count] = type;
+                    strncpy(structure.names[structure.value_count++], name, strlen(name));
+                }
+            }
+        }
+    }
+    
+    static void parse_structure_variables(char **source, char **temp_result, size_t *current_index, Structure &structure, const char *file_path)
+    {
+        char buffer[256];
+        
+        while(read_line(buffer, 256, source))
+		{
+            char *rest = &buffer[0];
+            eat_spaces_and_newlines(&rest);
+
+            if(starts_with(rest, "}"))
+            {
+                break;
+            }
+            else if(starts_with(rest, "vec4"))
+            {
+                printf("VEC4!\n");
+            }
+            else if(starts_with(rest, "vec3"))
+            {
+                
+            }
+            
+            strncpy(temp_result[*current_index], buffer, strlen(buffer));
+            (*current_index) += strlen(buffer);
+        }
+    }
+
+    static Structure *get_structure(char *type_name, Shader &shader)
+    {
+        for(i32 i = 0; i < shader.structure_count; i++)
+        {
+            if(strcmp(type_name, shader.structures[i].name) == 0)
+            {
+                return &shader.structures[i];
+            }
+        }
+        return nullptr;
+    }
+    
+    static char* load_shader_text(MemoryArena* arena, char* source, Shader& shader, Uniform **uniforms_array, i32 *uniform_count, const char* file_path, size_t* file_size = nullptr)
     {
 		size_t i = 0;
 
@@ -91,7 +190,7 @@ namespace rendering
 					char* included_source = read_file_into_buffer(&temp_arena, included_shd);
 					char* path = concat(concat(file_path, "<-", &temp_arena), included_path, &temp_arena);
 					
-					char* included_text = load_shader_text(&temp_arena, included_source, shader, path);
+					char* included_text = load_shader_text(&temp_arena, included_source, shader, uniforms_array, uniform_count, path);
 
 					if(i + strlen(buffer) > temp_current_size)
 					{
@@ -130,7 +229,7 @@ namespace rendering
 					char* included_source = read_file_into_buffer(&temp_arena, included_shd);
 					char* path = concat(concat(file_path, "<-", &temp_arena), included_path, &temp_arena);
 					
-					char* included_text = load_shader_text(&temp_arena, included_source, shader, path);
+					char* included_text = load_shader_text(&temp_arena, included_source, shader, uniforms_array, uniform_count, path);
 
 					if(i + strlen(buffer) > temp_current_size)
 					{
@@ -156,98 +255,125 @@ namespace rendering
 				}
 				
 			}
+            else if(starts_with(buffer, "struct"))
+            {
+                Structure &structure = shader.structures[shader.structure_count++];
+                sscanf(buffer, "struct %[^\n]", structure.name);
+                
+                parse_structure_variables(&source, &temp_result, &i, structure, file_path);
+                continue;
+            }
 			else if(starts_with(buffer, "uniform"))
 			{
 				char* rest = &buffer[strlen("uniform") + 1];
 
-				Uniform& uniform = shader.uniforms[shader.uniform_count++];
-
-				uniform.type = get_value_type(&rest, file_path);
-		    
-				while(rest[0] == ' ')
-					rest++;
-
-				sscanf(rest, "%s", uniform.name);
-
-				rest += strlen(uniform.name);
-
-				if(uniform.name[strlen(uniform.name) - 1] == ';')
-				{
-					uniform.name[strlen(uniform.name) - 1] = '\0';
-				}
-				else
-				{
-					i32 c = 0;
-					i32 m_c = 0;
-					char mapped_buffer[32];
-		    
-					while(rest[c] != ';' && rest[c] != '\n')
-					{
-						if(rest[c] != ':' && rest[c] != ' ')
-						{
-							mapped_buffer[m_c++] = rest[c];
-						}
-						c++;
-					}
+                ValueType type = get_value_type(&rest, file_path);
+                
+                if(type == ValueType::INVALID) // We might have a struct
+                {
+                    if(Structure *structure = get_structure(rest, shader))
+                    {
+                        printf("Found structure %s\n", structure->name);
+                    }
+                    else
+                    {
+                        char buf[32];
+                        sprintf(buf, "Structure '%s' not found\n", rest);
+                        error(buf, file_path);
+                    }
+                }
+                else
+                {
+                    Uniform uniform = {};//shader.uniforms[shader.uniform_count++];
+                    uniform.type = type;
                     
-					if(m_c > 0)
-					{
-						//@Note: Check for correct indices
-						buffer[strlen(buffer) - strlen(rest) + 3] = '\0';
-						buffer[strlen(buffer) - strlen(rest) + 2] = '\n';
-						buffer[strlen(buffer) - strlen(rest) + 1] = ';';
-						mapped_buffer[m_c] = '\0';
+                    while(rest[0] == ' ')
+                        rest++;
 
-						if(starts_with(mapped_buffer, "DIFFUSE_TEX"))
-						{
-							uniform.mapping_type = UniformMappingType::DIFFUSE_TEX;
-						}
-						else if(starts_with(mapped_buffer, "DIFFUSE_COLOR"))
-						{
-							uniform.mapping_type = UniformMappingType::DIFFUSE_COLOR;
-						}
-						else if(starts_with(mapped_buffer, "SPECULAR_TEX"))
-						{
-							uniform.mapping_type = UniformMappingType::SPECULAR_TEX;
-						}
-						else if(starts_with(mapped_buffer, "SPECULAR_COLOR"))
-						{
-							uniform.mapping_type = UniformMappingType::SPECULAR_COLOR;
-						}
-						else if(starts_with(mapped_buffer, "SPECULAR_INTENSITY"))
-						{
-							uniform.mapping_type = UniformMappingType::SPECULAR_INTENSITY;
-						}
-						else if(starts_with(mapped_buffer, "AMBIENT_COLOR"))
-						{
-							uniform.mapping_type = UniformMappingType::AMBIENT_COLOR;
-						}
-						else if(starts_with(mapped_buffer, "AMBIENT_TEX"))
-						{
-							uniform.mapping_type = UniformMappingType::AMBIENT_TEX;
-						}
-						else if(starts_with(mapped_buffer, "SHADOW_MAP"))
-						{
-							uniform.mapping_type = UniformMappingType::SHADOW_MAP;
-						}
-						else if(starts_with(mapped_buffer, "MODEL"))
-						{
-							uniform.mapping_type = UniformMappingType::MODEL;
-						}
-						else if(starts_with(mapped_buffer, "VIEW"))
-						{
-							uniform.mapping_type = UniformMappingType::VIEW;
-						}
-						else if(starts_with(mapped_buffer, "PROJECTION"))
-						{
-							uniform.mapping_type = UniformMappingType::PROJECTION;
-						}
-						else
-						{
-							error("Found invalid uniform mapping type", file_path);
-						}
-					}
-				}
+                    sscanf(rest, "%s", uniform.name);
+
+                    rest += strlen(uniform.name);
+
+                    if(uniform.name[strlen(uniform.name) - 1] == ';')
+                    {
+                        uniform.name[strlen(uniform.name) - 1] = '\0';
+                    }
+                    else
+                    {
+                        i32 c = 0;
+                        i32 m_c = 0;
+                        char mapped_buffer[32];
+		    
+                        while(rest[c] != ';' && rest[c] != '\n')
+                        {
+                            if(rest[c] != ':' && rest[c] != ' ')
+                            {
+                                mapped_buffer[m_c++] = rest[c];
+                            }
+                            c++;
+                        }
+                    
+                        if(m_c > 0)
+                        {
+                            //@Note: Check for correct indices
+                            buffer[strlen(buffer) - strlen(rest) + 3] = '\0';
+                            buffer[strlen(buffer) - strlen(rest) + 2] = '\n';
+                            buffer[strlen(buffer) - strlen(rest) + 1] = ';';
+                            mapped_buffer[m_c] = '\0';
+
+                            if(starts_with(mapped_buffer, "DIFFUSE_TEX"))
+                            {
+                                uniform.mapping_type = UniformMappingType::DIFFUSE_TEX;
+                            }
+                            else if(starts_with(mapped_buffer, "DIFFUSE_COLOR"))
+                            {
+                                uniform.mapping_type = UniformMappingType::DIFFUSE_COLOR;
+                            }
+                            else if(starts_with(mapped_buffer, "SPECULAR_TEX"))
+                            {
+                                uniform.mapping_type = UniformMappingType::SPECULAR_TEX;
+                            }
+                            else if(starts_with(mapped_buffer, "SPECULAR_COLOR"))
+                            {
+                                uniform.mapping_type = UniformMappingType::SPECULAR_COLOR;
+                            }
+                            else if(starts_with(mapped_buffer, "SPECULAR_INTENSITY"))
+                            {
+                                uniform.mapping_type = UniformMappingType::SPECULAR_INTENSITY;
+                            }
+                            else if(starts_with(mapped_buffer, "AMBIENT_COLOR"))
+                            {
+                                uniform.mapping_type = UniformMappingType::AMBIENT_COLOR;
+                            }
+                            else if(starts_with(mapped_buffer, "AMBIENT_TEX"))
+                            {
+                                uniform.mapping_type = UniformMappingType::AMBIENT_TEX;
+                            }
+                            else if(starts_with(mapped_buffer, "SHADOW_MAP"))
+                            {
+                                uniform.mapping_type = UniformMappingType::SHADOW_MAP;
+                            }
+                            else if(starts_with(mapped_buffer, "MODEL"))
+                            {
+                                uniform.mapping_type = UniformMappingType::MODEL;
+                            }
+                            else if(starts_with(mapped_buffer, "VIEW"))
+                            {
+                                uniform.mapping_type = UniformMappingType::VIEW;
+                            }
+                            else if(starts_with(mapped_buffer, "PROJECTION"))
+                            {
+                                uniform.mapping_type = UniformMappingType::PROJECTION;
+                            }
+                            else
+                            {
+                                error("Found invalid uniform mapping type", file_path);
+                            }
+                        }
+                    }
+
+                    (*uniforms_array)[(*uniform_count)++] = uniform;
+                }
 			}
 			else if(starts_with(buffer, "layout"))
 			{
@@ -317,7 +443,7 @@ namespace rendering
 
 		result = push_string(arena, i);
 		memcpy(result, temp_result, i);
-	
+
 		end_temporary_memory(temp_mem);
 
 		return result;
@@ -373,20 +499,26 @@ namespace rendering
 	    
 			shader.vert_shader = nullptr;
 			shader.frag_shader = nullptr;
-			 
+           
+            Uniform *uniforms = (Uniform*)malloc(sizeof(Uniform) * 512);
+            i32 uniform_count = 0;
+            
 			for(size_t i = 0; i < size; i++)
 			{
 				if(starts_with(&source[i], "#vert"))
 				{
-					shader.vert_shader = load_shader_text(&renderer.shader_arena, &source[i + strlen("#vert") + 1], shader, shader.path, &i);
+					shader.vert_shader = load_shader_text(&renderer.shader_arena, &source[i + strlen("#vert") + 1], shader, &uniforms, &uniform_count, shader.path, &i);
 				}
 				else if(starts_with(&source[i], "#frag"))
 				{
-					shader.frag_shader = load_shader_text(&renderer.shader_arena, &source[i + strlen("#frag") + 1], shader, shader.path, &i);
+					shader.frag_shader = load_shader_text(&renderer.shader_arena, &source[i + strlen("#frag") + 1], shader, &uniforms, &uniform_count, shader.path, &i);
 				}
 			}
 
-			//assert(shader.vert_shader && shader.frag_shader);
+            shader.uniforms = push_array(&shader.arena, uniform_count, Uniform);
+            shader.uniform_count = (i32)uniform_count;
+            memcpy(shader.uniforms, uniforms, uniform_count * sizeof(Uniform));
+            free(uniforms);
 
 // #if DEBUG
 // 			FILE* shd = fopen("../out.shd", "w");

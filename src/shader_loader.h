@@ -28,7 +28,9 @@ namespace rendering
 		INTEGER,
 		BOOL,
 		MAT4,
-		TEXTURE
+		TEXTURE,
+
+        STRUCTURE
     };
 
     struct TextureHandle
@@ -74,8 +76,19 @@ namespace rendering
 		MODEL,
 		VIEW,
 		PROJECTION,
+        
+        LIGHTS,
 
 		MAX
+    };
+
+    struct Structure
+    {
+        char name[32];
+        ValueType types[32];
+        char names[32][32];
+        
+        i32 value_count;
     };
     
     struct Uniform
@@ -83,6 +96,8 @@ namespace rendering
 		UniformMappingType mapping_type;
 		ValueType type;
 		char name[32];
+        
+        i32 structure_index; // If the uniforms is a structure we should save the index of the structure for later
     };
 
 	struct UniformValue
@@ -102,14 +117,33 @@ namespace rendering
 
 		UniformValue () {}
 	};
+
+    enum class DefinedValueType
+    {
+        INTEGER,
+        FLOAT
+    };
+    
+    struct DefinedValue
+    {
+        DefinedValueType type;
+        union
+        {
+            i32 integer_val;
+            r32 float_val;
+        };
+    };
     
     struct Shader
     {
 		VertexAttribute vertex_attributes[16];
 		i32 vertex_attribute_count;
 
-		Uniform uniforms[32];
+		Uniform *uniforms;
 		i32 uniform_count;
+
+        Structure structures[32];
+        i32 structure_count;
 
 		char* vert_shader;
 		char* frag_shader;
@@ -118,6 +152,11 @@ namespace rendering
 
         time_t last_loaded;
         b32 loaded;
+        
+        DefinedValue defined_values[4];
+        i32 defined_value_count;
+
+        MemoryArena arena;
         
 		Shader () {}
     };
