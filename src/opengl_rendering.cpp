@@ -1140,7 +1140,13 @@ static void load_extra_shaders(RenderState& render_state, Renderer& renderer)
 	// @Note: Load the "new" shader system shaders
 	for(i32 index = render_state.gl_shader_count; index < renderer.render.shader_count; index++)
 	{
-		load_shader(renderer, renderer.render.shaders[index], render_state.gl_shaders[index]);
+        rendering::Shader &shader = renderer.render.shaders[index];
+        ShaderGL &gl_shader = render_state.gl_shaders[index];
+        
+        if(shader.loaded)
+        {
+            load_shader(renderer, shader, gl_shader);
+        }
 	}
 
 	// @Note: Even if loading a shader fails, we don't want to continue to compile it
@@ -3255,12 +3261,19 @@ static void render_buffer(rendering::RenderCommand& command, RenderState& render
 	glBindVertexArray(buffer.vao);
 
 	rendering::Material& material = renderer.render.material_instances[command.material.handle];
-	ShaderGL& gl_shader = render_state.gl_shaders[material.shader.handle];
+	ShaderGL gl_shader = render_state.gl_shaders[material.shader.handle];
 
-    if(!gl_shader.program)
-        return;
-    
-	glUseProgram(gl_shader.program);
+    if(!gl_shader.program) // Use fallback if it exists
+    {
+        gl_shader = render_state.gl_shaders[renderer.render.fallback_shader.handle];
+
+        if(!gl_shader.program)
+            return;
+        
+        glUseProgram(gl_shader.program);
+    }
+    else
+        glUseProgram(gl_shader.program);
 
 	i32 texture_count = 0;
 	

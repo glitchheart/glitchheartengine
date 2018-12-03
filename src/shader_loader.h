@@ -117,7 +117,8 @@ namespace rendering
 		char path[256];
 
         time_t last_loaded;
-		
+        b32 loaded;
+        
 		Shader () {}
     };
 

@@ -1873,6 +1873,9 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
     
     for(i32 i = 0; i < 128; i++)
     {
+        queued_commands[i] = {};
+        queued_commands[i].instanced = {}; 
+        queued_commands[i].normal = {};
         queued_commands[i].instanced.count = 0;
     }
     

@@ -1151,6 +1151,8 @@ struct Renderer
 		rendering::Shader *shaders;
 		i32 shader_count;
 
+        rendering::ShaderHandle fallback_shader;
+        
 		i32 shaders_to_reload[8];
 		i32 shaders_to_reload_count;
 	

@@ -7,7 +7,6 @@ namespace rendering
     static void error(const char* msg, const char* file)
     {
 		debug_log("ERROR: %s in %s", msg, file);
-		assert(false);
     }
 
     static ValueType get_value_type(char** value, const char* file_path)
@@ -365,6 +364,8 @@ namespace rendering
     {
 		FILE* file = fopen(shader.path, "r");
 
+        shader.loaded = false;
+        
 		if(file)
 		{
 			size_t size = 0;
@@ -385,7 +386,7 @@ namespace rendering
 				}
 			}
 
-			assert(shader.vert_shader && shader.frag_shader);
+			//assert(shader.vert_shader && shader.frag_shader);
 
 // #if DEBUG
 // 			FILE* shd = fopen("../out.shd", "w");
@@ -394,10 +395,12 @@ namespace rendering
 // 			fclose(shd);
 // #endif
 			fclose(file);
+            shader.loaded = shader.vert_shader && shader.frag_shader;
             set_last_loaded(shader);
 		}
 		else
 		{
+            shader.loaded = false;
 			error("File not found", shader.path);
 		}
     }
@@ -411,6 +414,11 @@ namespace rendering
         load_shader(renderer, shader);
 		return { renderer.render.shader_count++ };
 	}
+    
+    static void set_fallback_shader(Renderer &renderer, const char* path)
+    {
+        renderer.render.fallback_shader = load_shader(renderer, path);
+    }
     
 	static UniformValue* mapping(Material& material, UniformMappingType type)
 	{
