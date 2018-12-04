@@ -1867,13 +1867,6 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
     Light lights[32];
     i32 light_count = 0;
 
-    Light first = {};
-    first.position = math::Vec4(-10.0f, 10.0f, -10.0f, 0.0f);
-    first.intensities = math::Vec3(0.5f, 0.5f, 0.7f);
-    first.ambient_coefficient = 0.6f;
-    
-    lights[light_count++] = first;
-    
     QueuedRenderCommand queued_commands[MAX_INSTANCING_PAIRS];
     i32 normal_count = 0;
 
@@ -1911,7 +1904,13 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
             math::Vec3 scale = transform.scale;
             
             i32 command_index = -1;
-            
+
+            if(ent.comp_flags & scene::COMP_LIGHT)
+            {
+                scene::LightComponent &light_comp = scene.light_components[ent.light_handle.handle];
+                lights[light_count++] = light_comp.light;
+            }
+
             if (ent.comp_flags & scene::COMP_RENDER)
             {
                 scene::RenderComponent &render = scene.render_components[ent.render_handle.handle];

@@ -3268,6 +3268,11 @@ static void set_uniform(rendering::RenderCommand &command, rendering::UniformVal
     case rendering::UniformMappingType::AMBIENT_COLOR:
     case rendering::UniformMappingType::AMBIENT_TEX:
     case rendering::UniformMappingType::SHADOW_MAP:
+    case rendering::UniformMappingType::LIGHTS:
+    case rendering::UniformMappingType::LIGHT_POSITION:
+    case rendering::UniformMappingType::LIGHT_INTENSITIES:
+    case rendering::UniformMappingType::LIGHT_ATTENUATION:
+    case rendering::UniformMappingType::LIGHT_AMBIENT_COEFFICIENT:
     {
         set_uniform(render_state, renderer, gl_shader.program, uniform_value, texture_count);
     }

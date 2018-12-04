@@ -720,6 +720,7 @@ namespace rendering
                 UniformValue value = {};
                 value.uniform = u;
                 value.array_index = material.array_count++;
+                strncpy(value.name, u.name, strlen(u.name) + 1);
                 buf_push(uniform_vals, value);
 
                 UniformArray array = {};
@@ -1554,6 +1555,7 @@ namespace rendering
             {
                 assert(u_v.uniform.type == ValueType::FLOAT);
                 u_v.float_val = value;
+                break;
             }
         }
 	}
@@ -1569,6 +1571,7 @@ namespace rendering
             {
                 assert(u_v.uniform.type == ValueType::FLOAT2);
                 u_v.float2_val = value;
+                break;
             }
         }
 	}
@@ -1584,6 +1587,7 @@ namespace rendering
             {
                 assert(u_v.uniform.type == ValueType::FLOAT3);
                 u_v.float3_val = value;
+                break;
             }
         }
 	}
@@ -1599,6 +1603,7 @@ namespace rendering
             {
                 assert(u_v.uniform.type == ValueType::FLOAT4);
                 u_v.float4_val = value;
+                break;
             }
         }
 	}
@@ -1616,10 +1621,12 @@ namespace rendering
                 if(u_v.uniform.type == ValueType::BOOL)
                 {
                     u_v.boolean_val = value;
+                    break;
                 }
                 else if(u_v.uniform.type == ValueType::INTEGER)
                 {
                     u_v.integer_val = value;
+                    break;
                 }
             }
         }
@@ -1636,6 +1643,7 @@ namespace rendering
             {
                 assert(u_v.uniform.type == ValueType::MAT4);
                 u_v.mat4_val = value;
+                break;
             }
         }
 	}
@@ -1651,6 +1659,7 @@ namespace rendering
             {
                 assert(u_v.uniform.type == ValueType::TEXTURE);
                 u_v.texture = value;
+                break;
             }
         }
 	}
@@ -1675,6 +1684,7 @@ namespace rendering
                     {
                         assert(u_v.uniform.type == ValueType::FLOAT);
                         u_v.float_val = value;
+                        break;
                     }
                 }
                 break;
@@ -1701,6 +1711,7 @@ namespace rendering
                     {
                         assert(u_v.uniform.type == ValueType::FLOAT2);
                         u_v.float2_val = value;
+                        break;
                     }
                 }
                 break;
@@ -1727,6 +1738,7 @@ namespace rendering
                     {
                         assert(u_v.uniform.type == ValueType::FLOAT3);
                         u_v.float3_val = value;
+                        break;
                     }
                 }
                 break;
@@ -1752,6 +1764,7 @@ namespace rendering
                     {
                         assert(u_v.uniform.type == ValueType::FLOAT4);
                         u_v.float4_val = value;
+                        break;
                     }
                 }
                 break;
@@ -1779,10 +1792,12 @@ namespace rendering
                         if(u_v.uniform.type == ValueType::BOOL)
                         {
                             u_v.boolean_val = value;
+                            break;
                         }
                         else if(u_v.uniform.type == ValueType::INTEGER)
                         {
                             u_v.integer_val = value;
+                            break;
                         }
                     }
                 }
@@ -1809,6 +1824,7 @@ namespace rendering
                     {
                         assert(u_v.uniform.type == ValueType::MAT4);
                         u_v.mat4_val = value;
+                        break;
                     }
                 }
                 break;
@@ -1834,6 +1850,7 @@ namespace rendering
                     {
                         assert(u_v.uniform.type == ValueType::TEXTURE);
                         u_v.texture = value;
+                        break;
                     }
                 }
                 break;

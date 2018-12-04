@@ -31,12 +31,18 @@ namespace scene
     {
         i32 handle;
     };
+
+    struct LightComponentHandle
+    {
+        i32 handle;
+    };
     
     enum ComponentTypeFlags
     {
         COMP_TRANSFORM = 1 << 0,
         COMP_RENDER = 1 << 1,
-        COMP_PARTICLES = 1 << 2
+        COMP_PARTICLES = 1 << 2,
+        COMP_LIGHT = 1 << 3
     };
     
     struct Entity
@@ -45,6 +51,7 @@ namespace scene
         TransformComponentHandle transform_handle;
         RenderComponentHandle render_handle;
         ParticleSystemComponentHandle particle_system_handle;
+        LightComponentHandle light_handle;
     };
     
     struct TransformComponent
@@ -205,12 +212,12 @@ namespace scene
         
         RenderComponent *render_components;
         i32 render_component_count;
-
-        LightComponent *light_components;
-        i32 light_component;
         
         ParticleSystemComponent *particle_system_components;
         i32 particle_system_component_count;
+        
+        LightComponent *light_components;
+        i32 light_component_count;
         
         Material *material_instances;
         i32 material_count;
