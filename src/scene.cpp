@@ -268,16 +268,14 @@ namespace scene
                         }
                         else if(starts_with(buffer, "prim"))
                         {
-                            if(is_new_version)
-                                assert(false);
-                            
                             char *prim_type = buffer + sizeof(char) * 6;
 
                             if(starts_with(prim_type, "cube"))
                             {
                                 if(is_new_version)
                                 {
-                                    //templ.render.v2.buffer_handle = rendering::create_plane(*scene.renderer);
+                                    templ.render.is_new_version = true;
+                                    templ.render.v2.buffer_handle = rendering::create_plane(*scene.renderer);
                                 }
                                 else
                                 {
@@ -289,7 +287,8 @@ namespace scene
                             {
                                 if(is_new_version)
                                 {
-                                    //templ.render.v2.buffer_handle = rendering::create_plane(*scene.renderer);
+                                    templ.render.is_new_version = true;
+                                    templ.render.v2.buffer_handle = rendering::create_plane(*scene.renderer);
                                 }
                                 else
                                 {
@@ -863,4 +862,19 @@ namespace scene
         RenderComponent &render = get_render_comp(handle, scene);
         rendering::set_uniform_value(*scene.renderer, render.v2.material_handle, name, value);
 	}
+
+#define SET_MAT_ARRAY_VALUE(type) static void set_uniform_array_value(EntityHandle handle, const char *array_name, i32 index, const char *variable_name, type value, Scene &scene) \
+    { \
+       RenderComponent &render = get_render_comp(handle, scene); \
+    rendering::set_uniform_array_value(*scene.renderer, render.v2.material_handle, array_name, index, variable_name, value);\
+    } \
+
+SET_MAT_ARRAY_VALUE(r32)
+SET_MAT_ARRAY_VALUE(math::Vec2)
+SET_MAT_ARRAY_VALUE(math::Vec3)
+SET_MAT_ARRAY_VALUE(math::Vec4)
+SET_MAT_ARRAY_VALUE(i32)
+SET_MAT_ARRAY_VALUE(math::Mat4)
+SET_MAT_ARRAY_VALUE(rendering::TextureHandle)
+    
 }

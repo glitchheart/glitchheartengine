@@ -3,53 +3,59 @@
 namespace rendering
 {
     
-// @Robustness: New shader stuff
+	// @Robustness: New shader stuff
     static void error(const char* msg, const char* file)
     {
 		debug_log("ERROR: %s in %s", msg, file);
     }
 
-    static ValueType parse_type(char *type, const char *file_path)
+    static ValueType parse_type(char *type, const char *file_path, b32 invalid_is_valid)
     {
         ValueType result;
         
 		if(starts_with(type, "float"))
-		{
-			result = ValueType::FLOAT;
-		}
+        {
+            result = ValueType::FLOAT;
+        }
 		else if(starts_with(type, "vec2"))
-		{
-			result = ValueType::FLOAT2;
-		}
+        {
+            result = ValueType::FLOAT2;
+        }
 		else if(starts_with(type, "vec3"))
-		{
-			result = ValueType::FLOAT3;
-		}
+        {
+            result = ValueType::FLOAT3;
+        }
 		else if(starts_with(type, "vec4"))
-		{
-			result = ValueType::FLOAT4;
-		}
+        {
+            result = ValueType::FLOAT4;
+        }
 		else if(starts_with(type, "mat4"))
-		{
-			result = ValueType::MAT4;
-		}
+        {
+            result = ValueType::MAT4;
+        }
 		else if(starts_with(type, "bool"))
-		{
-			result = ValueType::BOOL;
-		}
+        {
+            result = ValueType::BOOL;
+        }
 		else if(starts_with(type, "int"))
-		{
-			result = ValueType::INTEGER;
-		}
+        {
+            result = ValueType::INTEGER;
+        }
 		else if(starts_with(type, "sampler2D"))
-		{
-			result = ValueType::TEXTURE;
-		}
+        {
+            result = ValueType::TEXTURE;
+        }
 		else
-		{
-			result = ValueType::INVALID;
-			error("invalid value type", file_path);
-		}
+        {
+            result = ValueType::INVALID;
+
+            if(!invalid_is_valid)
+            {
+                char error_buf[256];
+                sprintf(error_buf, "Invalid value type '%s'", type);
+                error(error_buf, file_path);
+            }
+        }
 
         return result;
     }
@@ -60,13 +66,13 @@ namespace rendering
             (*source)++;
     }
     
-    static ValueType get_value_type(char** value, const char* file_path)
+    static ValueType get_value_type(char** value, const char* file_path, b32 invalid_is_valid = false)
     {
 		ValueType result;
 		char type[16];
 		sscanf(*value, "%s", type);
 
-        result = parse_type(type, file_path);
+        result = parse_type(type, file_path, invalid_is_valid);
         *value += strlen(type);
 		return result;
     }
@@ -85,76 +91,228 @@ namespace rendering
         buffer[index] = '\0';
     }
 
-    static void parse_structure_values(char **source, Structure &structure, const char *file_path)
+    static i32 get_structure_index(char *type_name, Shader &shader)
     {
-		char buffer[256];
-        
-		while(read_line(buffer, 256, source))
+        for(i32 i = 0; i < shader.structure_count; i++)
         {
-            if(!starts_with(buffer, "{") && !starts_with(buffer, "\n"))
+            if(strncmp(type_name, shader.structures[i].name, strlen(type_name)) == 0)
             {
-                char *rest = &buffer[0];
-                eat_spaces_and_newlines(&rest);
-
-                if(starts_with(rest, "}"))
-                    return;
-                
-                char type_str[32];
-                parse_word(&rest, type_str);
-                           
-                ValueType type = parse_type(type_str, file_path);
-                if(type != ValueType::INVALID)
-                {
-                    eat_spaces_and_newlines(&rest);
-                    
-                    char name[32];
-                    parse_word(&rest, name);
-                    structure.types[structure.value_count] = type;
-                    strncpy(structure.names[structure.value_count++], name, strlen(name));
-                }
+                return i;
             }
         }
-    }
-    
-    static void parse_structure_variables(char **source, char **temp_result, size_t *current_index, Structure &structure, const char *file_path)
-    {
-        char buffer[256];
-        
-        while(read_line(buffer, 256, source))
-		{
-            char *rest = &buffer[0];
-            eat_spaces_and_newlines(&rest);
-
-            if(starts_with(rest, "}"))
-            {
-                break;
-            }
-            else if(starts_with(rest, "vec4"))
-            {
-                printf("VEC4!\n");
-            }
-            else if(starts_with(rest, "vec3"))
-            {
-                
-            }
-            
-            strncpy(temp_result[*current_index], buffer, strlen(buffer));
-            (*current_index) += strlen(buffer);
-        }
+        return -1;
     }
 
     static Structure *get_structure(char *type_name, Shader &shader)
     {
         for(i32 i = 0; i < shader.structure_count; i++)
         {
-            if(strcmp(type_name, shader.structures[i].name) == 0)
+            if(strncmp(type_name, shader.structures[i].name, strlen(type_name)) == 0)
             {
                 return &shader.structures[i];
             }
         }
         return nullptr;
     }
+
+    static DefinedValue *get_defined_value(char *name, Shader &shader)
+    {
+        for(i32 i = 0; i < shader.defined_value_count; i++)
+        {
+            if(strcmp(name, shader.defined_values[i].name) == 0)
+            {
+                return &shader.defined_values[i];
+            }
+        }
+        return nullptr;
+    }
     
+    static void parse_uniform_array_data(char **rest, Uniform &uniform, Shader &shader)
+    {
+        if(starts_with(*rest, "["))
+        {
+            uniform.is_array = true;
+            char array_size[32];
+            sscanf(*rest, "[%[^]]]", array_size);
+
+            if(DefinedValue *defined_value = get_defined_value(array_size, shader))
+            {
+                (*rest) += strlen(defined_value->name) + 2;
+                
+                uniform.array_size = defined_value->integer_val;
+            }
+            else
+            {
+                uniform.array_size = strtol(*rest, rest, 10);
+            }
+        }
+    }
+
+    static Uniform parse_uniform(ValueType type, char *rest, char *original_buffer, Shader &shader, const char *file_path)
+    {
+        Uniform uniform = {};
+        uniform.type = type;
+                    
+        while(rest[0] == ' ')
+            rest++;
+        
+        sscanf(rest, "%[^[ \n]", uniform.name);
+
+        rest += strlen(uniform.name);
+
+        parse_uniform_array_data(&rest, uniform, shader);
+                                
+        if(uniform.name[strlen(uniform.name) - 1] == ';')
+        {
+            uniform.name[strlen(uniform.name) - 1] = '\0';
+        }
+        else
+        {
+            i32 c = 0;
+            i32 m_c = 0;
+            char mapped_buffer[32];
+		    
+            while(rest[c] != ';' && rest[c] != '\n')
+            {
+                if(rest[c] != ':' && rest[c] != ' ')
+                {
+                    mapped_buffer[m_c++] = rest[c];
+                }
+                c++;
+            }
+                    
+            if(m_c > 0)
+            {
+                //@Note: Check for correct indices
+                original_buffer[strlen(original_buffer) - strlen(rest) + 3] = '\0';
+                original_buffer[strlen(original_buffer) - strlen(rest) + 2] = '\n';
+                original_buffer[strlen(original_buffer) - strlen(rest) + 1] = ';';
+                mapped_buffer[m_c] = '\0';
+
+                if(starts_with(mapped_buffer, "DIFFUSE_TEX"))
+                {
+                    uniform.mapping_type = UniformMappingType::DIFFUSE_TEX;
+                }
+                else if(starts_with(mapped_buffer, "DIFFUSE_COLOR"))
+                {
+                    uniform.mapping_type = UniformMappingType::DIFFUSE_COLOR;
+                }
+                else if(starts_with(mapped_buffer, "SPECULAR_TEX"))
+                {
+                    uniform.mapping_type = UniformMappingType::SPECULAR_TEX;
+                }
+                else if(starts_with(mapped_buffer, "SPECULAR_COLOR"))
+                {
+                    uniform.mapping_type = UniformMappingType::SPECULAR_COLOR;
+                }
+                else if(starts_with(mapped_buffer, "SPECULAR_INTENSITY"))
+                {
+                    uniform.mapping_type = UniformMappingType::SPECULAR_INTENSITY;
+                }
+                else if(starts_with(mapped_buffer, "AMBIENT_COLOR"))
+                {
+                    uniform.mapping_type = UniformMappingType::AMBIENT_COLOR;
+                }
+                else if(starts_with(mapped_buffer, "AMBIENT_TEX"))
+                {
+                    uniform.mapping_type = UniformMappingType::AMBIENT_TEX;
+                }
+                else if(starts_with(mapped_buffer, "SHADOW_MAP"))
+                {
+                    uniform.mapping_type = UniformMappingType::SHADOW_MAP;
+                }
+                else if(starts_with(mapped_buffer, "MODEL"))
+                {
+                    uniform.mapping_type = UniformMappingType::MODEL;
+                }
+                else if(starts_with(mapped_buffer, "VIEW"))
+                {
+                    uniform.mapping_type = UniformMappingType::VIEW;
+                }
+                else if(starts_with(mapped_buffer, "PROJECTION"))
+                {
+                    uniform.mapping_type = UniformMappingType::PROJECTION;
+                }
+                else if(starts_with(mapped_buffer, "CAMERA_POSITION"))
+                {
+                    uniform.mapping_type = UniformMappingType::CAMERA_POSITION;
+                }
+                else if(starts_with(mapped_buffer, "LIGHTS"))
+                {
+                    uniform.mapping_type = UniformMappingType::LIGHTS;
+                }
+                else if(starts_with(mapped_buffer, "LIGHT_POSITION"))
+                {
+                    uniform.mapping_type = UniformMappingType::LIGHT_POSITION;
+                }
+                else if(starts_with(mapped_buffer, "LIGHT_INTENSITIES"))
+                {
+                    uniform.mapping_type = UniformMappingType::LIGHT_INTENSITIES;
+                }
+                else if(starts_with(mapped_buffer, "LIGHT_ATTENUATION"))
+                {
+                    uniform.mapping_type = UniformMappingType::LIGHT_ATTENUATION;
+                }
+                else if(starts_with(mapped_buffer, "LIGHT_AMBIENT_COEFFICIENT"))
+                {
+                    uniform.mapping_type = UniformMappingType::LIGHT_AMBIENT_COEFFICIENT;
+                }
+                else
+                {
+                    char error_buf[256];
+                    sprintf(error_buf, "Found invalid uniform mapping type '%s'", mapped_buffer);
+                    error(error_buf, file_path);
+                }
+            }
+        }
+
+        return(uniform);
+    }
+    
+    static void parse_structure_variables(char **source, char *total_buffer, Structure &structure, Shader &shader, const char *file_path)
+    {
+        size_t i = 0;
+        
+        char buffer[256];
+
+        while(read_line(buffer, 256, source))
+        {
+            b32 should_break = false;
+            
+            char *rest = &buffer[0];
+            eat_spaces_and_newlines(&rest);
+
+            if(starts_with(rest, "struct"))
+            {
+                sscanf(rest, "struct %[^\n]", structure.name);
+            }
+            else if(starts_with(rest, "}"))
+            {
+                should_break = true;
+            }
+            else if(starts_with(rest, "{"))
+            {}
+            else
+            {
+                // GET TYPE
+                ValueType type = get_value_type(&rest, file_path);
+                if(type != ValueType::INVALID)
+                {
+                    Uniform uniform = parse_uniform(type, rest, buffer, shader, file_path);
+                    structure.uniforms[structure.uniform_count++] = uniform;
+                }
+            }
+
+            strncpy(&total_buffer[i], buffer, strlen(buffer));
+            i += strlen(buffer);
+
+            if(should_break)
+                break;
+        }
+
+        total_buffer[i++] = '\0';
+    }
+
     static char* load_shader_text(MemoryArena* arena, char* source, Shader& shader, Uniform **uniforms_array, i32 *uniform_count, const char* file_path, size_t* file_size = nullptr)
     {
 		size_t i = 0;
@@ -164,282 +322,217 @@ namespace rendering
 
 		char* result;
 
-		size_t temp_current_size = strlen(source) * 2;
+		size_t temp_current_size = strlen(source) * 10;
 		char* temp_result = push_string(&temp_arena, temp_current_size);
 
 		char buffer[256];
 
 		while(read_line(buffer, 256, &source))
-		{
-			if(starts_with(buffer, "#vert") || starts_with(buffer, "#frag"))
-			{
-				break;
-			}
-			else if(starts_with(buffer, "#include \""))
-			{
-				// @Note: Game shaders are included with ""
-				char include_name[256];
-				sscanf(buffer, "#include \"%s\"", include_name);
+        {
+            if(starts_with(buffer, "#vert") || starts_with(buffer, "#frag"))
+            {
+                break;
+            }
+            else if(starts_with(buffer, "#include \""))
+            {
+                // @Note: Game shaders are included with ""
+                char include_name[256];
+                sscanf(buffer, "#include \"%s\"", include_name);
 
-				char* included_path = concat("../assets/shaders/", include_name, &temp_arena);
+                char* included_path = concat("../assets/shaders/", include_name, &temp_arena);
 				
-				FILE* included_shd = fopen(included_path, "r");
+                FILE* included_shd = fopen(included_path, "r");
 
-				if(included_shd)
-				{
-					char* included_source = read_file_into_buffer(&temp_arena, included_shd);
-					char* path = concat(concat(file_path, "<-", &temp_arena), included_path, &temp_arena);
+                if(included_shd)
+                {
+                    char* included_source = read_file_into_buffer(&temp_arena, included_shd);
+                    char* path = concat(concat(file_path, "<-", &temp_arena), included_path, &temp_arena);
 					
-					char* included_text = load_shader_text(&temp_arena, included_source, shader, uniforms_array, uniform_count, path);
+                    char* included_text = load_shader_text(&temp_arena, included_source, shader, uniforms_array, uniform_count, path);
 
-					if(i + strlen(buffer) > temp_current_size)
-					{
-						error("Temp buffer is too small", file_path);
-					}
+                    if(i + strlen(buffer) > temp_current_size)
+                    {
+                        error("Temp buffer is too small", file_path);
+                    }
 					
-					strncpy(&temp_result[i], included_text, strlen(included_text));
-					i += strlen(included_text);
-					if(file_size)
-					{
-						*file_size += strlen(buffer);
-					}
+                    strncpy(&temp_result[i], included_text, strlen(included_text));
+                    i += strlen(included_text);
+                    if(file_size)
+                    {
+                        *file_size += strlen(buffer);
+                    }
 					
-					fclose(included_shd);
+                    fclose(included_shd);
 					
-					continue;
-				}
-				else
-				{
-					char err_buf[256];
-					sprintf(err_buf, "Include file not found %s", included_path);
-					error(err_buf, file_path);
-				}
-			}
-			else if(starts_with(buffer, "#include <"))
-			{
-				// @Note: Engine shaders are included with <>
-				char include_name[256];
-				sscanf(buffer, "#include <%[^>]", include_name);
-				char* included_path = concat("../engine_assets/standard_shaders/", include_name, &temp_arena);
+                    continue;
+                }
+                else
+                {
+                    char err_buf[256];
+                    sprintf(err_buf, "Include file not found %s", included_path);
+                    error(err_buf, file_path);
+                }
+            }
+            else if(starts_with(buffer, "#include <"))
+            {
+                // @Note: Engine shaders are included with <>
+                char include_name[256];
+                sscanf(buffer, "#include <%[^>]", include_name);
+                char* included_path = concat("../engine_assets/standard_shaders/", include_name, &temp_arena);
 				
-				FILE* included_shd = fopen(included_path, "r");
+                FILE* included_shd = fopen(included_path, "r");
 
-				if(included_shd)
-				{
-					char* included_source = read_file_into_buffer(&temp_arena, included_shd);
-					char* path = concat(concat(file_path, "<-", &temp_arena), included_path, &temp_arena);
+                if(included_shd)
+                {
+                    char* included_source = read_file_into_buffer(&temp_arena, included_shd);
+                    char* path = concat(concat(file_path, "<-", &temp_arena), included_path, &temp_arena);
 					
-					char* included_text = load_shader_text(&temp_arena, included_source, shader, uniforms_array, uniform_count, path);
-
-					if(i + strlen(buffer) > temp_current_size)
-					{
-						error("Temp buffer is too small", file_path);
-					}
+                    char* included_text = load_shader_text(&temp_arena, included_source, shader, uniforms_array, uniform_count, path);
+                    
+                    if(i + strlen(buffer) > temp_current_size)
+                    {
+                        error("Temp buffer is too small", file_path);
+                    }
 					
-					strncpy(&temp_result[i], included_text, strlen(included_text));
-					i += strlen(included_text);
-					if(file_size)
-					{
-						*file_size += strlen(buffer);
-					}
+                    strncpy(&temp_result[i], included_text, strlen(included_text));
+                    i += strlen(included_text);
+                    
+                    if(file_size)
+                    {
+                        *file_size += strlen(buffer);
+                    }
 					
-					fclose(included_shd);
+                    fclose(included_shd);
 					
-					continue;
-				}
-				else
-				{
-					char err_buf[256];
-					sprintf(err_buf, "Include file not found %s", included_path);
-					error(err_buf, file_path);
-				}
+                    continue;
+                }
+                else
+                {
+                    char err_buf[256];
+                    sprintf(err_buf, "Include file not found %s", included_path);
+                    error(err_buf, file_path);
+                }
 				
-			}
+            }
+            else if(starts_with(buffer, "#define"))
+            {
+                // @Incomplete: float defines missing
+                DefinedValue defined_value = {};
+                defined_value.type = DefinedValueType::INTEGER;
+                sscanf(buffer, "#define %s %d", defined_value.name, &defined_value.integer_val);
+                shader.defined_values[shader.defined_value_count++] = defined_value;
+            }
             else if(starts_with(buffer, "struct"))
             {
+                source -= strlen(buffer);
+
+                char total_buffer[1024];
                 Structure &structure = shader.structures[shader.structure_count++];
-                sscanf(buffer, "struct %[^\n]", structure.name);
+                parse_structure_variables(&source, total_buffer, structure, shader, file_path);
                 
-                parse_structure_variables(&source, &temp_result, &i, structure, file_path);
+                strncpy(&temp_result[i], total_buffer, strlen(total_buffer));
+                i += strlen(total_buffer);
+                    
                 continue;
             }
-			else if(starts_with(buffer, "uniform"))
-			{
-				char* rest = &buffer[strlen("uniform") + 1];
-
-                ValueType type = get_value_type(&rest, file_path);
+            else if(starts_with(buffer, "uniform"))
+            {
+                char* rest = &buffer[strlen("uniform") + 1];
+                char *prev = rest;
+                
+                ValueType type = get_value_type(&rest, file_path, true);
                 
                 if(type == ValueType::INVALID) // We might have a struct
                 {
-                    if(Structure *structure = get_structure(rest, shader))
+                    char name[32];
+                    sscanf(prev, "%[^ ]", name);
+                    
+                    i32 structure_index = get_structure_index(name, shader);
+                    
+                    if(structure_index < 0)
                     {
-                        printf("Found structure %s\n", structure->name);
+                        char buf[32];
+                        sprintf(buf, "Structure '%s' not found\n", prev);
+                        error(buf, file_path);
                     }
                     else
                     {
-                        char buf[32];
-                        sprintf(buf, "Structure '%s' not found\n", rest);
-                        error(buf, file_path);
+                        Uniform uniform = parse_uniform(ValueType::STRUCTURE, rest, buffer, shader, file_path);
+                        uniform.structure_index = structure_index;
+                        (*uniforms_array)[(*uniform_count)++] = uniform;
                     }
                 }
                 else
                 {
-                    Uniform uniform = {};//shader.uniforms[shader.uniform_count++];
-                    uniform.type = type;
-                    
+                    Uniform uniform = parse_uniform(type, rest, buffer, shader, file_path);
+                    (*uniforms_array)[(*uniform_count)++] = uniform;
+                }
+            }
+            else if(starts_with(buffer, "layout"))
+            {
+                VertexAttribute& vertex_attribute = shader.vertex_attributes[shader.vertex_attribute_count++];
+                char* rest = &buffer[strlen("layout") + 1];
+		
+                while(rest[0] == ' ' || rest[0] == '(')
+                {
+                    rest++;
+                }
+
+                if(starts_with(rest, "location"))
+                {
+                    rest += strlen("location");
+                    // @Note: Eat spaces until we see =
                     while(rest[0] == ' ')
-                        rest++;
-
-                    sscanf(rest, "%s", uniform.name);
-
-                    rest += strlen(uniform.name);
-
-                    if(uniform.name[strlen(uniform.name) - 1] == ';')
                     {
-                        uniform.name[strlen(uniform.name) - 1] = '\0';
+                        rest++;
+                    }
+
+                    if(rest[0] == '=')
+                    {
+                        rest++;
+                        vertex_attribute.location = strtol(rest, &rest, 10);
+
+                        while(rest[0] == ' ' || rest[0] == ')')
+                            rest++;
+
+                        if(starts_with(rest, "in"))
+                        {
+                            while(rest[0] == ' ')
+                                rest++;
+
+                            rest += 2;
+			    
+                            vertex_attribute.type = get_value_type(&rest, file_path);
+                        }
+                        else
+                        {
+                            error("layout 'in' keyword missing", file_path);
+                        }
                     }
                     else
                     {
-                        i32 c = 0;
-                        i32 m_c = 0;
-                        char mapped_buffer[32];
-		    
-                        while(rest[c] != ';' && rest[c] != '\n')
-                        {
-                            if(rest[c] != ':' && rest[c] != ' ')
-                            {
-                                mapped_buffer[m_c++] = rest[c];
-                            }
-                            c++;
-                        }
-                    
-                        if(m_c > 0)
-                        {
-                            //@Note: Check for correct indices
-                            buffer[strlen(buffer) - strlen(rest) + 3] = '\0';
-                            buffer[strlen(buffer) - strlen(rest) + 2] = '\n';
-                            buffer[strlen(buffer) - strlen(rest) + 1] = ';';
-                            mapped_buffer[m_c] = '\0';
-
-                            if(starts_with(mapped_buffer, "DIFFUSE_TEX"))
-                            {
-                                uniform.mapping_type = UniformMappingType::DIFFUSE_TEX;
-                            }
-                            else if(starts_with(mapped_buffer, "DIFFUSE_COLOR"))
-                            {
-                                uniform.mapping_type = UniformMappingType::DIFFUSE_COLOR;
-                            }
-                            else if(starts_with(mapped_buffer, "SPECULAR_TEX"))
-                            {
-                                uniform.mapping_type = UniformMappingType::SPECULAR_TEX;
-                            }
-                            else if(starts_with(mapped_buffer, "SPECULAR_COLOR"))
-                            {
-                                uniform.mapping_type = UniformMappingType::SPECULAR_COLOR;
-                            }
-                            else if(starts_with(mapped_buffer, "SPECULAR_INTENSITY"))
-                            {
-                                uniform.mapping_type = UniformMappingType::SPECULAR_INTENSITY;
-                            }
-                            else if(starts_with(mapped_buffer, "AMBIENT_COLOR"))
-                            {
-                                uniform.mapping_type = UniformMappingType::AMBIENT_COLOR;
-                            }
-                            else if(starts_with(mapped_buffer, "AMBIENT_TEX"))
-                            {
-                                uniform.mapping_type = UniformMappingType::AMBIENT_TEX;
-                            }
-                            else if(starts_with(mapped_buffer, "SHADOW_MAP"))
-                            {
-                                uniform.mapping_type = UniformMappingType::SHADOW_MAP;
-                            }
-                            else if(starts_with(mapped_buffer, "MODEL"))
-                            {
-                                uniform.mapping_type = UniformMappingType::MODEL;
-                            }
-                            else if(starts_with(mapped_buffer, "VIEW"))
-                            {
-                                uniform.mapping_type = UniformMappingType::VIEW;
-                            }
-                            else if(starts_with(mapped_buffer, "PROJECTION"))
-                            {
-                                uniform.mapping_type = UniformMappingType::PROJECTION;
-                            }
-                            else
-                            {
-                                error("Found invalid uniform mapping type", file_path);
-                            }
-                        }
+                        error("layout location invalid, found no =", file_path);
                     }
-
-                    (*uniforms_array)[(*uniform_count)++] = uniform;
                 }
-			}
-			else if(starts_with(buffer, "layout"))
-			{
-				VertexAttribute& vertex_attribute = shader.vertex_attributes[shader.vertex_attribute_count++];
-				char* rest = &buffer[strlen("layout") + 1];
-		
-				while(rest[0] == ' ' || rest[0] == '(')
-				{
-					rest++;
-				}
+                else
+                {
+                    error("layout location not found", file_path);
+                }
+            }
 
-				if(starts_with(rest, "location"))
-				{
-					rest += strlen("location");
-					// @Note: Eat spaces until we see =
-					while(rest[0] == ' ')
-					{
-						rest++;
-					}
-
-					if(rest[0] == '=')
-					{
-						rest++;
-						vertex_attribute.location = strtol(rest, &rest, 10);
-
-						while(rest[0] == ' ' || rest[0] == ')')
-							rest++;
-
-						if(starts_with(rest, "in"))
-						{
-							while(rest[0] == ' ')
-								rest++;
-
-							rest += 2;
-			    
-							vertex_attribute.type = get_value_type(&rest, file_path);
-						}
-						else
-						{
-							error("layout 'in' keyword missing", file_path);
-						}
-					}
-					else
-					{
-						error("layout location invalid, found no =", file_path);
-					}
-				}
-				else
-				{
-					error("layout location not found", file_path);
-				}
-			}
-
-			if(i + strlen(buffer) > temp_current_size)
-			{
-				error("Temp buffer is too small", file_path);
-			}
+            if(i + strlen(buffer) > temp_current_size)
+            {
+                error("Temp buffer is too small", file_path);
+            }
 			
-			strncpy(&temp_result[i], buffer, strlen(buffer));
+            strncpy(&temp_result[i], buffer, strlen(buffer));
 
-			i += strlen(buffer);
-			if(file_size)
-			{
-				*file_size += strlen(buffer);
-			}
-		}
+            i += strlen(buffer);
+            if(file_size)
+            {
+                *file_size += strlen(buffer);
+            }
+        }
 
 		result = push_string(arena, i);
 		memcpy(result, temp_result, i);
@@ -493,48 +586,48 @@ namespace rendering
         shader.loaded = false;
         
 		if(file)
-		{
-			size_t size = 0;
-			char* source = read_file_into_buffer(&renderer.shader_arena, file, &size);
+        {
+            size_t size = 0;
+            char* source = read_file_into_buffer(&renderer.shader_arena, file, &size);
 	    
-			shader.vert_shader = nullptr;
-			shader.frag_shader = nullptr;
+            shader.vert_shader = nullptr;
+            shader.frag_shader = nullptr;
            
             Uniform *uniforms = (Uniform*)malloc(sizeof(Uniform) * 512);
             i32 uniform_count = 0;
             
-			for(size_t i = 0; i < size; i++)
-			{
-				if(starts_with(&source[i], "#vert"))
-				{
-					shader.vert_shader = load_shader_text(&renderer.shader_arena, &source[i + strlen("#vert") + 1], shader, &uniforms, &uniform_count, shader.path, &i);
-				}
-				else if(starts_with(&source[i], "#frag"))
-				{
-					shader.frag_shader = load_shader_text(&renderer.shader_arena, &source[i + strlen("#frag") + 1], shader, &uniforms, &uniform_count, shader.path, &i);
-				}
-			}
+            for(size_t i = 0; i < size; i++)
+            {
+                if(starts_with(&source[i], "#vert"))
+                {
+                    shader.vert_shader = load_shader_text(&renderer.shader_arena, &source[i + strlen("#vert") + 1], shader, &uniforms, &uniform_count, shader.path, &i);
+                }
+                else if(starts_with(&source[i], "#frag"))
+                {
+                    shader.frag_shader = load_shader_text(&renderer.shader_arena, &source[i + strlen("#frag") + 1], shader, &uniforms, &uniform_count, shader.path, &i);
+                }
+            }
 
             shader.uniforms = push_array(&shader.arena, uniform_count, Uniform);
             shader.uniform_count = (i32)uniform_count;
             memcpy(shader.uniforms, uniforms, uniform_count * sizeof(Uniform));
             free(uniforms);
 
-// #if DEBUG
-// 			FILE* shd = fopen("../out.shd", "w");
-// 			fwrite(shader.vert_shader, strlen(shader.vert_shader), 1, shd);
-// 			fwrite(shader.frag_shader, strlen(shader.frag_shader), 1, shd);
-// 			fclose(shd);
-// #endif
-			fclose(file);
+            // #if DEBUG
+            // 			FILE* shd = fopen("../out.shd", "w");
+            // 			fwrite(shader.vert_shader, strlen(shader.vert_shader), 1, shd);
+            // 			fwrite(shader.frag_shader, strlen(shader.frag_shader), 1, shd);
+            // 			fclose(shd);
+            // #endif
+            fclose(file);
             shader.loaded = shader.vert_shader && shader.frag_shader;
             set_last_loaded(shader);
-		}
+        }
 		else
-		{
+        {
             shader.loaded = false;
-			error("File not found", shader.path);
-		}
+            error("File not found", shader.path);
+        }
     }
     
     static ShaderHandle load_shader(Renderer& renderer, const char* file_path)
@@ -552,94 +645,215 @@ namespace rendering
         renderer.render.fallback_shader = load_shader(renderer, path);
     }
     
+    static UniformValue *get_array_variable_mapping(MaterialInstanceHandle handle, const char *array_name, UniformMappingType type, Renderer &renderer)
+    {
+        Material &material = renderer.render.material_instances[handle.handle];
+
+        for(i32 i = 0; i < material.array_count; i++)
+        {
+            if(strcmp(material.arrays[i].name, array_name) == 0)
+            {
+                UniformArrayEntry &first_entry = material.arrays[i].entries[0];
+                
+                for(i32 j = 0; j < first_entry.value_count; j++)
+                {
+                    if(first_entry.values[j].uniform.mapping_type == type)
+                    {
+                        return &first_entry.values[j];
+                    }
+                }
+                break;
+            }
+        }
+
+		return nullptr;
+    }
+
 	static UniformValue* mapping(Material& material, UniformMappingType type)
 	{
 		for(i32 i = 0; i < material.uniform_value_count; i++)
-		{
-			if(material.uniform_values[i].uniform.mapping_type == type)
-			{
-				return &material.uniform_values[i];
-			}
-		}
+        {
+            if(material.uniform_values[i].uniform.mapping_type == type)
+            {
+                return &material.uniform_values[i];
+            }
+        }
 
 		return nullptr;
 	}
+
+    static UniformValue *get_mapping(MaterialInstanceHandle handle, UniformMappingType type, Renderer &renderer)
+    {
+        Material &material = renderer.render.material_instances[handle.handle];
+        return mapping(material, type);
+    }
 
     static UniformValue* get_value(Material& material, ValueType type, const char *name)
 	{
 		for(i32 i = 0; i < material.uniform_value_count; i++)
-		{
+        {
             UniformValue &value = material.uniform_values[i];
             
-			if(value.uniform.type == type && strcmp(value.uniform.name, name) == 0)
-			{
-				return &value;
-			}
-		}
+            if(value.uniform.type == type && strcmp(value.uniform.name, name) == 0)
+            {
+                return &value;
+            }
+        }
 
 		return nullptr;
 	}
 
-    static void set_shader_values(Material &material, Shader &shader)
+    static void set_shader_values(Material &material, Shader &shader, Renderer &renderer)
     {
+        UniformValue *uniform_vals = nullptr;
+        UniformArray *arrays = nullptr;
+        
 		// @Incomplete: Get shader uniforms
-		for(i32 i = 0; i < shader.uniform_count; i++)
-		{
-			Uniform& u = shader.uniforms[i];
-			UniformValue& u_v = material.uniform_values[i];
-
-			u_v.uniform = u;
-
-			material.uniform_value_count++;
-		}
-    }
-
-static void set_old_material_values(Material &new_material, Material &old_material)
-{
-    for(i32 uniform_index = 0; uniform_index < new_material.uniform_value_count; uniform_index++)
-    {
-        UniformValue &value = new_material.uniform_values[uniform_index];
-                
-        if(UniformValue *old_value = get_value(old_material, value.uniform.type, value.uniform.name))
+		for(i32 uni_i = 0; uni_i < shader.uniform_count; uni_i++)
         {
-            switch(value.uniform.type)
+            Uniform u = shader.uniforms[uni_i];
+
+            // If we're working with an array type we should add all the possible uniforms for the whole array
+            if(u.is_array)
             {
-            case ValueType::FLOAT:
-                value.float_val = old_value->float_val;
-                break;
-            case ValueType::FLOAT2:
-                value.float2_val = old_value->float2_val;
-                break;
-            case ValueType::FLOAT3:
-                value.float3_val = old_value->float3_val;
-                break;
-            case ValueType::FLOAT4:
-                value.float4_val = old_value->float4_val;
-                break;
-            case ValueType::INTEGER:
-                value.integer_val = old_value->integer_val;
-                break;
-            case ValueType::BOOL:
-                value.boolean_val = old_value->boolean_val;
-                break;
-            case ValueType::MAT4:
-                value.mat4_val = old_value->mat4_val;
-                break;
-            case ValueType::TEXTURE:
-                value.texture = old_value->texture;
-                break;
-            default:
-                assert(false);
+                // First we push the array placeholder inside the uniforms array
+                UniformValue value = {};
+                value.uniform = u;
+                value.array_index = material.array_count++;
+                buf_push(uniform_vals, value);
+
+                UniformArray array = {};
+                strncpy(array.name, u.name, strlen(u.name) + 1);
+                array.entry_count = 0;
+                array.max_size = u.array_size;
+                
+                if(u.type == ValueType::STRUCTURE)
+                {
+                    Structure &structure = shader.structures[u.structure_index];
+
+                    i32 num_to_allocate = u.array_size;
+                    array.entries = push_array(&renderer.mesh_arena, num_to_allocate, UniformArrayEntry);
+                    
+                    if(u.mapping_type == UniformMappingType::LIGHTS)
+                    {
+                        material.lighting.receives_light = true;
+                    }
+                    
+                    for(i32 i = 0; i < u.array_size; i++)
+                    {
+                        UniformArrayEntry entry = {};
+                        entry.value_count = 0;
+                        
+                        for(i32 j = 0; j < structure.uniform_count; j++)
+                        {
+                            Uniform struct_uni = structure.uniforms[j];
+                            Uniform new_uniform = struct_uni;
+                            UniformValue u_v = {};
+
+                            strncpy(u_v.name, struct_uni.name, strlen(struct_uni.name) + 1);
+                            sprintf(new_uniform.name, "%s[%d].%s", u.name, i, struct_uni.name);
+                            
+                            u_v.uniform = new_uniform;
+                            entry.values[entry.value_count++] = u_v;
+                        }
+
+                        array.entries[array.entry_count++] = entry;
+                    }
+                }
+                else
+                {
+                    i32 num_to_allocate = u.array_size;
+                    array.entries = push_array(&renderer.mesh_arena, num_to_allocate, UniformArrayEntry);
+                    
+                    for(i32 i = 0; i < u.array_size; i++)
+                    {
+                        UniformArrayEntry entry = {};
+                        entry.value_count = 0;
+                        
+                        UniformValue u_v = {};
+                        Uniform new_uniform = u;
+                        sprintf(new_uniform.name, "%s[%d]", u.name, i);
+                        u_v.uniform = new_uniform;
+                        entry.values[entry.value_count++] = u_v;
+                        array.entries[array.entry_count++] = entry;
+                    }
+                }
+
+                buf_push(arrays, array);
+            }
+            else
+            {
+                UniformValue u_v = {};
+                u_v.uniform = u;
+                buf_push(uniform_vals, u_v);
             }
         }
-    }
-}
+        
+        size_t size = buf_len(uniform_vals);
+        size_t array_size = buf_len(arrays);
+        
+        if(!material.uniform_values)
+        {
+            material.uniform_values = push_array(&renderer.mesh_arena, size, UniformValue);
+        }
 
-static void get_updated_material(Material *new_material, Material &current_material, Shader &shader)
-{
-    set_shader_values(*new_material, shader);
-    set_old_material_values(*new_material, current_material);
-}
+        if(!material.arrays)
+        {
+            material.arrays = push_array(&renderer.mesh_arena, array_size, UniformArray);
+        }
+
+        material.uniform_value_count = (i32)size;
+        memcpy(material.uniform_values, uniform_vals, size * sizeof(UniformValue));
+        material.array_count = (i32)array_size;
+        memcpy(material.arrays, arrays, array_size * sizeof(UniformValue));
+    }
+
+	static void set_old_material_values(Material &new_material, Material &old_material)
+	{
+		for(i32 uniform_index = 0; uniform_index < new_material.uniform_value_count; uniform_index++)
+        {
+            UniformValue &value = new_material.uniform_values[uniform_index];
+                
+            if(UniformValue *old_value = get_value(old_material, value.uniform.type, value.uniform.name))
+            {
+                switch(value.uniform.type)
+                {
+                case ValueType::FLOAT:
+                value.float_val = old_value->float_val;
+                break;
+                case ValueType::FLOAT2:
+                value.float2_val = old_value->float2_val;
+                break;
+                case ValueType::FLOAT3:
+                value.float3_val = old_value->float3_val;
+                break;
+                case ValueType::FLOAT4:
+                value.float4_val = old_value->float4_val;
+                break;
+                case ValueType::INTEGER:
+                value.integer_val = old_value->integer_val;
+                break;
+                case ValueType::BOOL:
+                value.boolean_val = old_value->boolean_val;
+                break;
+                case ValueType::MAT4:
+                value.mat4_val = old_value->mat4_val;
+                break;
+                case ValueType::TEXTURE:
+                value.texture = old_value->texture;
+                break;
+                default:
+                assert(false);
+                }
+            }
+        }
+	}
+
+	static void get_updated_material(Material *new_material, Material &current_material, Shader &shader, Renderer &renderer)
+	{
+		set_shader_values(*new_material, shader, renderer);
+		set_old_material_values(*new_material, current_material);
+	}
 
     static void update_materials_with_shader(Renderer &renderer, Shader &shader)
     {
@@ -647,7 +861,7 @@ static void get_updated_material(Material *new_material, Material &current_mater
         {
             Material &material = renderer.render.materials[i];
             Material new_material = {};
-            get_updated_material(&new_material, material, shader);
+            get_updated_material(&new_material, material, shader, renderer);
             renderer.render.materials[i] = new_material;
         }
 
@@ -655,7 +869,7 @@ static void get_updated_material(Material *new_material, Material &current_mater
         {
             Material &material = renderer.render.material_instances[i];
             Material new_material = {};
-            get_updated_material(&new_material, material, shader);
+            get_updated_material(&new_material, material, shader, renderer);
             renderer.render.materials[i] = new_material;
         }
     }
@@ -667,10 +881,15 @@ static void get_updated_material(Material *new_material, Material &current_mater
 
         Shader& shader = renderer.render.shaders[shader_handle.handle];
         
-        set_shader_values(material, shader);
+        set_shader_values(material, shader, renderer);
 		
 		return { renderer.render.material_count++ };
 	}
+
+    static Material *get_material(MaterialInstanceHandle instance_handle, Renderer &renderer)
+    {
+        return &renderer.render.material_instances[instance_handle.handle];
+    }
 
 	static void load_texture(const char* full_texture_path, Renderer& renderer, TextureFiltering filtering, i32* handle = 0)
 	{
@@ -681,24 +900,24 @@ static void get_updated_material(Material *new_material, Material &current_mater
 		PlatformFile png_file = platform.open_file(full_texture_path, POF_READ | POF_OPEN_EXISTING | POF_IGNORE_ERROR);
     
 		if(png_file.handle)
-		{
-			platform.seek_file(png_file, 0, SO_END);
-			auto size = platform.tell_file(png_file);
-			platform.seek_file(png_file, 0, SO_SET);
+        {
+            platform.seek_file(png_file, 0, SO_END);
+            auto size = platform.tell_file(png_file);
+            platform.seek_file(png_file, 0, SO_SET);
         
-			auto temp_mem = begin_temporary_memory(&renderer.texture_arena);
-			auto tex_data = push_size(&renderer.texture_arena, size + 1, stbi_uc);
-			platform.read_file(tex_data, size, 1, png_file);
+            auto temp_mem = begin_temporary_memory(&renderer.texture_arena);
+            auto tex_data = push_size(&renderer.texture_arena, size + 1, stbi_uc);
+            platform.read_file(tex_data, size, 1, png_file);
         
-			texture_data->image_data = stbi_load_from_memory(tex_data, size, &texture_data->width, &texture_data->height, 0, STBI_rgb_alpha);
-			platform.close_file(png_file);
-			end_temporary_memory(temp_mem);
-		}
+            texture_data->image_data = stbi_load_from_memory(tex_data, size, &texture_data->width, &texture_data->height, 0, STBI_rgb_alpha);
+            platform.close_file(png_file);
+            end_temporary_memory(temp_mem);
+        }
     
 		if(!texture_data->image_data)
-		{
-			printf("Texture could not be loaded: %s\n", full_texture_path);
-		}
+        {
+            printf("Texture could not be loaded: %s\n", full_texture_path);
+        }
     
 		if(handle)
 			*handle = texture_data->handle + 1; // We add one to the handle, since we want 0 to be an invalid handle
@@ -711,12 +930,12 @@ static void get_updated_material(Material *new_material, Material &current_mater
 		// Find the directory of the file
 		size_t index = 0;
 		for(size_t i = 0; i < strlen(file_path); i++)
-		{
-			if(file_path[i] == '/')
-			{
-				index = i + 1;
-			}
-		}
+        {
+            if(file_path[i] == '/')
+            {
+                index = i + 1;
+            }
+        }
 
     	TemporaryMemory temp_block = begin_temporary_memory(&renderer.temp_arena);
     
@@ -727,118 +946,118 @@ static void get_updated_material(Material *new_material, Material &current_mater
 		FILE* file = fopen(file_path, "r");
 
 		if(file)
-		{
-			char buffer[256];
+        {
+            char buffer[256];
 
-			Material& material = renderer.render.materials[material_handle.handle];			
+            Material& material = renderer.render.materials[material_handle.handle];			
 
-			while(fgets(buffer, sizeof(buffer), file))
-			{
-				if(starts_with(buffer, "newmtl"))
-				{
-					// @Incomplete: Save name
-				}
-				else if(starts_with(buffer, "illum")) // illumination
-				{
-				}
-				else if(starts_with(buffer, "Ka")) // ambient color
-				{
-					if(UniformValue* u = mapping(material, UniformMappingType::AMBIENT_COLOR))
-					{
-						sscanf(buffer, "Ka %f %f %f", &u->float4_val.r, &u->float4_val.g, &u->float4_val.b);
-						u->float4_val.a = 1.0f;
-					}
-				}
-				else if(starts_with(buffer, "Kd")) // diffuse color
-				{
-					if(UniformValue* u = mapping(material, UniformMappingType::DIFFUSE_COLOR))
-					{
-						sscanf(buffer, "Kd %f %f %f", &u->float4_val.r, &u->float4_val.g, &u->float4_val.b);
-						u->float4_val.a = 1.0f;
-					}
-				}
-				else if(starts_with(buffer, "Ks")) // specular color
-				{
-					if(UniformValue* u = mapping(material, UniformMappingType::SPECULAR_COLOR))
-					{
-						sscanf(buffer, "Ks %f %f %f", &u->float4_val.r, &u->float4_val.g, &u->float4_val.b);
-						u->float4_val.a = 1.0f;
-					}
-				}
-				else if(starts_with(buffer, "Ns")) // specular exponent
-				{
-					if(UniformValue* u = mapping(material, UniformMappingType::SPECULAR_INTENSITY))
-					{
-						sscanf(buffer, "Ns %f", &u->float_val);
-					}
-				}
-				else if(starts_with(buffer, "d"))
-				{
-					if(UniformValue* u = mapping(material, UniformMappingType::DISSOLVE))
-					{
-						sscanf(buffer, "d %f", &u->float_val);
-					}
-				}
-				else if(starts_with(buffer, "map_Ka")) // ambient map
-				{
-					if(UniformValue* u = mapping(material, UniformMappingType::AMBIENT_TEX))
-					{
-						char name[64];
-						sscanf(buffer, "map_Ka %s", name);
+            while(fgets(buffer, sizeof(buffer), file))
+            {
+                if(starts_with(buffer, "newmtl"))
+                {
+                    // @Incomplete: Save name
+                }
+                else if(starts_with(buffer, "illum")) // illumination
+                {
+                }
+                else if(starts_with(buffer, "Ka")) // ambient color
+                {
+                    if(UniformValue* u = mapping(material, UniformMappingType::AMBIENT_COLOR))
+                    {
+                        sscanf(buffer, "Ka %f %f %f", &u->float4_val.r, &u->float4_val.g, &u->float4_val.b);
+                        u->float4_val.a = 1.0f;
+                    }
+                }
+                else if(starts_with(buffer, "Kd")) // diffuse color
+                {
+                    if(UniformValue* u = mapping(material, UniformMappingType::DIFFUSE_COLOR))
+                    {
+                        sscanf(buffer, "Kd %f %f %f", &u->float4_val.r, &u->float4_val.g, &u->float4_val.b);
+                        u->float4_val.a = 1.0f;
+                    }
+                }
+                else if(starts_with(buffer, "Ks")) // specular color
+                {
+                    if(UniformValue* u = mapping(material, UniformMappingType::SPECULAR_COLOR))
+                    {
+                        sscanf(buffer, "Ks %f %f %f", &u->float4_val.r, &u->float4_val.g, &u->float4_val.b);
+                        u->float4_val.a = 1.0f;
+                    }
+                }
+                else if(starts_with(buffer, "Ns")) // specular exponent
+                {
+                    if(UniformValue* u = mapping(material, UniformMappingType::SPECULAR_INTENSITY))
+                    {
+                        sscanf(buffer, "Ns %f", &u->float_val);
+                    }
+                }
+                else if(starts_with(buffer, "d"))
+                {
+                    if(UniformValue* u = mapping(material, UniformMappingType::DISSOLVE))
+                    {
+                        sscanf(buffer, "d %f", &u->float_val);
+                    }
+                }
+                else if(starts_with(buffer, "map_Ka")) // ambient map
+                {
+                    if(UniformValue* u = mapping(material, UniformMappingType::AMBIENT_TEX))
+                    {
+                        char name[64];
+                        sscanf(buffer, "map_Ka %s", name);
 						
-						if(name[0] == '.')
-							load_texture(name, renderer, LINEAR, &u->texture.handle);
-						else
-							load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &u->texture.handle);
-					}
-				}
-				else if(starts_with(buffer, "map_Kd")) // diffuse map
-				{
-					if(UniformValue* u = mapping(material, UniformMappingType::DIFFUSE_TEX))
-					{
-						char name[64];
-						sscanf(buffer, "map_Kd %s", name);
+                        if(name[0] == '.')
+                            load_texture(name, renderer, LINEAR, &u->texture.handle);
+                        else
+                            load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &u->texture.handle);
+                    }
+                }
+                else if(starts_with(buffer, "map_Kd")) // diffuse map
+                {
+                    if(UniformValue* u = mapping(material, UniformMappingType::DIFFUSE_TEX))
+                    {
+                        char name[64];
+                        sscanf(buffer, "map_Kd %s", name);
 						
-						if(name[0] == '.')
-							load_texture(name, renderer, LINEAR, &u->texture.handle);
-						else
-							load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &u->texture.handle);
-					}
-				}
-				else if(starts_with(buffer, "map_Ks")) // specular map
-				{
-					if(UniformValue* u = mapping(material, UniformMappingType::SPECULAR_TEX))
-					{
-						char name[64];
-						sscanf(buffer, "map_Ks %s", name);
+                        if(name[0] == '.')
+                            load_texture(name, renderer, LINEAR, &u->texture.handle);
+                        else
+                            load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &u->texture.handle);
+                    }
+                }
+                else if(starts_with(buffer, "map_Ks")) // specular map
+                {
+                    if(UniformValue* u = mapping(material, UniformMappingType::SPECULAR_TEX))
+                    {
+                        char name[64];
+                        sscanf(buffer, "map_Ks %s", name);
 						
-						if(name[0] == '.')
-							load_texture(name, renderer, LINEAR, &u->texture.handle);
-						else
-							load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &u->texture.handle);
-					}
-				}
-				else if(starts_with(buffer, "map_Ns")) // specular intensity map
-				{
-					if(UniformValue* u = mapping(material, UniformMappingType::SPECULAR_INTENSITY_TEX))
-					{
-						char name[64];
-						sscanf(buffer, "map_Ns %s", name);
+                        if(name[0] == '.')
+                            load_texture(name, renderer, LINEAR, &u->texture.handle);
+                        else
+                            load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &u->texture.handle);
+                    }
+                }
+                else if(starts_with(buffer, "map_Ns")) // specular intensity map
+                {
+                    if(UniformValue* u = mapping(material, UniformMappingType::SPECULAR_INTENSITY_TEX))
+                    {
+                        char name[64];
+                        sscanf(buffer, "map_Ns %s", name);
 						
-						if(name[0] == '.')
-							load_texture(name, renderer, LINEAR, &u->texture.handle);
-						else
-							load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &u->texture.handle);
-					}
-				}	
-			}
+                        if(name[0] == '.')
+                            load_texture(name, renderer, LINEAR, &u->texture.handle);
+                        else
+                            load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &u->texture.handle);
+                    }
+                }	
+            }
 
-			fclose(file);
-		}
+            fclose(file);
+        }
 		else
-		{
-			error("Can't load .mtl file", file_path);
-		}
+        {
+            error("Can't load .mtl file", file_path);
+        }
 
 		end_temporary_memory(temp_block);
 	}
@@ -858,18 +1077,18 @@ static void get_updated_material(Material *new_material, Material &current_mater
         default:
         case ValueType::INVALID:
         case ValueType::TEXTURE:
-            assert(false);
+        assert(false);
         case ValueType::FLOAT:
-            return sizeof(r32);
+        return sizeof(r32);
         case ValueType::FLOAT2:
-            return sizeof(r32) * 2;
+        return sizeof(r32) * 2;
         case ValueType::FLOAT3:
-            return sizeof(r32) * 3;
+        return sizeof(r32) * 3;
         case ValueType::INTEGER:
         case ValueType::BOOL:
-            return sizeof(i32);
+        return sizeof(i32);
         case ValueType::MAT4:
-            return sizeof(r32) * 16;
+        return sizeof(r32) * 16;
         }
     }
 
@@ -887,27 +1106,27 @@ static void get_updated_material(Material *new_material, Material &current_mater
 		i32 vertex_data_count = vertex_size;
     
 		for(i32 i = 0; i < vertex_count; i++)
-		{
-			i32 increment_by = 1;
-			i32 base_index = i * vertex_data_count;
-			Vertex vertex = vertices[i];
-			vertex_buffer[base_index] = vertex.position.x;
-			vertex_buffer[base_index + increment_by++] = vertex.position.y;
-			vertex_buffer[base_index + increment_by++] = vertex.position.z;
+        {
+            i32 increment_by = 1;
+            i32 base_index = i * vertex_data_count;
+            Vertex vertex = vertices[i];
+            vertex_buffer[base_index] = vertex.position.x;
+            vertex_buffer[base_index + increment_by++] = vertex.position.y;
+            vertex_buffer[base_index + increment_by++] = vertex.position.z;
         
-			if(has_normals)
-			{
-				vertex_buffer[base_index + increment_by++] = vertex.normal.x;
-				vertex_buffer[base_index + increment_by++] = vertex.normal.y;
-				vertex_buffer[base_index + increment_by++] = vertex.normal.z;
-			}
+            if(has_normals)
+            {
+                vertex_buffer[base_index + increment_by++] = vertex.normal.x;
+                vertex_buffer[base_index + increment_by++] = vertex.normal.y;
+                vertex_buffer[base_index + increment_by++] = vertex.normal.z;
+            }
         
-			if(has_uvs)
-			{
-				vertex_buffer[base_index + increment_by++] = vertex.uv.x;
-				vertex_buffer[base_index + increment_by++] = vertex.uv.y;
-			}
-		}
+            if(has_uvs)
+            {
+                vertex_buffer[base_index + increment_by++] = vertex.uv.x;
+                vertex_buffer[base_index + increment_by++] = vertex.uv.y;
+            }
+        }
 	}
 
 	static void generate_index_buffer(u16* index_buffer, Face* faces, i32 face_count)
@@ -915,34 +1134,34 @@ static void get_updated_material(Material *new_material, Material &current_mater
 		i32 face_data_count = 3;
     
 		for(i32 i = 0; i < face_count; i++)
-		{
-			i32 base_index = i * face_data_count;
-			Face face = faces[i];
-			index_buffer[base_index] = face.indices[0];
-			index_buffer[base_index + 1] = face.indices[1];
-			index_buffer[base_index + 2] = face.indices[2];
-		}
+        {
+            i32 base_index = i * face_data_count;
+            Face face = faces[i];
+            index_buffer[base_index] = face.indices[0];
+            index_buffer[base_index + 1] = face.indices[1];
+            index_buffer[base_index + 2] = face.indices[2];
+        }
 	}
 
 	static i32 _find_unused_handle(Renderer& renderer)
 	{
 		for(i32 index = renderer.render._current_internal_buffer_handle; index < global_max_custom_buffers; index++)
-		{
-			if(renderer.render._internal_buffer_handles[index] == -1)
-			{
-				renderer.render._current_internal_buffer_handle = index;
-				return index;
-			}
-		}
+        {
+            if(renderer.render._internal_buffer_handles[index] == -1)
+            {
+                renderer.render._current_internal_buffer_handle = index;
+                return index;
+            }
+        }
     
 		for(i32 index = 0; index < global_max_custom_buffers; index++)
-		{
-			if(renderer.render._internal_buffer_handles[index] == -1)
-			{
-				renderer.render._current_internal_buffer_handle = index;
-				return index;
-			}
-		}
+        {
+            if(renderer.render._internal_buffer_handles[index] == -1)
+            {
+                renderer.render._current_internal_buffer_handle = index;
+                return index;
+            }
+        }
 		
 		assert(false);
     
@@ -973,17 +1192,18 @@ static void get_updated_material(Material *new_material, Material &current_mater
         add_vertex_attrib(ValueType::FLOAT3, info);
         
 		if(has_normals)
-		{
+        {
             add_vertex_attrib(ValueType::FLOAT3, info);
-			vertex_size += 3;
-		}
+            vertex_size += 3;
+        }
 
 		if(has_uvs)
-		{
+        {
             add_vertex_attrib(ValueType::FLOAT2, info);
-			vertex_size += 2;
-		}
+            vertex_size += 2;
+        }
 
+        info.data.vertex_count = mesh.vertex_count;
 		info.data.vertex_buffer_size = mesh.vertex_count * vertex_size * (i32)sizeof(r32);
 
 		info.data.vertex_buffer = push_size(&renderer.mesh_arena, info.data.vertex_buffer_size, r32);
@@ -1002,6 +1222,70 @@ static void get_updated_material(Material *new_material, Material &current_mater
 		return { register_buffer(renderer, info).handle };
 	}
 
+    
+    static BufferHandle create_plane(Renderer &renderer)
+    {
+        Mesh mesh;
+        mesh = {};
+        mesh.vertices = push_array(&renderer.mesh_arena, sizeof(plane_vertices) / sizeof(r32) / 3, Vertex);
+        mesh.faces = push_array(&renderer.mesh_arena, sizeof(plane_indices) / sizeof(u16) / 3, Face);
+    
+        mesh.vertex_count = sizeof(plane_vertices) / sizeof(r32) / 3;
+    
+        for(i32 i = 0; i < mesh.vertex_count; i++)
+        {
+            Vertex &vertex = mesh.vertices[i];
+            vertex.position = math::Vec3(plane_vertices[i * 3], plane_vertices[i * 3 + 1], plane_vertices[i * 3 + 2]);
+            vertex.normal = math::Vec3(plane_normals[i * 3], plane_normals[i * 3 + 1], plane_normals[i * 3 + 2]);
+            vertex.uv = math::Vec2(plane_uvs[i * 2], plane_uvs[i * 2 + 1]);
+        }
+    
+        mesh.face_count = sizeof(plane_indices) / sizeof(u16) / 3;
+    
+        for(i32 i = 0; i < mesh.face_count; i++)
+        {
+            Face &face = mesh.faces[i];
+        
+            face.indices[0] = plane_indices[i * 3];
+            face.indices[1] = plane_indices[i * 3 + 1];
+            face.indices[2] = plane_indices[i * 3 + 2];
+        }
+        
+        return { create_buffers_from_mesh(renderer, mesh, 0, true, true) };
+    }
+    
+    static BufferHandle create_cube(Renderer &renderer)
+    {
+        Mesh mesh;
+        mesh = {};
+        mesh.vertices = push_array(&renderer.mesh_arena, sizeof(cube_vertices) / sizeof(r32) / 3, Vertex);
+        mesh.faces = push_array(&renderer.mesh_arena, sizeof(cube_indices) / sizeof(u16) / 3, Face);
+    
+        mesh.vertex_count = sizeof(cube_vertices) / sizeof(r32) / 3;
+    
+        for(i32 i = 0; i < mesh.vertex_count; i++)
+        {
+            Vertex &vertex = mesh.vertices[i];
+            vertex.position = math::Vec3(cube_vertices[i * 3], cube_vertices[i * 3 + 1], cube_vertices[i * 3 + 2]);
+            vertex.normal = math::Vec3(cube_normals[i * 3], cube_normals[i * 3 + 1], cube_normals[i * 3 + 2]);
+            vertex.uv = math::Vec2(cube_uvs[i * 2], cube_uvs[i * 2 + 1]);
+        }
+    
+        mesh.face_count = sizeof(cube_indices) / sizeof(u16) / 3;
+    
+        for(i32 i = 0; i < mesh.face_count; i++)
+        {
+            Face &face = mesh.faces[i];
+        
+            face.indices[0] = cube_indices[i * 3];
+            face.indices[1] = cube_indices[i * 3 + 1];
+            face.indices[2] = cube_indices[i * 3 + 2];
+        }
+
+        return { create_buffers_from_mesh(renderer, mesh, 0, true, true) };
+    }
+
+
 	static b32 vertex_equals(Vertex &v1, Vertex &v2)
 	{
 		return v1.position.x == v2.position.x && v1.position.y == v2.position.y && v1.position.z == v2.position.z && v1.uv.x == v2.uv.x && v1.uv.y == v2.uv.y && v1.normal.x == v2.normal.x && v1.normal.y == v2.normal.y && v1.normal.z == v2.normal.z;
@@ -1015,14 +1299,14 @@ static void get_updated_material(Material *new_material, Material &current_mater
 		vertex.normal = normal;
     
 		for(size_t index = 0; index < current_size; index++)
-		{
-			Vertex &existing = final_vertices[index];
+        {
+            Vertex &existing = final_vertices[index];
         
-			if(vertex_equals(existing, vertex))
-			{
-				return (i32)index;
-			}
-		}
+            if(vertex_equals(existing, vertex))
+            {
+                return (i32)index;
+            }
+        }
     
 		*should_add = true;
     
@@ -1055,8 +1339,8 @@ static void get_updated_material(Material *new_material, Material &current_mater
 		char mtl_file_name[32];
 
 		if(file)
-		{
-			char buffer[256];
+        {
+            char buffer[256];
         
             while((fgets(buffer, sizeof(buffer), file) != NULL))
             {
@@ -1194,7 +1478,7 @@ static void get_updated_material(Material *new_material, Material &current_mater
                     buf_push(faces, face);
                 }
             }	
-			fclose(file);
+            fclose(file);
         
             assert(renderer.mesh_count + 1 < global_max_meshes);
 
@@ -1264,14 +1548,14 @@ static void get_updated_material(Material *new_material, Material &current_mater
 		Material& material = renderer.render.material_instances[handle.handle];
 
 		for(i32 i = 0; i < material.uniform_value_count; i++)
-		{
-			UniformValue& u_v = material.uniform_values[i];
-			if(strncmp(u_v.uniform.name, name, strlen(name)) == 0)
-			{
-				assert(u_v.uniform.type == ValueType::FLOAT);
-				u_v.float_val = value;
-			}
-		}
+        {
+            UniformValue& u_v = material.uniform_values[i];
+            if(strncmp(u_v.uniform.name, name, strlen(name)) == 0)
+            {
+                assert(u_v.uniform.type == ValueType::FLOAT);
+                u_v.float_val = value;
+            }
+        }
 	}
 
 	static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, math::Vec2 value)
@@ -1279,14 +1563,14 @@ static void get_updated_material(Material *new_material, Material &current_mater
 		Material& material = renderer.render.material_instances[handle.handle];
 
 		for(i32 i = 0; i < material.uniform_value_count; i++)
-		{
-			UniformValue& u_v = material.uniform_values[i];
-			if(strncmp(u_v.uniform.name, name, strlen(name)) == 0)
-			{
-				assert(u_v.uniform.type == ValueType::FLOAT2);
-				u_v.float2_val = value;
-			}
-		}
+        {
+            UniformValue& u_v = material.uniform_values[i];
+            if(strncmp(u_v.uniform.name, name, strlen(name)) == 0)
+            {
+                assert(u_v.uniform.type == ValueType::FLOAT2);
+                u_v.float2_val = value;
+            }
+        }
 	}
 
 	static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, math::Vec3 value)
@@ -1294,14 +1578,14 @@ static void get_updated_material(Material *new_material, Material &current_mater
 		Material& material = renderer.render.material_instances[handle.handle];
 
 		for(i32 i = 0; i < material.uniform_value_count; i++)
-		{
-			UniformValue& u_v = material.uniform_values[i];
-			if(strncmp(u_v.uniform.name, name, strlen(name)) == 0)
-			{
-				assert(u_v.uniform.type == ValueType::FLOAT3);
-				u_v.float3_val = value;
-			}
-		}
+        {
+            UniformValue& u_v = material.uniform_values[i];
+            if(strncmp(u_v.uniform.name, name, strlen(name)) == 0)
+            {
+                assert(u_v.uniform.type == ValueType::FLOAT3);
+                u_v.float3_val = value;
+            }
+        }
 	}
 
 	static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, math::Vec4 value)
@@ -1309,14 +1593,14 @@ static void get_updated_material(Material *new_material, Material &current_mater
 		Material& material = renderer.render.material_instances[handle.handle];
 
 		for(i32 i = 0; i < material.uniform_value_count; i++)
-		{
-			UniformValue& u_v = material.uniform_values[i];
-			if(strncmp(u_v.uniform.name, name, strlen(name)) == 0)
-			{
-				assert(u_v.uniform.type == ValueType::FLOAT4);
-				u_v.float4_val = value;
-			}
-		}
+        {
+            UniformValue& u_v = material.uniform_values[i];
+            if(strncmp(u_v.uniform.name, name, strlen(name)) == 0)
+            {
+                assert(u_v.uniform.type == ValueType::FLOAT4);
+                u_v.float4_val = value;
+            }
+        }
 	}
 
 	static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, i32 value)
@@ -1324,21 +1608,21 @@ static void get_updated_material(Material *new_material, Material &current_mater
 		Material& material = renderer.render.material_instances[handle.handle];
 
 		for(i32 i = 0; i < material.uniform_value_count; i++)
-		{
-			UniformValue& u_v = material.uniform_values[i];
-			if(strncmp(u_v.uniform.name, name, strlen(name)) == 0)
-			{
-				assert(u_v.uniform.type == ValueType::INTEGER || u_v.uniform.type == ValueType::BOOL);
-				if(u_v.uniform.type == ValueType::BOOL)
-				{
-					u_v.boolean_val = value;
-				}
-				else if(u_v.uniform.type == ValueType::INTEGER)
-				{
-					u_v.integer_val = value;
-				}
-			}
-		}
+        {
+            UniformValue& u_v = material.uniform_values[i];
+            if(strncmp(u_v.uniform.name, name, strlen(name)) == 0)
+            {
+                assert(u_v.uniform.type == ValueType::INTEGER || u_v.uniform.type == ValueType::BOOL);
+                if(u_v.uniform.type == ValueType::BOOL)
+                {
+                    u_v.boolean_val = value;
+                }
+                else if(u_v.uniform.type == ValueType::INTEGER)
+                {
+                    u_v.integer_val = value;
+                }
+            }
+        }
 	}
 
 	static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, math::Mat4 value)
@@ -1346,14 +1630,14 @@ static void get_updated_material(Material *new_material, Material &current_mater
 		Material& material = renderer.render.material_instances[handle.handle];
 
 		for(i32 i = 0; i < material.uniform_value_count; i++)
-		{
-			UniformValue& u_v = material.uniform_values[i];
-			if(strncmp(u_v.uniform.name, name, strlen(name)) == 0)
-			{
-				assert(u_v.uniform.type == ValueType::MAT4);
-				u_v.mat4_val = value;
-			}
-		}
+        {
+            UniformValue& u_v = material.uniform_values[i];
+            if(strncmp(u_v.uniform.name, name, strlen(name)) == 0)
+            {
+                assert(u_v.uniform.type == ValueType::MAT4);
+                u_v.mat4_val = value;
+            }
+        }
 	}
 
 	static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, TextureHandle value)
@@ -1361,15 +1645,201 @@ static void get_updated_material(Material *new_material, Material &current_mater
 		Material& material = renderer.render.material_instances[handle.handle];
 
 		for(i32 i = 0; i < material.uniform_value_count; i++)
-		{
-			UniformValue& u_v = material.uniform_values[i];
-			if(strncmp(u_v.uniform.name, name, strlen(name)) == 0)
-			{
-				assert(u_v.uniform.type == ValueType::TEXTURE);
-				u_v.texture = value;
-			}
-		}
+        {
+            UniformValue& u_v = material.uniform_values[i];
+            if(strncmp(u_v.uniform.name, name, strlen(name)) == 0)
+            {
+                assert(u_v.uniform.type == ValueType::TEXTURE);
+                u_v.texture = value;
+            }
+        }
 	}
+
+    
+    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, r32 value)
+    {
+        Material &material = renderer.render.material_instances[handle.handle];
+
+        for(i32 i = 0; i < material.array_count; i++)
+        {
+            UniformArray &array = material.arrays[i];
+            
+            if(strcmp(array.name, array_name) == 0)
+            {
+                UniformArrayEntry &entry = array.entries[index];
+            
+                for(i32 j = 0; j < entry.value_count; j++)
+                {
+                    UniformValue& u_v = entry.values[j];
+                    if(strcmp(u_v.name, variable_name) == 0)
+                    {
+                        assert(u_v.uniform.type == ValueType::FLOAT);
+                        u_v.float_val = value;
+                    }
+                }
+                break;
+            }
+        }
+    } 
+
+    
+    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec2 value)
+    {
+        Material &material = renderer.render.material_instances[handle.handle];
+
+        for(i32 i = 0; i < material.array_count; i++)
+        {
+            UniformArray &array = material.arrays[i];
+            if(strcmp(array.name, array_name) == 0)
+            {
+                UniformArrayEntry &entry = array.entries[index];
+            
+                for(i32 j = 0; j < entry.value_count; j++)
+                {
+                    UniformValue& u_v = entry.values[j];
+                    if(strcmp(u_v.name, variable_name) == 0)
+                    {
+                        assert(u_v.uniform.type == ValueType::FLOAT2);
+                        u_v.float2_val = value;
+                    }
+                }
+                break;
+            }
+        }
+    } 
+
+    
+    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec3 value)
+    {
+        Material &material = renderer.render.material_instances[handle.handle];
+
+        for(i32 i = 0; i < material.array_count; i++)
+        {
+            UniformArray &array = material.arrays[i];
+            if(strcmp(array.name, array_name) == 0)
+            {
+                UniformArrayEntry &entry = array.entries[index];
+            
+                for(i32 j = 0; j < entry.value_count; j++)
+                {
+                    UniformValue& u_v = entry.values[j];
+                    if(strcmp(u_v.name, variable_name) == 0)
+                    {
+                        assert(u_v.uniform.type == ValueType::FLOAT3);
+                        u_v.float3_val = value;
+                    }
+                }
+                break;
+            }
+        }
+    } 
+
+    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec4 value)
+    {
+        Material &material = renderer.render.material_instances[handle.handle];
+
+        for(i32 i = 0; i < material.array_count; i++)
+        {
+            UniformArray &array = material.arrays[i];
+            if(strcmp(array.name, array_name) == 0)
+            {
+                UniformArrayEntry &entry = array.entries[index];
+            
+                for(i32 j = 0; j < entry.value_count; j++)
+                {
+                    UniformValue& u_v = entry.values[j];
+                    if(strcmp(u_v.name, variable_name) == 0)
+                    {
+                        assert(u_v.uniform.type == ValueType::FLOAT4);
+                        u_v.float4_val = value;
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    
+    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, i32 value)
+    {
+        Material &material = renderer.render.material_instances[handle.handle];
+
+        for(i32 i = 0; i < material.array_count; i++)
+        {
+            UniformArray &array = material.arrays[i];
+            if(strcmp(array.name, array_name) == 0)
+            {
+                UniformArrayEntry &entry = array.entries[index];
+            
+                for(i32 j = 0; j < entry.value_count; j++)
+                {
+                    UniformValue& u_v = entry.values[j];
+                    if(strcmp(u_v.name, variable_name) == 0)
+                    {
+                        if(u_v.uniform.type == ValueType::BOOL)
+                        {
+                            u_v.boolean_val = value;
+                        }
+                        else if(u_v.uniform.type == ValueType::INTEGER)
+                        {
+                            u_v.integer_val = value;
+                        }
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Mat4 value)
+    {
+        Material &material = renderer.render.material_instances[handle.handle];
+
+        for(i32 i = 0; i < material.array_count; i++)
+        {
+            UniformArray &array = material.arrays[i];
+            if(strcmp(array.name, array_name) == 0)
+            {
+                UniformArrayEntry &entry = array.entries[index];
+            
+                for(i32 j = 0; j < entry.value_count; j++)
+                {
+                    UniformValue& u_v = entry.values[j];
+                    if(strcmp(u_v.name, variable_name) == 0)
+                    {
+                        assert(u_v.uniform.type == ValueType::MAT4);
+                        u_v.mat4_val = value;
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, rendering::TextureHandle value)
+    {
+        Material &material = renderer.render.material_instances[handle.handle];
+
+        for(i32 i = 0; i < material.array_count; i++)
+        {
+            UniformArray &array = material.arrays[i];
+            if(strcmp(array.name, array_name) == 0)
+            {
+                UniformArrayEntry &entry = array.entries[index];
+            
+                for(i32 j = 0; j < entry.value_count; j++)
+                {
+                    UniformValue& u_v = entry.values[j];
+                    if(strcmp(u_v.name, variable_name) == 0)
+                    {
+                        assert(u_v.uniform.type == ValueType::TEXTURE);
+                        u_v.texture = value;
+                    }
+                }
+                break;
+            }
+        }
+    }
 
 	static void update_buffer(Renderer& renderer, BufferHandle handle, BufferData new_data)
 	{

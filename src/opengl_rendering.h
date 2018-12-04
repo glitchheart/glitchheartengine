@@ -134,6 +134,7 @@ struct Buffer
     GLuint vbo;
     GLuint ibo;
     GLint vertex_buffer_size;
+    GLint vertex_count;
     GLint index_buffer_size;
     GLint index_buffer_count;
 };
