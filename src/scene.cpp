@@ -20,6 +20,7 @@ namespace scene
     static TransformComponent& get_transform_comp(EntityHandle handle, Scene &scene);
     static RenderComponent& get_render_comp(EntityHandle handle, Scene &scene);
     static ParticleSystemComponent& get_particle_system_comp(EntityHandle handle, Scene &scene);
+    static LightComponent &get_light_comp(EntityHandle handle, Scene &scene);
     static MaterialHandle create_material(MaterialHandle material_to_copy, Scene &scene);
     static Material& get_material(EntityHandle handle, Scene &scene);
     
@@ -45,6 +46,7 @@ namespace scene
         scene.active_entities = push_array(&memory_arena, initial_entity_array_size, b32);
         scene.transform_components = push_array(&memory_arena, initial_entity_array_size, TransformComponent);
         scene.render_components = push_array(&memory_arena, initial_entity_array_size, RenderComponent);
+        scene.light_components = push_array(&memory_arena, initial_entity_array_size, LightComponent);
         scene.particle_system_components = push_array(&memory_arena, initial_entity_array_size, ParticleSystemComponent);
         scene.material_instances = push_array(&memory_arena, initial_entity_array_size, Material);
         
@@ -79,6 +81,7 @@ namespace scene
             
             scene.particle_system_component_count = 0;
             scene.material_count = 0;
+            scene.light_component_count = 0;
             scene.current_internal_handle = 0;
             clear(&scene.memory_arena);
         }
@@ -154,6 +157,16 @@ namespace scene
         
         return(comp);
     }
+
+    static LightComponent &add_light_component(Scene &scene, EntityHandle entity_handle)
+    {
+        Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
+        entity.comp_flags |= COMP_LIGHT;
+        entity.light_handle = { scene.light_component_count++ };
+        scene::LightComponent &comp = scene.light_components[entity.light_handle.handle];
+        
+        return(comp); 
+    }
     
     // Returns a new valid "EntityHandle". "comp_flags" Specifies the components that the entity should contain.
     static EntityHandle register_entity(u64 comp_flags, Scene &scene)
@@ -179,6 +192,11 @@ namespace scene
         if(comp_flags & COMP_PARTICLES)
         {
             add_particle_system_component(scene, handle, get_default_particle_system_attributes(), 0);
+        }
+
+        if(comp_flags & COMP_LIGHT)
+        {
+            add_light_component(scene, handle);
         }
         
         return(handle);
@@ -664,7 +682,21 @@ namespace scene
         }
         return -1;
     }
-    
+
+    i32 _pack_light_components(Entity &entity, Scene &scene)
+    {
+        if(entity.comp_flags & COMP_LIGHT)
+        {
+            for(i32 index = entity.light_handle.handle; index < scene.light_component_count - 1; index++)
+            {
+                scene.light_components[index] = scene.light_components[index + 1];
+            }
+            scene.light_component_count--;
+            return entity.light_handle.handle;
+        }
+        return -1;
+    }
+
     i32 _pack_particle_system_components(Entity &entity, Scene &scene)
     {
         if(entity.comp_flags & COMP_PARTICLES)
@@ -710,6 +742,7 @@ namespace scene
             i32 transform_handle = _pack_transform_components(entity, scene);
             i32 render_handle = _pack_render_components(entity, scene);
             i32 particle_system_handle = _pack_particle_system_components(entity, scene);
+            i32 light_component_handle = _pack_light_components(entity, scene);
             
             // Remember to reset the internal handle to -1 to indicate an unused index
             scene._internal_handles[removed_handle - 1] = -1;
@@ -732,6 +765,11 @@ namespace scene
                 if(scene.entities[index].particle_system_handle.handle > render_handle)
                 {
                     scene.entities[index].particle_system_handle.handle--;
+                }
+
+                if(scene.entities[index].light_handle.handle > light_component_handle)
+                {
+                    scene.entities[index].light_handle.handle--;
                 }
                 
                 scene.active_entities[index] = scene.active_entities[index + 1];
@@ -803,6 +841,19 @@ namespace scene
         assert(entity.comp_flags & COMP_PARTICLES);
         
         ParticleSystemComponent& comp = scene.particle_system_components[entity.particle_system_handle.handle];
+        return(comp);
+    }
+    
+    static LightComponent &get_light_comp(EntityHandle handle, Scene &scene)
+    {
+        assert(handle.handle != 0);
+        i32 internal_handle = scene._internal_handles[handle.handle - 1];
+        assert(internal_handle != -1);
+        Entity entity = scene.entities[internal_handle];
+        
+        assert(entity.comp_flags & COMP_LIGHT);
+        
+        LightComponent& comp = scene.light_components[entity.light_handle.handle];
         return(comp);
     }
     
