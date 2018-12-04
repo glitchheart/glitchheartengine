@@ -1862,12 +1862,24 @@ static void push_particle_system(Renderer &renderer, i32 particle_system_handle)
 
 static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, math::Vec3 *positions, math::Vec3 *rotations, math::Vec3 *scalings, math::Rgba *colors)
 {
-    renderer.view_matrix = scene.camera.view_matrix;
-    renderer.projection_matrix = scene.camera.projection_matrix;
+    renderer.camera = scene.camera;
+
+    Light lights[32];
+    i32 light_count = 0;
+
+    Light first = {};
+    first.position = math::Vec4(-10.0f, 10.0f, -10.0f, 0.0f);
+    first.intensities = math::Vec3(0.5f, 0.5f, 0.7f);
+    first.ambient_coefficient = 0.6f;
+    
+    lights[light_count++] = first;
     
     QueuedRenderCommand queued_commands[MAX_INSTANCING_PAIRS];
-    i32 command_count = 0;
+    i32 normal_count = 0;
 
+    QueuedRenderCommand instanced_commands[MAX_INSTANCING_PAIRS];
+    i32 command_count = 0;
+    
     i32 particles_to_push[64];
     i32 particles_count = 0;
     
@@ -1877,6 +1889,12 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
         queued_commands[i].instanced = {}; 
         queued_commands[i].normal = {};
         queued_commands[i].instanced.count = 0;
+        
+        instanced_commands[i] = {};
+        instanced_commands[i].instanced = {};
+        instanced_commands[i].normal = {};
+        instanced_commands[i].instanced.count = 0;
+        
     }
     
     for(i32 ent_index = 0; ent_index < scene.entity_count; ent_index++)
@@ -1905,12 +1923,13 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                     t.rotation = rotation;
                     t.scale = scale;
                     
-					QueuedRenderCommand &command = queued_commands[command_count++];
+					QueuedRenderCommand &command = queued_commands[normal_count];
                     
-                    queued_commands[command_index].type = QueuedRenderCommandType::NORMAL;
+                    queued_commands[normal_count].type = QueuedRenderCommandType::NORMAL;
 					command.normal.transform = t;
 					command.normal.buffer_handle = render.v2.buffer_handle;
 					command.normal.material_handle = render.v2.material_handle;
+                    normal_count++;
                 }
                 else
                 {
@@ -1920,9 +1939,9 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 
                     for (i32 i = 0; i < command_count; i++)
                     {
-                        if(queued_commands[i].type == QueuedRenderCommandType::INSTANCED)
+                        if(instanced_commands[i].type == QueuedRenderCommandType::INSTANCED)
                         {
-                            if (queued_commands[i].instanced.mesh_handle == render.mesh_handle.handle && queued_commands[i].instanced.original_material_handle == material.source_handle.handle)
+                            if (instanced_commands[i].instanced.mesh_handle == render.mesh_handle.handle && instanced_commands[i].instanced.original_material_handle == material.source_handle.handle)
 							{
 								command_index = i;
 								break;
@@ -1933,16 +1952,16 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                     if (command_index == -1)
                     {
                         command_index = command_count++;
-                        queued_commands[command_index].type = QueuedRenderCommandType::INSTANCED;
-                        queued_commands[command_index].instanced.mesh_handle = render.mesh_handle.handle;
-                        queued_commands[command_index].instanced.material_handle = render.material_handle.handle;
-                        queued_commands[command_index].instanced.original_material_handle = material.source_handle.handle;
-                        queued_commands[command_index].instanced.scale = math::Vec3(1, 1, 1);
-                        queued_commands[command_index].instanced.receives_shadows = render.receives_shadows;
-                        queued_commands[command_index].instanced.cast_shadows = render.cast_shadows;
+                        instanced_commands[command_index].type = QueuedRenderCommandType::INSTANCED;
+                        instanced_commands[command_index].instanced.mesh_handle = render.mesh_handle.handle;
+                        instanced_commands[command_index].instanced.material_handle = render.material_handle.handle;
+                        instanced_commands[command_index].instanced.original_material_handle = material.source_handle.handle;
+                        instanced_commands[command_index].instanced.scale = math::Vec3(1, 1, 1);
+                        instanced_commands[command_index].instanced.receives_shadows = render.receives_shadows;
+                        instanced_commands[command_index].instanced.cast_shadows = render.cast_shadows;
                     }
                 
-                    InstancedRenderCommand &command = queued_commands[command_index].instanced;
+                    InstancedRenderCommand &command = instanced_commands[command_index].instanced;
                 
                     if(IS_COMP_HANDLE_VALID(transform.parent_handle))
                     {
@@ -1992,15 +2011,51 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
         }
     }
 
-    for(i32 com_index = 0; com_index < command_count; com_index++)
+    for(i32 index = 0; index < normal_count; index++)
     {
-		QueuedRenderCommand &render_command = queued_commands[com_index];
+        QueuedRenderCommand &render_command = queued_commands[index];
         
 		if(render_command.type == QueuedRenderCommandType::NORMAL)
 		{
+            rendering::Material *material = rendering::get_material(render_command.normal.material_handle, renderer);
+
+            if(material->lighting.receives_light)
+            {
+                rendering::UniformValue *mapping = rendering::get_mapping(render_command.normal.material_handle, rendering::UniformMappingType::LIGHTS, renderer);
+                rendering::UniformValue *light_pos = rendering::get_array_variable_mapping(render_command.normal.material_handle, mapping->name, rendering::UniformMappingType::LIGHT_POSITION, renderer);
+                rendering::UniformValue *light_intensities = rendering::get_array_variable_mapping(render_command.normal.material_handle, mapping->name, rendering::UniformMappingType::LIGHT_INTENSITIES, renderer);
+                rendering::UniformValue *light_attenuation = rendering::get_array_variable_mapping(render_command.normal.material_handle, mapping->name, rendering::UniformMappingType::LIGHT_ATTENUATION, renderer);
+                rendering::UniformValue *light_ambient_coefficient = rendering::get_array_variable_mapping(render_command.normal.material_handle, mapping->name, rendering::UniformMappingType::LIGHT_AMBIENT_COEFFICIENT, renderer);
+                
+                rendering::set_uniform_value(renderer, render_command.normal.material_handle, "lightCount", light_count);
+                
+                for(i32 light_index = 0; light_index < light_count; light_index++)
+                {
+                    Light &light = lights[light_index];
+
+                    if(light_pos)
+                        rendering::set_uniform_array_value(renderer, render_command.normal.material_handle, mapping->name, light_index, light_pos->name, light.position);
+
+                    if(light_intensities)
+                        rendering::set_uniform_array_value(renderer, render_command.normal.material_handle, mapping->name, light_index, light_intensities->name, light.intensities);
+
+                    if(light_attenuation)
+                        rendering::set_uniform_array_value(renderer, render_command.normal.material_handle, mapping->name, light_index, light_attenuation->name, light.attenuation);
+
+                    if(light_ambient_coefficient)
+                        rendering::set_uniform_array_value(renderer, render_command.normal.material_handle, mapping->name, light_index, light_ambient_coefficient->name, light.ambient_coefficient);
+                }
+            }
+            
 			rendering::push_buffer(renderer, render_command.normal.buffer_handle, render_command.normal.material_handle, render_command.normal.transform);
 		}
-		else if(render_command.type == QueuedRenderCommandType::INSTANCED)
+    }
+
+    for(i32 com_index = 0; com_index < command_count; com_index++)
+    {
+		QueuedRenderCommand &render_command = instanced_commands[com_index];
+        
+        if(render_command.type == QueuedRenderCommandType::INSTANCED)
 		{
 			InstancedRenderCommand command = render_command.instanced;
 			Material material = scene.material_instances[command.material_handle];

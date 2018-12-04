@@ -76,21 +76,18 @@ namespace rendering
 		MODEL,
 		VIEW,
 		PROJECTION,
+
+        CAMERA_POSITION,
         
         LIGHTS,
-
+        LIGHT_POSITION,
+        LIGHT_INTENSITIES,
+        LIGHT_ATTENUATION,
+        LIGHT_AMBIENT_COEFFICIENT,
+        
 		MAX
     };
 
-    struct Structure
-    {
-        char name[32];
-        ValueType types[32];
-        char names[32][32];
-        
-        i32 value_count;
-    };
-    
     struct Uniform
     {
 		UniformMappingType mapping_type;
@@ -98,11 +95,24 @@ namespace rendering
 		char name[32];
         
         i32 structure_index; // If the uniforms is a structure we should save the index of the structure for later
+
+        b32 is_array;
+        i32 array_size;
+    };
+
+    struct Structure
+    {
+        char name[32];
+        Uniform uniforms[32];
+        i32 uniform_count;
     };
 
 	struct UniformValue
 	{
+        char name[32];
 		Uniform uniform;
+        i32 array_index;
+        
 		union
 		{
 			r32 float_val = 0.0f;
@@ -118,6 +128,21 @@ namespace rendering
 		UniformValue () {}
 	};
 
+    struct UniformArrayEntry
+    {
+        UniformValue values[32];
+        i32 value_count;
+    };
+    
+    struct UniformArray
+    {
+        char name[32];
+        UniformArrayEntry *entries;
+
+        i32 entry_count;
+        i32 max_size;
+    };
+    
     enum class DefinedValueType
     {
         INTEGER,
@@ -126,6 +151,7 @@ namespace rendering
     
     struct DefinedValue
     {
+        char name[32];
         DefinedValueType type;
         union
         {
@@ -164,10 +190,20 @@ namespace rendering
     struct Material
     {
 		ShaderHandle shader;
-		UniformValue uniform_values[32];
+		UniformValue *uniform_values;
 		i32 uniform_value_count;
 
         MaterialHandle source_material;
+
+        UniformArray *arrays;
+        i32 array_count;
+
+        struct
+        {
+            b32 receives_light; // @Cleanup: Do we need this?
+            i32 array_handle;
+        } lighting;
+        
         
 		Material () {}
     };
@@ -178,6 +214,7 @@ namespace rendering
 	{
 		r32* vertex_buffer;
 		i32 vertex_buffer_size;
+        i32 vertex_count;
 		u16* index_buffer;
 		i32 index_buffer_count;
 		i32 index_buffer_size;
@@ -202,13 +239,13 @@ namespace rendering
 		BufferData data;
 
 		RegisterBufferInfo(const RegisterBufferInfo& other)
-			{
-				memcpy(vertex_attributes, other.vertex_attributes, sizeof(VertexAttribute) * other.vertex_attribute_count);
-				vertex_attribute_count = other.vertex_attribute_count;
-				stride = other.stride;
-				usage = other.usage;
-				data = other.data;
-			}
+        {
+            memcpy(vertex_attributes, other.vertex_attributes, sizeof(VertexAttribute) * other.vertex_attribute_count);
+            vertex_attribute_count = other.vertex_attribute_count;
+            stride = other.stride;
+            usage = other.usage;
+            data = other.data;
+        }
 
 		RegisterBufferInfo() {}
 	};

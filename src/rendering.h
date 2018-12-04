@@ -48,6 +48,16 @@ struct FontData
 	char* name;
 };
 
+struct Light
+{
+    math::Vec4 position;
+    math::Vec3 intensities;
+    r32 attenuation;
+    r32 ambient_coefficient;
+    r32 cone_angle;
+    math::Vec3 cone_direction;
+};
+
 // @Cleanup: Clean up lighting code
 struct Spotlight
 {
@@ -1014,6 +1024,27 @@ struct Resolution
 
 struct ParticleSystemInfo;
 
+struct Camera
+{
+    r32 zoom;
+    math::Vec3 center;
+    math::Vec3 position;
+    math::Quat orientation;
+    math::Vec3 target;
+    
+    r32 follow_speed;
+    math::Mat4 view_matrix;
+    math::Mat4 projection_matrix;
+    
+    FadingMode fading_mode = FADING_NONE;
+    math::Vec3 fading_tint;
+    
+    b32 fading_in;
+    r32 end_alpha;
+    r32 fading_alpha = 0.0f;
+    r32 fading_speed;
+};
+
 struct Renderer
 {
 	b32 should_close;
@@ -1026,9 +1057,8 @@ struct Renderer
     
 	WindowMode window_mode;
 
-	math::Mat4 view_matrix;
-	math::Mat4 projection_matrix;
-    
+    Camera camera;
+	
 	RenderCommand *commands;
 	i32 command_count;
     

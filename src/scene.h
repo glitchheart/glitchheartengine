@@ -79,6 +79,11 @@ namespace scene
         ParticleSystemHandle handle;
     };
 
+    struct LightComponent
+    {
+        Light light;
+    };
+
     struct TemplateHandle
     {
         i32 handle;
@@ -137,6 +142,10 @@ namespace scene
                 i32 value_count;
             } speed_over_lifetime;
         } particles;
+        struct
+        {
+            Light light;
+        } light;
     };
     
     // Holds all the currently loaded templates
@@ -144,28 +153,6 @@ namespace scene
     {
         EntityTemplate *templates;
         i32 template_count;
-    };
-
-    
-    struct Camera
-    {
-        r32 zoom;
-        math::Vec3 center;
-        math::Vec3 position;
-        math::Quat orientation;
-        math::Vec3 target;
-    
-        r32 follow_speed;
-        math::Mat4 view_matrix;
-        math::Mat4 projection_matrix;
-    
-        FadingMode fading_mode = FADING_NONE;
-        math::Vec3 fading_tint;
-    
-        b32 fading_in;
-        r32 end_alpha;
-        r32 fading_alpha = 0.0f;
-        r32 fading_speed;
     };
 
     enum CameraFlags
@@ -218,6 +205,9 @@ namespace scene
         
         RenderComponent *render_components;
         i32 render_component_count;
+
+        LightComponent *light_components;
+        i32 light_component;
         
         ParticleSystemComponent *particle_system_components;
         i32 particle_system_component_count;

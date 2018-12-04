@@ -388,8 +388,9 @@ static void reload_shaders(RenderState &render_state, Renderer &renderer)
             i32 index = shaders_to_reload[i];
             rendering::Shader &shader = renderer.render.shaders[index];
             ShaderGL &gl_shader = render_state.gl_shaders[index];
-
+            
             delete_shader_program(gl_shader);
+            clear(&shader.arena);
             rendering::load_shader(renderer, shader);
             load_shader(renderer, shader, gl_shader);
             printf("Reloaded shader: %s", shader.path);
@@ -1417,7 +1418,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     
-    glfwSwapInterval(0);
+    glfwSwapInterval(1);
     
     glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
     glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
@@ -1551,7 +1552,6 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
         }
     }
 }
-
 
 static void initialize_opengl(RenderState& render_state, Renderer& renderer, ConfigData* config_data, MemoryArena *perm_arena, b32 *do_save_config)
 {
@@ -2595,7 +2595,7 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
     if(buffer.index_buffer_count == 0)
     {
         glDrawArrays(
-            GL_TRIANGLES, 0, buffer.vertex_buffer_size / 3);
+            GL_TRIANGLES, 0, buffer.vertex_count);
     }
     else
     {
@@ -3078,6 +3078,7 @@ static void register_buffer(Buffer& buffer, rendering::RegisterBufferInfo info)
 {
     buffer.vertex_buffer_size = info.data.vertex_buffer_size;
     buffer.index_buffer_count = info.data.index_buffer_count;
+    buffer.vertex_count = info.data.vertex_count;
     
 	glGenVertexArrays(1, &buffer.vao);
 	glBindVertexArray(buffer.vao);
@@ -3253,7 +3254,66 @@ static void set_uniform(RenderState& render_state, Renderer& renderer, GLuint pr
 	}
 }
 
-static void render_buffer(rendering::RenderCommand& command, RenderState& render_state, Renderer& renderer, math::Mat4 projection_matrix, math::Mat4 view_matrix)
+static void set_uniform(rendering::RenderCommand &command, rendering::UniformValue &uniform_value, ShaderGL &gl_shader, const Camera &camera, i32 *texture_count, RenderState &render_state, Renderer &renderer)
+{
+    rendering::Uniform &uniform = uniform_value.uniform;
+    
+    switch(uniform.mapping_type)
+    {
+    case rendering::UniformMappingType::NONE:
+    case rendering::UniformMappingType::DIFFUSE_TEX:
+    case rendering::UniformMappingType::DIFFUSE_COLOR:
+    case rendering::UniformMappingType::SPECULAR_TEX:
+    case rendering::UniformMappingType::SPECULAR_COLOR:
+    case rendering::UniformMappingType::AMBIENT_COLOR:
+    case rendering::UniformMappingType::AMBIENT_TEX:
+    case rendering::UniformMappingType::SHADOW_MAP:
+    {
+        set_uniform(render_state, renderer, gl_shader.program, uniform_value, texture_count);
+    }
+    break;
+    case rendering::UniformMappingType::MODEL:
+    {
+        rendering::Transform transform = command.transform;		
+        math::Mat4 model_matrix(1.0f);
+        model_matrix = math::scale(model_matrix, transform.scale);
+    
+        math::Vec3 rotation = transform.rotation;
+        auto x_axis = rotation.x > 0.0f ? 1.0f : 0.0f;
+        auto y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
+        auto z_axis = rotation.z > 0.0f ? 1.0f : 0.0f;
+    
+        math::Quat orientation = math::Quat();
+        orientation = math::rotate(orientation, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
+        orientation = math::rotate(orientation, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
+        orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
+    
+        model_matrix = to_matrix(orientation) * model_matrix;
+    
+        model_matrix = math::translate(model_matrix, transform.position);
+
+        set_mat4_uniform(gl_shader.program, uniform_value.uniform.name, model_matrix);
+    }
+    break;
+    case rendering::UniformMappingType::VIEW:
+    {
+        set_mat4_uniform(gl_shader.program, uniform_value.uniform.name, camera.view_matrix);
+    }
+    break;
+    case rendering::UniformMappingType::PROJECTION:
+    {
+        set_mat4_uniform(gl_shader.program, uniform_value.uniform.name, camera.projection_matrix);
+    }
+    break;
+    case rendering::UniformMappingType::CAMERA_POSITION:
+    {
+        set_vec3_uniform(gl_shader.program, uniform_value.uniform.name, camera.position);
+    }
+    break;
+    }
+}
+
+static void render_buffer(rendering::RenderCommand& command, RenderState& render_state, Renderer& renderer, const Camera &camera)
 {
     i32 handle = renderer.render._internal_buffer_handles[command.buffer.handle - 1];
 	Buffer& buffer = render_state.gl_buffers[handle];
@@ -3276,60 +3336,29 @@ static void render_buffer(rendering::RenderCommand& command, RenderState& render
         glUseProgram(gl_shader.program);
 
 	i32 texture_count = 0;
-	
+    
 	for(i32 i = 0; i < material.uniform_value_count; i++)
 	{
 		rendering::UniformValue& uniform_value = material.uniform_values[i];
 		rendering::Uniform& uniform = uniform_value.uniform;
 
-		switch(uniform.mapping_type)
-		{
-		case rendering::UniformMappingType::NONE:
-		case rendering::UniformMappingType::DIFFUSE_TEX:
-		case rendering::UniformMappingType::DIFFUSE_COLOR:
-		case rendering::UniformMappingType::SPECULAR_TEX:
-		case rendering::UniformMappingType::SPECULAR_COLOR:
-		case rendering::UniformMappingType::AMBIENT_COLOR:
-		case rendering::UniformMappingType::AMBIENT_TEX:
-		case rendering::UniformMappingType::SHADOW_MAP:
-		{
-			set_uniform(render_state, renderer, gl_shader.program, uniform_value, &texture_count);
-		}
-		break;
-		case rendering::UniformMappingType::MODEL:
-		{
-			rendering::Transform transform = command.transform;		
-			math::Mat4 model_matrix(1.0f);
-			model_matrix = math::scale(model_matrix, transform.scale);
-    
-			math::Vec3 rotation = transform.rotation;
-			auto x_axis = rotation.x > 0.0f ? 1.0f : 0.0f;
-			auto y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
-			auto z_axis = rotation.z > 0.0f ? 1.0f : 0.0f;
-    
-			math::Quat orientation = math::Quat();
-			orientation = math::rotate(orientation, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
-			orientation = math::rotate(orientation, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
-			orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
-    
-			model_matrix = to_matrix(orientation) * model_matrix;
-    
-			model_matrix = math::translate(model_matrix, transform.position);
-
-			set_mat4_uniform(gl_shader.program, uniform_value.uniform.name, model_matrix);
-		}
-		break;
-		case rendering::UniformMappingType::VIEW:
-		{
-			set_mat4_uniform(gl_shader.program, uniform_value.uniform.name, view_matrix);
-		}
-		break;
-		case rendering::UniformMappingType::PROJECTION:
-		{
-			set_mat4_uniform(gl_shader.program, uniform_value.uniform.name, projection_matrix);
-		}
-		break;
-		}
+        if(uniform.is_array)
+        {
+            rendering::UniformArray &array = material.arrays[uniform_value.array_index];
+            for(i32 j = 0; j < array.entry_count; j++)
+            {
+                rendering::UniformArrayEntry &entry = array.entries[j];
+                for(i32 k = 0; k < entry.value_count; k++)
+                {
+                    rendering::UniformValue& value = entry.values[k];
+                    set_uniform(command, value, gl_shader, camera, &texture_count, render_state, renderer);
+                }
+            }
+        }
+        else
+        {
+            set_uniform(command, uniform_value, gl_shader, camera, &texture_count, render_state, renderer);
+        }
 	}
 
 	if(buffer.ibo)
@@ -3338,8 +3367,7 @@ static void render_buffer(rendering::RenderCommand& command, RenderState& render
 	}
 	else
 	{
-		glDrawArrays(
-            GL_TRIANGLES, 0, buffer.vertex_buffer_size / 3);
+		glDrawArrays(GL_TRIANGLES, 0, buffer.vertex_count / 3);
 	}
 }
 
@@ -3385,12 +3413,12 @@ static void render_shadows(RenderState &render_state, Renderer &renderer, Frameb
 
 static void render_new_commands(RenderState &render_state, Renderer &renderer)
 {
-    //glEnable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
     
     for(i32 i = 0; i < renderer.render.render_command_count; i++)
     {
         rendering::RenderCommand &command = renderer.render.render_commands[i];
-        render_buffer(command, render_state, renderer, renderer.projection_matrix, renderer.view_matrix);
+        render_buffer(command, render_state, renderer, renderer.camera);
     }
 
     renderer.render.render_command_count = 0;
@@ -3416,27 +3444,27 @@ static void render_ui_commands(RenderState &render_state, Renderer &renderer)
         {
             case RENDER_COMMAND_LINE:
             {
-                render_line(command, render_state, renderer.ui_projection_matrix, renderer.view_matrix);
+                render_line(command, render_state, renderer.ui_projection_matrix, renderer.camera.view_matrix);
             }
             break;
             case RENDER_COMMAND_TEXT:
             {
-                render_text(command, render_state, renderer, renderer.view_matrix, renderer.ui_projection_matrix);
+                render_text(command, render_state, renderer, renderer.camera.view_matrix, renderer.ui_projection_matrix);
             }
             break;
             case RENDER_COMMAND_QUAD:
             {
-                render_quad(command, render_state, renderer.ui_projection_matrix, renderer.view_matrix);
+                render_quad(command, render_state, renderer.ui_projection_matrix, renderer.camera.view_matrix);
             }
             break;
             case RENDER_COMMAND_MODEL:
             {
-                //render_model(command, render_state, renderer.projection_matrix, renderer.view_matrix);
+                //render_model(command, render_state, renderer.camera.projection_matrix, renderer.camera.view_matrix);
             }
             break;
             case RENDER_COMMAND_BUFFER:
             {
-                render_buffer(command, render_state, renderer, renderer.projection_matrix, renderer.view_matrix);
+                render_buffer(command, render_state, renderer, renderer.camera.projection_matrix, renderer.camera.view_matrix);
             }
             break;
             case RENDER_COMMAND_DEPTH_TEST:
@@ -3477,7 +3505,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
                 
                 Spotlight& spotlight = render_state.spotlight_data.spotlights[render_state.spotlight_data.num_lights++];
                 
-                auto pos = renderer.view_matrix * math::Vec4(command.position, 1.0f);
+                auto pos = renderer.camera.view_matrix * math::Vec4(command.position, 1.0f);
                 
                 spotlight.position[0] = pos.x;
                 spotlight.position[1] = pos.y;
@@ -3549,7 +3577,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
                 PointLight& point_light =
                     render_state.point_light_data.point_lights[render_state.point_light_data.num_lights++];
                 
-                auto pos = renderer.view_matrix * math::Vec4(command.position, 1.0f);
+                auto pos = renderer.camera.view_matrix * math::Vec4(command.position, 1.0f);
                 
                 point_light.position[0] = pos.x;
                 point_light.position[1] = pos.y;
@@ -3595,49 +3623,49 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
         {
             case RENDER_COMMAND_LINE:
             {
-                render_line(command, render_state, renderer.projection_matrix, renderer.view_matrix);
+                render_line(command, render_state, renderer.camera.projection_matrix, renderer.camera.view_matrix);
             }
             break;
             case RENDER_COMMAND_TEXT:
             {
-                render_text(command, render_state, renderer, renderer.view_matrix, renderer.projection_matrix);
+                render_text(command, render_state, renderer, renderer.camera.view_matrix, renderer.camera.projection_matrix);
             }
             break;
             case RENDER_COMMAND_3D_TEXT:
             {
-                render_3d_text(command, render_state, renderer, renderer.view_matrix, renderer.projection_matrix);
+                render_3d_text(command, render_state, renderer, renderer.camera.view_matrix, renderer.camera.projection_matrix);
             }
             break;
             case RENDER_COMMAND_QUAD:
             {
-                render_quad(command, render_state, renderer.projection_matrix, renderer.view_matrix);
+                render_quad(command, render_state, renderer.camera.projection_matrix, renderer.camera.view_matrix);
             }
             break;
             case RENDER_COMMAND_MODEL:
             {
-                //render_model(command, render_state, renderer.projection_matrix, renderer.view_matrix);
+                //render_model(command, render_state, renderer.camera.projection_matrix, renderer.camera.view_matrix);
                 
             }
             break;
             case RENDER_COMMAND_MESH:
             {
-                render_mesh(command, renderer, render_state, renderer.projection_matrix, renderer.view_matrix, false, &renderer.shadow_map_matrices);
+                render_mesh(command, renderer, render_state, renderer.camera.projection_matrix, renderer.camera.view_matrix, false, &renderer.shadow_map_matrices);
                 
             }
             break;
             case RENDER_COMMAND_PARTICLES:
             {
-                render_particles(command, renderer, render_state, renderer.projection_matrix, renderer.view_matrix);
+                render_particles(command, renderer, render_state, renderer.camera.projection_matrix, renderer.camera.view_matrix);
             }
             break;
             case RENDER_COMMAND_MESH_INSTANCED:
             {
-                render_mesh_instanced(command, renderer, render_state, renderer.projection_matrix, renderer.view_matrix, false, &renderer.shadow_map_matrices);
+                render_mesh_instanced(command, renderer, render_state, renderer.camera.projection_matrix, renderer.camera.view_matrix, false, &renderer.shadow_map_matrices);
             }
             break;
             case RENDER_COMMAND_BUFFER:
             {
-                render_buffer(command, render_state, renderer, renderer.projection_matrix, renderer.view_matrix);
+                render_buffer(command, render_state, renderer, renderer.camera.projection_matrix, renderer.camera.view_matrix);
             }
             break;
             case RENDER_COMMAND_DEPTH_TEST:
