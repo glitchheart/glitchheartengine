@@ -609,59 +609,6 @@ static void push_outlined_ui_quad(Renderer& renderer, math::Vec2i position,  mat
     render_command->is_ui = is_ui;
 }
 
-static void push_spotlight(Renderer& renderer, math::Vec3 position, math::Vec3 direction, r32 cut_off, r32 outer_cut_off, math::Vec3 ambient, math::Vec3 diffuse, math::Vec3 specular, r32 constant, r32 linear, r32 quadratic)
-{
-    RenderCommand* render_command = push_struct(&renderer.light_commands, RenderCommand);
-    renderer.light_command_count++;
-    
-    render_command->type = RENDER_COMMAND_SPOTLIGHT;
-    
-    render_command->position = position;
-    
-    auto& spotlight = render_command->spotlight;
-    spotlight.direction = direction;
-    spotlight.cut_off = cut_off;
-    spotlight.outer_cut_off = outer_cut_off;
-    spotlight.ambient = ambient;
-    spotlight.diffuse = diffuse;
-    spotlight.specular = specular;
-    spotlight.constant = constant;
-    spotlight.linear = linear;
-    spotlight.quadratic = quadratic;
-}
-
-static void push_directional_light(Renderer& renderer, math::Vec3 direction, math::Vec3 ambient, math::Vec3 diffuse, math::Vec3 specular)
-{
-    RenderCommand* render_command = push_struct(&renderer.light_commands, RenderCommand);
-    renderer.light_command_count++;
-    
-    render_command->type = RENDER_COMMAND_DIRECTIONAL_LIGHT;
-    
-    auto& directional_light = render_command->directional_light;
-    directional_light.direction = direction;
-    directional_light.ambient = ambient;
-    directional_light.diffuse = diffuse;
-    directional_light.specular = specular;
-}
-
-static void push_point_light(Renderer& renderer, math::Vec3 position, math::Vec3 ambient, math::Vec3 diffuse, math::Vec3 specular, r32 constant, r32 linear, r32 quadratic)
-{
-    RenderCommand* render_command = push_struct(&renderer.light_commands, RenderCommand);
-    renderer.light_command_count++;
-    
-    render_command->type = RENDER_COMMAND_POINT_LIGHT;
-    
-    render_command->position = position;
-    
-    auto& point_light = render_command->point_light;
-    point_light.ambient = ambient;
-    point_light.diffuse = diffuse;
-    point_light.specular = specular;
-    point_light.constant = constant;
-    point_light.linear = linear;
-    point_light.quadratic = quadratic;
-}
-
 static void push_buffer(Renderer& renderer, i32 buffer_handle, i32 texture_handle, math::Vec3 rotation = math::Vec3(), b32 is_ui = false, math::Vec3 position = math::Vec3(), math::Vec3 scale = math::Vec3(1.0f), math::Rgba color = math::Rgba(1, 1, 1, 1))
 {
     RenderCommand* render_command = push_next_command(renderer, is_ui);
@@ -1863,11 +1810,10 @@ static void push_particle_system(Renderer &renderer, i32 particle_system_handle)
 static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, math::Vec3 *positions, math::Vec3 *rotations, math::Vec3 *scalings, math::Rgba *colors)
 {
     renderer.camera = scene.camera;
-
-    Light lights[32];
-    i32 light_count = 0;
-
-    QueuedRenderCommand queued_commands[MAX_INSTANCING_PAIRS];
+    renderer.render.dir_light_count = 0;
+    renderer.render.point_light_count = 0;
+    
+    QueuedRenderCommand queued_commands[256];
     i32 normal_count = 0;
 
     QueuedRenderCommand instanced_commands[MAX_INSTANCING_PAIRS];
@@ -1908,7 +1854,18 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
             if(ent.comp_flags & scene::COMP_LIGHT)
             {
                 scene::LightComponent &light_comp = scene.light_components[ent.light_handle.handle];
-                lights[light_count++] = light_comp.light;
+
+                switch(light_comp.type)
+                {
+                case scene::LightType::DIRECTIONAL:
+                renderer.render.directional_lights[renderer.render.dir_light_count++] = light_comp.dir_light;
+                break;
+                case scene::LightType::POINT:
+                renderer.render.point_lights[renderer.render.point_light_count++] = light_comp.point_light;
+                break;
+                default:
+                assert(false);
+                }
             }
 
             if (ent.comp_flags & scene::COMP_RENDER)
@@ -2020,29 +1977,69 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
 
             if(material->lighting.receives_light)
             {
-                rendering::UniformValue *mapping = rendering::get_mapping(render_command.normal.material_handle, rendering::UniformMappingType::LIGHTS, renderer);
-                rendering::UniformValue *light_pos = rendering::get_array_variable_mapping(render_command.normal.material_handle, mapping->name, rendering::UniformMappingType::LIGHT_POSITION, renderer);
-                rendering::UniformValue *light_intensities = rendering::get_array_variable_mapping(render_command.normal.material_handle, mapping->name, rendering::UniformMappingType::LIGHT_INTENSITIES, renderer);
-                rendering::UniformValue *light_attenuation = rendering::get_array_variable_mapping(render_command.normal.material_handle, mapping->name, rendering::UniformMappingType::LIGHT_ATTENUATION, renderer);
-                rendering::UniformValue *light_ambient_coefficient = rendering::get_array_variable_mapping(render_command.normal.material_handle, mapping->name, rendering::UniformMappingType::LIGHT_AMBIENT_COEFFICIENT, renderer);
+                rendering::UniformValue *dir_light_count_map = rendering::get_mapping(render_command.normal.material_handle, rendering::UniformMappingType::DIRECTIONAL_LIGHT_COUNT, renderer);
                 
-                rendering::set_uniform_value(renderer, render_command.normal.material_handle, "lightCount", light_count);
+                if(dir_light_count_map)
+                    rendering::set_uniform_value(renderer, render_command.normal.material_handle, dir_light_count_map->name, renderer.render.dir_light_count);
+
+                if(renderer.render.dir_light_count > 0)
+                {                    
+                    rendering::UniformValue *mapping = rendering::get_mapping(render_command.normal.material_handle, rendering::UniformMappingType::DIRECTIONAL_LIGHTS, renderer);
+                    rendering::UniformValue *light_dir = rendering::get_array_variable_mapping(render_command.normal.material_handle, mapping->name, rendering::UniformMappingType::DIRECTIONAL_LIGHT_DIRECTION, renderer);
+                    rendering::UniformValue *ambient = rendering::get_array_variable_mapping(render_command.normal.material_handle, mapping->name, rendering::UniformMappingType::DIRECTIONAL_LIGHT_AMBIENT, renderer);
+                    rendering::UniformValue *diffuse = rendering::get_array_variable_mapping(render_command.normal.material_handle, mapping->name, rendering::UniformMappingType::DIRECTIONAL_LIGHT_DIFFUSE, renderer);
+                    rendering::UniformValue *specular = rendering::get_array_variable_mapping(render_command.normal.material_handle, mapping->name, rendering::UniformMappingType::DIRECTIONAL_LIGHT_SPECULAR, renderer);
+                    
+                    for(i32 light_index = 0; light_index < renderer.render.dir_light_count; light_index++)
+                    {
+                        DirectionalLight &light = renderer.render.directional_lights[light_index];
+
+                        if(light_dir)
+                            rendering::set_uniform_array_value(renderer, render_command.normal.material_handle, mapping->name, light_index, light_dir->name, light.direction);
+                        if(ambient)
+                            rendering::set_uniform_array_value(renderer, render_command.normal.material_handle, mapping->name, light_index, ambient->name, light.ambient);
+                        if(diffuse)
+                            rendering::set_uniform_array_value(renderer, render_command.normal.material_handle, mapping->name, light_index, diffuse->name, light.diffuse);
+                        if(specular)
+                            rendering::set_uniform_array_value(renderer, render_command.normal.material_handle, mapping->name, light_index, specular->name, light.specular);
+                    }
+                }
+
+                rendering::UniformValue *point_light_count_map = rendering::get_mapping(render_command.normal.material_handle, rendering::UniformMappingType::POINT_LIGHT_COUNT, renderer);
                 
-                for(i32 light_index = 0; light_index < light_count; light_index++)
+                if(point_light_count_map)
+                    rendering::set_uniform_value(renderer, render_command.normal.material_handle, point_light_count_map->name, renderer.render.point_light_count);
+
+                if(renderer.render.point_light_count > 0)
                 {
-                    Light &light = lights[light_index];
+                    rendering::UniformValue *mapping = rendering::get_mapping(render_command.normal.material_handle, rendering::UniformMappingType::POINT_LIGHTS, renderer);
+                    rendering::UniformValue *light_pos = rendering::get_array_variable_mapping(render_command.normal.material_handle, mapping->name, rendering::UniformMappingType::POINT_LIGHT_POSITION, renderer);
+                    rendering::UniformValue *constant = rendering::get_array_variable_mapping(render_command.normal.material_handle, mapping->name, rendering::UniformMappingType::POINT_LIGHT_CONSTANT, renderer);
+                    rendering::UniformValue *linear = rendering::get_array_variable_mapping(render_command.normal.material_handle, mapping->name, rendering::UniformMappingType::POINT_LIGHT_LINEAR, renderer);
+                    rendering::UniformValue *quadratic = rendering::get_array_variable_mapping(render_command.normal.material_handle, mapping->name, rendering::UniformMappingType::POINT_LIGHT_QUADRATIC, renderer);
+                    rendering::UniformValue *ambient = rendering::get_array_variable_mapping(render_command.normal.material_handle, mapping->name, rendering::UniformMappingType::POINT_LIGHT_AMBIENT, renderer);
+                    rendering::UniformValue *diffuse = rendering::get_array_variable_mapping(render_command.normal.material_handle, mapping->name, rendering::UniformMappingType::POINT_LIGHT_DIFFUSE, renderer);
+                    rendering::UniformValue *specular = rendering::get_array_variable_mapping(render_command.normal.material_handle, mapping->name, rendering::UniformMappingType::POINT_LIGHT_SPECULAR, renderer);
+                    
+                    for(i32 light_index = 0; light_index < renderer.render.point_light_count; light_index++)
+                    {
+                        PointLight &light = renderer.render.point_lights[light_index];
 
-                    if(light_pos)
-                        rendering::set_uniform_array_value(renderer, render_command.normal.material_handle, mapping->name, light_index, light_pos->name, light.position);
-
-                    if(light_intensities)
-                        rendering::set_uniform_array_value(renderer, render_command.normal.material_handle, mapping->name, light_index, light_intensities->name, light.intensities);
-
-                    if(light_attenuation)
-                        rendering::set_uniform_array_value(renderer, render_command.normal.material_handle, mapping->name, light_index, light_attenuation->name, light.attenuation);
-
-                    if(light_ambient_coefficient)
-                        rendering::set_uniform_array_value(renderer, render_command.normal.material_handle, mapping->name, light_index, light_ambient_coefficient->name, light.ambient_coefficient);
+                        if(light_pos)
+                            rendering::set_uniform_array_value(renderer, render_command.normal.material_handle, mapping->name, light_index, light_pos->name, light.position);
+                        if(constant)
+                            rendering::set_uniform_array_value(renderer, render_command.normal.material_handle, mapping->name, light_index, constant->name, light.constant);
+                        if(linear)
+                            rendering::set_uniform_array_value(renderer, render_command.normal.material_handle, mapping->name, light_index, linear->name, light.linear);
+                        if(quadratic)
+                            rendering::set_uniform_array_value(renderer, render_command.normal.material_handle, mapping->name, light_index, quadratic->name, light.quadratic);
+                        if(ambient)
+                            rendering::set_uniform_array_value(renderer, render_command.normal.material_handle, mapping->name, light_index, ambient->name, light.ambient);
+                        if(diffuse)
+                            rendering::set_uniform_array_value(renderer, render_command.normal.material_handle, mapping->name, light_index, diffuse->name, light.diffuse);
+                        if(specular)
+                            rendering::set_uniform_array_value(renderer, render_command.normal.material_handle, mapping->name, light_index, specular->name, light.specular);
+                    }
                 }
             }
             

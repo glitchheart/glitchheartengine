@@ -23,7 +23,7 @@ enum LogType
 
 static void _log(LogType log_type, i32 line_num, const char* file, const char* message, ...)
 {
-    char message_buffer[256];
+    char message_buffer[2048];
     va_list args;
     va_start(args, message);
     vsprintf(message_buffer, message, args); // @Robustness: This could lead to buffer overflow. vsnprintf should be safer?
@@ -39,7 +39,7 @@ static void _log(LogType log_type, i32 line_num, const char* file, const char* m
     
     strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);
     
-    log_state->log_buffer[log_state->log_count++] = push_string(&log_state->arena, 2048);
+    log_state->log_buffer[log_state->log_count++] = push_string(&log_state->arena, 2096);
     
     char *type_name = nullptr;
     if(log_type == LOG_INFO)

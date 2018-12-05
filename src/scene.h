@@ -36,6 +36,13 @@ namespace scene
     {
         i32 handle;
     };
+
+    enum LightType
+    {
+        DIRECTIONAL,
+        POINT,
+        SPOT
+    };
     
     enum ComponentTypeFlags
     {
@@ -88,7 +95,13 @@ namespace scene
 
     struct LightComponent
     {
-        Light light;
+        LightType type;
+        
+        union
+        {
+            DirectionalLight dir_light;
+            PointLight point_light;
+        };
     };
 
     struct TemplateHandle
@@ -151,7 +164,6 @@ namespace scene
         } particles;
         struct
         {
-            Light light;
         } light;
     };
     

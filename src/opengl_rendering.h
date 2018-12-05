@@ -200,11 +200,6 @@ struct RenderState
     
     Framebuffer framebuffer;
     Framebuffer shadow_map_buffer;
-    // Lighting data
-    SpotlightData spotlight_data;
-    DirectionalLightData directional_light_data;
-    PointLightData point_light_data;
-    
     
     u32 framebuffer_quad_vertices_size = 16 * sizeof(GLfloat);
     u32 texture_quad_vertices_size = 16 * sizeof(GLfloat);

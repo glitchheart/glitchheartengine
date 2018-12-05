@@ -190,7 +190,7 @@ static GLint compile_shader(MemoryArena* arena, const char* shader_name, GLuint 
 
 		glGetShaderInfoLog(shader, max_length, &max_length, error_log);
 
-		log_error("Shader compilation error - %s", shader_name);
+		log_error("Shader compilation error - %s\n", shader_name);
 		log_error("%s", error_log);
 
 		glDeleteShader(shader);
@@ -228,7 +228,7 @@ static GLint link_program(MemoryArena* arena, const char* program_name, GLuint p
 
 		glGetProgramInfoLog(program, max_length, &max_length, error_log);
 
-		log_error("Program linking error - %s", program_name);
+		log_error("Program linking error - %s\n", program_name);
 		log_error("%s", error_log);
 	}
 	return is_linked;
@@ -3265,14 +3265,23 @@ static void set_uniform(rendering::RenderCommand &command, rendering::UniformVal
     case rendering::UniformMappingType::DIFFUSE_COLOR:
     case rendering::UniformMappingType::SPECULAR_TEX:
     case rendering::UniformMappingType::SPECULAR_COLOR:
+    case rendering::UniformMappingType::SPECULAR_EXPONENT:
     case rendering::UniformMappingType::AMBIENT_COLOR:
     case rendering::UniformMappingType::AMBIENT_TEX:
     case rendering::UniformMappingType::SHADOW_MAP:
-    case rendering::UniformMappingType::LIGHTS:
-    case rendering::UniformMappingType::LIGHT_POSITION:
-    case rendering::UniformMappingType::LIGHT_INTENSITIES:
-    case rendering::UniformMappingType::LIGHT_ATTENUATION:
-    case rendering::UniformMappingType::LIGHT_AMBIENT_COEFFICIENT:
+    case rendering::UniformMappingType::DIRECTIONAL_LIGHT_COUNT:
+    case rendering::UniformMappingType::POINT_LIGHT_COUNT:
+    case rendering::UniformMappingType::POINT_LIGHT_POSITION:
+    case rendering::UniformMappingType::DIRECTIONAL_LIGHT_DIRECTION:
+    case rendering::UniformMappingType::DIRECTIONAL_LIGHT_AMBIENT:
+    case rendering::UniformMappingType::DIRECTIONAL_LIGHT_DIFFUSE:
+    case rendering::UniformMappingType::DIRECTIONAL_LIGHT_SPECULAR:
+    case rendering::UniformMappingType::POINT_LIGHT_AMBIENT:
+    case rendering::UniformMappingType::POINT_LIGHT_DIFFUSE:
+    case rendering::UniformMappingType::POINT_LIGHT_SPECULAR:
+    case rendering::UniformMappingType::POINT_LIGHT_CONSTANT:
+    case rendering::UniformMappingType::POINT_LIGHT_LINEAR:
+    case rendering::UniformMappingType::POINT_LIGHT_QUADRATIC:
     {
         set_uniform(render_state, renderer, gl_shader.program, uniform_value, texture_count);
     }
@@ -3431,8 +3440,6 @@ static void render_new_commands(RenderState &render_state, Renderer &renderer)
 
 static void render_ui_commands(RenderState &render_state, Renderer &renderer)
 {
-    
-    
     for (i32 index = 0; index < renderer.ui_command_count; index++)
     {
         const RenderCommand& command = renderer.ui_commands[index];
@@ -3494,129 +3501,6 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
         FontData data = renderer.fonts[index];
         load_font(render_state, renderer, data.path, data.size);
     }
-    
-    for (i32 index = 0; index < renderer.light_command_count; index++)
-    {
-        const RenderCommand& command = *((RenderCommand*)renderer.light_commands.current_block->base + index);
-        
-        switch (command.type)
-        {
-            case RENDER_COMMAND_SPOTLIGHT:
-            {
-                if(!render_state.spotlight_data.spotlights)
-                {
-                    render_state.spotlight_data.spotlights = push_array(render_state.perm_arena, global_max_lights, Spotlight);
-                }
-                
-                Spotlight& spotlight = render_state.spotlight_data.spotlights[render_state.spotlight_data.num_lights++];
-                
-                auto pos = renderer.camera.view_matrix * math::Vec4(command.position, 1.0f);
-                
-                spotlight.position[0] = pos.x;
-                spotlight.position[1] = pos.y;
-                spotlight.position[2] = pos.z;
-                spotlight.position[3] = 1;
-                
-                spotlight.direction[0] = command.spotlight.direction.x;
-                spotlight.direction[1] = command.spotlight.direction.y;
-                spotlight.direction[2] = command.spotlight.direction.z;
-                spotlight.direction[3] = 0;
-                
-                spotlight.cut_off = command.spotlight.cut_off;
-                spotlight.outer_cut_off = command.spotlight.outer_cut_off;
-                
-                spotlight.ambient[0] = command.spotlight.ambient.x;
-                spotlight.ambient[1] = command.spotlight.ambient.y;
-                spotlight.ambient[2] = command.spotlight.ambient.z;
-                spotlight.ambient[3] = 1.0f;
-                
-                spotlight.diffuse[0] = command.spotlight.diffuse.x;
-                spotlight.diffuse[1] = command.spotlight.diffuse.y;
-                spotlight.diffuse[2] = command.spotlight.diffuse.z;
-                spotlight.diffuse[3] = 1.0f;
-                spotlight.specular[0] = command.spotlight.specular.x;
-                spotlight.specular[1] = command.spotlight.specular.y;
-                spotlight.specular[2] = command.spotlight.specular.z;
-                spotlight.specular[3] = 1.0f;
-                
-                spotlight.constant = command.spotlight.constant;
-                spotlight.linear = command.spotlight.linear;
-                spotlight.quadratic = command.spotlight.quadratic;
-            }
-            break;
-            case RENDER_COMMAND_DIRECTIONAL_LIGHT:
-            {
-                if(!render_state.directional_light_data.directional_lights)
-                {
-                    render_state.directional_light_data.directional_lights = push_array(render_state.perm_arena, global_max_lights, DirectionalLight);
-                }
-                
-                DirectionalLight& directional_light = render_state.directional_light_data.directional_lights[render_state.directional_light_data.num_lights++];
-                
-                directional_light.direction[0] = command.directional_light.direction.x;
-                directional_light.direction[1] = command.directional_light.direction.y;
-                directional_light.direction[2] = command.directional_light.direction.z;
-                directional_light.direction[3] = 0;
-                
-                directional_light.ambient[0] = command.directional_light.ambient.x;
-                directional_light.ambient[1] = command.directional_light.ambient.y;
-                directional_light.ambient[2] = command.directional_light.ambient.z;
-                directional_light.ambient[3] = 1;
-                directional_light.diffuse[0] = command.directional_light.diffuse.x;
-                directional_light.diffuse[1] = command.directional_light.diffuse.y;
-                directional_light.diffuse[2] = command.directional_light.diffuse.z;
-                directional_light.diffuse[3] = 1;
-                directional_light.specular[0] = command.directional_light.specular.x;
-                directional_light.specular[1] = command.directional_light.specular.y;
-                directional_light.specular[2] = command.directional_light.specular.z;
-                directional_light.specular[3] = 1;
-            }
-            break;
-            case RENDER_COMMAND_POINT_LIGHT:
-            {
-                if(!render_state.point_light_data.point_lights)
-                {
-                    render_state.point_light_data.point_lights = push_array(render_state.perm_arena, global_max_lights, PointLight);
-                }                
-                
-                PointLight& point_light =
-                    render_state.point_light_data.point_lights[render_state.point_light_data.num_lights++];
-                
-                auto pos = renderer.camera.view_matrix * math::Vec4(command.position, 1.0f);
-                
-                point_light.position[0] = pos.x;
-                point_light.position[1] = pos.y;
-                point_light.position[2] = pos.z;
-                point_light.position[3] = 1.0f;
-                
-                point_light.ambient[0] = command.point_light.ambient.x;
-                point_light.ambient[1] = command.point_light.ambient.y;
-                point_light.ambient[2] = command.point_light.ambient.z;
-                
-                point_light.diffuse[0] = command.point_light.diffuse.x;
-                point_light.diffuse[1] = command.point_light.diffuse.y;
-                point_light.diffuse[2] = command.point_light.diffuse.z;
-                
-                point_light.specular[0] = command.point_light.specular.x;
-                point_light.specular[1] = command.point_light.specular.y;
-                point_light.specular[2] = command.point_light.specular.z;
-                
-                point_light.constant = command.point_light.constant;
-                point_light.linear = command.point_light.linear;
-                point_light.quadratic = command.point_light.quadratic;
-            }
-            break;
-            default:
-            break;
-        }
-    }
-    
-    //update_lighting_data(render_state);
-    renderer.light_command_count = 0;
-    render_state.spotlight_data.num_lights = 0;
-    render_state.directional_light_data.num_lights = 0;
-    render_state.point_light_data.num_lights = 0;
-    clear(&renderer.light_commands);
     
     glEnable(GL_DEPTH_TEST);
     
@@ -3722,7 +3606,6 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
     {
         renderer.command_count = 0;
         renderer.ui_command_count = 0;
-        renderer.light_command_count = 0;
         return;
     }
     
@@ -3847,7 +3730,6 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
             render_state.total_delta = delta_time;
         }
         
-        renderer.light_command_count = 0;
         renderer.command_count = 0;
         renderer.ui_command_count = 0;
         
