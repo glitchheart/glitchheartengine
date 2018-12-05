@@ -202,12 +202,12 @@ namespace rendering
     struct Material
     {
 		ShaderHandle shader;
-		UniformValue *uniform_values;
+		UniformValue uniform_values[64];
 		i32 uniform_value_count;
 
         MaterialHandle source_material;
 
-        UniformArray *arrays;
+        UniformArray arrays[8];
         i32 array_count;
 
         struct

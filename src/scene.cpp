@@ -28,9 +28,8 @@ namespace scene
     // @Incomplete: We need to make sure that we can grow in size if we need more than what we allocated at any point in time.
     static Scene create_scene(Renderer &renderer, EntityTemplateState &template_state, i32 initial_entity_array_size = 1024)
     {
-        renderer.render.material_instance_count = 0;
-        
         Scene scene = {};
+        scene.valid = true;
         scene.template_state = &template_state;
         scene.renderer = &renderer;
         scene.max_entity_count = initial_entity_array_size;
@@ -67,23 +66,30 @@ namespace scene
     // Zeroes all counts and frees all memory allocated for the "Scene"
     static void free_scene(Scene& scene)
     {
-        if (scene.entity_count > 0)
+        if(scene.valid)
         {
-            scene.entity_count = 0;
-            scene.transform_component_count = 0;
-            scene.render_component_count = 0;
-            
-            for(i32 index = 0; index < scene.particle_system_component_count; index++)
+            scene.renderer->render.material_instance_count = 0;
+        
+            if (scene.entity_count > 0)
             {
-                ParticleSystemComponent& ps_comp = scene.particle_system_components[index];
-                remove_particle_system(*scene.renderer, ps_comp.handle);
+                scene.entity_count = 0;
+                scene.transform_component_count = 0;
+                scene.render_component_count = 0;
+            
+                for(i32 index = 0; index < scene.particle_system_component_count; index++)
+                {
+                    ParticleSystemComponent& ps_comp = scene.particle_system_components[index];
+                    remove_particle_system(*scene.renderer, ps_comp.handle);
+                }
+            
+                scene.particle_system_component_count = 0;
+                scene.material_count = 0;
+                scene.light_component_count = 0;
+                scene.current_internal_handle = 0;
+                clear(&scene.memory_arena);
             }
             
-            scene.particle_system_component_count = 0;
-            scene.material_count = 0;
-            scene.light_component_count = 0;
-            scene.current_internal_handle = 0;
-            clear(&scene.memory_arena);
+            scene.valid = false;
         }
     }
     

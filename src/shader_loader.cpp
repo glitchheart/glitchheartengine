@@ -355,6 +355,11 @@ namespace rendering
 
     static char* load_shader_text(MemoryArena* arena, char* source, Shader& shader, Uniform **uniforms_array, i32 *uniform_count, const char* file_path, size_t* file_size = nullptr)
     {
+        shader.vertex_attribute_count = 0;
+        shader.uniform_count = 0;
+        shader.structure_count = 0;
+        shader.defined_value_count = 0;
+        
 		size_t i = 0;
 
 		MemoryArena temp_arena = {};
@@ -839,12 +844,12 @@ namespace rendering
         
         if(!material.uniform_values)
         {
-            material.uniform_values = push_array(&renderer.mesh_arena, size, UniformValue);
+            //material.uniform_values = push_array(&renderer.mesh_arena, size, UniformValue);
         }
 
         if(!material.arrays)
         {
-            material.arrays = push_array(&renderer.mesh_arena, array_size, UniformArray);
+            //material.arrays = push_array(&renderer.mesh_arena, array_size, UniformArray);
         }
 
         material.uniform_value_count = (i32)size;
@@ -995,7 +1000,11 @@ namespace rendering
             char buffer[256];
 
             Material& material = renderer.render.materials[material_handle.handle];			
-            
+            if(UniformValue* u = mapping(material, UniformMappingType::DIFFUSE_COLOR))
+            {
+                u->float4_val = math::Rgba(1, 1, 1, 1);
+            }
+                
             while(fgets(buffer, sizeof(buffer), file))
             {
                 if(starts_with(buffer, "newmtl"))
@@ -1581,7 +1590,6 @@ namespace rendering
 	static MaterialInstanceHandle create_material_instance(Renderer& renderer, MaterialHandle material_handle)
 	{
 		Material& material = renderer.render.materials[material_handle.handle];
-
         renderer.render.material_instances[renderer.render.material_instance_count] = material;
         renderer.render.material_instances[renderer.render.material_instance_count].source_material = material_handle;
         

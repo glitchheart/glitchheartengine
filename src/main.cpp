@@ -394,6 +394,7 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     renderer.render.shaders = push_array(&renderer.mesh_arena, global_max_shaders, rendering::Shader);
     renderer.render._internal_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
     renderer.render._current_internal_buffer_handle = 0;
+    
     for(i32 index = 0; index < global_max_custom_buffers; index++)
     {
         renderer.render._internal_buffer_handles[index] = -1;

@@ -209,6 +209,8 @@ namespace scene
     
     struct Scene
     {
+        b32 valid;
+        
         MemoryArena memory_arena;
 
         Camera camera;
