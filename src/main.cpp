@@ -359,7 +359,6 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     renderer.spritesheet_animations = push_array(&renderer.animation_arena, global_max_spritesheet_animations, SpritesheetAnimation);
     renderer.commands = push_array(&renderer.command_arena, global_max_render_commands, RenderCommand);
     renderer.ui_commands = push_array(&renderer.command_arena, global_max_ui_commands, RenderCommand);
-    renderer.light_commands.minimum_block_size = sizeof(RenderCommand) * global_max_light_commands;
     renderer.buffers = push_array(&renderer.buffer_arena, global_max_custom_buffers, BufferData);
     renderer.updated_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
     renderer.texture_data = push_array(&renderer.texture_arena, global_max_textures, TextureData);
@@ -386,6 +385,10 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     renderer.render.material_count = 0;
     
     //@Incomplete: Make these dynamically allocated?
+
+    renderer.render.directional_lights = push_array(&renderer.mesh_arena, global_max_directional_lights, DirectionalLight);
+    renderer.render.point_lights = push_array(&renderer.mesh_arena, global_max_point_lights, PointLight);
+    
     renderer.render.materials = push_array(&renderer.mesh_arena, global_max_materials, rendering::Material);
     renderer.render.material_instances = push_array(&renderer.mesh_arena, global_max_materials, rendering::Material);
     renderer.render.shaders = push_array(&renderer.mesh_arena, global_max_shaders, rendering::Shader);

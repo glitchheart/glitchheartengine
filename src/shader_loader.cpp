@@ -69,11 +69,11 @@ namespace rendering
     static ValueType get_value_type(char** value, const char* file_path, b32 invalid_is_valid = false)
     {
 		ValueType result;
-		char type[16];
+		char type[32];
 		sscanf(*value, "%s", type);
 
         result = parse_type(type, file_path, invalid_is_valid);
-        *value += strlen(type);
+        *value += strlen(type) + 1;
 		return result;
     }
 
@@ -205,9 +205,9 @@ namespace rendering
                 {
                     uniform.mapping_type = UniformMappingType::SPECULAR_COLOR;
                 }
-                else if(starts_with(mapped_buffer, "SPECULAR_INTENSITY"))
+                else if(starts_with(mapped_buffer, "SPECULAR_EXPONENT"))
                 {
-                    uniform.mapping_type = UniformMappingType::SPECULAR_INTENSITY;
+                    uniform.mapping_type = UniformMappingType::SPECULAR_EXPONENT;
                 }
                 else if(starts_with(mapped_buffer, "AMBIENT_COLOR"))
                 {
@@ -237,25 +237,65 @@ namespace rendering
                 {
                     uniform.mapping_type = UniformMappingType::CAMERA_POSITION;
                 }
-                else if(starts_with(mapped_buffer, "LIGHTS"))
+                else if(starts_with(mapped_buffer, "DIRECTIONAL_LIGHTS"))
                 {
-                    uniform.mapping_type = UniformMappingType::LIGHTS;
+                    uniform.mapping_type = UniformMappingType::DIRECTIONAL_LIGHTS;
                 }
-                else if(starts_with(mapped_buffer, "LIGHT_POSITION"))
+                else if(starts_with(mapped_buffer, "POINT_LIGHTS"))
                 {
-                    uniform.mapping_type = UniformMappingType::LIGHT_POSITION;
+                    uniform.mapping_type = UniformMappingType::POINT_LIGHTS;
                 }
-                else if(starts_with(mapped_buffer, "LIGHT_INTENSITIES"))
+                else if(starts_with(mapped_buffer, "DIRECTIONAL_LIGHT_COUNT"))
                 {
-                    uniform.mapping_type = UniformMappingType::LIGHT_INTENSITIES;
+                    uniform.mapping_type = UniformMappingType::DIRECTIONAL_LIGHT_COUNT;
                 }
-                else if(starts_with(mapped_buffer, "LIGHT_ATTENUATION"))
+                else if(starts_with(mapped_buffer, "POINT_LIGHT_COUNT"))
                 {
-                    uniform.mapping_type = UniformMappingType::LIGHT_ATTENUATION;
+                    uniform.mapping_type = UniformMappingType::POINT_LIGHT_COUNT;
                 }
-                else if(starts_with(mapped_buffer, "LIGHT_AMBIENT_COEFFICIENT"))
+                else if(starts_with(mapped_buffer, "DIRECTIONAL_LIGHT_DIRECTION"))
                 {
-                    uniform.mapping_type = UniformMappingType::LIGHT_AMBIENT_COEFFICIENT;
+                    uniform.mapping_type = UniformMappingType::DIRECTIONAL_LIGHT_DIRECTION;
+                }
+                else if(starts_with(mapped_buffer, "DIRECTIONAL_LIGHT_AMBIENT"))
+                {
+                    uniform.mapping_type = UniformMappingType::DIRECTIONAL_LIGHT_AMBIENT;
+                }
+                else if(starts_with(mapped_buffer, "DIRECTIONAL_LIGHT_DIFFUSE"))
+                {
+                    uniform.mapping_type = UniformMappingType::DIRECTIONAL_LIGHT_DIFFUSE;
+                }
+                else if(starts_with(mapped_buffer, "DIRECTIONAL_LIGHT_SPECULAR"))
+                {
+                    uniform.mapping_type = UniformMappingType::DIRECTIONAL_LIGHT_SPECULAR;
+                }
+                else if(starts_with(mapped_buffer, "POINT_LIGHT_POSITION"))
+                {
+                    uniform.mapping_type = UniformMappingType::POINT_LIGHT_POSITION;
+                }
+                else if(starts_with(mapped_buffer, "POINT_LIGHT_CONSTANT"))
+                {
+                    uniform.mapping_type = UniformMappingType::POINT_LIGHT_CONSTANT;
+                }
+                else if(starts_with(mapped_buffer, "POINT_LIGHT_LINEAR"))
+                {
+                    uniform.mapping_type = UniformMappingType::POINT_LIGHT_LINEAR;
+                }
+                else if(starts_with(mapped_buffer, "POINT_LIGHT_QUADRATIC"))
+                {
+                    uniform.mapping_type = UniformMappingType::POINT_LIGHT_QUADRATIC;
+                }
+                else if(starts_with(mapped_buffer, "POINT_LIGHT_AMBIENT"))
+                {
+                    uniform.mapping_type = UniformMappingType::POINT_LIGHT_AMBIENT;
+                }
+                else if(starts_with(mapped_buffer, "POINT_LIGHT_DIFFUSE"))
+                {
+                    uniform.mapping_type = UniformMappingType::POINT_LIGHT_DIFFUSE;
+                }
+                else if(starts_with(mapped_buffer, "POINT_LIGHT_SPECULAR"))
+                {
+                    uniform.mapping_type = UniformMappingType::POINT_LIGHT_SPECULAR;
                 }
                 else
                 {
@@ -608,6 +648,9 @@ namespace rendering
                 }
             }
 
+            shader.uniforms = nullptr;
+            shader.uniform_count = 0;
+        
             shader.uniforms = push_array(&shader.arena, uniform_count, Uniform);
             shader.uniform_count = (i32)uniform_count;
             memcpy(shader.uniforms, uniforms, uniform_count * sizeof(Uniform));
@@ -735,7 +778,7 @@ namespace rendering
                     i32 num_to_allocate = u.array_size;
                     array.entries = push_array(&renderer.mesh_arena, num_to_allocate, UniformArrayEntry);
                     
-                    if(u.mapping_type == UniformMappingType::LIGHTS)
+                    if(u.mapping_type == UniformMappingType::DIRECTIONAL_LIGHTS || u.mapping_type == UniformMappingType::POINT_LIGHTS)
                     {
                         material.lighting.receives_light = true;
                     }
@@ -785,6 +828,7 @@ namespace rendering
             else
             {
                 UniformValue u_v = {};
+                strncpy(u_v.name, u.name, strlen(u.name) + 1);
                 u_v.uniform = u;
                 buf_push(uniform_vals, u_v);
             }
@@ -987,7 +1031,7 @@ namespace rendering
                 }
                 else if(starts_with(buffer, "Ns")) // specular exponent
                 {
-                    if(UniformValue* u = mapping(material, UniformMappingType::SPECULAR_INTENSITY))
+                    if(UniformValue* u = mapping(material, UniformMappingType::SPECULAR_EXPONENT))
                     {
                         sscanf(buffer, "Ns %f", &u->float_val);
                     }

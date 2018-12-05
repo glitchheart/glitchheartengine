@@ -48,81 +48,24 @@ struct FontData
 	char* name;
 };
 
-struct Light
-{
-    math::Vec4 position;
-    math::Vec3 intensities;
-    r32 attenuation;
-    r32 ambient_coefficient;
-    r32 cone_angle;
-    math::Vec3 cone_direction;
-};
-
-// @Cleanup: Clean up lighting code
-struct Spotlight
-{
-	r32 position[4];
-	r32 direction[4];
-    
-	r32 cut_off;
-	r32 outer_cut_off;
-	r32 p; // Padding
-	r32 p1; // Padding
-    
-	r32 ambient[4];
-	r32 diffuse[4];
-	r32 specular[4];
-    
-	r32 constant;
-	r32 linear;
-	r32 quadratic;
-	r32 p3; // Padding
-};
-
 struct DirectionalLight
 {
-	r32 direction[4];
-	r32 ambient[4];
-	r32 diffuse[4];
-	r32 specular[4];
+    math::Vec3 direction;
+    math::Vec3 ambient;
+    math::Vec3 diffuse;
+    math::Vec3 specular;
 };
 
 struct PointLight
 {
-	r32 position[4];
-    
-	r32 constant;
-	r32 linear;
-	r32 quadratic;
-	r32 padding;
-    
-	r32 ambient[4];
-	r32 diffuse[4];
-	r32 specular[4];
+    math::Vec3 position;
+    r32 constant;
+    r32 linear;
+    r32 quadratic;
+    math::Vec3 ambient;
+    math::Vec3 diffuse;
+    math::Vec3 specular;
 };
-
-struct SpotlightData
-{
-	i32 num_lights; // GLSL: 16, x64: 4: We need 12 bytes of padding
-	math::Vec3 padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
-	Spotlight *spotlights;
-};
-
-struct DirectionalLightData // GLSL: 96, x64: 68 -> 96 - 68 = 24
-{
-	i32 num_lights; // GLSL: 16, x64: 4: We need 12 bytes of padding
-	math::Vec3 padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
-	DirectionalLight *directional_lights;
-};
-
-struct PointLightData
-{
-	i32 num_lights; // GLSL: 16, x64: 4: We need 12 bytes of padding
-	math::Vec3 padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
-	PointLight *point_lights;
-};
-// @Cleanup END
-
 
 // @Incomplete: Remove the prefix from the values 
 enum ShaderType
@@ -1067,9 +1010,6 @@ struct Renderer
     
 	MemoryArena command_arena;
     
-	MemoryArena light_commands;
-	i32 light_command_count;
-    
 	BufferData *buffers;
 	i32 buffer_count;
     
@@ -1206,6 +1146,13 @@ struct Renderer
 
 		rendering::RenderCommand *render_commands;
 		i32 render_command_count;
+
+        DirectionalLight *directional_lights;
+        i32 dir_light_count;
+
+        PointLight *point_lights;
+        i32 point_light_count;
+        
 	} render;
 };
 

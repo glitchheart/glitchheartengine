@@ -6,7 +6,7 @@ struct MemoryArena;
 #define HANDLE(name) struct name ## Handle { i32 handle; };
 
 #ifndef __linux
-#define ENABLE_ANALYTICS 1
+#define ENABLE_ANALYTICS 0
 #else
 #define ENABLE_ANALYTICS 0
 #endif
