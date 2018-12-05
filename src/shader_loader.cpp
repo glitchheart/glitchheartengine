@@ -995,7 +995,7 @@ namespace rendering
             char buffer[256];
 
             Material& material = renderer.render.materials[material_handle.handle];			
-
+            
             while(fgets(buffer, sizeof(buffer), file))
             {
                 if(starts_with(buffer, "newmtl"))
