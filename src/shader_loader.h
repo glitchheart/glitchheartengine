@@ -83,6 +83,7 @@ namespace rendering
         DIRECTIONAL_LIGHTS,
         POINT_LIGHT_COUNT,
         DIRECTIONAL_LIGHT_COUNT,
+        LIGHT_SPACE_MATRIX,
         
         DIRECTIONAL_LIGHT_DIRECTION,
         DIRECTIONAL_LIGHT_AMBIENT,
@@ -216,7 +217,6 @@ namespace rendering
             i32 array_handle;
         } lighting;
         
-        
 		Material () {}
     };
 
@@ -274,6 +274,12 @@ namespace rendering
 		MaterialInstanceHandle material;
 		Transform transform;
 		BufferHandle buffer;
+    };
+
+    struct ShadowCommand
+    {
+        Transform transform;
+        BufferHandle buffer;
     };
 }
 

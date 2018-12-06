@@ -372,14 +372,18 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     renderer.tt_font_infos = push_array(&renderer.font_arena, global_max_fonts, TrueTypeFontInfo);
     renderer._internal_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
     renderer._current_internal_buffer_handle = 0;
+    
     for (i32 index = 0; index < global_max_custom_buffers; index++)
     {
         renderer._internal_buffer_handles[index] = -1;
     }
+    
     renderer.removed_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
 
     // NEW RENDER PIPELIN
     renderer.render.render_commands = push_array(&renderer.command_arena, global_max_render_commands, rendering::RenderCommand);
+    renderer.render.shadow_commands = push_array(&renderer.command_arena, global_max_shadow_commands, rendering::ShadowCommand);
+    
     renderer.render.buffers = push_array(&renderer.buffer_arena, global_max_custom_buffers, rendering::RegisterBufferInfo);
     renderer.render.updated_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
     renderer.render.material_count = 0;
@@ -399,6 +403,7 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     {
         renderer.render._internal_buffer_handles[index] = -1;
     }
+    
     renderer.render.removed_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
 
 #if DEBUG
@@ -411,6 +416,8 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
 #endif
 
     rendering::set_fallback_shader(renderer, "../engine_assets/standard_shaders/fallback.shd");
+    rendering::set_shadow_map_shader(renderer, "../engine_assets/standard_shaders/shadow_map.shd");
+    rendering::set_light_space_matrices(renderer, math::ortho(-20, 20, -20, 20, 1, 50), math::look_at_with_target(math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0.0f, 0.0f, 0.0f)));
 }
 
 #if ENABLE_ANALYTICS

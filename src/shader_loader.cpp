@@ -297,6 +297,10 @@ namespace rendering
                 {
                     uniform.mapping_type = UniformMappingType::POINT_LIGHT_SPECULAR;
                 }
+                else if(starts_with(mapped_buffer, "LIGHT_SPACE_MATRIX"))
+                {
+                    uniform.mapping_type = UniformMappingType::LIGHT_SPACE_MATRIX;
+                }
                 else
                 {
                     char error_buf[256];
@@ -549,6 +553,10 @@ namespace rendering
 			    
                             vertex_attribute.type = get_value_type(&rest, file_path);
                         }
+                        else if(starts_with(rest, "out"))
+                        {
+                            // @Incomplete: IGNORE
+                        }
                         else
                         {
                             error("layout 'in' keyword missing", file_path);
@@ -624,6 +632,8 @@ namespace rendering
         }
     }
 
+    static int out_count = 0;
+    
     static void load_shader(Renderer &renderer, Shader &shader)
     {
 		FILE* file = fopen(shader.path, "r");
@@ -661,12 +671,27 @@ namespace rendering
             memcpy(shader.uniforms, uniforms, uniform_count * sizeof(Uniform));
             free(uniforms);
 
-            // #if DEBUG
-            // 			FILE* shd = fopen("../out.shd", "w");
-            // 			fwrite(shader.vert_shader, strlen(shader.vert_shader), 1, shd);
-            // 			fwrite(shader.frag_shader, strlen(shader.frag_shader), 1, shd);
-            // 			fclose(shd);
-            // #endif
+            #if DEBUG
+            char out_name[256];
+            strcpy(out_name, shader.path);
+            for(size_t i = 0; i < strlen(out_name); i++)
+            {
+                if(out_name[i] == '/')
+                {
+                    out_name[i] = '_';
+                }
+            }
+
+            char out_path[256];
+            
+            sprintf(out_path, "../out/%s.shd", out_name);
+            
+            FILE* shd = fopen(out_path, "w");
+            fwrite(shader.vert_shader, strlen(shader.vert_shader), 1, shd);
+            fwrite(shader.frag_shader, strlen(shader.frag_shader), 1, shd);
+            fclose(shd);
+            #endif
+            
             fclose(file);
             shader.loaded = shader.vert_shader && shader.frag_shader;
             set_last_loaded(shader);
@@ -691,6 +716,16 @@ namespace rendering
     static void set_fallback_shader(Renderer &renderer, const char* path)
     {
         renderer.render.fallback_shader = load_shader(renderer, path);
+    }
+
+    static void set_shadow_map_shader(Renderer &renderer, const char *path)
+    {
+        renderer.render.shadow_map_shader = load_shader(renderer, path);
+    }
+
+    static void set_light_space_matrices(Renderer &renderer, math::Mat4 projection_matrix, math::Mat4 view_matrix)
+    {
+        renderer.render.light_space_matrix = projection_matrix * view_matrix;
     }
     
     static UniformValue *get_array_variable_mapping(MaterialInstanceHandle handle, const char *array_name, UniformMappingType type, Renderer &renderer)
@@ -869,31 +904,31 @@ namespace rendering
                 switch(value.uniform.type)
                 {
                 case ValueType::FLOAT:
-                value.float_val = old_value->float_val;
-                break;
+                    value.float_val = old_value->float_val;
+                    break;
                 case ValueType::FLOAT2:
-                value.float2_val = old_value->float2_val;
-                break;
+                    value.float2_val = old_value->float2_val;
+                    break;
                 case ValueType::FLOAT3:
-                value.float3_val = old_value->float3_val;
-                break;
+                    value.float3_val = old_value->float3_val;
+                    break;
                 case ValueType::FLOAT4:
-                value.float4_val = old_value->float4_val;
-                break;
+                    value.float4_val = old_value->float4_val;
+                    break;
                 case ValueType::INTEGER:
-                value.integer_val = old_value->integer_val;
-                break;
+                    value.integer_val = old_value->integer_val;
+                    break;
                 case ValueType::BOOL:
-                value.boolean_val = old_value->boolean_val;
-                break;
+                    value.boolean_val = old_value->boolean_val;
+                    break;
                 case ValueType::MAT4:
-                value.mat4_val = old_value->mat4_val;
-                break;
+                    value.mat4_val = old_value->mat4_val;
+                    break;
                 case ValueType::TEXTURE:
-                value.texture = old_value->texture;
-                break;
+                    value.texture = old_value->texture;
+                    break;
                 default:
-                assert(false);
+                    assert(false);
                 }
             }
         }
@@ -1131,18 +1166,18 @@ namespace rendering
         default:
         case ValueType::INVALID:
         case ValueType::TEXTURE:
-        assert(false);
+            assert(false);
         case ValueType::FLOAT:
-        return sizeof(r32);
+            return sizeof(r32);
         case ValueType::FLOAT2:
-        return sizeof(r32) * 2;
+            return sizeof(r32) * 2;
         case ValueType::FLOAT3:
-        return sizeof(r32) * 3;
+            return sizeof(r32) * 3;
         case ValueType::INTEGER:
         case ValueType::BOOL:
-        return sizeof(i32);
+            return sizeof(i32);
         case ValueType::MAT4:
-        return sizeof(r32) * 16;
+            return sizeof(r32) * 16;
         }
     }
 
@@ -1917,7 +1952,7 @@ namespace rendering
 		// Update data in info from new_data
 	}
 
-    static void push_buffer(Renderer &renderer, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, Transform &transform)
+    static void push_buffer(Renderer &renderer, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, Transform &transform, b32 casts_shadows = false)
     {
         assert(renderer.render.render_command_count < global_max_render_commands);
         
@@ -1925,7 +1960,14 @@ namespace rendering
         render_command.buffer = buffer_handle;
         render_command.material = material_instance_handle;
         render_command.transform = transform;
-
         renderer.render.render_commands[renderer.render.render_command_count++] = render_command;
+
+        if(casts_shadows)
+        {
+            ShadowCommand shadow_command = {};
+            shadow_command.buffer = buffer_handle;
+            shadow_command.transform = transform;
+            renderer.render.shadow_commands[renderer.render.shadow_command_count++] = shadow_command;
+        }
     }
 }

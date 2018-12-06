@@ -77,8 +77,7 @@ namespace scene
         MaterialHandle material_handle;
         MaterialHandle original_material_handle;
         
-        b32 cast_shadows;
-        b32 receives_shadows;
+        b32 casts_shadows;
 
         b32 is_new_version;
         struct
@@ -126,9 +125,7 @@ namespace scene
             MeshHandle mesh_handle;
             MaterialHandle material_handle;
             
-            b32 cast_shadows;
-            b32 receives_shadows;
-
+            b32 casts_shadows;
             
             b32 is_new_version;
             struct

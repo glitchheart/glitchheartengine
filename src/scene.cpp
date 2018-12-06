@@ -5,7 +5,7 @@ namespace scene
     static Scene create_scene(Renderer &renderer, EntityTemplateState &template_state, i32 initial_entity_array_size);
     static void free_scene(Scene& scene);
     i32 _unused_entity_handle(Scene &scene);
-    static RenderComponent& add_render_component(Scene &scene, EntityHandle entity_handle, b32 receives_shadows, b32 cast_shadows);
+    static RenderComponent& add_render_component(Scene &scene, EntityHandle entity_handle, b32 cast_shadows);
     static TransformComponent& add_transform_component(Scene &scene, EntityHandle entity_handle);
     static ParticleSystemComponent& add_particle_system_component(Scene &scene, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles);
     static EntityHandle register_entity(u64 comp_flags, Scene &scene);
@@ -122,7 +122,7 @@ namespace scene
         return -1;
     }
     
-    static RenderComponent& add_render_component(Scene &scene, EntityHandle entity_handle, b32 receives_shadows = true, b32 cast_shadows = true)
+    static RenderComponent& add_render_component(Scene &scene, EntityHandle entity_handle, b32 cast_shadows = true)
     {
         Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
         entity.comp_flags |= COMP_RENDER;
@@ -131,8 +131,7 @@ namespace scene
         scene::RenderComponent &comp = scene.render_components[entity.render_handle.handle];
         comp.material_handle = { entity.render_handle.handle };
         comp.mesh_handle = { -1 };
-        comp.receives_shadows = receives_shadows;
-        comp.cast_shadows = cast_shadows;
+        comp.casts_shadows = cast_shadows;
         
         return(comp);
     }
@@ -192,7 +191,7 @@ namespace scene
         
         if(comp_flags & COMP_RENDER)
         {
-            add_render_component(scene, handle, true, true);
+            add_render_component(scene, handle, true);
         }
         
         if(comp_flags & COMP_PARTICLES)
@@ -271,11 +270,11 @@ namespace scene
                         }
                         if(starts_with(buffer, "receives shadows"))
                         {
-                            sscanf(buffer, "receives shadows: %d\n", &templ.render.receives_shadows);
+                            //sscanf(buffer, "receives shadows: %d\n", &templ.render.receives_shadows);
                         }
                         else if(starts_with(buffer, "cast shadows"))
                         {
-                            sscanf(buffer, "cast shadows: %d\n", &templ.render.cast_shadows);
+                            sscanf(buffer, "cast shadows: %d\n", &templ.render.casts_shadows);
                         }
                         else if(starts_with(buffer, "obj"))
                         {
@@ -581,8 +580,7 @@ namespace scene
             {
                 render.mesh_handle = templ.render.mesh_handle;
                 render.material_handle = create_material(templ.render.material_handle, scene);
-                render.receives_shadows = templ.render.receives_shadows;
-                render.cast_shadows = templ.render.cast_shadows;
+                render.casts_shadows = templ.render.casts_shadows;
             }
         }
         
