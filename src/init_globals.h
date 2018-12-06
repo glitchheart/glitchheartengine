@@ -8,6 +8,7 @@ static constexpr i32 global_max_spritesheet_animations = 0;
 static constexpr i32 global_max_spritesheet_animation_infos = 0;
 static constexpr i32 global_max_animation_controllers = 32;
 static constexpr i32 global_max_render_commands = 1024;
+static constexpr i32 global_max_shadow_commands = 1024;
 static constexpr i32 global_max_ui_commands = 512;
 static constexpr i32 global_max_light_commands = 32;
 static constexpr i32 global_max_sounds = 64;

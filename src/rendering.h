@@ -438,6 +438,7 @@ struct NormalRenderCommand
 	rendering::Transform transform;
 	rendering::BufferHandle buffer_handle;
 	rendering::MaterialInstanceHandle material_handle;
+    b32 casts_shadows;
 };
 
 enum QueuedRenderCommandType
@@ -974,18 +975,9 @@ struct Camera
     math::Vec3 position;
     math::Quat orientation;
     math::Vec3 target;
-    
-    r32 follow_speed;
+
     math::Mat4 view_matrix;
-    math::Mat4 projection_matrix;
-    
-    FadingMode fading_mode = FADING_NONE;
-    math::Vec3 fading_tint;
-    
-    b32 fading_in;
-    r32 end_alpha;
-    r32 fading_alpha = 0.0f;
-    r32 fading_speed;
+    math::Mat4 projection_matrix;    
 };
 
 struct Renderer
@@ -1122,6 +1114,7 @@ struct Renderer
 		i32 shader_count;
 
         rendering::ShaderHandle fallback_shader;
+        rendering::ShaderHandle shadow_map_shader;
         
 		i32 shaders_to_reload[8];
 		i32 shaders_to_reload_count;
@@ -1147,11 +1140,16 @@ struct Renderer
 		rendering::RenderCommand *render_commands;
 		i32 render_command_count;
 
+        rendering::ShadowCommand *shadow_commands;
+        i32 shadow_command_count;
+
         DirectionalLight *directional_lights;
         i32 dir_light_count;
 
         PointLight *point_lights;
         i32 point_light_count;
+
+        math::Mat4 light_space_matrix;
         
 	} render;
 };

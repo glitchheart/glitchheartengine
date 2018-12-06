@@ -1885,6 +1885,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
 					command.normal.transform = t;
 					command.normal.buffer_handle = render.v2.buffer_handle;
 					command.normal.material_handle = render.v2.material_handle;
+                    command.normal.casts_shadows = render.casts_shadows;
                     normal_count++;
                 }
                 else
@@ -1913,8 +1914,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                         instanced_commands[command_index].instanced.material_handle = render.material_handle.handle;
                         instanced_commands[command_index].instanced.original_material_handle = material.source_handle.handle;
                         instanced_commands[command_index].instanced.scale = math::Vec3(1, 1, 1);
-                        instanced_commands[command_index].instanced.receives_shadows = render.receives_shadows;
-                        instanced_commands[command_index].instanced.cast_shadows = render.cast_shadows;
+                        instanced_commands[command_index].instanced.cast_shadows = render.casts_shadows;
                     }
                 
                     InstancedRenderCommand &command = instanced_commands[command_index].instanced;
@@ -2043,7 +2043,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 }
             }
             
-			rendering::push_buffer(renderer, render_command.normal.buffer_handle, render_command.normal.material_handle, render_command.normal.transform);
+			rendering::push_buffer(renderer, render_command.normal.buffer_handle, render_command.normal.material_handle, render_command.normal.transform, render_command.normal.casts_shadows);
 		}
     }
 

@@ -1463,9 +1463,6 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     if(!recreate_window)
     {
-        // @Incomplete: This is hardcoded uglinesssssssss
-        // Create matrices for light
-        renderer.shadow_map_matrices.depth_model_matrix = math::Mat4(1.0f);
         renderer.shadow_map_matrices.depth_projection_matrix = math::ortho(-20, 20, -20, 20, 1, 50.0f);
         renderer.shadow_map_matrices.depth_view_matrix = math::look_at_with_target(math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0, 0, 0));
         renderer.shadow_map_matrices.depth_bias_matrix = math::Mat4(
@@ -3268,7 +3265,6 @@ static void set_uniform(rendering::RenderCommand &command, rendering::UniformVal
     case rendering::UniformMappingType::SPECULAR_EXPONENT:
     case rendering::UniformMappingType::AMBIENT_COLOR:
     case rendering::UniformMappingType::AMBIENT_TEX:
-    case rendering::UniformMappingType::SHADOW_MAP:
     case rendering::UniformMappingType::DIRECTIONAL_LIGHT_COUNT:
     case rendering::UniformMappingType::POINT_LIGHT_COUNT:
     case rendering::UniformMappingType::POINT_LIGHT_POSITION:
@@ -3284,6 +3280,17 @@ static void set_uniform(rendering::RenderCommand &command, rendering::UniformVal
     case rendering::UniformMappingType::POINT_LIGHT_QUADRATIC:
     {
         set_uniform(render_state, renderer, gl_shader.program, uniform_value, texture_count);
+    }
+    break;
+    case rendering::UniformMappingType::LIGHT_SPACE_MATRIX:
+    {
+        set_mat4_uniform(gl_shader.program, uniform_value.uniform.name, renderer.render.light_space_matrix);
+    }
+    break;
+    case rendering::UniformMappingType::SHADOW_MAP:
+    {
+        glActiveTexture(GL_TEXTURE0 + *texture_count++);
+        glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
     }
     break;
     case rendering::UniformMappingType::MODEL:
@@ -3375,6 +3382,9 @@ static void render_buffer(rendering::RenderCommand& command, RenderState& render
         }
 	}
 
+    set_mat4_uniform(gl_shader.program, "view", camera.view_matrix);
+    set_mat4_uniform(gl_shader.program, "projection", camera.projection_matrix);
+
 	if(buffer.ibo)
 	{
 		glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)nullptr);
@@ -3382,6 +3392,47 @@ static void render_buffer(rendering::RenderCommand& command, RenderState& render
 	else
 	{
 		glDrawArrays(GL_TRIANGLES, 0, buffer.vertex_count / 3);
+	}
+}
+
+static void render_shadow_buffer(rendering::ShadowCommand &shadow_command, RenderState &render_state, Renderer &renderer)
+{
+    i32 handle = renderer.render._internal_buffer_handles[shadow_command.buffer.handle - 1];
+	Buffer& buffer = render_state.gl_buffers[handle];
+	
+	glBindVertexArray(buffer.vao);
+    
+    ShaderGL gl_shader = render_state.gl_shaders[renderer.render.shadow_map_shader.handle];
+    glUseProgram(gl_shader.program);
+    
+    rendering::Transform transform = shadow_command.transform;
+    
+    math::Mat4 model_matrix(1.0f);
+    model_matrix = math::scale(model_matrix, transform.scale);
+    
+    math::Vec3 rotation = transform.rotation;
+    auto x_axis = rotation.x > 0.0f ? 1.0f : 0.0f;
+    auto y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
+    auto z_axis = rotation.z > 0.0f ? 1.0f : 0.0f;
+    
+    math::Quat orientation = math::Quat();
+    orientation = math::rotate(orientation, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
+    orientation = math::rotate(orientation, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
+    orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
+    
+    model_matrix = to_matrix(orientation) * model_matrix;    
+    model_matrix = math::translate(model_matrix, transform.position);
+
+    set_mat4_uniform(gl_shader.program, "model", model_matrix);
+    set_mat4_uniform(gl_shader.program, "lightSpaceMatrix", renderer.render.light_space_matrix);
+    
+	if(buffer.ibo)
+	{
+		glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)nullptr);
+	}
+	else
+	{
+		glDrawArrays(GL_TRIANGLES, 0, buffer.vertex_count);
 	}
 }
 
@@ -3393,36 +3444,17 @@ static void render_shadows(RenderState &render_state, Renderer &renderer, Frameb
     glClear(GL_DEPTH_BUFFER_BIT);
     
     glEnable(GL_DEPTH_TEST);
-    
-    for (i32 index = 0; index < renderer.command_count; index++)
+
+    for(i32 i = 0; i < renderer.render.shadow_command_count; i++)
     {
-        const RenderCommand& command = renderer.commands[index];
-        
-        switch (command.type)
-        {
-            case RENDER_COMMAND_MESH:
-            {
-                if(command.cast_shadows)
-                {
-                    render_mesh(command, renderer, render_state, renderer.shadow_map_matrices.depth_projection_matrix, renderer.shadow_map_matrices.depth_view_matrix, true);
-                }
-            }
-            break;
-            case RENDER_COMMAND_MESH_INSTANCED:
-            {
-                if(command.cast_shadows)
-                {
-                    render_mesh_instanced(command, renderer, render_state, renderer.shadow_map_matrices.depth_projection_matrix, renderer.shadow_map_matrices.depth_view_matrix, true);
-                }
-            }
-            break;
-            default:
-            break;
-        }
+        rendering::ShadowCommand &shadow_command = renderer.render.shadow_commands[i];
+        render_shadow_buffer(shadow_command, render_state, renderer);
     }
     
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glCullFace(GL_BACK);
+
+    renderer.render.shadow_command_count = 0;
 }
 
 static void render_new_commands(RenderState &render_state, Renderer &renderer)
@@ -3434,7 +3466,9 @@ static void render_new_commands(RenderState &render_state, Renderer &renderer)
         rendering::RenderCommand &command = renderer.render.render_commands[i];
         render_buffer(command, render_state, renderer, renderer.camera);
     }
-
+    
+    glActiveTexture(GL_TEXTURE0);
+    
     renderer.render.render_command_count = 0;
 }
 

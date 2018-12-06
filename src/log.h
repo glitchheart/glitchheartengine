@@ -26,7 +26,7 @@ static void _log(LogType log_type, i32 line_num, const char* file, const char* m
     char message_buffer[2048];
     va_list args;
     va_start(args, message);
-    vsprintf(message_buffer, message, args); // @Robustness: This could lead to buffer overflow. vsnprintf should be safer?
+    vsnprintf(message_buffer, 2048, message, args); // @Robustness: This could lead to buffer overflow. vsnprintf should be safer?
     va_end(args);
     
     assert(log_state->log_count < MAX_LOG_MESSAGES);
