@@ -1039,6 +1039,12 @@ namespace rendering
             {
                 u->float4_val = math::Rgba(1, 1, 1, 1);
             }
+            
+            if(UniformValue* u = mapping(material, UniformMappingType::SPECULAR_COLOR))
+            {
+                u->float4_val = math::Rgba(0, 0, 0, 1);
+            }
+            
                 
             while(fgets(buffer, sizeof(buffer), file))
             {
@@ -1779,7 +1785,7 @@ namespace rendering
         }
     } 
 
-    
+
     static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec2 value)
     {
         Material &material = renderer.render.material_instances[handle.handle];
