@@ -3241,6 +3241,7 @@ static void set_uniform(RenderState& render_state, Renderer& renderer, GLuint pr
 	case rendering::ValueType::TEXTURE:
 	{
 		Texture texture = render_state.texture_array[renderer.texture_data[uniform_value.texture.handle - 1].handle];
+        set_int_uniform(program, uniform_value.uniform.name, *texture_count);
 		set_texture_uniform(program, texture.texture_handle, *texture_count);
 		(*texture_count)++;
 	}
@@ -3289,6 +3290,7 @@ static void set_uniform(rendering::RenderCommand &command, rendering::UniformVal
     break;
     case rendering::UniformMappingType::SHADOW_MAP:
     {
+        set_int_uniform(gl_shader.program, uniform_value.uniform.name, *texture_count);
         glActiveTexture(GL_TEXTURE0 + *texture_count++);
         glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
     }
