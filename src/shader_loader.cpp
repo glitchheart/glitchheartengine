@@ -1051,6 +1051,11 @@ namespace rendering
             {
                 u->float4_val = math::Rgba(0, 0, 0, 1);
             }
+
+            if(UniformValue* u = mapping(material, UniformMappingType::AMBIENT_COLOR))
+            {
+                u->float4_val = math::Rgba(0.0f);
+            }
             
                 
             while(fgets(buffer, sizeof(buffer), file))
