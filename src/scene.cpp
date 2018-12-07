@@ -575,6 +575,7 @@ namespace scene
                 render.is_new_version = true;
                 render.v2.buffer_handle = templ.render.v2.buffer_handle;
                 render.v2.material_handle = rendering::create_material_instance(*scene.renderer, templ.render.v2.material_handle);
+                render.casts_shadows = templ.render.casts_shadows;
             }
             else
             {
