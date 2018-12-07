@@ -1151,8 +1151,11 @@ struct Renderer
 
         math::Mat4 light_space_matrix;
         
+        math::Vec3 shadow_view_position;
+        
 	} render;
 };
+
 
 static math::Vec2i get_scale(Renderer& renderer)
 {

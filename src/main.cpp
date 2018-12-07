@@ -417,7 +417,7 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
 
     rendering::set_fallback_shader(renderer, "../engine_assets/standard_shaders/fallback.shd");
     rendering::set_shadow_map_shader(renderer, "../engine_assets/standard_shaders/shadow_map.shd");
-    rendering::set_light_space_matrices(renderer, math::ortho(-20, 20, -20, 20, 1, 50), math::look_at_with_target(math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0.0f, 0.0f, 0.0f)));
+    rendering::set_light_space_matrices(renderer, math::ortho(-25, 25, -25, 25, 1, 20.0f), math::Vec3(-1.0f, 3.0f, -1.0f), math::Vec3(0.0f, 0.0f, 0.0f));
 }
 
 #if ENABLE_ANALYTICS

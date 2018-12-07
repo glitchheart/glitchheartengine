@@ -224,14 +224,6 @@ struct RenderState
         1.0f, 1.0f, 1.0f, 0.0f,
         0.0f, 1.0f, 0.0f, 0.0f
     };
-    
-    /* GLfloat billboard_vertices[20] = */
-    /* { */
-    /*     0.0f, 1.0f, 0.0f, 0.0f, 0.0f, */
-    /*     1.0f, 1.0f, 0.0f, 1.0f, 0.0f, */
-    /*     1.0f, 0.0f, 0.0f, 1.0f, 1.0f, */
-    /*     0.0f, 0.0f, 0.0f, 0.0f, 1.0f */
-    /* }; */
 
     GLfloat billboard_vertices[20] =
     {

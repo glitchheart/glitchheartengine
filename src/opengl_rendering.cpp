@@ -1464,7 +1464,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     if(!recreate_window)
     {
         renderer.shadow_map_matrices.depth_projection_matrix = math::ortho(-10, 10, -10, 10, 1, 7.5f);
-        renderer.shadow_map_matrices.depth_view_matrix = math::look_at_with_target(math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0, 0, 0));
+        renderer.shadow_map_matrices.depth_view_matrix = math::look_at_with_target(math::Vec3(-2.0f, 2.0f, -1.0f), math::Vec3(0, 0, 0));
         renderer.shadow_map_matrices.depth_bias_matrix = math::Mat4(
             0.5, 0.0, 0.0, 0.0,
             0.0, 0.5, 0.0, 0.0,
@@ -3293,6 +3293,11 @@ static void set_uniform(rendering::RenderCommand &command, rendering::UniformVal
         set_int_uniform(gl_shader.program, uniform_value.uniform.name, *texture_count);
         glActiveTexture(GL_TEXTURE0 + *texture_count++);
         glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
+    }
+    break;
+    case rendering::UniformMappingType::SHADOW_VIEW_POSITION:
+    {
+        set_vec3_uniform(gl_shader.program, uniform_value.uniform.name, renderer.render.shadow_view_position);
     }
     break;
     case rendering::UniformMappingType::MODEL:
