@@ -221,6 +221,10 @@ namespace rendering
                 {
                     uniform.mapping_type = UniformMappingType::SHADOW_MAP;
                 }
+                else if(starts_with(mapped_buffer, "SHADOW_VIEW_POSITION"))
+                {
+                    uniform.mapping_type = UniformMappingType::SHADOW_VIEW_POSITION;
+                }
                 else if(starts_with(mapped_buffer, "MODEL"))
                 {
                     uniform.mapping_type = UniformMappingType::MODEL;
@@ -723,10 +727,13 @@ namespace rendering
         renderer.render.shadow_map_shader = load_shader(renderer, path);
     }
 
-    static void set_light_space_matrices(Renderer &renderer, math::Mat4 projection_matrix, math::Mat4 view_matrix)
+    static void set_light_space_matrices(Renderer &renderer, math::Mat4 projection_matrix, math::Vec3 view_position, math::Vec3 target)
     {
+        math::Mat4 view_matrix = math::look_at_with_target(view_position, target);
+        renderer.render.shadow_view_position = view_position;
         renderer.render.light_space_matrix = projection_matrix * view_matrix;
     }
+
     
     static UniformValue *get_array_variable_mapping(MaterialInstanceHandle handle, const char *array_name, UniformMappingType type, Renderer &renderer)
     {

@@ -73,6 +73,7 @@ namespace rendering
 		DISSOLVE,
 	
 		SHADOW_MAP,
+        SHADOW_VIEW_POSITION,
 		MODEL,
 		VIEW,
 		PROJECTION,
