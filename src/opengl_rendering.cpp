@@ -3838,7 +3838,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
 
         b32 horizontal = true;
         b32 first_iteration = true;
-        i32 amount = 10;
+        i32 amount = renderer.render.bloom.amount;
         
         glBindVertexArray(render_state.framebuffer_quad_vao);
         ShaderGL gl_shader = render_state.gl_shaders[renderer.render.blur_shader.handle];
