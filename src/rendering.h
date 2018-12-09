@@ -1115,6 +1115,8 @@ struct Renderer
 
         rendering::ShaderHandle fallback_shader;
         rendering::ShaderHandle shadow_map_shader;
+        rendering::ShaderHandle bloom_shader;
+        rendering::ShaderHandle blur_shader;
         
 		i32 shaders_to_reload[8];
 		i32 shaders_to_reload_count;
@@ -1152,6 +1154,13 @@ struct Renderer
         math::Mat4 light_space_matrix;
         
         math::Vec3 shadow_view_position;
+
+        struct
+        {
+            b32 active;
+            r32 exposure;
+            i32 amount;
+        } bloom;
         
 	} render;
 };

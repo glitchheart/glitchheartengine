@@ -339,6 +339,10 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     renderer.pixels_per_unit = global_pixels_per_unit;
     renderer.frame_lock = 0;
 
+    renderer.render.bloom.active = true;
+    renderer.render.bloom.exposure = 1.8f;
+    renderer.render.bloom.amount = 10;
+    
     renderer.particles = {};
 
     renderer.particles._max_particle_system_count = global_max_particle_systems;
@@ -418,6 +422,10 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     rendering::set_fallback_shader(renderer, "../engine_assets/standard_shaders/fallback.shd");
     rendering::set_shadow_map_shader(renderer, "../engine_assets/standard_shaders/shadow_map.shd");
     rendering::set_light_space_matrices(renderer, math::ortho(-25, 25, -25, 25, 1, 20.0f), math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0.0f, 0.0f, 0.0f));
+
+    rendering::set_bloom_shader(renderer, "../engine_assets/standard_shaders/bloom.shd");
+    rendering::set_blur_shader(renderer, "../engine_assets/standard_shaders/blur.shd");
+    
 }
 
 #if ENABLE_ANALYTICS
@@ -519,7 +527,7 @@ int main(int argc, char **args)
 
     init_keys();
     RenderState render_state = {};
-    render_state.framebuffer = {};
+    render_state.current_framebuffer = 0;
     render_state.should_close = false;
     render_state.buffer_count = 0;
     render_state.dpi_scale = 0;
