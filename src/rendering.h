@@ -1154,6 +1154,12 @@ struct Renderer
         math::Mat4 light_space_matrix;
         
         math::Vec3 shadow_view_position;
+
+        struct
+        {
+            b32 active;
+            r32 exposure;
+        } bloom;
         
 	} render;
 };

@@ -3863,8 +3863,6 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
                 first_iteration = false;
         }
 
-//        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_state.bloom.ping_pong_fbo[2]);
         
         ShaderGL bloom_shader = render_state.gl_shaders[renderer.render.bloom_shader.handle];
@@ -3878,29 +3876,30 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, render_state.bloom.ping_pong_buffer[!horizontal]);
         
-        set_int_uniform(bloom_shader.program, "bloom", true);
+        set_int_uniform(bloom_shader.program, "bloom", renderer.render.bloom.active);
 
-        set_float_uniform(bloom_shader.program, "exposure", 1.2f);
+        set_float_uniform(bloom_shader.program, "exposure", renderer.render.bloom.exposure);
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)nullptr);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, 0);
+        glBindVertexArray(0);
 
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_state.framebuffers[render_state.current_framebuffer].buffer_handle);
-        
+        // @Note: Render UI commands after bloom/final render pass
         render_ui_commands(render_state, renderer);
 
+        // @Note: Bind the final framebuffer for reading before drawing to the main FBO
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, render_state.bloom.ping_pong_fbo[2]);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, render_state.framebuffers[render_state.current_framebuffer].buffer_handle);
         glDrawBuffer(GL_BACK);
-        
+
+        // @Note: Read from final FBO to main FBO
         i32 width = render_state.framebuffer_width;
         i32 height = render_state.framebuffer_height;
         glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, 
                           GL_COLOR_BUFFER_BIT, GL_NEAREST);
-        
+
         if (renderer.frame_lock != 0)
         {
             render_state.total_delta = 0.0;

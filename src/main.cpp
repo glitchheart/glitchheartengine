@@ -339,6 +339,9 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     renderer.pixels_per_unit = global_pixels_per_unit;
     renderer.frame_lock = 0;
 
+    renderer.render.bloom.active = true;
+    renderer.render.bloom.exposure = 1.8f;
+    
     renderer.particles = {};
 
     renderer.particles._max_particle_system_count = global_max_particle_systems;
