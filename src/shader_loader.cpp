@@ -727,6 +727,16 @@ namespace rendering
         renderer.render.shadow_map_shader = load_shader(renderer, path);
     }
 
+    static void set_bloom_shader(Renderer &renderer, const char* path)
+    {
+        renderer.render.bloom_shader = load_shader(renderer, path);
+    }
+
+    static void set_blur_shader(Renderer &renderer, const char* path)
+    {
+        renderer.render.blur_shader = load_shader(renderer, path);
+    }
+
     static void set_light_space_matrices(Renderer &renderer, math::Mat4 projection_matrix, math::Vec3 view_position, math::Vec3 target)
     {
         math::Mat4 view_matrix = math::look_at_with_target(view_position, target);
