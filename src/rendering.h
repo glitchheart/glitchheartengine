@@ -20,7 +20,6 @@
 #pragma warning(pop)
 #endif
 
-
 struct TrueTypeFontInfo
 {
 	i32 ascent;
@@ -981,7 +980,7 @@ struct Camera
 };
 
 struct Renderer
-{
+{   
 	b32 should_close;
 	r64 fps;
 	r64 average_fps;
@@ -1139,6 +1138,17 @@ struct Renderer
 		i32 *removed_buffer_handles;
 		i32 removed_buffer_handle_count;
 
+        rendering::RenderPass passes[32];
+        i32 pass_count;
+
+        rendering::RenderPass post_processing_passes[32];
+        i32 post_processing_pass_count;
+
+        rendering::FramebufferInfo framebuffers[32];
+        i32 framebuffer_count;
+
+        MemoryArena render_pass_arena;
+        
 		rendering::RenderCommand *render_commands;
 		i32 render_command_count;
 
