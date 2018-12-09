@@ -55,6 +55,7 @@ static MemoryState memory_state;
 #endif
 
 #include "shader_loader.cpp"
+#include "render_pipeline.cpp"
 
 #if defined(__linux) || defined(__APPLE__)
 #include "dlfcn.h"

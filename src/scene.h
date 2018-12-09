@@ -84,6 +84,10 @@ namespace scene
         {
             rendering::BufferHandle buffer_handle;
             rendering::MaterialInstanceHandle material_handle;
+            
+            // @Note: All the render passes this component should be rendered in
+            rendering::RenderPassHandle render_passes[8];
+            i32 render_pass_count;
         } v2;
     };
     

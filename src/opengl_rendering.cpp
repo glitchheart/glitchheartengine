@@ -1501,7 +1501,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
     
     glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
     glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
@@ -3825,9 +3825,9 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         glClearColor(renderer.clear_color.r, renderer.clear_color.g, renderer.clear_color.b, renderer.clear_color.a);
-        
-        render_commands(render_state, renderer);
+
         render_new_commands(render_state, renderer);
+        render_commands(render_state, renderer);
 
         render_state.bound_texture = 0;
         
