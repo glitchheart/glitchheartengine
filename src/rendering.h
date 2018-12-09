@@ -1159,6 +1159,7 @@ struct Renderer
         {
             b32 active;
             r32 exposure;
+            i32 amount;
         } bloom;
         
 	} render;

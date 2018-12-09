@@ -341,6 +341,7 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
 
     renderer.render.bloom.active = true;
     renderer.render.bloom.exposure = 1.8f;
+    renderer.render.bloom.amount = 10;
     
     renderer.particles = {};
 
