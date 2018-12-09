@@ -342,7 +342,7 @@ static GLuint load_shader(Renderer& renderer, rendering::Shader& shader, ShaderG
 
 	if(!compile_shader(&renderer.shader_arena, shader.path, gl_shader.frag_program))
 	{
-		log_error("Failed compilation of vertex shader: %s", shader.path);
+		log_error("Failed compilation of fragment shader: %s", shader.path);
 		gl_shader.frag_program = 0;
 		return GL_FALSE;
 	}
@@ -731,37 +731,64 @@ static void register_vertex_buffer(RenderState& render_state, GLfloat* buffer_da
         render_state.buffer_count++;
 }
 
-static void create_framebuffer_color_attachment(Framebuffer &framebuffer, i32 width, i32 height, b32 multisampled, i32 samples)
+static void create_framebuffer_color_attachment(Framebuffer &framebuffer, i32 width, i32 height, b32 multisampled, i32 samples, b32 hdr = false, i32 count = 1)
 {
     framebuffer.multisampled = multisampled;
+    framebuffer.tex_color_buffer_count = count;
+    framebuffer.hdr = hdr;
+    framebuffer.samples = samples;
+    
     if(multisampled)
     {
-        if(framebuffer.tex_color_buffer_handle != 0)
+        for(i32 i = 0; i < count; i++)
         {
-            glDeleteRenderbuffers(1, &framebuffer.tex_color_buffer_handle);
-        }
+            if(framebuffer.tex_color_buffer_handles[i] != 0)
+            {
+                glDeleteRenderbuffers(1, &framebuffer.tex_color_buffer_handles[i]);
+            }
         
-        glGenRenderbuffers(1, &framebuffer.tex_color_buffer_handle);
-        glBindRenderbuffer(GL_RENDERBUFFER, framebuffer.tex_color_buffer_handle);
-        glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_RGBA8, width, height);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER,
-                                  framebuffer.tex_color_buffer_handle);
+            glGenRenderbuffers(1, &framebuffer.tex_color_buffer_handles[i]);
+            glBindRenderbuffer(GL_RENDERBUFFER, framebuffer.tex_color_buffer_handles[i]);
+            if(hdr)
+            {
+                glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_RGBA16F, width, height);
+            }
+            else
+            {
+                glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_RGBA8, width, height);
+            }
+        
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_RENDERBUFFER,
+                                      framebuffer.tex_color_buffer_handles[i]);            
+        }
     }
     else
     {
-        // @Incomplete: There might be todo here
-        if(framebuffer.tex_color_buffer_handle != 0)
+        for(i32 i = 0; i < count; i++)
         {
-            glDeleteRenderbuffers(1, &framebuffer.tex_color_buffer_handle);
+            // @Incomplete: There might be todo here
+            if(framebuffer.tex_color_buffer_handles[i] != 0)
+            {
+                glDeleteRenderbuffers(1, &framebuffer.tex_color_buffer_handles[i]);
+            }
+        
+            glGenTextures(1, &framebuffer.tex_color_buffer_handles[i]);
+            glBindTexture(GL_TEXTURE_2D, framebuffer.tex_color_buffer_handles[i]);
+            
+            if(hdr)
+            {
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+            }
+            else
+            {
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+            }
+
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, framebuffer.tex_color_buffer_handles[i], NULL);
+        
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         }
-        
-        glGenTextures(1, &framebuffer.tex_color_buffer_handle);
-        glBindTexture(GL_TEXTURE_2D, framebuffer.tex_color_buffer_handle);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebuffer.tex_color_buffer_handle, NULL);
-        
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     }
 }
 
@@ -822,7 +849,7 @@ static void create_shadow_map(Framebuffer& framebuffer,  i32 width, i32 height)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);  
 }
 
-static void create_framebuffer(RenderState& render_state, Framebuffer& framebuffer, i32 width, i32 height, Shader& shader, MemoryArena* arena, r32* vertices, u32 vertices_size, u32* indices, u32 indices_size, b32 multisampled, i32 samples = 0)
+static void create_framebuffer(RenderState& render_state, Framebuffer& framebuffer, i32 width, i32 height, Shader& shader, MemoryArena* arena, r32* vertices, u32 vertices_size, u32* indices, u32 indices_size, b32 multisampled, i32 samples = 0, b32 hdr = false, i32 color_buffer_count = 1)
 {
     if(framebuffer.buffer_handle == 0)
     {
@@ -830,10 +857,23 @@ static void create_framebuffer(RenderState& render_state, Framebuffer& framebuff
     }
     
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
-    glDrawBuffer(GL_COLOR_ATTACHMENT0);
+
+    u32 *attachments = (u32*)malloc(sizeof(u32) * color_buffer_count);
+
+    for(i32 i = 0; i < color_buffer_count; i++)
+    {
+        attachments[i] = GL_COLOR_ATTACHMENT0 + i;
+    }
     
-    create_framebuffer_color_attachment(framebuffer, width, height, multisampled, samples);
+    
+//    glDrawBuffer(GL_COLOR_ATTACHMENT0);
+    
+    create_framebuffer_color_attachment(framebuffer, width, height, multisampled, samples, hdr, color_buffer_count);
     create_framebuffer_render_buffer_attachment(framebuffer, width, height, multisampled, samples);
+
+    glDrawBuffers(color_buffer_count, attachments);
+
+    free(attachments);
     
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
@@ -859,7 +899,7 @@ static void create_framebuffer(RenderState& render_state, Framebuffer& framebuff
     vertex_attrib_pointer(pos_loc, 2, GL_FLOAT, 4 * sizeof(float), nullptr);
     vertex_attrib_pointer(tex_loc, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
     
-    render_state.framebuffer.tex0_loc = (GLuint)glGetUniformLocation(shader.program, "tex");
+    render_state.framebuffers[render_state.current_framebuffer].tex0_loc = (GLuint)glGetUniformLocation(shader.program, "tex");
     
     glGenBuffers(1, &framebuffer.ebo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, framebuffer.ebo);
@@ -895,10 +935,12 @@ void frame_buffer_size_callback(GLFWwindow *window, int width, int height)
         GLint viewport[4];
         glGetIntegerv(GL_VIEWPORT, viewport);
         memcpy(render_state->viewport, viewport, sizeof(GLint) * 4);
+
+        Framebuffer& framebuffer = render_state->framebuffers[render_state->current_framebuffer];
         
-        create_framebuffer(*render_state, render_state->framebuffer, width, height, render_state->frame_buffer_shader, &render_state->framebuffer_arena, render_state->framebuffer_quad_vertices,
-                           render_state->framebuffer_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices), true, 4);
-        
+        create_framebuffer(*render_state, framebuffer, width, height, render_state->frame_buffer_shader, &render_state->framebuffer_arena, render_state->framebuffer_quad_vertices,
+                           render_state->framebuffer_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices), framebuffer.multisampled, framebuffer.samples, framebuffer.hdr, framebuffer.tex_color_buffer_count);
+
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
         
         const GLFWvidmode* mode = glfwGetVideoMode(monitor);
@@ -926,13 +968,26 @@ static void setup_quad(RenderState& render_state, MemoryArena* arena)
     render_state.quad_shader.type = SHADER_QUAD;
     load_shader(shader_paths[SHADER_QUAD], &render_state.quad_shader, arena);
     
-    auto position_location3 = (GLuint)glGetAttribLocation(render_state.quad_shader.program, "pos");
-    auto texcoord_location3 = (GLuint)glGetAttribLocation(render_state.quad_shader.program, "t_uv");
-    
-    vertex_attrib_pointer(position_location3, 2, GL_FLOAT, 4 * sizeof(float), nullptr);
-    vertex_attrib_pointer(texcoord_location3, 2, GL_FLOAT, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+    vertex_attrib_pointer(0, 2, GL_FLOAT, 4 * sizeof(float), nullptr);
+    vertex_attrib_pointer(1, 2, GL_FLOAT, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     
     glBindVertexArray(0);
+
+    // Framebuffer quad
+    glGenVertexArrays(1, &render_state.framebuffer_quad_vao);
+    glBindVertexArray(render_state.framebuffer_quad_vao);
+    glGenBuffers(1, &render_state.framebuffer_quad_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, render_state.framebuffer_quad_vbo);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)render_state.framebuffer_quad_vertices_size, render_state.framebuffer_quad_vertices, GL_DYNAMIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_state.quad_index_buffer);
+
+    vertex_attrib_pointer(0, 2, GL_FLOAT, 4 * sizeof(float), nullptr);
+    vertex_attrib_pointer(1, 2, GL_FLOAT, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+    
+    glBindVertexArray(0);
+    
+    // Textured Quad
     
     glGenVertexArrays(1, &render_state.texture_quad_vao);
     glBindVertexArray(render_state.texture_quad_vao);
@@ -946,11 +1001,8 @@ static void setup_quad(RenderState& render_state, MemoryArena* arena)
     render_state.texture_quad_shader.type = SHADER_TEXTURE_QUAD;
     load_shader(shader_paths[SHADER_TEXTURE_QUAD], &render_state.texture_quad_shader, arena);
     
-    auto position_location2 = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "pos");
-    auto texcoord_location2 = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "texcoord");
-    
-    vertex_attrib_pointer(position_location2, 2, GL_FLOAT, 4 * sizeof(float), nullptr);
-    vertex_attrib_pointer(texcoord_location2, 2, GL_FLOAT, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+    vertex_attrib_pointer(0, 2, GL_FLOAT, 4 * sizeof(float), nullptr);
+    vertex_attrib_pointer(1, 2, GL_FLOAT, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     
     glBindVertexArray(0);
     
@@ -1038,8 +1090,39 @@ static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
     
     glfwGetFramebufferSize(render_state->window, &render_state->framebuffer_width, &render_state->framebuffer_height);
     
-    create_framebuffer(*render_state, render_state->framebuffer, render_state->framebuffer_width, render_state->framebuffer_height, render_state->frame_buffer_shader, &render_state->framebuffer_arena, render_state->framebuffer_quad_vertices,
-                       render_state->framebuffer_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices), true, 4);
+    create_framebuffer(*render_state, render_state->framebuffers[render_state->current_framebuffer], render_state->framebuffer_width, render_state->framebuffer_height, render_state->frame_buffer_shader, &render_state->framebuffer_arena, render_state->framebuffer_quad_vertices,
+                       render_state->framebuffer_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices), false, 1, true, 2);
+
+    // @Note: Bloom stuff
+
+    glGenFramebuffers(3, render_state->bloom.ping_pong_fbo);
+    glGenTextures(3, render_state->bloom.ping_pong_buffer);
+
+    for(i32 i = 0; i < 3; i++)
+    {
+        glViewport(0, 0, render_state->framebuffer_width, render_state->framebuffer_height);
+        glBindFramebuffer(GL_FRAMEBUFFER, render_state->bloom.ping_pong_fbo[i]);
+        glBindTexture(GL_TEXTURE_2D, render_state->bloom.ping_pong_buffer[i]);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, render_state->framebuffer_width, render_state->framebuffer_height, 0, GL_RGB, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, render_state->bloom.ping_pong_buffer[i], 0);
+
+        if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        {
+            debug("Error: Bloom FBO incomplete\n");
+            error_gl();
+        }
+    }
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    
+
+    // END BLOOM
+    
     
     render_state->depth_shader.type = SHADER_DEPTH;
     render_state->depth_instanced_shader.type = SHADER_DEPTH_INSTANCED;
@@ -1313,7 +1396,7 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
     
     render_state.window = glfwCreateWindow(screen_width, screen_height,  render_state.window_title, monitor,
                                            nullptr);
-    render_state.framebuffer.buffer_handle = 0;
+    render_state.framebuffers[render_state.current_framebuffer].buffer_handle = 0;
     
     if(old_window)
     {
@@ -1346,7 +1429,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
         }
     }
     
-    render_state.framebuffer.buffer_handle = 0;
+    render_state.framebuffers[render_state.current_framebuffer].buffer_handle = 0;
     render_state.paused = false;
     
     glfwSetErrorCallback(error_callback);
@@ -3733,7 +3816,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         render_shadows(render_state, renderer, render_state.shadow_map_buffer);
         
         glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_state.framebuffer.buffer_handle);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_state.framebuffers[render_state.current_framebuffer].buffer_handle);
         
         glEnable(GL_DEPTH_TEST);
         
@@ -3745,22 +3828,78 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         
         render_commands(render_state, renderer);
         render_new_commands(render_state, renderer);
-        render_ui_commands(render_state, renderer);
-        
+
         render_state.bound_texture = 0;
         
         // We have to reset the bound texture to nothing, since we're about to bind other textures
         // Second pass
         
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, render_state.framebuffer.buffer_handle);
-        glDrawBuffer(GL_BACK);
+
+        b32 horizontal = true;
+        b32 first_iteration = true;
+        i32 amount = renderer.render.bloom.amount;
         
+        glBindVertexArray(render_state.framebuffer_quad_vao);
+        ShaderGL gl_shader = render_state.gl_shaders[renderer.render.blur_shader.handle];
+        glUseProgram(gl_shader.program);
+
+        for(i32 i = 0; i < amount; i++)
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, render_state.bloom.ping_pong_fbo[horizontal]);
+
+            glActiveTexture(GL_TEXTURE0);
+
+            GLuint tex = first_iteration ? render_state.framebuffers[render_state.current_framebuffer].tex_color_buffer_handles[1] : render_state.bloom.ping_pong_buffer[!horizontal];
+            
+            glBindTexture(GL_TEXTURE_2D, tex);
+            set_int_uniform(gl_shader.program, "image", 0);
+            set_int_uniform(gl_shader.program, "horizontal", horizontal);
+
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)nullptr);
+            horizontal = !horizontal;
+
+            if(first_iteration)
+                first_iteration = false;
+        }
+
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_state.bloom.ping_pong_fbo[2]);
+        
+        ShaderGL bloom_shader = render_state.gl_shaders[renderer.render.bloom_shader.handle];
+        glUseProgram(bloom_shader.program);
+
+        set_int_uniform(bloom_shader.program, "scene", 0);
+        set_int_uniform(bloom_shader.program, "bloomBlur", 1);
+        
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, render_state.framebuffers[render_state.current_framebuffer].tex_color_buffer_handles[0]);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, render_state.bloom.ping_pong_buffer[!horizontal]);
+        
+        set_int_uniform(bloom_shader.program, "bloom", renderer.render.bloom.active);
+
+        set_float_uniform(bloom_shader.program, "exposure", renderer.render.bloom.exposure);
+
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)nullptr);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindVertexArray(0);
+
+        // @Note: Render UI commands after bloom/final render pass
+        render_ui_commands(render_state, renderer);
+
+        // @Note: Bind the final framebuffer for reading before drawing to the main FBO
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, render_state.bloom.ping_pong_fbo[2]);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        glDrawBuffer(GL_BACK);
+
+        // @Note: Read from final FBO to main FBO
         i32 width = render_state.framebuffer_width;
         i32 height = render_state.framebuffer_height;
         glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, 
                           GL_COLOR_BUFFER_BIT, GL_NEAREST);
-        
+
         if (renderer.frame_lock != 0)
         {
             render_state.total_delta = 0.0;

@@ -143,13 +143,16 @@ struct Framebuffer
 {
     GLuint buffer_handle;
     GLuint tex0_loc;
-    GLuint tex_color_buffer_handle;
+    GLuint tex_color_buffer_handles[4];
+    i32 tex_color_buffer_count;
     GLuint depth_buffer_handle;
     GLuint vao;
     GLuint vbo;
     GLuint ebo;
     
     b32 multisampled;
+    i32 samples;
+    b32 hdr;
     
     b32 has_shadow_map;
     
@@ -198,7 +201,18 @@ struct RenderState
     b32 should_close;
     r64 fps;
     
-    Framebuffer framebuffer;
+    Framebuffer framebuffers[2];
+    i32 current_framebuffer;
+
+    struct
+    {
+        u32 ping_pong_fbo[3];
+        u32 ping_pong_buffer[3];
+
+        
+    } bloom;
+    
+
     Framebuffer shadow_map_buffer;
     
     u32 framebuffer_quad_vertices_size = 16 * sizeof(GLfloat);
@@ -216,7 +230,7 @@ struct RenderState
         1.0f, -1.0f, 1.0f, 0.0f, 
         -1.0f, -1.0f, 0, 0.0f
     };
-    
+
     GLfloat quad_vertices[16] =
     {
         0.0f, 0.0f, 0.0f, 1.0f,
@@ -288,6 +302,9 @@ struct RenderState
     GLuint quad_vao;
     GLuint texture_quad_vao;
     GLuint quad_vbo;
+
+    GLuint framebuffer_quad_vao;
+    GLuint framebuffer_quad_vbo;
     
     union 
     {
