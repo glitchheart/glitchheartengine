@@ -141,6 +141,9 @@ struct Buffer
 
 struct Framebuffer
 {
+    u32 width;
+    u32 height;
+    
     GLuint buffer_handle;
     GLuint tex0_loc;
     GLuint tex_color_buffer_handles[4];
@@ -211,7 +214,13 @@ struct RenderState
 
         
     } bloom;
-    
+
+    struct
+    {
+#define MAX_FRAMEBUFFERS 16
+        Framebuffer framebuffers[MAX_FRAMEBUFFERS];
+        i32 framebuffer_count;
+    } v2;
 
     Framebuffer shadow_map_buffer;
     
@@ -328,13 +337,6 @@ struct RenderState
         };
     };
     
-    Shader extra_shaders[150];
-    i32 extra_shader_index;
-
-    i32 current_extra_shader;
-    ShaderAttribute* shader_attributes;
-    i32 shader_attribute_count;
-
 	ShaderGL gl_shaders[32];
 	i32 gl_shader_count;
     

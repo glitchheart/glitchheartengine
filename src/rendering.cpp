@@ -1813,7 +1813,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
     renderer.render.dir_light_count = 0;
     renderer.render.point_light_count = 0;
     
-    QueuedRenderCommand queued_commands[256];
+    QueuedRenderCommand *queued_commands = renderer.render.queued_commands;
     i32 normal_count = 0;
 
     QueuedRenderCommand instanced_commands[MAX_INSTANCING_PAIRS];
@@ -1878,15 +1878,36 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                     t.position = position;
                     t.rotation = rotation;
                     t.scale = scale;
+
+                    if(render.v2.render_pass_count > 0)
+                    {
+                        QueuedRenderCommand &command = queued_commands[normal_count];
+                        queued_commands[normal_count].type = QueuedRenderCommandType::NORMAL;
+                        command.normal.transform = t;
+                        command.normal.buffer_handle = render.v2.buffer_handle;
+                        command.normal.material_handle = render.v2.material_handle;
+                        command.normal.casts_shadows = render.casts_shadows;
+                        command.normal.pass_count = render.v2.render_pass_count;
+                        
+                        for(i32 i = 0; i < render.v2.render_pass_count; i++)
+                        {
+                            command.normal.passes[i] = render.v2.render_passes[i];
+                            command.normal.shader_handles[i] = render.v2.shader_handles[i];
+                        }
+                        
+                        normal_count++;
+                    }
+					else
+                    {
+                        QueuedRenderCommand &command = queued_commands[normal_count];
                     
-					QueuedRenderCommand &command = queued_commands[normal_count];
-                    
-                    queued_commands[normal_count].type = QueuedRenderCommandType::NORMAL;
-					command.normal.transform = t;
-					command.normal.buffer_handle = render.v2.buffer_handle;
-					command.normal.material_handle = render.v2.material_handle;
-                    command.normal.casts_shadows = render.casts_shadows;
-                    normal_count++;
+                        queued_commands[normal_count].type = QueuedRenderCommandType::NORMAL;
+                        command.normal.transform = t;
+                        command.normal.buffer_handle = render.v2.buffer_handle;
+                        command.normal.material_handle = render.v2.material_handle;
+                        command.normal.casts_shadows = render.casts_shadows;
+                        normal_count++;
+                    }
                 }
                 else
                 {
@@ -2042,8 +2063,18 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                     }
                 }
             }
-            
-			rendering::push_buffer(renderer, render_command.normal.buffer_handle, render_command.normal.material_handle, render_command.normal.transform, render_command.normal.casts_shadows);
+
+            // Push the command to the shadow buffer if it casts shadows
+            if(render_command.normal.casts_shadows)
+            {
+                rendering::push_shadow_buffer(renderer, render_command.normal.buffer_handle, render_command.normal.transform);
+            }
+
+            // Push the command to the correct render passes
+            for(i32 pass_index = 0; pass_index < render_command.normal.pass_count; pass_index++)
+            {
+                rendering::push_buffer_to_render_pass(renderer, render_command.normal.buffer_handle, render_command.normal.material_handle, render_command.normal.transform, render_command.normal.shader_handles[pass_index], render_command.normal.passes[pass_index]);
+            }
 		}
     }
 

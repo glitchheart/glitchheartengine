@@ -438,6 +438,10 @@ struct NormalRenderCommand
 	rendering::BufferHandle buffer_handle;
 	rendering::MaterialInstanceHandle material_handle;
     b32 casts_shadows;
+
+    rendering::RenderPassHandle passes[8];
+    rendering::ShaderHandle shader_handles[8];
+    i32 pass_count;
 };
 
 enum QueuedRenderCommandType
@@ -1116,6 +1120,7 @@ struct Renderer
         rendering::ShaderHandle shadow_map_shader;
         rendering::ShaderHandle bloom_shader;
         rendering::ShaderHandle blur_shader;
+        rendering::ShaderHandle hdr_shader;
         
 		i32 shaders_to_reload[8];
 		i32 shaders_to_reload_count;
@@ -1152,6 +1157,9 @@ struct Renderer
 		rendering::RenderCommand *render_commands;
 		i32 render_command_count;
 
+        QueuedRenderCommand *queued_commands;
+        i32 queued_command_count;
+
         rendering::ShadowCommand *shadow_commands;
         i32 shadow_command_count;
 
@@ -1171,6 +1179,14 @@ struct Renderer
             r32 exposure;
             i32 amount;
         } bloom;
+
+        struct
+        {
+            b32 active;
+            r32 exposure;
+        } hdr;
+
+        rendering::FramebufferHandle final_framebuffer;
         
 	} render;
 };

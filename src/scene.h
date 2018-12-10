@@ -87,6 +87,7 @@ namespace scene
             
             // @Note: All the render passes this component should be rendered in
             rendering::RenderPassHandle render_passes[8];
+            rendering::ShaderHandle shader_handles[8];
             i32 render_pass_count;
         } v2;
     };
@@ -136,6 +137,10 @@ namespace scene
             {
                 rendering::BufferHandle buffer_handle;
                 rendering::MaterialHandle material_handle;
+
+                char render_pass_names[8][32];
+                rendering::ShaderHandle shader_handles[8];
+                i32 render_pass_count;
             } v2;
         } render;
         struct

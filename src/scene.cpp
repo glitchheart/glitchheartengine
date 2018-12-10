@@ -135,6 +135,52 @@ namespace scene
         
         return(comp);
     }
+
+    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, rendering::ShaderHandle shader_handle, RenderComponent &comp)
+    {
+        comp.v2.render_passes[comp.v2.render_pass_count] = render_pass_handle;
+        comp.v2.shader_handles[comp.v2.render_pass_count] = shader_handle;
+        comp.v2.render_pass_count++;
+    }
+
+    
+    static void add_to_render_pass(const char *pass_name, rendering::ShaderHandle shader_handle, RenderComponent &comp, Renderer &renderer)
+    {
+        rendering::RenderPassHandle render_pass_handle = rendering::get_render_pass_handle_for_name(pass_name, renderer);
+        add_to_render_pass(render_pass_handle, shader_handle, comp);
+    }
+
+    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, RenderComponent &comp)
+    {
+        add_to_render_pass(render_pass_handle, comp.v2.shader_handles[0], comp);
+    }
+
+    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, EntityHandle entity, Scene &scene)
+    {
+        RenderComponent &render_comp = get_render_comp(entity, scene);
+        add_to_render_pass(render_pass_handle, render_comp);
+    }
+
+    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, rendering::ShaderHandle shader_handle, EntityHandle entity, Scene &scene)
+    {
+        RenderComponent &render_comp = get_render_comp(entity, scene);
+        add_to_render_pass(render_pass_handle, shader_handle, render_comp);
+    }
+
+    static void remove_from_render_pass(rendering::RenderPassHandle render_pass_handle, scene::EntityHandle entity, Scene& scene)
+    {
+        RenderComponent &render_comp = get_render_comp(entity, scene);
+        for(i32 i = 0; i < render_comp.v2.render_pass_count; i++)
+        {
+            if(render_comp.v2.render_passes[i].handle = render_pass_handle.handle)
+            {
+                render_comp.v2.render_passes[i] = render_comp.v2.render_passes[render_comp.v2.render_pass_count - 1];
+                render_comp.v2.shader_handles[i] = render_comp.v2.shader_handles[render_comp.v2.render_pass_count - 1];
+                render_comp.v2.render_pass_count--;
+                break;
+            }
+        }
+    }
     
     static TransformComponent& add_transform_component(Scene &scene, EntityHandle entity_handle)
     {
@@ -261,14 +307,32 @@ namespace scene
                     
                     while(fgets(buffer, 256, file) && !starts_with(buffer, "-"))
                     {
-                        if(starts_with(buffer, "shd"))
+                        if(starts_with(buffer, "shd:"))
                         {
-                            char shader_file[256];
-                            sscanf(buffer, "shd: %s", shader_file);
-                            rendering::ShaderHandle shader_handle = rendering::load_shader(*scene.renderer, shader_file);
-                            templ.render.v2.material_handle = rendering::create_material(*scene.renderer, shader_handle);
+                            if(starts_with(buffer, "shd_pass"))
+                            {
+                                char pass_name[128];
+                                char shader_file[256];
+                                sscanf(buffer, "shd_pass: %s - %s", pass_name, shader_file);
+                                rendering::ShaderHandle shader_handle = rendering::load_shader(*scene.renderer, shader_file);
+
+                                // Add the pass information
+                                strncpy(templ.render.v2.render_pass_names[templ.render.v2.render_pass_count], pass_name, strlen(pass_name) + 1);
+                                templ.render.v2.shader_handles[templ.render.v2.render_pass_count++] = shader_handle;
+                            }
+                            else
+                            {
+                                char shader_file[256];
+                                sscanf(buffer, "shd: %s", shader_file);
+                                rendering::ShaderHandle shader_handle = rendering::load_shader(*scene.renderer, shader_file);
+                                templ.render.v2.material_handle = rendering::create_material(*scene.renderer, shader_handle);
+
+                                // Add the pass information
+                                strncpy(templ.render.v2.render_pass_names[templ.render.v2.render_pass_count], STANDARD_PASS, strlen(STANDARD_PASS) + 1);
+                                templ.render.v2.shader_handles[templ.render.v2.render_pass_count++] = shader_handle;
+                            }
                         }
-                        if(starts_with(buffer, "receives shadows"))
+                        else if(starts_with(buffer, "receives shadows"))
                         {
                             //sscanf(buffer, "receives shadows: %d\n", &templ.render.receives_shadows);
                         }
@@ -576,6 +640,11 @@ namespace scene
                 render.v2.buffer_handle = templ.render.v2.buffer_handle;
                 render.v2.material_handle = rendering::create_material_instance(*scene.renderer, templ.render.v2.material_handle);
                 render.casts_shadows = templ.render.casts_shadows;
+                
+                for(i32 i = 0; i < templ.render.v2.render_pass_count; i++)
+                {
+                    add_to_render_pass(templ.render.v2.render_pass_names[i], templ.render.v2.shader_handles[i], render, *scene.renderer);
+                }
             }
             else
             {
