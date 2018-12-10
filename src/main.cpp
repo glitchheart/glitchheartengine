@@ -388,6 +388,7 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     // NEW RENDER PIPELIN
     renderer.render.render_commands = push_array(&renderer.command_arena, global_max_render_commands, rendering::RenderCommand);
     renderer.render.shadow_commands = push_array(&renderer.command_arena, global_max_shadow_commands, rendering::ShadowCommand);
+    renderer.render.queued_commands = push_array(&renderer.command_arena, global_max_render_commands, QueuedRenderCommand);
     
     renderer.render.buffers = push_array(&renderer.buffer_arena, global_max_custom_buffers, rendering::RegisterBufferInfo);
     renderer.render.updated_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
@@ -426,7 +427,27 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
 
     rendering::set_bloom_shader(renderer, "../engine_assets/standard_shaders/bloom.shd");
     rendering::set_blur_shader(renderer, "../engine_assets/standard_shaders/blur.shd");
+    rendering::set_hdr_shader(renderer, "../engine_assets/standard_shaders/hdr.shd");
+
+    rendering::FramebufferInfo info = rendering::generate_framebuffer_info();
+    info.width = renderer.framebuffer_width;
+    info.height = renderer.framebuffer_height;
+    rendering::add_color_attachment(rendering::ColorAttachmentFlags::TEXTURE_BUFFER | rendering::ColorAttachmentFlags::HDR, info);
+    rendering::add_depth_attachment(0, info);
     
+    rendering::FramebufferHandle framebuffer = rendering::create_framebuffer(info, renderer);
+    rendering::RenderPassHandle standard = rendering::create_render_pass(STANDARD_PASS, framebuffer, renderer);
+
+
+    // Final multisampled framebuffer
+    rendering::FramebufferInfo final_info = rendering::generate_framebuffer_info();
+    final_info.width = renderer.framebuffer_width;
+    final_info.height = renderer.framebuffer_height;
+    rendering::add_color_attachment(rendering::ColorAttachmentFlags::TEXTURE_BUFFER | rendering::ColorAttachmentFlags::MULTI_SAMPLED, final_info, 4);
+    rendering::add_depth_attachment(rendering::DepthAttachmentFlags::DEPTH_MULTI_SAMPLED, final_info, 4);
+    
+    rendering::FramebufferHandle final_framebuffer = rendering::create_framebuffer(final_info, renderer);
+    rendering::set_final_framebuffer(renderer, final_framebuffer);
 }
 
 #if ENABLE_ANALYTICS
@@ -535,19 +556,16 @@ int main(int argc, char **args)
     render_state.window = nullptr;
     render_state.texture_index = 0;
     render_state.frame_delta = 0.0;
-    render_state.extra_shader_index = 0;
 
     render_state.font_arena = {};
     render_state.string_arena = {};
     render_state.gl_shader_count = 0;
     render_state.gl_buffer_count = 0;
+
+    
     Renderer renderer = {};
 
     b32 do_save_config = false;
-
-    WorkQueue reload_queue;
-    ThreadInfo reload_thread;
-    init_renderer(renderer, &reload_queue, &reload_thread);
     
     if constexpr(global_graphics_api == GRAPHICS_VULKAN)
                 {
@@ -563,6 +581,10 @@ int main(int argc, char **args)
         initialize_opengl(render_state, renderer, &config_data, &platform_state->perm_arena, &do_save_config);
     }
 
+    WorkQueue reload_queue;
+    ThreadInfo reload_thread;
+    init_renderer(renderer, &reload_queue, &reload_thread);
+    
     GameCode game = {};
     game.is_valid = false;
 
@@ -658,7 +680,7 @@ int main(int argc, char **args)
         //auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
 
         game.update(&game_memory);
-
+        
         update_particle_systems(renderer, delta_time);
 #if ENABLE_ANALYTICS
         process_analytics_events(analytics_state, &analytics_queue);

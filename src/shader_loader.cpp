@@ -737,6 +737,16 @@ namespace rendering
         renderer.render.blur_shader = load_shader(renderer, path);
     }
 
+    static void set_hdr_shader(Renderer &renderer, const char *path)
+    {
+        renderer.render.hdr_shader = load_shader(renderer, path);
+    }
+
+    static void set_final_framebuffer(Renderer &renderer, FramebufferHandle framebuffer)
+    {
+        renderer.render.final_framebuffer = framebuffer;
+    }
+
     static void set_light_space_matrices(Renderer &renderer, math::Mat4 projection_matrix, math::Vec3 view_position, math::Vec3 target)
     {
         math::Mat4 view_matrix = math::look_at_with_target(view_position, target);
@@ -1997,5 +2007,26 @@ namespace rendering
             shadow_command.transform = transform;
             renderer.render.shadow_commands[renderer.render.shadow_command_count++] = shadow_command;
         }
+    }
+
+    static void push_shadow_buffer(Renderer &renderer, BufferHandle buffer_handle, Transform &transform)
+    {
+        ShadowCommand shadow_command = {};
+        shadow_command.buffer = buffer_handle;
+        shadow_command.transform = transform;
+        renderer.render.shadow_commands[renderer.render.shadow_command_count++] = shadow_command;
+    }
+    
+    static void push_buffer_to_render_pass(Renderer &renderer, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, Transform &transform, ShaderHandle shader_handle, RenderPassHandle render_pass_handle)
+    {
+        assert(renderer.render.render_command_count < global_max_render_commands);
+        
+        RenderCommand render_command = {};
+        render_command.buffer = buffer_handle;
+        render_command.material = material_instance_handle;
+        render_command.transform = transform;
+        render_command.pass.shader_handle = shader_handle;
+        RenderPass &pass =  renderer.render.passes[render_pass_handle.handle - 1];
+        pass.commands.render_commands[pass.commands.render_command_count++] = render_command;
     }
 }
