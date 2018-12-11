@@ -821,6 +821,8 @@ namespace rendering
     {
         UniformValue *uniform_vals = nullptr;
         UniformArray *arrays = nullptr;
+
+        i32 location_index = 0;
         
 		// @Incomplete: Get shader uniforms
 		for(i32 uni_i = 0; uni_i < shader.uniform_count; uni_i++)
@@ -863,6 +865,7 @@ namespace rendering
                         {
                             Uniform struct_uni = structure.uniforms[j];
                             Uniform new_uniform = struct_uni;
+                            new_uniform.location_index = location_index++;
                             UniformValue u_v = {};
 
                             strncpy(u_v.name, struct_uni.name, strlen(struct_uni.name) + 1);
@@ -887,6 +890,7 @@ namespace rendering
                         
                         UniformValue u_v = {};
                         Uniform new_uniform = u;
+                        new_uniform.location_index = location_index++;
                         sprintf(new_uniform.name, "%s[%d]", u.name, i);
                         u_v.uniform = new_uniform;
                         entry.values[entry.value_count++] = u_v;
@@ -901,6 +905,7 @@ namespace rendering
                 UniformValue u_v = {};
                 strncpy(u_v.name, u.name, strlen(u.name) + 1);
                 u_v.uniform = u;
+                u_v.uniform.location_index = location_index++;
                 buf_push(uniform_vals, u_v);
             }
         }
@@ -1319,7 +1324,7 @@ namespace rendering
 		i32 vertex_size = 3;
 
 		RegisterBufferInfo info = create_register_buffer_info();
-
+        info.usage = BufferUsage::STATIC;
         add_vertex_attrib(ValueType::FLOAT3, info);
         
 		if(has_normals)

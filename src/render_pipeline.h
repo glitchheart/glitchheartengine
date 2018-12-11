@@ -129,6 +129,8 @@ namespace rendering
 
         b32 is_array;
         i32 array_size;
+
+        i32 location_index;
     };
 
     struct Structure
