@@ -1807,9 +1807,20 @@ static void push_particle_system(Renderer &renderer, i32 particle_system_handle)
     }
 }
 
+#define STANDARD_PASS_HANDLE { 1 }
 static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, math::Vec3 *positions, math::Vec3 *rotations, math::Vec3 *scalings, math::Rgba *colors)
 {
     renderer.camera = scene.camera;
+
+    for(i32 i = 0; i < renderer.render.pass_count; i++)
+    {
+        rendering::RenderPass &pass = renderer.render.passes[i];
+        if(pass.use_scene_camera)
+        {
+            pass.camera = scene.camera;
+        }
+    }
+    
     renderer.render.dir_light_count = 0;
     renderer.render.point_light_count = 0;
     

@@ -113,6 +113,8 @@ namespace rendering
         POINT_LIGHT_AMBIENT,
         POINT_LIGHT_DIFFUSE,
         POINT_LIGHT_SPECULAR,
+
+        CLIPPING_PLANE,
         
 		MAX
     };
@@ -359,6 +361,13 @@ namespace rendering
         } depth_attachment;
     };
 
+    enum class ClippingPlaneType
+    {
+        NONE,
+        HORIZONTAL_ABOVE,
+        HORIZONTAL_BELOW
+    };
+    
 #define STANDARD_PASS "STANDARD_PASS"
 
     // @Note: When rendering a scene, multiple render passes can be used.
@@ -372,7 +381,16 @@ namespace rendering
         char name[32];
         
         FramebufferHandle framebuffer;
+        
+        b32 use_scene_camera;
+        Camera camera;
 
+        struct
+        {
+            ClippingPlaneType type;
+            math::Vec4 plane;
+        } clipping_planes;
+        
         union
         {
             struct
@@ -385,6 +403,8 @@ namespace rendering
                 i32 render_command_count;
             } commands;
         };
+
+        RenderPass() {}
     };
 }
 

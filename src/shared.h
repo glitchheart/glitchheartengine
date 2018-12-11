@@ -24,6 +24,7 @@ struct MemoryArena;
 #include "log.h"
 
 #include "animation.h"
+#include "camera.h"
 #include "render_pipeline.h"
 #include "shader_loader.h"
 #include "rendering.h"

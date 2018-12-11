@@ -143,7 +143,6 @@ namespace scene
         comp.v2.render_pass_count++;
     }
 
-    
     static void add_to_render_pass(const char *pass_name, rendering::ShaderHandle shader_handle, RenderComponent &comp, Renderer &renderer)
     {
         rendering::RenderPassHandle render_pass_handle = rendering::get_render_pass_handle_for_name(pass_name, renderer);
@@ -167,12 +166,21 @@ namespace scene
         add_to_render_pass(render_pass_handle, shader_handle, render_comp);
     }
 
+    
+    static void add_all_to_render_pass(rendering::RenderPassHandle render_pass_handle, Scene &scene)
+    {
+        for(i32 i = 0; i < scene.render_component_count; i++)
+        {
+            add_to_render_pass(render_pass_handle, scene.render_components[i]);
+        }
+    }
+
     static void remove_from_render_pass(rendering::RenderPassHandle render_pass_handle, scene::EntityHandle entity, Scene& scene)
     {
         RenderComponent &render_comp = get_render_comp(entity, scene);
         for(i32 i = 0; i < render_comp.v2.render_pass_count; i++)
         {
-            if(render_comp.v2.render_passes[i].handle = render_pass_handle.handle)
+            if(render_comp.v2.render_passes[i].handle == render_pass_handle.handle)
             {
                 render_comp.v2.render_passes[i] = render_comp.v2.render_passes[render_comp.v2.render_pass_count - 1];
                 render_comp.v2.shader_handles[i] = render_comp.v2.shader_handles[render_comp.v2.render_pass_count - 1];
