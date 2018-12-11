@@ -65,6 +65,9 @@ struct ShaderGL
 	
 	GLuint vert_program;
 	GLuint frag_program;
+
+    GLuint uniform_locations[128];
+    i32 location_count;
 };
 
 struct Shader
@@ -170,6 +173,11 @@ struct Framebuffer
 
 struct RenderState
 {
+    struct
+    {
+        GLuint shader_program;
+        GLuint vao;
+    } current_state;
     CharacterData *character_buffer;
     GLFWwindow *window;
     i32 window_width;
