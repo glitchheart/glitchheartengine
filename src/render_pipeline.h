@@ -312,22 +312,27 @@ namespace rendering
 
     enum ColorAttachmentFlags
     {
-        RENDER_BUFFER = 1 << 0,
-        TEXTURE_BUFFER = 1 << 1,
-        RGBA_8 = 1 << 2,
-        RGBA_16 = 1 << 3,
-        RGBA_32 = 1 << 4,
-        HDR = 1 << 5,
-        MULTI_SAMPLED = 1 << 6
+        RGBA_8 = 1 << 0,
+        RGBA_16 = 1 << 1,
+        RGBA_32 = 1 << 2,
+        HDR = 1 << 3,
+        MULTISAMPLED = 1 << 4
     };
 
     enum DepthAttachmentFlags
     {
-        DEPTH_MULTI_SAMPLED = 1 << 0
+        DEPTH_MULTISAMPLED = 1 << 0
+    };
+
+    enum class ColorAttachmentType
+    {
+        TEXTURE,
+        RENDER_BUFFER
     };
 
     struct ColorAttachment
     {
+        ColorAttachmentType type;
         u64 flags;
         TextureHandle texture;
         u32 samples;

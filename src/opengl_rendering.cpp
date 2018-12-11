@@ -700,59 +700,82 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
     for(i32 i = 0; i < info.color_attachments.count; i++)
     {
         rendering::ColorAttachment &attachment = info.color_attachments.attachments[i];
-
-        if(attachment.flags & rendering::ColorAttachmentFlags::MULTI_SAMPLED)
+        if(attachment.type == rendering::ColorAttachmentType::RENDER_BUFFER)
         {
-            if(framebuffer.tex_color_buffer_handles[i] != 0)
+            if(attachment.flags & rendering::ColorAttachmentFlags::MULTISAMPLED)
             {
-                glDeleteRenderbuffers(1, &framebuffer.tex_color_buffer_handles[i]);
-            }
+                if(framebuffer.tex_color_buffer_handles[i] != 0)
+                {
+                    glDeleteRenderbuffers(1, &framebuffer.tex_color_buffer_handles[i]);
+                }
         
-            glGenRenderbuffers(1, &framebuffer.tex_color_buffer_handles[i]);
-            glBindRenderbuffer(GL_RENDERBUFFER, framebuffer.tex_color_buffer_handles[i]);
+                glGenRenderbuffers(1, &framebuffer.tex_color_buffer_handles[i]);
+                glBindRenderbuffer(GL_RENDERBUFFER, framebuffer.tex_color_buffer_handles[i]);
 
-            if(attachment.flags & rendering::ColorAttachmentFlags::HDR)
-            {
-                glRenderbufferStorageMultisample(GL_RENDERBUFFER, attachment.samples, GL_RGBA16F, width, height);
+                if(attachment.flags & rendering::ColorAttachmentFlags::HDR)
+                {
+                    glRenderbufferStorageMultisample(GL_RENDERBUFFER, attachment.samples, GL_RGBA16F, width, height);
+                }
+                else
+                {
+                    glRenderbufferStorageMultisample(GL_RENDERBUFFER, attachment.samples, GL_RGBA8, width, height);
+                }
+        
+                glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_RENDERBUFFER,
+                                          framebuffer.tex_color_buffer_handles[i]);    
             }
             else
             {
-                glRenderbufferStorageMultisample(GL_RENDERBUFFER, attachment.samples, GL_RGBA8, width, height);
+                
             }
-        
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_RENDERBUFFER,
-                                      framebuffer.tex_color_buffer_handles[i]);    
         }
         else
         {
-            // // @Incomplete: There might be todo here
-            // if(framebuffer.tex_color_buffer_handles[i] != 0)
-            // {
-            //     glDeleteRenderbuffers(1, &framebuffer.tex_color_buffer_handles[i]);
-            // }
-
             Texture texture;
             glGenTextures(1, &texture.texture_handle);
-            glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
-            
-            if(attachment.flags & rendering::ColorAttachmentFlags::HDR)
+
+            if(attachment.flags & rendering::ColorAttachmentFlags::MULTISAMPLED)
             {
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+                glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture.texture_handle);
+                
+                if(attachment.flags & rendering::ColorAttachmentFlags::HDR)
+                {
+                    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, attachment.samples, GL_RGBA16F, width, height, GL_TRUE);
+                    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+                }
+                else
+                {
+                    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, attachment.samples, GL_RGB, width, height, GL_TRUE);
+                    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+                }
+
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D_MULTISAMPLE, texture.texture_handle, NULL);
+        
             }
             else
             {
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+                glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
+            
+                if(attachment.flags & rendering::ColorAttachmentFlags::HDR)
+                {
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+                }
+                else
+                {
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+                }
+
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, texture.texture_handle, NULL);
+        
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             }
 
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, texture.texture_handle, NULL);
-        
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             framebuffer.tex_color_buffer_handles[i] = texture.texture_handle;
             render_state.texture_array[render_state.texture_index] = texture;
             attachment.texture = { renderer.texture_count + 1 };
             render_state.texture_index++;
-            renderer.texture_data[renderer.texture_count].handle = renderer.texture_count++;
+            renderer.texture_data[renderer.texture_count].handle = renderer.texture_count++;   
         }      
     }
 }
@@ -768,7 +791,7 @@ static void create_framebuffer_render_buffer_attachment(rendering::FramebufferIn
     glBindRenderbuffer(GL_RENDERBUFFER, framebuffer.depth_buffer_handle);
     
 
-    if(info.depth_attachment.flags & rendering::DepthAttachmentFlags::DEPTH_MULTI_SAMPLED)
+    if(info.depth_attachment.flags & rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED)
     {
         glRenderbufferStorageMultisample(GL_RENDERBUFFER, info.depth_attachment.samples, GL_DEPTH_COMPONENT, width, height);
     }
@@ -1406,6 +1429,9 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
     glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
     glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
     glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+    
+    //glfwWindowHint(GLFW_SAMPLES, 8);
+
     debug_log("refresh rate %d", mode->refreshRate);
     
     if (window_mode == FM_WINDOWED)
@@ -1418,7 +1444,7 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
     render_state.window = glfwCreateWindow(screen_width, screen_height,  render_state.window_title, monitor,
                                            nullptr);
     render_state.framebuffers[render_state.current_framebuffer].buffer_handle = 0;
-    
+
     if(old_window)
     {
         glfwDestroyWindow(old_window);
@@ -1532,7 +1558,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback((GLDEBUGPROC)message_callback, 0);
 #endif
-    
+    glEnable(GL_MULTISAMPLE);
     glDisable(GL_DITHER);
     glLineWidth(2.0f);
     glEnable(GL_LINE_SMOOTH);
@@ -3845,10 +3871,24 @@ static void render_bloom(RenderState &render_state, Renderer &renderer)
     glBindVertexArray(0);
 }
 
+
+/*
+
+    Framebuffer final_buffer = render_state.v2.framebuffers[renderer.render.final_framebuffer.handle - 1];
+    
+    glDisable(GL_DEPTH_TEST);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, render_state.v2.framebuffers[0].buffer_handle);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, final_buffer.buffer_handle);
+
+    glBlitFramebuffer(0, 0, final_buffer.width, final_buffer.height, 0, 0, final_buffer.width, final_buffer.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+                      
+    
+*/
+
 static void render_post_processing_passes(RenderState &render_state, Renderer &renderer)
 {
     glDisable(GL_DEPTH_TEST);
-
+    
     Framebuffer final_buffer = render_state.v2.framebuffers[renderer.render.final_framebuffer.handle - 1];
     
     glBindFramebuffer(GL_FRAMEBUFFER, final_buffer.buffer_handle);
@@ -3859,13 +3899,16 @@ static void render_post_processing_passes(RenderState &render_state, Renderer &r
     glUseProgram(hdr_shader.program);
 
     set_int_uniform(hdr_shader.program, "scene", 0);
+    set_int_uniform(hdr_shader.program, "width", final_buffer.width);
+    set_int_uniform(hdr_shader.program, "height", final_buffer.height);
+    
     set_float_uniform(hdr_shader.program, "exposure", renderer.render.hdr.exposure);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, render_state.v2.framebuffers[0].tex_color_buffer_handles[0]);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, render_state.v2.framebuffers[0].tex_color_buffer_handles[0]);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)nullptr);
     
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
     glBindVertexArray(0);
 }
 
@@ -3904,40 +3947,28 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
     
     if(should_render)
     {
-        Framebuffer &final_framebuffer = render_state.v2.framebuffers[renderer.render.final_framebuffer.handle - 1];
-
-        renderer.framebuffer_width = render_state.framebuffer_width;
-        renderer.framebuffer_height = render_state.framebuffer_height;
-
-        // SHADOWS
+        // Render through all passes
         render_shadows(render_state, renderer, render_state.shadow_map_buffer);
-        
         render_all_passes(render_state, renderer);
         render_commands(render_state, renderer);
-        
-        // OLD
-        glBindFramebuffer(GL_FRAMEBUFFER, render_state.v2.framebuffers[0].buffer_handle);
-        
         render_post_processing_passes(render_state, renderer);
-        //render_bloom(render_state, renderer);
-        
-        // @Note: Render UI commands after bloom/final render pass
         render_ui_commands(render_state, renderer);
         
         render_state.bound_texture = 0;
-        // @Note: Bind the final framebuffer for reading before drawing to the main FBO
-        //glBindFramebuffer(GL_READ_FRAMEBUFFER, render_state.bloom.ping_pong_fbo[2]);
 
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, final_framebuffer.buffer_handle); // @Incomplete: STANDARD_PASS buffer index
+        Framebuffer &final_framebuffer = render_state.v2.framebuffers[renderer.render.final_framebuffer.handle - 1];
+        renderer.framebuffer_width = render_state.framebuffer_width;
+        renderer.framebuffer_height = render_state.framebuffer_height;
+
+        // Blit the final framebuffer to screen
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, final_framebuffer.buffer_handle);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
         glDrawBuffer(GL_BACK);
  
-        // @Note: Read from final FBO to main FBO
         i32 width = render_state.framebuffer_width;
         i32 height = render_state.framebuffer_height;
 
         glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
 
         /////// NOTHING WITH FRAMEBUFFERS ///////
 

@@ -429,22 +429,22 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     rendering::set_blur_shader(renderer, "../engine_assets/standard_shaders/blur.shd");
     rendering::set_hdr_shader(renderer, "../engine_assets/standard_shaders/hdr.shd");
 
+    // Add a hdr framebuffer as the standard pass framebuffer
     rendering::FramebufferInfo info = rendering::generate_framebuffer_info();
     info.width = renderer.framebuffer_width;
     info.height = renderer.framebuffer_height;
-    rendering::add_color_attachment(rendering::ColorAttachmentFlags::TEXTURE_BUFFER | rendering::ColorAttachmentFlags::HDR, info);
-    rendering::add_depth_attachment(0, info);
+    rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR | rendering::ColorAttachmentFlags::MULTISAMPLED, info, 8);
+    rendering::add_depth_attachment(rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, info, 8);
     
     rendering::FramebufferHandle framebuffer = rendering::create_framebuffer(info, renderer);
     rendering::RenderPassHandle standard = rendering::create_render_pass(STANDARD_PASS, framebuffer, renderer);
-
 
     // Final multisampled framebuffer
     rendering::FramebufferInfo final_info = rendering::generate_framebuffer_info();
     final_info.width = renderer.framebuffer_width;
     final_info.height = renderer.framebuffer_height;
-    rendering::add_color_attachment(rendering::ColorAttachmentFlags::TEXTURE_BUFFER | rendering::ColorAttachmentFlags::MULTI_SAMPLED, final_info, 4);
-    rendering::add_depth_attachment(rendering::DepthAttachmentFlags::DEPTH_MULTI_SAMPLED, final_info, 4);
+    rendering::add_color_attachment(rendering::ColorAttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED, final_info, 8);
+    rendering::add_depth_attachment(rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, final_info, 8);
     
     rendering::FramebufferHandle final_framebuffer = rendering::create_framebuffer(final_info, renderer);
     rendering::set_final_framebuffer(renderer, final_framebuffer);
