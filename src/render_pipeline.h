@@ -358,6 +358,8 @@ namespace rendering
     
     struct FramebufferInfo
     {
+        char name[32];
+        
         b32 complete;
         
         FramebufferType type;
