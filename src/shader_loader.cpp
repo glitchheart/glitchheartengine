@@ -45,6 +45,10 @@ namespace rendering
         {
             result = ValueType::TEXTURE;
         }
+        else if(starts_with(type, "sampler2DMS"))
+        {
+            result = ValueType::MS_TEXTURE;
+        }
 		else
         {
             result = ValueType::INVALID;
@@ -963,6 +967,9 @@ namespace rendering
                 case ValueType::TEXTURE:
                     value.texture = old_value->texture;
                     break;
+                case ValueType::MS_TEXTURE:
+                    value.ms_texture = old_value->ms_texture;
+                    break;
                 default:
                     assert(false);
                 }
@@ -1213,6 +1220,7 @@ namespace rendering
         default:
         case ValueType::INVALID:
         case ValueType::TEXTURE:
+        case ValueType::MS_TEXTURE:
             assert(false);
         case ValueType::FLOAT:
             return sizeof(r32);
@@ -1798,6 +1806,23 @@ namespace rendering
         }
 	}
 
+    static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, MSTextureHandle value)
+	{
+		Material& material = renderer.render.material_instances[handle.handle];
+
+		for(i32 i = 0; i < material.uniform_value_count; i++)
+        {
+            UniformValue& u_v = material.uniform_values[i];
+            if(strncmp(u_v.uniform.name, name, strlen(name)) == 0)
+            {
+                assert(u_v.uniform.type == ValueType::MS_TEXTURE);
+                u_v.ms_texture = value;
+                break;
+            }
+        }
+	}
+
+
     
     static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, r32 value)
     {
@@ -1966,6 +1991,7 @@ namespace rendering
         }
     }
 
+    // @Incomplete: Add MSTexture support for arrays
     static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, rendering::TextureHandle value)
     {
         Material &material = renderer.render.material_instances[handle.handle];

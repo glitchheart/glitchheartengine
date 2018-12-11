@@ -1880,6 +1880,12 @@ static void set_texture_uniform(GLuint shader_handle, GLuint texture, i32 index)
     glBindTexture(GL_TEXTURE_2D, texture);
 }
 
+static void set_ms_texture_uniform(GLuint shader_handle, GLuint texture, i32 index)
+{
+	glActiveTexture(GL_TEXTURE0 + index);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture);
+}
+
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
 //@Cleanup/@Robustness/@Note/@Incomplete/@Study: Fuck this function
@@ -3332,13 +3338,21 @@ static void set_uniform(RenderState& render_state, Renderer& renderer, GLuint pr
 		(*texture_count)++;
 	}
 	break;
+    case rendering::ValueType::MS_TEXTURE:
+	{
+		Texture texture = render_state.texture_array[renderer.texture_data[uniform_value.texture.handle - 1].handle];
+        set_int_uniform(program, location, *texture_count);
+		set_ms_texture_uniform(program, texture.texture_handle, *texture_count);
+		(*texture_count)++;
+	}
+	break;
 	case rendering::ValueType::INVALID:
 		assert(false);
 	break;
 	}
 }
 
-static void set_uniform(rendering::RenderCommand &command, const rendering::RenderPass &render_pass, rendering::UniformValue &uniform_value, ShaderGL &gl_shader, const Camera &camera, i32 *texture_count, RenderState &render_state, Renderer &renderer)
+static void set_uniform(rendering::Transform transform, const rendering::RenderPass &render_pass, rendering::UniformValue &uniform_value, ShaderGL &gl_shader, const Camera &camera, i32 *texture_count, RenderState &render_state, Renderer &renderer)
 {
     rendering::Uniform &uniform = uniform_value.uniform;
 
@@ -3395,7 +3409,6 @@ static void set_uniform(rendering::RenderCommand &command, const rendering::Rend
     break;
     case rendering::UniformMappingType::MODEL:
     {
-        rendering::Transform transform = command.transform;		
         math::Mat4 model_matrix(1.0f);
         model_matrix = math::scale(model_matrix, transform.scale);
     
@@ -3493,13 +3506,13 @@ static void render_buffer(rendering::RenderCommand& command, const rendering::Re
                 for(i32 k = 0; k < entry.value_count; k++)
                 {
                     rendering::UniformValue& value = entry.values[k];
-                    set_uniform(command, render_pass, value, gl_shader, camera, &texture_count, render_state, renderer);
+                    set_uniform(command.transform, render_pass, value, gl_shader, camera, &texture_count, render_state, renderer);
                 }
             }
         }
         else
         {
-            set_uniform(command, render_pass, uniform_value, gl_shader, camera, &texture_count, render_state, renderer);
+            set_uniform(command.transform, render_pass, uniform_value, gl_shader, camera, &texture_count, render_state, renderer);
         }
 	}
 
@@ -3853,7 +3866,9 @@ static void render_bloom(RenderState &render_state, Renderer &renderer)
     b32 horizontal = true;
     b32 first_iteration = true;
     i32 amount = renderer.render.bloom.amount;
-        
+
+    Framebuffer final_buffer = render_state.v2.framebuffers[0];
+    
     bind_vertex_array(render_state.framebuffer_quad_vao, render_state);
     ShaderGL gl_shader = render_state.gl_shaders[renderer.render.blur_shader.handle];
     glUseProgram(gl_shader.program);
@@ -3864,7 +3879,7 @@ static void render_bloom(RenderState &render_state, Renderer &renderer)
 
         glActiveTexture(GL_TEXTURE0);
 
-        GLuint tex = first_iteration ? render_state.framebuffers[render_state.current_framebuffer].tex_color_buffer_handles[1] : render_state.bloom.ping_pong_buffer[!horizontal];
+        GLuint tex = first_iteration ? final_buffer.tex_color_buffer_handles[1] : render_state.bloom.ping_pong_buffer[!horizontal];
             
         glBindTexture(GL_TEXTURE_2D, tex);
         set_int_uniform(gl_shader.program, "image", 0);
@@ -3915,28 +3930,60 @@ static void render_bloom(RenderState &render_state, Renderer &renderer)
 static void render_post_processing_passes(RenderState &render_state, Renderer &renderer)
 {
     glDisable(GL_DEPTH_TEST);
+
+    bind_vertex_array(render_state.framebuffer_quad_vao, render_state);
     
     Framebuffer final_buffer = render_state.v2.framebuffers[renderer.render.final_framebuffer.handle - 1];
-    
-    glBindFramebuffer(GL_FRAMEBUFFER, final_buffer.buffer_handle);
-    
-    bind_vertex_array(render_state.framebuffer_quad_vao, render_state);
-    ShaderGL hdr_shader = render_state.gl_shaders[renderer.render.hdr_shader.handle];
 
-    glUseProgram(hdr_shader.program);
+    for(i32 pass_index = 0; pass_index < renderer.render.post_processing_pass_count; pass_index++)
+    {
+        rendering::RenderPass& pass = renderer.render.post_processing_passes[pass_index];
+        Framebuffer pass_buffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
 
-    set_int_uniform(hdr_shader.program, "scene", 0);
-    set_int_uniform(hdr_shader.program, "width", final_buffer.width);
-    set_int_uniform(hdr_shader.program, "height", final_buffer.height);
-    
-    set_float_uniform(hdr_shader.program, "exposure", renderer.render.hdr.exposure);
+        if(pass_index == renderer.render.post_processing_pass_count - 1)
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, final_buffer.buffer_handle);
+        }
+        else
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, pass_buffer.buffer_handle);
+        }
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, render_state.v2.framebuffers[0].tex_color_buffer_handles[0]);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)nullptr);
+        ShaderGL shader = render_state.gl_shaders[pass.post_processing.shader_handle.handle];
+
+        glUseProgram(shader.program);
+
+        i32 texture_count = 0;
+        
+        for(i32 i = 0; i < pass.post_processing.uniform_value_count; i++)
+        {
+            set_uniform({}, pass, pass.post_processing.uniform_values[i], shader, {}, &texture_count, render_state, renderer);
+        }
+
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)nullptr);
+    }
     
-    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
     bind_vertex_array(0, render_state);
+    
+    // glBindFramebuffer(GL_FRAMEBUFFER, final_buffer.buffer_handle);
+    
+    // bind_vertex_array(render_state.framebuffer_quad_vao, render_state);
+    // ShaderGL hdr_shader = render_state.gl_shaders[renderer.render.hdr_shader.handle];
+
+    // glUseProgram(hdr_shader.program);
+
+    // set_int_uniform(hdr_shader.program, "scene", 0);
+    // set_int_uniform(hdr_shader.program, "width", final_buffer.width);
+    // set_int_uniform(hdr_shader.program, "height", final_buffer.height);
+    
+    // set_float_uniform(hdr_shader.program, "exposure", renderer.render.hdr.exposure);
+
+    // glActiveTexture(GL_TEXTURE0);
+    // glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, render_state.v2.framebuffers[0].tex_color_buffer_handles[0]);
+    // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)nullptr);
+    
+    // glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+
 }
 
 static void render(RenderState& render_state, Renderer& renderer, r64 delta_time, b32 *save_config)
@@ -3979,6 +4026,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         render_all_passes(render_state, renderer);
         render_commands(render_state, renderer);
         render_post_processing_passes(render_state, renderer);
+
         render_ui_commands(render_state, renderer);
         
         render_state.bound_texture = 0;
