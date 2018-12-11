@@ -192,9 +192,10 @@ namespace rendering
 
     // @Note: creates a framebuffer that can be used with a render pass
     // The handle returned maps directly to the graphics API specific framebuffer index
-    static FramebufferHandle create_framebuffer(FramebufferInfo &info, Renderer &renderer)
+    static FramebufferHandle create_framebuffer(FramebufferInfo &info, Renderer &renderer, char* name = "")
     {
         FramebufferHandle handle = { (renderer.render.framebuffer_count++) + 1 };
+        strncpy(info.name, name, strlen(name) + 1);
         renderer.render.framebuffers[handle.handle - 1] = info;
         
         return handle;
