@@ -30,7 +30,7 @@ namespace rendering
 
     static void set_uniform_value(Renderer& renderer, PostProcessingRenderPassHandle handle, const char* name, r32 value)
 	{
-        RenderPass &pass = renderer.render.post_processing_passes[renderer.render.post_processing_pass_count];
+        RenderPass &pass = renderer.render.post_processing_passes[handle.handle - 1];
         for(i32 i = 0; i < pass.post_processing.uniform_value_count; i++)
         {
             UniformValue& u_v = pass.post_processing.uniform_values[i];
@@ -45,7 +45,7 @@ namespace rendering
 
 	static void set_uniform_value(Renderer& renderer, PostProcessingRenderPassHandle handle, const char* name, math::Vec2 value)
 	{
-        RenderPass &pass = renderer.render.post_processing_passes[renderer.render.post_processing_pass_count];
+        RenderPass &pass = renderer.render.post_processing_passes[handle.handle - 1];
         for(i32 i = 0; i < pass.post_processing.uniform_value_count; i++)
         {
             UniformValue& u_v = pass.post_processing.uniform_values[i];
@@ -60,7 +60,7 @@ namespace rendering
 
 	static void set_uniform_value(Renderer& renderer, PostProcessingRenderPassHandle handle, const char* name, math::Vec3 value)
 	{
-        RenderPass &pass = renderer.render.post_processing_passes[renderer.render.post_processing_pass_count];
+        RenderPass &pass = renderer.render.post_processing_passes[handle.handle - 1];
         for(i32 i = 0; i < pass.post_processing.uniform_value_count; i++)
         {
             UniformValue& u_v = pass.post_processing.uniform_values[i];
@@ -75,7 +75,7 @@ namespace rendering
 
 	static void set_uniform_value(Renderer& renderer, PostProcessingRenderPassHandle handle, const char* name, math::Vec4 value)
 	{
-        RenderPass &pass = renderer.render.post_processing_passes[renderer.render.post_processing_pass_count];
+        RenderPass &pass = renderer.render.post_processing_passes[handle.handle - 1];
         for(i32 i = 0; i < pass.post_processing.uniform_value_count; i++)
         {
             UniformValue& u_v = pass.post_processing.uniform_values[i];
@@ -90,7 +90,7 @@ namespace rendering
 
     static void set_uniform_value(Renderer& renderer, PostProcessingRenderPassHandle handle, const char* name, TextureHandle value)
 	{
-        RenderPass &pass = renderer.render.post_processing_passes[renderer.render.post_processing_pass_count];
+        RenderPass &pass = renderer.render.post_processing_passes[handle.handle - 1];
         for(i32 i = 0; i < pass.post_processing.uniform_value_count; i++)
         {
             UniformValue& u_v = pass.post_processing.uniform_values[i];
@@ -105,7 +105,7 @@ namespace rendering
 
     static void set_uniform_value(Renderer& renderer, PostProcessingRenderPassHandle handle, const char* name, MSTextureHandle value)
 	{
-        RenderPass &pass = renderer.render.post_processing_passes[renderer.render.post_processing_pass_count];
+        RenderPass &pass = renderer.render.post_processing_passes[handle.handle - 1];
         for(i32 i = 0; i < pass.post_processing.uniform_value_count; i++)
         {
             UniformValue& u_v = pass.post_processing.uniform_values[i];
@@ -122,7 +122,7 @@ namespace rendering
 	static void set_uniform_value(Renderer& renderer, PostProcessingRenderPassHandle handle, const char* name, i32 value)
 	{
         
-        RenderPass &pass = renderer.render.post_processing_passes[renderer.render.post_processing_pass_count];
+        RenderPass &pass = renderer.render.post_processing_passes[handle.handle - 1];
         for(i32 i = 0; i < pass.post_processing.uniform_value_count; i++)
         {
             UniformValue& u_v = pass.post_processing.uniform_values[i];
@@ -145,7 +145,7 @@ namespace rendering
 
 	static void set_uniform_value(Renderer& renderer, PostProcessingRenderPassHandle handle, const char* name, math::Mat4 value)
 	{
-        RenderPass &pass = renderer.render.post_processing_passes[renderer.render.post_processing_pass_count];
+        RenderPass &pass = renderer.render.post_processing_passes[handle.handle - 1];
         
 		for(i32 i = 0; i < pass.post_processing.uniform_value_count; i++)
         {
@@ -181,6 +181,7 @@ namespace rendering
     static FramebufferInfo generate_framebuffer_info()
     {
         FramebufferInfo info = {};
+        info.complete = false;
         info.color_attachments.enabled = false;
         info.color_attachments.count = 0;
         info.depth_attachment.enabled = false;
@@ -195,6 +196,7 @@ namespace rendering
     {
         FramebufferHandle handle = { (renderer.render.framebuffer_count++) + 1 };
         renderer.render.framebuffers[handle.handle - 1] = info;
+        
         return handle;
     }
 
@@ -217,7 +219,11 @@ namespace rendering
         if(texture_index < info.color_attachments.count)
         {
             assert((info.color_attachments.attachments[texture_index].flags & ColorAttachmentFlags::MULTISAMPLED) == 0);
-            return info.color_attachments.attachments[texture_index].texture;
+            
+            if(info.complete)
+                return info.color_attachments.attachments[texture_index].texture;
+            else
+                return { -1 };
         }
         
         assert(false);
@@ -230,11 +236,48 @@ namespace rendering
         if(texture_index < info.color_attachments.count)
         {
             assert(info.color_attachments.attachments[texture_index].flags & ColorAttachmentFlags::MULTISAMPLED);
-            return info.color_attachments.attachments[texture_index].ms_texture;
+            if(info.complete)
+                return info.color_attachments.attachments[texture_index].ms_texture;
+            else
+                return { -1 };
         }
         
         assert(false);
         return { -1 };
+    }
+    
+    static void set_texture_uniform_for_render_pass(i32 texture_index, FramebufferHandle framebuffer, PostProcessingRenderPassHandle pass_handle, const char *uniform_name, Renderer &renderer)
+    {
+        FramebufferInfo &info = renderer.render.framebuffers[framebuffer.handle - 1];
+        
+        if(!info.complete)
+        {
+            info.pending_textures.pass_handles[info.pending_textures.count] = pass_handle;
+            info.pending_textures.color_attachment_indices[info.pending_textures.count] = texture_index;
+            strncpy(info.pending_textures.uniform_names[info.pending_textures.count], uniform_name, strlen(uniform_name) + 1);
+            info.pending_textures.count++;
+        }
+        else
+        {
+            set_uniform_value(renderer, pass_handle, uniform_name, get_texture_from_framebuffer(0, framebuffer, renderer));
+        }
+    }
+
+    static void set_ms_texture_uniform_for_render_pass(i32 texture_index, FramebufferHandle framebuffer, PostProcessingRenderPassHandle pass_handle, const char *uniform_name, Renderer &renderer)
+    {
+        FramebufferInfo &info = renderer.render.framebuffers[framebuffer.handle - 1];
+        
+        if(!info.complete)
+        {
+            info.pending_textures.pass_handles[info.pending_textures.count] = pass_handle;
+            info.pending_textures.color_attachment_indices[info.pending_textures.count] = texture_index;
+            strncpy(info.pending_textures.uniform_names[info.pending_textures.count], uniform_name, strlen(uniform_name) + 1);
+            info.pending_textures.count++;
+        }
+        else
+        {
+            set_uniform_value(renderer, pass_handle, uniform_name, get_ms_texture_from_framebuffer(0, framebuffer, renderer));
+        }
     }
 
     static void add_color_attachment(ColorAttachmentType type, u64 flags, FramebufferInfo &info, u32 samples = 0)

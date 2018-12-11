@@ -358,6 +358,8 @@ namespace rendering
     
     struct FramebufferInfo
     {
+        b32 complete;
+        
         FramebufferType type;
         
         u32 width;
@@ -375,6 +377,14 @@ namespace rendering
             u64 flags;
             u32 samples;
         } depth_attachment;
+
+        struct
+        {
+            PostProcessingRenderPassHandle pass_handles[4];
+            i32 color_attachment_indices[4];
+            char uniform_names[4][32];
+            i32 count;
+        } pending_textures;
     };
 
     enum class ClippingPlaneType

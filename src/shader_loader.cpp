@@ -41,13 +41,13 @@ namespace rendering
         {
             result = ValueType::INTEGER;
         }
-		else if(starts_with(type, "sampler2D"))
-        {
-            result = ValueType::TEXTURE;
-        }
         else if(starts_with(type, "sampler2DMS"))
         {
             result = ValueType::MS_TEXTURE;
+        }
+		else if(starts_with(type, "sampler2D"))
+        {
+            result = ValueType::TEXTURE;
         }
 		else
         {

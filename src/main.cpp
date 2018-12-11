@@ -428,13 +428,23 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     rendering::set_bloom_shader(renderer, "../engine_assets/standard_shaders/bloom.shd");
     rendering::set_blur_shader(renderer, "../engine_assets/standard_shaders/blur.shd");
     rendering::set_hdr_shader(renderer, "../engine_assets/standard_shaders/hdr.shd");
+    
+    // Final framebuffer
+    rendering::FramebufferInfo final_info = rendering::generate_framebuffer_info();
+    final_info.width = renderer.framebuffer_width;
+    final_info.height = renderer.framebuffer_height;
+    rendering::add_color_attachment(rendering::ColorAttachmentType::RENDER_BUFFER, 0, final_info);
+    rendering::add_depth_attachment(0, final_info);
+    
+    rendering::FramebufferHandle final_framebuffer = rendering::create_framebuffer(final_info, renderer);
+    rendering::set_final_framebuffer(renderer, final_framebuffer);
 
     // Add a hdr framebuffer as the standard pass framebuffer
     rendering::FramebufferInfo info = rendering::generate_framebuffer_info();
     info.width = renderer.framebuffer_width;
     info.height = renderer.framebuffer_height;
-    rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR | rendering::ColorAttachmentFlags::MULTISAMPLED, info, 8);
-    rendering::add_depth_attachment(rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, info, 8);
+    rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR, info, 0);
+    rendering::add_depth_attachment(rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, info, 0);
     
     rendering::FramebufferHandle framebuffer = rendering::create_framebuffer(info, renderer);
     rendering::RenderPassHandle standard = rendering::create_render_pass(STANDARD_PASS, framebuffer, renderer);
@@ -444,16 +454,16 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     hdr_info.width = renderer.framebuffer_width;
     hdr_info.height = renderer.framebuffer_height;
 
-    rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR | rendering::ColorAttachmentFlags::MULTISAMPLED, hdr_info, 8);
-    rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR | rendering::ColorAttachmentFlags::MULTISAMPLED, hdr_info, 8);
+    rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR, hdr_info, 0);
+    rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR, hdr_info, 0);
 
     rendering::FramebufferHandle hdr_fbo = rendering::create_framebuffer(hdr_info, renderer);
 
-    rendering::ShaderHandle hdr_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/hdr.shd");
+    rendering::ShaderHandle hdr_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/new_hdr.shd");
 
     rendering::PostProcessingRenderPassHandle hdr_pass = rendering::create_post_processing_render_pass("HDR Pass", hdr_fbo, renderer, hdr_shader);
 
-    rendering::set_uniform_value(renderer, hdr_pass, "scene", rendering::get_ms_texture_from_framebuffer(0, framebuffer, renderer));
+    rendering::set_texture_uniform_for_render_pass(0, framebuffer, hdr_pass, "scene", renderer);
     rendering::set_uniform_value(renderer, hdr_pass, "width", (i32)hdr_info.width);
     rendering::set_uniform_value(renderer, hdr_pass, "height", (i32)hdr_info.height);
     rendering::set_uniform_value(renderer, hdr_pass, "exposure", 1.8f); // @Incomplete: Hardcoded
@@ -463,7 +473,7 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     bloom_info.width = renderer.framebuffer_width;
     bloom_info.height = renderer.framebuffer_height;
 
-    rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR | rendering::ColorAttachmentFlags::MULTISAMPLED, bloom_info, 8);
+    rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR, bloom_info, 0);
 
     rendering::FramebufferHandle bloom_1_fbo = rendering::create_framebuffer(bloom_info, renderer);
     rendering::FramebufferHandle bloom_2_fbo = rendering::create_framebuffer(bloom_info, renderer);
@@ -472,28 +482,17 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     rendering::ShaderHandle bloom_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/bloom.shd");
     
     rendering::PostProcessingRenderPassHandle blur_1 = rendering::create_post_processing_render_pass("Bloom_blur_1", bloom_1_fbo, renderer, blur_shader);
-    rendering::PostProcessingRenderPassHandle blur_2 = rendering::create_post_processing_render_pass("Bloom_blur_2", bloom_2_fbo, renderer, blur_shader);
+    rendering::PostProcessingRenderPassHandle blur_2 = rendering::create_post_processing_render_pass("Bloom_blur_2", final_framebuffer, renderer, blur_shader);
 
-    rendering::set_uniform_value(renderer, blur_1, "image", rendering::get_ms_texture_from_framebuffer(1, hdr_fbo, renderer));
+    rendering::set_texture_uniform_for_render_pass(1, hdr_fbo, blur_1, "image", renderer);
     rendering::set_uniform_value(renderer, blur_1, "horizontal", true);
 
-    rendering::set_uniform_value(renderer, blur_2, "image", 0);
-    rendering::set_uniform_value(renderer, blur_2, "image", rendering::get_ms_texture_from_framebuffer(0, bloom_1_fbo, renderer));
+    rendering::set_texture_uniform_for_render_pass(0, bloom_1_fbo, blur_2, "image", renderer);
     rendering::set_uniform_value(renderer, blur_2, "horizontal", false);
 
     //END BLOOM
 
     // Add tonemapping pass?
-    
-    // Final multisampled framebuffer
-    rendering::FramebufferInfo final_info = rendering::generate_framebuffer_info();
-    final_info.width = renderer.framebuffer_width;
-    final_info.height = renderer.framebuffer_height;
-    rendering::add_color_attachment(rendering::ColorAttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED, final_info, 8);
-    rendering::add_depth_attachment(rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, final_info, 8);
-    
-    rendering::FramebufferHandle final_framebuffer = rendering::create_framebuffer(final_info, renderer);
-    rendering::set_final_framebuffer(renderer, final_framebuffer);
 }
 
 #if ENABLE_ANALYTICS
