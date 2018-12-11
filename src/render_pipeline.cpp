@@ -22,7 +22,6 @@ namespace rendering
         return { (renderer.render.post_processing_pass_count++) + 1 };
     }
 
-
     // @Note: Generates and returns a FramebufferInfo with default values
     static FramebufferInfo generate_framebuffer_info()
     {
