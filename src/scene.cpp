@@ -996,6 +996,12 @@ namespace scene
         rendering::set_uniform_value(*scene.renderer, render.v2.material_handle, name, value);
 	}
 
+    static void set_uniform_value(EntityHandle handle, const char* name, rendering::MSTextureHandle value, Scene &scene)
+	{
+        RenderComponent &render = get_render_comp(handle, scene);
+        rendering::set_uniform_value(*scene.renderer, render.v2.material_handle, name, value);
+	}
+
 #define SET_MAT_ARRAY_VALUE(type) static void set_uniform_array_value(EntityHandle handle, const char *array_name, i32 index, const char *variable_name, type value, Scene &scene) \
     { \
        RenderComponent &render = get_render_comp(handle, scene); \

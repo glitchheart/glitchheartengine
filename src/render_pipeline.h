@@ -44,11 +44,17 @@ namespace rendering
 		BOOL,
 		MAT4,
 		TEXTURE,
+        MS_TEXTURE,
 
         STRUCTURE
     };
 
     struct TextureHandle
+    {
+		i32 handle;
+    };
+
+    struct MSTextureHandle
     {
 		i32 handle;
     };
@@ -67,6 +73,7 @@ namespace rendering
 			b32 boolean_val;
 			math::Mat4 mat4_val;
 			TextureHandle texture;
+            MSTextureHandle ms_texture;
 		};
 
 		VertexAttribute () {}
@@ -156,6 +163,7 @@ namespace rendering
 			b32 boolean_val;
 			math::Mat4 mat4_val;
 			TextureHandle texture;
+            MSTextureHandle ms_texture;
 		};
 
 		UniformValue () {}
@@ -338,7 +346,13 @@ namespace rendering
     {
         ColorAttachmentType type;
         u64 flags;
-        TextureHandle texture;
+
+        union
+        {
+            TextureHandle texture;
+            MSTextureHandle ms_texture;
+        };
+        
         u32 samples;
     };
     
@@ -397,6 +411,9 @@ namespace rendering
         {
             struct
             {
+                UniformValue uniform_values[64];
+                i32 uniform_value_count;
+                
                 ShaderHandle shader_handle;
             } post_processing;
             struct
