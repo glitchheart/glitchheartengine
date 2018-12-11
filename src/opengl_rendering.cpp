@@ -355,7 +355,7 @@ static void reload_shaders(RenderState &render_state, Renderer &renderer)
             clear(&shader.arena);
             rendering::load_shader(renderer, shader);
             load_shader(renderer, shader, gl_shader);
-            printf("Reloaded shader: %s", shader.path);
+            printf("Reloaded shader: %s\n", shader.path);
         }
     }
 }
@@ -3334,7 +3334,7 @@ static void set_uniform(RenderState& render_state, Renderer& renderer, GLuint pr
 	}
 }
 
-static void set_uniform(rendering::RenderCommand &command, rendering::UniformValue &uniform_value, ShaderGL &gl_shader, const Camera &camera, i32 *texture_count, RenderState &render_state, Renderer &renderer)
+static void set_uniform(rendering::RenderCommand &command, const rendering::RenderPass &render_pass, rendering::UniformValue &uniform_value, ShaderGL &gl_shader, const Camera &camera, i32 *texture_count, RenderState &render_state, Renderer &renderer)
 {
     rendering::Uniform &uniform = uniform_value.uniform;
     
@@ -3363,6 +3363,11 @@ static void set_uniform(rendering::RenderCommand &command, rendering::UniformVal
     case rendering::UniformMappingType::POINT_LIGHT_QUADRATIC:
     {
         set_uniform(render_state, renderer, gl_shader.program, uniform_value, texture_count);
+    }
+    break;
+    case rendering::UniformMappingType::CLIPPING_PLANE:
+    {
+        set_vec4_uniform(gl_shader.program, uniform_value.uniform.name, render_pass.clipping_planes.plane);
     }
     break;
     case rendering::UniformMappingType::LIGHT_SPACE_MATRIX:
@@ -3423,7 +3428,7 @@ static void set_uniform(rendering::RenderCommand &command, rendering::UniformVal
     }
 }
 
-static void render_buffer(rendering::RenderCommand& command, RenderState& render_state, Renderer& renderer, const Camera &camera, ShaderGL *shader = nullptr)
+static void render_buffer(rendering::RenderCommand& command, const rendering::RenderPass &render_pass, RenderState& render_state, Renderer& renderer, const Camera &camera, ShaderGL *shader = nullptr)
 {
     i32 handle = renderer.render._internal_buffer_handles[command.buffer.handle - 1];
 	Buffer& buffer = render_state.gl_buffers[handle];
@@ -3471,18 +3476,18 @@ static void render_buffer(rendering::RenderCommand& command, RenderState& render
                 for(i32 k = 0; k < entry.value_count; k++)
                 {
                     rendering::UniformValue& value = entry.values[k];
-                    set_uniform(command, value, gl_shader, camera, &texture_count, render_state, renderer);
+                    set_uniform(command, render_pass, value, gl_shader, camera, &texture_count, render_state, renderer);
                 }
             }
         }
         else
         {
-            set_uniform(command, uniform_value, gl_shader, camera, &texture_count, render_state, renderer);
+            set_uniform(command, render_pass, uniform_value, gl_shader, camera, &texture_count, render_state, renderer);
         }
 	}
 
-    set_mat4_uniform(gl_shader.program, "view", camera.view_matrix);
-    set_mat4_uniform(gl_shader.program, "projection", camera.projection_matrix);
+    // set_mat4_uniform(gl_shader.program, "view", camera.view_matrix);
+    // set_mat4_uniform(gl_shader.program, "projection", camera.projection_matrix);
 
 	if(buffer.ibo)
 	{
@@ -3564,20 +3569,30 @@ static void render_all_passes(RenderState &render_state, Renderer &renderer)
     for(i32 pass_index = renderer.render.pass_count - 1; pass_index >= 0; pass_index--)
     {
         rendering::RenderPass &pass = renderer.render.passes[pass_index];
+
         Framebuffer &framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
 
         glViewport(0, 0, framebuffer.width, framebuffer.height);
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
 
+        // @Incomplete: Not all framebuffers should have depth testing or clear both bits
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glClearColor(renderer.clear_color.r, renderer.clear_color.g, renderer.clear_color.b, renderer.clear_color.a);
+
+        // @Incomplete: Create a better way for enabling/disabling the clipping planes
+        // Check if we have clipping planes
+        //if(pass.clipping_planes.type != rendering::ClippingPlaneType::NONE)
+            glEnable(GL_CLIP_PLANE0);
+            //else
+            //glDisable(GL_CLIP_PLANE0);
         
         for(i32 i = 0; i < pass.commands.render_command_count; i++)
         {
             rendering::RenderCommand &command = pass.commands.render_commands[i];
-            render_buffer(command, render_state, renderer, renderer.camera, &render_state.gl_shaders[command.pass.shader_handle.handle]);
+
+            render_buffer(command, pass, render_state, renderer, pass.camera, &render_state.gl_shaders[command.pass.shader_handle.handle]);
         }
 
         pass.commands.render_command_count = 0;
@@ -3593,8 +3608,8 @@ static void render_new_commands(RenderState &render_state, Renderer &renderer)
     
     for(i32 i = 0; i < renderer.render.render_command_count; i++)
     {
-        rendering::RenderCommand &command = renderer.render.render_commands[i];
-        render_buffer(command, render_state, renderer, renderer.camera);
+        //rendering::RenderCommand &command = renderer.render.render_commands[i];
+        //render_buffer(command, , render_state, renderer, renderer.camera);
     }
     
     glActiveTexture(GL_TEXTURE0);

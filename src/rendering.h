@@ -971,18 +971,6 @@ struct Resolution
 
 struct ParticleSystemInfo;
 
-struct Camera
-{
-    r32 zoom;
-    math::Vec3 center;
-    math::Vec3 position;
-    math::Quat orientation;
-    math::Vec3 target;
-
-    math::Mat4 view_matrix;
-    math::Mat4 projection_matrix;    
-};
-
 struct Renderer
 {   
 	b32 should_close;

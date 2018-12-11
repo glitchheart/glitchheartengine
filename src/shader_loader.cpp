@@ -305,6 +305,10 @@ namespace rendering
                 {
                     uniform.mapping_type = UniformMappingType::LIGHT_SPACE_MATRIX;
                 }
+                else if(starts_with(mapped_buffer, "CLIPPING_PLANE"))
+                {
+                    uniform.mapping_type = UniformMappingType::CLIPPING_PLANE;
+                }
                 else
                 {
                     char error_buf[256];

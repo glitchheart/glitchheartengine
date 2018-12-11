@@ -5,6 +5,10 @@ namespace rendering
     {
         RenderPass &pass = renderer.render.passes[renderer.render.pass_count];
         pass.framebuffer = framebuffer;
+        pass.use_scene_camera = true;
+        pass.clipping_planes.type = ClippingPlaneType::NONE;
+        pass.clipping_planes.plane = math::Vec4(0, 0, 0, 0);
+        
         strncpy(pass.name, name, strlen(name) + 1);
         pass.commands.render_commands = push_array(&renderer.render.render_pass_arena, global_max_render_commands, RenderCommand);
         
@@ -80,5 +84,17 @@ namespace rendering
         info.depth_attachment.enabled = true;
         info.depth_attachment.flags = flags;
         info.depth_attachment.samples = samples;
+    }
+
+    static void set_clipping_plane(math::Vec4 plane, RenderPassHandle render_pass_handle, Renderer &renderer)
+    {
+        RenderPass &pass = renderer.render.passes[render_pass_handle.handle - 1];
+        pass.clipping_planes.plane = plane;
+    }
+
+    static void set_camera_for_render_pass(Camera &camera, RenderPassHandle render_pass_handle, Renderer &renderer)
+    {
+        renderer.render.passes[render_pass_handle.handle - 1].camera = camera;
+        renderer.render.passes[render_pass_handle.handle - 1].use_scene_camera = false;
     }
 }
