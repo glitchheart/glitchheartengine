@@ -65,9 +65,10 @@ namespace rendering
         return { -1 };
     }
 
-    static void add_color_attachment(u64 flags, FramebufferInfo &info, u32 samples = 0)
+    static void add_color_attachment(ColorAttachmentType type, u64 flags, FramebufferInfo &info, u32 samples = 0)
     {
         ColorAttachment attachment;
+        attachment.type = type;
         attachment.flags = flags;
         attachment.samples = samples;
         info.color_attachments.enabled = true;
