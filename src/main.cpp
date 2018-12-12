@@ -461,34 +461,34 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
 
     rendering::ShaderHandle hdr_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/new_hdr.shd");
 
-    rendering::PostProcessingRenderPassHandle hdr_pass = rendering::create_post_processing_render_pass("HDR Pass", hdr_fbo, renderer, hdr_shader);
-
-    rendering::set_texture_uniform_for_render_pass(0, framebuffer, hdr_pass, "scene", renderer);
+    //rendering::PostProcessingRenderPassHandle hdr_pass = rendering::create_post_processing_render_pass("HDR Pass", hdr_fbo, renderer, hdr_shader);
+    rendering::PostProcessingRenderPassHandle hdr_pass = rendering::create_post_processing_render_pass("HDR Pass", final_framebuffer, renderer, hdr_shader);
+    rendering::set_uniform_value(renderer, hdr_pass, "scene", rendering::get_texture_from_framebuffer(0, framebuffer, renderer));
     rendering::set_uniform_value(renderer, hdr_pass, "width", (i32)hdr_info.width);
     rendering::set_uniform_value(renderer, hdr_pass, "height", (i32)hdr_info.height);
     rendering::set_uniform_value(renderer, hdr_pass, "exposure", 1.8f); // @Incomplete: Hardcoded
     
-    //BLOOM
-    rendering::FramebufferInfo bloom_info = rendering::generate_framebuffer_info();
-    bloom_info.width = renderer.framebuffer_width;
-    bloom_info.height = renderer.framebuffer_height;
+    // //BLOOM
+    // rendering::FramebufferInfo bloom_info = rendering::generate_framebuffer_info();
+    // bloom_info.width = renderer.framebuffer_width;
+    // bloom_info.height = renderer.framebuffer_height;
 
-    rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR, bloom_info, 0);
+    // rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR, bloom_info, 0);
 
-    rendering::FramebufferHandle bloom_1_fbo = rendering::create_framebuffer(bloom_info, renderer);
-    rendering::FramebufferHandle bloom_2_fbo = rendering::create_framebuffer(bloom_info, renderer);
+    // rendering::FramebufferHandle bloom_1_fbo = rendering::create_framebuffer(bloom_info, renderer);
+    // rendering::FramebufferHandle bloom_2_fbo = rendering::create_framebuffer(bloom_info, renderer);
 
-    rendering::ShaderHandle blur_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/blur.shd");
-    rendering::ShaderHandle bloom_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/bloom.shd");
+    // rendering::ShaderHandle blur_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/blur.shd");
+    // rendering::ShaderHandle bloom_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/bloom.shd");
     
-    rendering::PostProcessingRenderPassHandle blur_1 = rendering::create_post_processing_render_pass("Bloom_blur_1", bloom_1_fbo, renderer, blur_shader);
-    rendering::PostProcessingRenderPassHandle blur_2 = rendering::create_post_processing_render_pass("Bloom_blur_2", final_framebuffer, renderer, blur_shader);
+    // rendering::PostProcessingRenderPassHandle blur_1 = rendering::create_post_processing_render_pass("Bloom_blur_1", bloom_1_fbo, renderer, blur_shader);
+    // rendering::PostProcessingRenderPassHandle blur_2 = rendering::create_post_processing_render_pass("Bloom_blur_2", final_framebuffer, renderer, blur_shader);
+    
+    // rendering::set_uniform_value(renderer, blur_1, "image", rendering::get_texture_from_framebuffer(1, hdr_fbo, renderer));
+    // rendering::set_uniform_value(renderer, blur_1, "horizontal", true);
 
-    rendering::set_texture_uniform_for_render_pass(1, hdr_fbo, blur_1, "image", renderer);
-    rendering::set_uniform_value(renderer, blur_1, "horizontal", true);
-
-    rendering::set_texture_uniform_for_render_pass(0, bloom_1_fbo, blur_2, "image", renderer);
-    rendering::set_uniform_value(renderer, blur_2, "horizontal", false);
+    // rendering::set_uniform_value(renderer, blur_2, "image", rendering::get_texture_from_framebuffer(0, bloom_1_fbo, renderer));
+    // rendering::set_uniform_value(renderer, blur_2, "horizontal", false);
 
     //END BLOOM
 
@@ -608,8 +608,10 @@ int main(int argc, char **args)
     render_state.gl_buffer_count = 0;
 
     
-    Renderer renderer = {};
-
+    Renderer *renderer_alloc = (Renderer *)malloc(sizeof(Renderer));
+    Renderer &renderer = *renderer_alloc;
+    renderer = {};
+    
     b32 do_save_config = false;
     
     if constexpr(global_graphics_api == GRAPHICS_VULKAN)

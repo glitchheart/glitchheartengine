@@ -839,7 +839,7 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
 
             framebuffer.tex_color_buffer_handles[i] = texture.texture_handle;
             render_state.texture_array[render_state.texture_index] = texture;
-            renderer.texture_data[renderer.texture_count].handle = handle;
+            renderer.texture_data[renderer.texture_count].handle = handle - 1;
             renderer.texture_count++;
             render_state.texture_index++;
         }      
@@ -936,34 +936,6 @@ static void create_new_framebuffer(RenderState &render_state, Renderer &renderer
         log_error("Error: Framebuffer incomplete");
         error_gl();
     }
-    else
-        info.complete = true;
-    
-    // // FrameBuffer vao
-    // glGenVertexArrays(1, &framebuffer.vao);
-    // glBindVertexArray(framebuffer.vao);
-    // glGenBuffers(1, &framebuffer.vbo);
-    // glBindBuffer(GL_ARRAY_BUFFER, framebuffer.vbo);
-    // glBufferData(GL_ARRAY_BUFFER, vertices_size, vertices, GL_DYNAMIC_DRAW);
-    
-    // shader.type = SHADER_FRAME_BUFFER;
-    
-    // // @Incomplete: This should not be loaded more than once!
-    // load_shader(shader_paths[SHADER_FRAME_BUFFER], &shader, render_state.perm_arena);
-    
-    // auto pos_loc = (GLuint)glGetAttribLocation(shader.program, "pos");
-    // auto tex_loc = (GLuint)glGetAttribLocation(shader.program, "texcoord");
-    
-    // vertex_attrib_pointer(pos_loc, 2, GL_FLOAT, 4 * sizeof(float), nullptr);
-    // vertex_attrib_pointer(tex_loc, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-    
-    // render_state.framebuffers[render_state.current_framebuffer].tex0_loc = (GLuint)glGetUniformLocation(shader.program, "tex");
-    
-    // glGenBuffers(1, &framebuffer.ebo);
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, framebuffer.ebo);
-    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_size, indices, GL_STATIC_DRAW);
-    
-    // glBindVertexArray(0);
 }
 
 static void create_framebuffer(RenderState& render_state, Framebuffer& framebuffer, i32 width, i32 height, Shader& shader, MemoryArena* arena, r32* vertices, u32 vertices_size, u32* indices, u32 indices_size, b32 multisampled, i32 samples = 0, b32 hdr = false, i32 color_buffer_count = 1)
@@ -1528,8 +1500,23 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
     return monitor ? mode : nullptr;
 }
 
+static void new_create_framebuffer(rendering::FramebufferInfo &info, RenderState *render_state, Renderer *renderer)
+{
+    Framebuffer &framebuffer = render_state->v2.framebuffers[render_state->v2.framebuffer_count++];
+    create_new_framebuffer(*render_state, *renderer, info, framebuffer);
+}
+
+static void new_load_texture(TextureData &texture_data, RenderState *render_state, Renderer *renderer)
+{
+    load_texture(texture_data, &render_state->texture_array[render_state->texture_index++]);
+}
+
 static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char* title, MemoryArena *perm_arena, b32 *do_save_config)
 {
+    renderer.api_functions.render_state = &render_state;
+    renderer.api_functions.load_texture = &new_load_texture;
+    renderer.api_functions.create_framebuffer = &new_create_framebuffer;
+    
     render_state.character_buffer = push_array(perm_arena, 4096, CharacterData);
     auto recreate_window = render_state.window != nullptr;
 	
@@ -1614,7 +1601,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     
-    glfwSwapInterval(0);
+    glfwSwapInterval(1);
     
     glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
     glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
@@ -3490,7 +3477,7 @@ static void render_buffer(rendering::RenderCommand& command, const rendering::Re
 	Buffer& buffer = render_state.gl_buffers[handle];
 	
 	bind_vertex_array(buffer.vao, render_state);
-
+    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
     ShaderGL gl_shader;
     rendering::Material& material = renderer.render.material_instances[command.material.handle];
     
@@ -3555,7 +3542,7 @@ static void render_buffer(rendering::RenderCommand& command, const rendering::Re
 
 	if(buffer.ibo)
 	{
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
+        //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
 		glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)nullptr);
 	}
 	else
@@ -4050,10 +4037,10 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
     
     renderer.ui_projection_matrix = math::ortho(0.0f, (r32)renderer.framebuffer_width, 0.0f, (r32)renderer.framebuffer_height, -500.0f, 500.0f);
 
-    load_textures(render_state, renderer);
+    //load_textures(render_state, renderer);
     register_buffers(render_state, renderer);
     register_new_buffers(render_state, renderer);
-    register_framebuffers(render_state, renderer);
+    //register_framebuffers(render_state, renderer);
     
     if(should_render)
     {
@@ -4063,7 +4050,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         render_commands(render_state, renderer);
         render_post_processing_passes(render_state, renderer);
 
-        //render_ui_commands(render_state, renderer);
+        render_ui_commands(render_state, renderer);
         
         render_state.bound_texture = 0;
 

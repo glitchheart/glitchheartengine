@@ -1040,13 +1040,16 @@ namespace rendering
             texture_data->image_data = stbi_load_from_memory(tex_data, size, &texture_data->width, &texture_data->height, 0, STBI_rgb_alpha);
             platform.close_file(png_file);
             end_temporary_memory(temp_mem);
+
+            assert(renderer.api_functions.load_texture);
+            renderer.api_functions.load_texture(*texture_data, renderer.api_functions.render_state, &renderer);
         }
-    
-		if(!texture_data->image_data)
+        else
         {
             printf("Texture could not be loaded: %s\n", full_texture_path);
+            assert(false);
         }
-    
+            
 		if(handle)
 			*handle = texture_data->handle + 1; // We add one to the handle, since we want 0 to be an invalid handle
 	}

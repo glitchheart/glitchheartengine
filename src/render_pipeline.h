@@ -165,7 +165,7 @@ namespace rendering
 			TextureHandle texture;
             MSTextureHandle ms_texture;
 		};
-
+        
 		UniformValue () {}
 	};
 
@@ -228,6 +228,11 @@ namespace rendering
 		Shader () {}
     };
 
+    struct InstanceBuffer
+    {
+        
+    };
+
     struct Material
     {
 		ShaderHandle shader;
@@ -244,6 +249,12 @@ namespace rendering
             b32 receives_light; // @Cleanup: Do we need this?
             i32 array_handle;
         } lighting;
+
+        b32 instanced;
+        struct
+        {
+            
+        } instancing;
         
 		Material () {}
     };
@@ -359,8 +370,6 @@ namespace rendering
     struct FramebufferInfo
     {
         char name[32];
-        
-        b32 complete;
         
         FramebufferType type;
         

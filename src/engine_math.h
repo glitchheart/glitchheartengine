@@ -1110,7 +1110,7 @@ namespace math
         
         
         Mat4& operator=(const Mat4& m) = default;
-        
+
         Mat4 operator*(Mat4 other)
         {
             Mat4 result(*this);
@@ -1510,6 +1510,17 @@ namespace math
         return out;
     }
     
+    b32 mat4_equals(const Mat4 &first, const Mat4 &second)
+    {
+        for(i32 index = 0; index < 16; index++)
+        {
+            if(first.q[index] != second.q[index])
+                return false;
+        }
+            
+        return true;
+    }
+        
     inline Mat4 transpose(Mat4 in)
     {
         Mat4 result(in);

@@ -971,8 +971,22 @@ struct Resolution
 
 struct ParticleSystemInfo;
 
+struct RenderState;
+
+typedef void (*LoadTexture)(TextureData &texture_data, RenderState *render_state, Renderer *renderer);
+typedef void (*CreateFramebuffer)(rendering::FramebufferInfo &framebuffer_info, RenderState *render_state, Renderer *renderer);
+
+struct GraphicsAPI
+{
+    LoadTexture load_texture;
+    CreateFramebuffer create_framebuffer;
+    RenderState *render_state;
+};
+
 struct Renderer
-{   
+{
+    GraphicsAPI api_functions;
+    
 	b32 should_close;
 	r64 fps;
 	r64 average_fps;
