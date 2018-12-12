@@ -71,6 +71,8 @@ static void load_texture(const char* full_texture_path, Renderer& renderer, Text
     texture_data->handle = renderer.texture_count++;
     
     PlatformFile png_file = platform.open_file(full_texture_path, POF_READ | POF_OPEN_EXISTING | POF_IGNORE_ERROR);
+
+    b32 loaded = true;
     
     if(png_file.handle)
     {
@@ -85,11 +87,14 @@ static void load_texture(const char* full_texture_path, Renderer& renderer, Text
         texture_data->image_data = stbi_load_from_memory(tex_data, size, &texture_data->width, &texture_data->height, 0, STBI_rgb_alpha);
         platform.close_file(png_file);
         end_temporary_memory(temp_mem);
+
+        assert(renderer.api_functions.load_texture);
+        renderer.api_functions.load_texture(*texture_data, renderer.api_functions.render_state, &renderer);
     }
-    
-    if(!texture_data->image_data)
+    else
     {
         printf("Texture could not be loaded: %s\n", full_texture_path);
+        assert(false);
     }
     
     if(handle)

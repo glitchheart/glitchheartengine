@@ -290,8 +290,8 @@ struct MemoryArena;
 struct DebugState;
 struct InputController;
 struct SoundSystem;
-struct RenderState;
 struct Renderer;
+struct RenderState;
 
 namespace scene
 {
