@@ -907,8 +907,16 @@ enum TextureFiltering
     NEAREST
 };
 
+enum class TextureDataType
+{
+    NORMAL,
+    FRAMEBUFFER
+};
+
 struct TextureData
 {
+    TextureDataType type;
+    
 	TextureFiltering filtering;
 	i32 handle;
 	char* name;
@@ -934,7 +942,7 @@ struct UIRenderInfo
 	math::Vec2 frame_size;
 	u32 shader_index;
 	math::Vec2 size = math::Vec2(1, 1);
-	math::Vec4 color = math::Vec4(1, 1, 1, 1);
+	math::Vec4 r = math::Vec4(1, 1, 1, 1);
 };
 
 struct BufferData
