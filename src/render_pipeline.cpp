@@ -195,13 +195,6 @@ namespace rendering
     {
         FramebufferHandle handle = { (renderer.render.framebuffer_count++) + 1 };
         strncpy(info.name, name, strlen(name) + 1);
-        info.complete = true;
-
-        for(i32 i = 0; i < info.color_attachments.count; i++)
-        {
-            info.color_attachments.attachments[i].texture = { (renderer.texture_count++) + 1 };
-        }
-        
         renderer.render.framebuffers[handle.handle - 1] = info;
 
         assert(renderer.api_functions.create_framebuffer);
