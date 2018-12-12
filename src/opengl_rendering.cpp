@@ -796,7 +796,7 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
             Texture texture;
             glGenTextures(1, &texture.texture_handle);
 
-            i32 handle = render_state.texture_index + 1;
+            i32 handle = attachment.texture.handle;
             
             if(attachment.flags & rendering::ColorAttachmentFlags::MULTISAMPLED)
             {
@@ -839,8 +839,7 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
 
             framebuffer.tex_color_buffer_handles[i] = texture.texture_handle;
             render_state.texture_array[render_state.texture_index] = texture;
-            renderer.texture_data[renderer.texture_count].handle = handle;
-            renderer.texture_count++;
+            renderer.texture_data[renderer.texture_count].handle = handle - 1;
             render_state.texture_index++;
         }      
     }
@@ -3293,22 +3292,22 @@ static void register_framebuffers(RenderState &render_state, Renderer &renderer)
         Framebuffer &framebuffer = render_state.v2.framebuffers[index];
         create_new_framebuffer(render_state, renderer, info, framebuffer);
 
-        for(i32 i = 0; i < info.pending_textures.count; i++)
-        {
-            rendering::RenderPass &pass = renderer.render.post_processing_passes[info.pending_textures.pass_handles[i].handle - 1];
-            char *name = info.pending_textures.uniform_names[i];
-            rendering::ColorAttachment &attachment = info.color_attachments.attachments[info.pending_textures.color_attachment_indices[i]];
+        // for(i32 i = 0; i < info.pending_textures.count; i++)
+        // {
+        //     rendering::RenderPass &pass = renderer.render.post_processing_passes[info.pending_textures.pass_handles[i].handle - 1];
+        //     char *name = info.pending_textures.uniform_names[i];
+        //     rendering::ColorAttachment &attachment = info.color_attachments.attachments[info.pending_textures.color_attachment_indices[i]];
             
-            for(i32 j = 0; j < pass.post_processing.uniform_value_count; j++)
-            {
-                rendering::UniformValue &uv = pass.post_processing.uniform_values[j];
-                if(strcmp(uv.name, name) == 0)
-                {
-                    uv.texture = attachment.texture;
-                    break;
-                }
-            }
-        }
+        //     for(i32 j = 0; j < pass.post_processing.uniform_value_count; j++)
+        //     {
+        //         rendering::UniformValue &uv = pass.post_processing.uniform_values[j];
+        //         if(strcmp(uv.name, name) == 0)
+        //         {
+        //             uv.texture = attachment.texture;
+        //             break;
+        //         }
+        //     }
+        // }
 
         info.pending_textures.count = 0;
     }
@@ -3896,74 +3895,6 @@ static void check_window_mode_and_size(RenderState &render_state, Renderer &rend
     }
 }
 
-static void render_bloom(RenderState &render_state, Renderer &renderer)
-{
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-
-    b32 horizontal = true;
-    b32 first_iteration = true;
-    i32 amount = renderer.render.bloom.amount;
-
-    Framebuffer final_buffer = render_state.v2.framebuffers[0];
-    
-    bind_vertex_array(render_state.framebuffer_quad_vao, render_state);
-    ShaderGL gl_shader = render_state.gl_shaders[renderer.render.blur_shader.handle];
-    glUseProgram(gl_shader.program);
-
-    for(i32 i = 0; i < amount; i++)
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, render_state.bloom.ping_pong_fbo[horizontal]);
-
-        glActiveTexture(GL_TEXTURE0);
-
-        GLuint tex = first_iteration ? final_buffer.tex_color_buffer_handles[1] : render_state.bloom.ping_pong_buffer[!horizontal];
-            
-        glBindTexture(GL_TEXTURE_2D, tex);
-        set_int_uniform(gl_shader.program, "image", 0);
-        set_int_uniform(gl_shader.program, "horizontal", horizontal);
-
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)nullptr);
-        horizontal = !horizontal;
-
-        if(first_iteration)
-            first_iteration = false;
-    }
-
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_state.bloom.ping_pong_fbo[2]);
-        
-    ShaderGL bloom_shader = render_state.gl_shaders[renderer.render.bloom_shader.handle];
-    glUseProgram(bloom_shader.program);
-
-    set_int_uniform(bloom_shader.program, "scene", 0);
-    set_int_uniform(bloom_shader.program, "bloomBlur", 1);
-        
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, render_state.framebuffers[render_state.current_framebuffer].tex_color_buffer_handles[0]);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, render_state.bloom.ping_pong_buffer[!horizontal]);
-        
-    set_int_uniform(bloom_shader.program, "bloom", renderer.render.bloom.active);
-
-    set_float_uniform(bloom_shader.program, "exposure", renderer.render.bloom.exposure);
-
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)nullptr);
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    bind_vertex_array(0, render_state);
-}
-
-/*
-
-    Framebuffer final_buffer = render_state.v2.framebuffers[renderer.render.final_framebuffer.handle - 1];
-    
-    glDisable(GL_DEPTH_TEST);
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, render_state.v2.framebuffers[0].buffer_handle);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, final_buffer.buffer_handle);
-
-    glBlitFramebuffer(0, 0, final_buffer.width, final_buffer.height, 0, 0, final_buffer.width, final_buffer.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-*/
-
 static void render_post_processing_passes(RenderState &render_state, Renderer &renderer)
 {
     glDisable(GL_DEPTH_TEST);
@@ -4001,26 +3932,6 @@ static void render_post_processing_passes(RenderState &render_state, Renderer &r
     }
     
     bind_vertex_array(0, render_state);
-    
-    // glBindFramebuffer(GL_FRAMEBUFFER, final_buffer.buffer_handle);
-    
-    // bind_vertex_array(render_state.framebuffer_quad_vao, render_state);
-    // ShaderGL hdr_shader = render_state.gl_shaders[renderer.render.hdr_shader.handle];
-
-    // glUseProgram(hdr_shader.program);
-
-    // set_int_uniform(hdr_shader.program, "scene", 0);
-    // set_int_uniform(hdr_shader.program, "width", final_buffer.width);
-    // set_int_uniform(hdr_shader.program, "height", final_buffer.height);
-    
-    // set_float_uniform(hdr_shader.program, "exposure", renderer.render.hdr.exposure);
-
-    // glActiveTexture(GL_TEXTURE0);
-    // glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, render_state.v2.framebuffers[0].tex_color_buffer_handles[0]);
-    // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)nullptr);
-    
-    // glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
-
 }
 
 static void render(RenderState& render_state, Renderer& renderer, r64 delta_time, b32 *save_config)
@@ -4050,10 +3961,10 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
     
     renderer.ui_projection_matrix = math::ortho(0.0f, (r32)renderer.framebuffer_width, 0.0f, (r32)renderer.framebuffer_height, -500.0f, 500.0f);
 
-    load_textures(render_state, renderer);
     register_buffers(render_state, renderer);
     register_new_buffers(render_state, renderer);
     register_framebuffers(render_state, renderer);
+    load_textures(render_state, renderer);
     
     if(should_render)
     {
@@ -4063,7 +3974,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         render_commands(render_state, renderer);
         render_post_processing_passes(render_state, renderer);
 
-        //render_ui_commands(render_state, renderer);
+        render_ui_commands(render_state, renderer);
         
         render_state.bound_texture = 0;
 
