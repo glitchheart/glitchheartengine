@@ -432,16 +432,24 @@ struct InstancedRenderCommand
     InstancedRenderCommand () {}
 };
 
-struct NormalRenderCommand
+struct BatchedCommand
 {
-	rendering::Transform transform;
-	rendering::BufferHandle buffer_handle;
-	rendering::MaterialInstanceHandle material_handle;
+    rendering::MaterialInstanceHandle material_handle;
+    rendering::Transform transform;
     b32 casts_shadows;
 
     rendering::RenderPassHandle passes[8];
     rendering::ShaderHandle shader_handles[8];
     i32 pass_count;
+};
+
+struct NormalRenderCommand
+{
+	rendering::BufferHandle buffer_handle;
+    rendering::MaterialHandle original_material;
+
+    BatchedCommand commands[128];
+    i32 count;
 };
 
 enum QueuedRenderCommandType
@@ -455,7 +463,6 @@ struct QueuedRenderCommand
 	QueuedRenderCommandType type;
 	union
 	{
-		InstancedRenderCommand instanced = {};
 		NormalRenderCommand normal;
 	};
 
