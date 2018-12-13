@@ -406,6 +406,7 @@ static void reload_shaders(RenderState &render_state, Renderer &renderer)
             clear(&shader.arena);
             rendering::load_shader(renderer, shader);
             load_shader(renderer, shader, gl_shader);
+            update_materials_with_shader(renderer, shader);
             printf("Reloaded shader: %s\n", shader.path);
         }
     }
