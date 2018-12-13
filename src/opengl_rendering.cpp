@@ -3650,7 +3650,7 @@ static void render_all_passes(RenderState &render_state, Renderer &renderer)
         pass.commands.render_command_count = 0;
     }
     
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glActiveTexture(GL_TEXTURE0);
 }
 
@@ -3735,12 +3735,12 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
     
     //glEnable(GL_DEPTH_TEST);
     
-    // for (i32 index = 0; index < renderer.command_count; index++)
-    // {
-    //     RenderCommand& command = renderer.commands[index];
+    for (i32 index = 0; index < renderer.command_count; index++)
+    {
+        RenderCommand& command = renderer.commands[index];
         
-    //     switch (command.type)
-    //     {
+        switch (command.type)
+        {
     //         case RENDER_COMMAND_LINE:
     //         {
     //             render_line(command, render_state, renderer.camera.projection_matrix, renderer.camera.view_matrix);
@@ -3773,11 +3773,11 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
                 
     //         }
     //         break;
-    //         case RENDER_COMMAND_PARTICLES:
-    //         {
-    //             render_particles(command, renderer, render_state, renderer.camera.projection_matrix, renderer.camera.view_matrix);
-    //         }
-    //         break;
+            case RENDER_COMMAND_PARTICLES:
+            {
+                render_particles(command, renderer, render_state, renderer.camera.projection_matrix, renderer.camera.view_matrix);
+            }
+            break;
     //         case RENDER_COMMAND_MESH_INSTANCED:
     //         {
     //             render_mesh_instanced(command, renderer, render_state, renderer.camera.projection_matrix, renderer.camera.view_matrix, false, &renderer.shadow_map_matrices);
@@ -3815,13 +3815,13 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
     //         break;
     //         default:
     //         break;
-    //     }
-    // }
+        }
+    }
     
     renderer.command_count = 0;
     //clear(&renderer.commands);
     
-    //glDisable(GL_DEPTH_TEST);
+    glDisable(GL_DEPTH_TEST);
     
     //clear(&renderer.ui_commands);
 }
