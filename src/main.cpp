@@ -608,7 +608,7 @@ int main(int argc, char **args)
     render_state.gl_buffer_count = 0;
 
     
-    Renderer *renderer_alloc = (Renderer *)malloc(sizeof(Renderer));
+    Renderer *renderer_alloc = push_struct(&platform_state->perm_arena, Renderer);
     Renderer &renderer = *renderer_alloc;
     renderer = {};
     

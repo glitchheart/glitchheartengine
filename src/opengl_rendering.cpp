@@ -3498,7 +3498,6 @@ static void render_buffer(rendering::RenderCommand& command, const rendering::Re
         if(!gl_shader.program)
             return;
 
-
         if(render_state.current_state.shader_program != gl_shader.program)
         {
             glUseProgram(gl_shader.program);
@@ -3615,8 +3614,10 @@ static void render_shadows(RenderState &render_state, Renderer &renderer, Frameb
 
 static void render_all_passes(RenderState &render_state, Renderer &renderer)
 {    
-    //glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-
+    // @Incomplete: Create a better way for enabling/disabling the clipping planes
+    // Check if we have clipping planes
+    glEnable(GL_CLIP_PLANE0);
+    
     // Go backwards through the array to enable easy render pass adding
     for(i32 pass_index = renderer.render.pass_count - 1; pass_index >= 0; pass_index--)
     {
@@ -3632,13 +3633,6 @@ static void render_all_passes(RenderState &render_state, Renderer &renderer)
         glDepthFunc(GL_LESS);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glClearColor(renderer.clear_color.r, renderer.clear_color.g, renderer.clear_color.b, renderer.clear_color.a);
-
-        // @Incomplete: Create a better way for enabling/disabling the clipping planes
-        // Check if we have clipping planes
-        //if(pass.clipping_planes.type != rendering::ClippingPlaneType::NONE)
-            glEnable(GL_CLIP_PLANE0);
-            //else
-            //glDisable(GL_CLIP_PLANE0);
         
         for(i32 i = 0; i < pass.commands.render_command_count; i++)
         {

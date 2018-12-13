@@ -206,6 +206,9 @@ namespace rendering
 		VertexAttribute vertex_attributes[16];
 		i32 vertex_attribute_count;
 
+        VertexAttribute instanced_vertex_attributes[16];
+        i32 instanced_attribute_count;
+
 		Uniform *uniforms;
 		i32 uniform_count;
 
@@ -226,11 +229,6 @@ namespace rendering
         MemoryArena arena;
         
 		Shader () {}
-    };
-
-    struct InstanceBuffer
-    {
-        
     };
 
     struct Material
