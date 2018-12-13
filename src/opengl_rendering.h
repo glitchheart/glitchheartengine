@@ -66,7 +66,7 @@ struct ShaderGL
 	GLuint vert_program;
 	GLuint frag_program;
 
-    GLuint uniform_locations[128];
+    GLint uniform_locations[128];
     i32 location_count;
 };
 

@@ -310,7 +310,8 @@ static void set_all_uniform_locations(rendering::Shader &shader, ShaderGL &gl_sh
                         rendering::Uniform struct_uni = structure.uniforms[j];
                         char char_buf[256];
                         sprintf(char_buf, "%s[%d].%s", uniform.name, i, struct_uni.name);
-                        gl_shader.uniform_locations[gl_shader.location_count++] = glGetUniformLocation(gl_shader.program, char_buf);
+                        GLint location = glGetUniformLocation(gl_shader.program, char_buf);
+                        gl_shader.uniform_locations[gl_shader.location_count++] = location;
                     }
                 }
             }
@@ -320,13 +321,16 @@ static void set_all_uniform_locations(rendering::Shader &shader, ShaderGL &gl_sh
                 {
                     char char_buf[256];
                     sprintf(char_buf, "%s[%d]", uniform.name, i);
-                    gl_shader.uniform_locations[gl_shader.location_count++] = glGetUniformLocation(gl_shader.program, char_buf);
+
+                    GLint location = glGetUniformLocation(gl_shader.program, char_buf);
+                    gl_shader.uniform_locations[gl_shader.location_count++] = location;
                 }
             }
         }
         else
         {
-            gl_shader.uniform_locations[gl_shader.location_count++] = glGetUniformLocation(gl_shader.program, uniform.name);
+            GLint location = glGetUniformLocation(gl_shader.program, uniform.name);
+            gl_shader.uniform_locations[gl_shader.location_count++] = location;
         }
     }
 }
@@ -1836,7 +1840,7 @@ static void set_vec2_uniform(GLuint shader_handle, const char *uniform_name, mat
 
 static void set_vec2_uniform(GLuint shader_handle, GLuint location, math::Vec2 value)
 {
-    glUniform2f(location, value.x, value.y);
+    glUniform2f(glGetUniformLocation(shader_handle, uniform_name), value.x, value.y);
 }
 
 void set_vec3_uniform(GLuint shader_handle, const char *uniform_name, math::Vec3 value)
@@ -2417,65 +2421,7 @@ static void render_quad(const RenderCommand& command, RenderState& render_state,
                     view);
     }
 }
-/*
-static void render_model(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
-{
-Buffer buffer = render_state.buffers[command.model.buffer_handle];
-glBindVertexArray(buffer.vao);
 
-for (i32 mesh_index = 0; mesh_index < command.model.mesh_count; mesh_index++)
-{
-MeshData mesh_data = command.model.meshes[mesh_index];
-Material material = command.model.materials[mesh_data.material_index];
-
-if (material.diffuse_texture.has_data)
-{
-Texture texture = render_state.texture_array[material.diffuse_texture.texture_handle];
-if (render_state.bound_texture != texture.texture_handle)
-{
-glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
-render_state.bound_texture = texture.texture_handle;
-}
-}
-
-Shader shader = {};
-
-if (command.model.type == MODEL_SKINNED)
-{
-shader = render_state.simple_model_shader;
-use_shader(shader);
-
-for (i32 index = 0; index < command.model.bone_count; index++)
-{
-char s_buffer[20];
-sprintf(s_buffer, "bones[%d]", index);
-set_mat4_uniform(shader.program, s_buffer, command.model.bone_transforms[index]);
-}
-}
-else
-{
-// @Incomplete: We need a shader that isn't using the bone data
-}
-
-math::Mat4 model(1.0f);
-model = math::scale(model, command.scale);
-model = math::rotate(model, command.orientation);
-model = math::translate(model, command.position);
-
-math::Mat4 normal_matrix = math::transpose(math::inverse(view * model));
-
-set_mat4_uniform(shader.program, "normalMatrix", normal_matrix);
-set_mat4_uniform(shader.program, "projection", projection);
-set_mat4_uniform(shader.program, "view", view);
-set_mat4_uniform(shader.program, "model", model);
-set_vec4_uniform(shader.program, "color", math::Rgba(1.0f, 1.0f, 1.0f, 1.0f));
-set_int_uniform(shader.program, "hasUVs", material.diffuse_texture.has_data);
-
-glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_INT, (void*)0);
-glBindVertexArray(0);
-}
-}
-*/
 static void prepare_shader(const Shader shader, ShaderAttribute *attributes, i32 shader_attribute_count)
 {
     use_shader(shader);
@@ -3322,43 +3268,43 @@ static void set_uniform(RenderState& render_state, Renderer& renderer, GLuint pr
 	{
 	case rendering::ValueType::FLOAT:
 	{
-		set_float_uniform(program, location, uniform_value.float_val);
+		set_float_uniform(program, uniform_value.uniform.name, uniform_value.float_val);
 	}
 	break;
 	case rendering::ValueType::FLOAT2:
 	{
-		set_vec2_uniform(program, location, uniform_value.float2_val);
+		set_vec2_uniform(program, uniform_value.uniform.name, uniform_value.float2_val);
 	}
 	break;
 	case rendering::ValueType::FLOAT3:
 	{
-		set_vec3_uniform(program, location, uniform_value.float3_val);
+		set_vec3_uniform(program, uniform_value.uniform.name, uniform_value.float3_val);
 	}
 	break;
 	case rendering::ValueType::FLOAT4:
 	{
-		set_vec4_uniform(program, location, uniform_value.float4_val);
+		set_vec4_uniform(program, uniform_value.uniform.name, uniform_value.float4_val);
 	}
 	break;
 	case rendering::ValueType::INTEGER:
 	{
-		set_int_uniform(program, location, uniform_value.integer_val);
+		set_int_uniform(program, uniform_value.uniform.name, uniform_value.integer_val);
 	}
 	break;
 	case rendering::ValueType::BOOL:
 	{
-		set_bool_uniform(program, location, uniform_value.boolean_val);
+		set_bool_uniform(program, uniform_value.uniform.name, uniform_value.boolean_val);
 	}
 	break;
 	case rendering::ValueType::MAT4:
 	{
-		set_mat4_uniform(program, location, uniform_value.mat4_val);
+		set_mat4_uniform(program, uniform_value.uniform.name, uniform_value.mat4_val);
 	}
 	break;
 	case rendering::ValueType::TEXTURE:
 	{
 		Texture texture = render_state.texture_array[renderer.texture_data[uniform_value.texture.handle - 1].handle];
-        set_int_uniform(program, location, *texture_count);
+        set_int_uniform(program, uniform_value.uniform.name, *texture_count);
 		set_texture_uniform(program, texture.texture_handle, *texture_count);
 		(*texture_count)++;
 	}
@@ -3366,7 +3312,7 @@ static void set_uniform(RenderState& render_state, Renderer& renderer, GLuint pr
     case rendering::ValueType::MS_TEXTURE:
 	{
 		Texture texture = render_state.texture_array[renderer.texture_data[uniform_value.ms_texture.handle - 1].handle];
-        set_int_uniform(program, location, *texture_count);
+        set_int_uniform(program, uniform_value.uniform.name, *texture_count);
 		set_ms_texture_uniform(program, texture.texture_handle, *texture_count);
 		(*texture_count)++;
 	}
