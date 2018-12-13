@@ -1376,7 +1376,6 @@ namespace rendering
         mesh = {};
         mesh.vertices = push_array(&renderer.mesh_arena, sizeof(plane_vertices) / sizeof(r32) / 3, Vertex);
         mesh.faces = push_array(&renderer.mesh_arena, sizeof(plane_indices) / sizeof(u16) / 3, Face);
-    
         mesh.vertex_count = sizeof(plane_vertices) / sizeof(r32) / 3;
     
         for(i32 i = 0; i < mesh.vertex_count; i++)
