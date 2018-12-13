@@ -348,6 +348,8 @@ namespace rendering
             }
             else if(starts_with(rest, "{"))
             {}
+            else if(strlen(rest) == 0)
+            { }// @Incomplete: Better fix here
             else
             {
                 // GET TYPE
