@@ -410,7 +410,6 @@ static void reload_shaders(RenderState &render_state, Renderer &renderer)
             clear(&shader.arena);
             rendering::load_shader(renderer, shader);
             load_shader(renderer, shader, gl_shader);
-            update_materials_with_shader(renderer, shader);
             printf("Reloaded shader: %s\n", shader.path);
         }
     }
@@ -1541,8 +1540,8 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     //@Incomplete: Figure something out here. Ask for compatible version etc
 #ifdef _WIN32
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 #elif __linux
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
@@ -1840,7 +1839,7 @@ static void set_vec2_uniform(GLuint shader_handle, const char *uniform_name, mat
 
 static void set_vec2_uniform(GLuint shader_handle, GLuint location, math::Vec2 value)
 {
-    glUniform2f(glGetUniformLocation(shader_handle, uniform_name), value.x, value.y);
+    glUniform2f(location, value.x, value.y);
 }
 
 void set_vec3_uniform(GLuint shader_handle, const char *uniform_name, math::Vec3 value)
@@ -3268,43 +3267,43 @@ static void set_uniform(RenderState& render_state, Renderer& renderer, GLuint pr
 	{
 	case rendering::ValueType::FLOAT:
 	{
-		set_float_uniform(program, uniform_value.uniform.name, uniform_value.float_val);
+		set_float_uniform(program, location, uniform_value.float_val);
 	}
 	break;
 	case rendering::ValueType::FLOAT2:
 	{
-		set_vec2_uniform(program, uniform_value.uniform.name, uniform_value.float2_val);
+		set_vec2_uniform(program, location, uniform_value.float2_val);
 	}
 	break;
 	case rendering::ValueType::FLOAT3:
 	{
-		set_vec3_uniform(program, uniform_value.uniform.name, uniform_value.float3_val);
+		set_vec3_uniform(program, location, uniform_value.float3_val);
 	}
 	break;
 	case rendering::ValueType::FLOAT4:
 	{
-		set_vec4_uniform(program, uniform_value.uniform.name, uniform_value.float4_val);
+		set_vec4_uniform(program, location, uniform_value.float4_val);
 	}
 	break;
 	case rendering::ValueType::INTEGER:
 	{
-		set_int_uniform(program, uniform_value.uniform.name, uniform_value.integer_val);
+		set_int_uniform(program, location, uniform_value.integer_val);
 	}
 	break;
 	case rendering::ValueType::BOOL:
 	{
-		set_bool_uniform(program, uniform_value.uniform.name, uniform_value.boolean_val);
+		set_bool_uniform(program, location, uniform_value.boolean_val);
 	}
 	break;
 	case rendering::ValueType::MAT4:
 	{
-		set_mat4_uniform(program, uniform_value.uniform.name, uniform_value.mat4_val);
+		set_mat4_uniform(program, location, uniform_value.mat4_val);
 	}
 	break;
 	case rendering::ValueType::TEXTURE:
 	{
 		Texture texture = render_state.texture_array[renderer.texture_data[uniform_value.texture.handle - 1].handle];
-        set_int_uniform(program, uniform_value.uniform.name, *texture_count);
+        set_int_uniform(program, location, *texture_count);
 		set_texture_uniform(program, texture.texture_handle, *texture_count);
 		(*texture_count)++;
 	}
@@ -3312,7 +3311,7 @@ static void set_uniform(RenderState& render_state, Renderer& renderer, GLuint pr
     case rendering::ValueType::MS_TEXTURE:
 	{
 		Texture texture = render_state.texture_array[renderer.texture_data[uniform_value.ms_texture.handle - 1].handle];
-        set_int_uniform(program, uniform_value.uniform.name, *texture_count);
+        set_int_uniform(program, location, *texture_count);
 		set_ms_texture_uniform(program, texture.texture_handle, *texture_count);
 		(*texture_count)++;
 	}
@@ -3328,93 +3327,94 @@ static void set_uniform(rendering::Transform transform, const rendering::RenderP
     rendering::Uniform &uniform = uniform_value.uniform;
 
     GLuint location = gl_shader.uniform_locations[uniform_value.uniform.location_index];
-        
-    switch(uniform.mapping_type)
+    if(location != -1)
     {
-    case rendering::UniformMappingType::NONE:
-    case rendering::UniformMappingType::DIFFUSE_TEX:
-    case rendering::UniformMappingType::DIFFUSE_COLOR:
-    case rendering::UniformMappingType::SPECULAR_TEX:
-    case rendering::UniformMappingType::SPECULAR_COLOR:
-    case rendering::UniformMappingType::SPECULAR_EXPONENT:
-    case rendering::UniformMappingType::AMBIENT_COLOR:
-    case rendering::UniformMappingType::AMBIENT_TEX:
-    case rendering::UniformMappingType::DIRECTIONAL_LIGHT_COUNT:
-    case rendering::UniformMappingType::POINT_LIGHT_COUNT:
-    case rendering::UniformMappingType::POINT_LIGHT_POSITION:
-    case rendering::UniformMappingType::DIRECTIONAL_LIGHT_DIRECTION:
-    case rendering::UniformMappingType::DIRECTIONAL_LIGHT_AMBIENT:
-    case rendering::UniformMappingType::DIRECTIONAL_LIGHT_DIFFUSE:
-    case rendering::UniformMappingType::DIRECTIONAL_LIGHT_SPECULAR:
-    case rendering::UniformMappingType::POINT_LIGHT_AMBIENT:
-    case rendering::UniformMappingType::POINT_LIGHT_DIFFUSE:
-    case rendering::UniformMappingType::POINT_LIGHT_SPECULAR:
-    case rendering::UniformMappingType::POINT_LIGHT_CONSTANT:
-    case rendering::UniformMappingType::POINT_LIGHT_LINEAR:
-    case rendering::UniformMappingType::POINT_LIGHT_QUADRATIC:
-    {
-        set_uniform(render_state, renderer, gl_shader.program, uniform_value, location, texture_count);
-    }
-    break;
-    case rendering::UniformMappingType::CLIPPING_PLANE:
-    {
-        set_vec4_uniform(gl_shader.program, uniform_value.uniform.name, render_pass.clipping_planes.plane);
-    }
-    break;
-    case rendering::UniformMappingType::LIGHT_SPACE_MATRIX:
-    {
-        set_mat4_uniform(gl_shader.program, uniform_value.uniform.name, renderer.render.light_space_matrix);
-    }
-    break;
-    case rendering::UniformMappingType::SHADOW_MAP:
-    {
-        set_int_uniform(gl_shader.program, uniform_value.uniform.name, *texture_count);
-        glActiveTexture(GL_TEXTURE0 + *texture_count++);
-        glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
-    }
-    break;
-    case rendering::UniformMappingType::SHADOW_VIEW_POSITION:
-    {
-        set_vec3_uniform(gl_shader.program, uniform_value.uniform.name, renderer.render.shadow_view_position);
-    }
-    break;
-    case rendering::UniformMappingType::MODEL:
-    {
-        math::Mat4 model_matrix(1.0f);
-        model_matrix = math::scale(model_matrix, transform.scale);
+        switch(uniform.mapping_type)
+        {
+        case rendering::UniformMappingType::NONE:
+        case rendering::UniformMappingType::DIFFUSE_TEX:
+        case rendering::UniformMappingType::DIFFUSE_COLOR:
+        case rendering::UniformMappingType::SPECULAR_TEX:
+        case rendering::UniformMappingType::SPECULAR_COLOR:
+        case rendering::UniformMappingType::SPECULAR_EXPONENT:
+        case rendering::UniformMappingType::AMBIENT_COLOR:
+        case rendering::UniformMappingType::AMBIENT_TEX:
+        case rendering::UniformMappingType::DIRECTIONAL_LIGHT_COUNT:
+        case rendering::UniformMappingType::POINT_LIGHT_POSITION:
+        case rendering::UniformMappingType::DIRECTIONAL_LIGHT_DIRECTION:
+        case rendering::UniformMappingType::DIRECTIONAL_LIGHT_AMBIENT:
+        case rendering::UniformMappingType::DIRECTIONAL_LIGHT_DIFFUSE:
+        case rendering::UniformMappingType::DIRECTIONAL_LIGHT_SPECULAR:
+        case rendering::UniformMappingType::POINT_LIGHT_AMBIENT:
+        case rendering::UniformMappingType::POINT_LIGHT_DIFFUSE:
+        case rendering::UniformMappingType::POINT_LIGHT_SPECULAR:
+        case rendering::UniformMappingType::POINT_LIGHT_CONSTANT:
+        case rendering::UniformMappingType::POINT_LIGHT_LINEAR:
+        case rendering::UniformMappingType::POINT_LIGHT_QUADRATIC:
+        {
+            set_uniform(render_state, renderer, gl_shader.program, uniform_value, location, texture_count);
+        }
+        break;
+        case rendering::UniformMappingType::CLIPPING_PLANE:
+        {
+            set_vec4_uniform(gl_shader.program, location, render_pass.clipping_planes.plane);
+        }
+        break;
+        case rendering::UniformMappingType::LIGHT_SPACE_MATRIX:
+        {
+            set_mat4_uniform(gl_shader.program, location, renderer.render.light_space_matrix);
+        }
+        break;
+        case rendering::UniformMappingType::SHADOW_MAP:
+        {
+            set_int_uniform(gl_shader.program, location, *texture_count);
+            glActiveTexture(GL_TEXTURE0 + *texture_count++);
+            glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
+        }
+        break;
+        case rendering::UniformMappingType::SHADOW_VIEW_POSITION:
+        {
+            set_vec3_uniform(gl_shader.program, location, renderer.render.shadow_view_position);
+        }
+        break;
+        case rendering::UniformMappingType::MODEL:
+        {
+            math::Mat4 model_matrix(1.0f);
+            model_matrix = math::scale(model_matrix, transform.scale);
     
-        math::Vec3 rotation = transform.rotation;
-        auto x_axis = rotation.x > 0.0f ? 1.0f : 0.0f;
-        auto y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
-        auto z_axis = rotation.z > 0.0f ? 1.0f : 0.0f;
+            math::Vec3 rotation = transform.rotation;
+            auto x_axis = rotation.x > 0.0f ? 1.0f : 0.0f;
+            auto y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
+            auto z_axis = rotation.z > 0.0f ? 1.0f : 0.0f;
     
-        math::Quat orientation = math::Quat();
-        orientation = math::rotate(orientation, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
-        orientation = math::rotate(orientation, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
-        orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
+            math::Quat orientation = math::Quat();
+            orientation = math::rotate(orientation, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
+            orientation = math::rotate(orientation, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
+            orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
     
-        model_matrix = to_matrix(orientation) * model_matrix;
+            model_matrix = to_matrix(orientation) * model_matrix;
     
-        model_matrix = math::translate(model_matrix, transform.position);
+            model_matrix = math::translate(model_matrix, transform.position);
 
-        set_mat4_uniform(gl_shader.program, uniform_value.uniform.name, model_matrix);
-    }
-    break;
-    case rendering::UniformMappingType::VIEW:
-    {
-        set_mat4_uniform(gl_shader.program, uniform_value.uniform.name, camera.view_matrix);
-    }
-    break;
-    case rendering::UniformMappingType::PROJECTION:
-    {
-        set_mat4_uniform(gl_shader.program, uniform_value.uniform.name, camera.projection_matrix);
-    }
-    break;
-    case rendering::UniformMappingType::CAMERA_POSITION:
-    {
-        set_vec3_uniform(gl_shader.program, uniform_value.uniform.name, camera.position);
-    }
-    break;
+            set_mat4_uniform(gl_shader.program, location, model_matrix);
+        }
+        break;
+        case rendering::UniformMappingType::VIEW:
+        {
+            set_mat4_uniform(gl_shader.program, location, camera.view_matrix);
+        }
+        break;
+        case rendering::UniformMappingType::PROJECTION:
+        {
+            set_mat4_uniform(gl_shader.program, location, camera.projection_matrix);
+        }
+        break;
+        case rendering::UniformMappingType::CAMERA_POSITION:
+        {
+            set_vec3_uniform(gl_shader.program, location, camera.position);
+        }
+        break;
+        }
     }
 }
 
