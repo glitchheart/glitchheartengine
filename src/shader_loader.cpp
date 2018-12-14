@@ -1331,7 +1331,7 @@ namespace rendering
 		return { unused_handle };
 	}
 
-    static BufferHandle create_quad_buffer(Renderer& renderer)
+    static BufferHandle create_quad_buffer(Renderer& renderer, math::Vec2 pivot = math::Vec2(0.0f), b32 uvs = false)
     {
         assert(renderer.render.buffer_count + 1 < global_max_custom_buffers);
 
@@ -1342,25 +1342,46 @@ namespace rendering
         info.usage = BufferUsage::STATIC;
         add_vertex_attrib(ValueType::FLOAT2, info);
 
-        info.data.vertex_count = 4;
-        info.data.vertex_buffer_size = info.data.vertex_count * vertex_size * (i32)sizeof(r32);
+        r32 *quad_vertices = nullptr;
+        
+        if(uvs)
+        {
+            add_vertex_attrib(ValueType::FLOAT2, info);
+            vertex_size += 2;
+            r32 vertices[16] =
+                {
+                    0.0f - pivot.x, 0.0f - pivot.y, 0.0f, 1.0f,
+                    1.0f - pivot.x, 0.0f - pivot.y, 1.0f, 1.0f,
+                    1.0f - pivot.x, 1.0f - pivot.y, 1.0f, 0.0f,
+                    0.0f - pivot.x, 1.0f - pivot.y, 0.0f, 0.0f
+                };
 
-        info.data.vertex_buffer = push_size(&renderer.buffer_arena, info.data.vertex_buffer_size, r32);
-
-        r32 quad_vertices[8] =
+            quad_vertices = vertices;
+        }
+        else
+        {
+            r32 vertices[8] =
             {
-                0.0f, 0.0f,
-                1.0f, 0.0f,
-                1.0f, 1.0f,
-                0.0f, 1.0f
+                0.0f - pivot.x, 0.0f - pivot.y,
+                1.0f - pivot.x, 0.0f - pivot.y,
+                1.0f - pivot.x, 1.0f - pivot.y,
+                0.0f - pivot.x, 1.0f - pivot.y,
             };
 
+            quad_vertices = vertices;
+        }
+        
         u16 quad_indices[6] =
             {
                 0, 1, 2,
                 0, 2, 3
             };
+        
+        info.data.vertex_count = 4;
+        info.data.vertex_buffer_size = info.data.vertex_count * vertex_size * (i32)sizeof(r32);
 
+        info.data.vertex_buffer = push_size(&renderer.buffer_arena, info.data.vertex_buffer_size, r32);
+        
         for(i32 i = 0; i < info.data.vertex_count * vertex_size; i++)
         {
             info.data.vertex_buffer[i] = quad_vertices[i];
@@ -1379,6 +1400,7 @@ namespace rendering
 
         return {register_buffer(renderer, info).handle };
     }
+
 
 	static BufferHandle create_buffers_from_mesh(Renderer& renderer, Mesh& mesh, u64 vertex_data_flags, b32 has_normals, b32 has_uvs)
 	{
@@ -1871,7 +1893,7 @@ namespace rendering
 
 	static void set_uniform_value(Renderer& renderer, Material& material, const char* name, TextureHandle value)
 	{
-			for(i32 i = 0; i < material.uniform_value_count; i++)
+        for(i32 i = 0; i < material.uniform_value_count; i++)
         {
             UniformValue& u_v = material.uniform_values[i];
             if(strncmp(u_v.uniform.name, name, strlen(name)) == 0)
@@ -2236,11 +2258,25 @@ namespace rendering
         // @Incomplete: Textured
         UIRenderCommand render_command = {};
         render_command.buffer = buffer_handle;
-        render_command.material = renderer.render.materials[renderer.render.ui.material.handle];
-        set_uniform_value(renderer, render_command.material, "color", info.color);
+
+        printf("centered: %d\n", info.centered);
+        
+        if(info.texture_handle != 0)
+        {
+            render_command.material = renderer.render.materials[renderer.render.ui.textured_material.handle];
+            TextureHandle tex = {info.texture_handle};
+            set_uniform_value(renderer, render_command.material, "tex0", tex);
+        }
+        else
+        {
+            render_command.material = renderer.render.materials[renderer.render.ui.material.handle];
+            set_uniform_value(renderer, render_command.material, "color", info.color);
+        }
 
         Transform transform = {};
         transform.position = math::Vec3(info.position.x, info.position.y, info.z_layer);
+        transform.scale = info.scale;
+        transform.rotation = info.rotation;
         
         render_command.transform = transform;
         render_command.shader_handle = shader;
@@ -2255,20 +2291,22 @@ namespace rendering
         info.position = math::Vec2(0.0f);
         info.rotation = math::Vec3(0.0f);
         info.scale = math::Vec2(0.0f);
+        info.centered = true;
 
         info.z_layer = 0;
         info.color = math::Rgba(1.0f);
         info.clip_rect = math::Rect(0.0f);
-        info.clip = false;
+        info.clip = true;
 
         info.scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO;
+        info.texture_handle = { 0 };
 
         return info;
     }
 
     static void push_ui_quad(Renderer& renderer, CreateUICommandInfo info)
     {
-        CreateUICommandInfo scaled_info = {};
+        CreateUICommandInfo scaled_info = info;
         math::Vec2i resolution_scale = get_scale(renderer);
 
         math::Vec2 pos;
@@ -2282,14 +2320,29 @@ namespace rendering
         scaled_info.clip_rect = scale_clip_rect(renderer, info.clip_rect, info.scaling_flag);
 
         scaled_info.rotation = info.rotation;
+        scaled_info.color = info.color;
         
         if(info.texture_handle != 0)
         {
-            // @Incomplete: Push textured quad buffer with uv's
+            if(info.centered)
+            {
+                push_buffer_to_ui_pass(renderer, renderer.render.ui.centered_textured_quad_buffer, renderer.render.textured_ui_quad_shader, scaled_info);
+            }
+            else
+            {
+                push_buffer_to_ui_pass(renderer, renderer.render.ui.textured_quad_buffer, renderer.render.textured_ui_quad_shader, scaled_info);
+            }
         }
         else
         {
-            push_buffer_to_ui_pass(renderer, renderer.render.ui.quad_buffer, renderer.render.ui_quad_shader, scaled_info);
+            if(info.centered)
+            {
+                push_buffer_to_ui_pass(renderer, renderer.render.ui.centered_quad_buffer, renderer.render.ui_quad_shader, scaled_info);
+            }
+            else
+            {
+                push_buffer_to_ui_pass(renderer, renderer.render.ui.quad_buffer, renderer.render.ui_quad_shader, scaled_info);
+            }
         }
         
         

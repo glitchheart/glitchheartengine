@@ -228,9 +228,12 @@ namespace math
             return this->e[i];
         }
         
-        inline Vec3 operator= (Vec2 o)
+        inline Vec3& operator= (Vec2 o)
         {
-            return Vec3(o.x, o.y, 0);
+            x = o.x;
+            y = o.y;
+            z = 0.0f;
+            return *this;
         }
         
         inline Vec3 operator-()
