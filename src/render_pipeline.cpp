@@ -29,11 +29,12 @@ namespace rendering
         camera.target = math::Vec3();
         camera.view_matrix = math::Mat4();
 
-        camera.projection_matrix = math::ortho(0.0f, (r32)renderer.framebuffer_width, 0.0f, (r32)renderer.framebuffer_height, -500.0f, 500.0f);
+        camera.projection_matrix = math::ortho(0.0f, (r32)renderer.framebuffer_width, 0.0f,
+                                               (r32)renderer.framebuffer_height, -500.0f, 500.0f);
 
         pass.camera = camera;
         strncpy(pass.name, "UI Pass", strlen("UI Pass") + 1);
-        pass.commands.render_commands = push_array(&renderer.render.render_pass_arena, global_max_ui_commands, RenderCommand);
+        pass.ui.render_commands = push_array(&renderer.render.render_pass_arena, global_max_ui_commands, UIRenderCommand);
     }
 
     static void set_uniforms_from_shader(Renderer& renderer, RenderPass& pass, ShaderHandle shader_handle)

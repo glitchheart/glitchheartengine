@@ -3295,43 +3295,43 @@ static void set_uniform(RenderState& render_state, Renderer& renderer, GLuint pr
 	{
 	case rendering::ValueType::FLOAT:
 	{
-		set_float_uniform(program, location, uniform_value.float_val);
+		set_float_uniform(program, uniform_value.uniform.name, uniform_value.float_val);
 	}
 	break;
 	case rendering::ValueType::FLOAT2:
 	{
-		set_vec2_uniform(program, location, uniform_value.float2_val);
+		set_vec2_uniform(program, uniform_value.uniform.name, uniform_value.float2_val);
 	}
 	break;
 	case rendering::ValueType::FLOAT3:
 	{
-		set_vec3_uniform(program, location, uniform_value.float3_val);
+		set_vec3_uniform(program, uniform_value.uniform.name, uniform_value.float3_val);
 	}
 	break;
 	case rendering::ValueType::FLOAT4:
 	{
-		set_vec4_uniform(program, location, uniform_value.float4_val);
+		set_vec4_uniform(program, uniform_value.uniform.name, uniform_value.float4_val);
 	}
 	break;
 	case rendering::ValueType::INTEGER:
 	{
-		set_int_uniform(program, location, uniform_value.integer_val);
+		set_int_uniform(program, uniform_value.uniform.name, uniform_value.integer_val);
 	}
 	break;
 	case rendering::ValueType::BOOL:
 	{
-		set_bool_uniform(program, location, uniform_value.boolean_val);
+		set_bool_uniform(program, uniform_value.uniform.name, uniform_value.boolean_val);
 	}
 	break;
 	case rendering::ValueType::MAT4:
 	{
-		set_mat4_uniform(program, location, uniform_value.mat4_val);
+		set_mat4_uniform(program, uniform_value.uniform.name, uniform_value.mat4_val);
 	}
 	break;
 	case rendering::ValueType::TEXTURE:
 	{
 		Texture texture = render_state.texture_array[renderer.texture_data[uniform_value.texture.handle - 1].handle];
-        set_int_uniform(program, location, *texture_count);
+        set_int_uniform(program, uniform_value.uniform.name, *texture_count);
 		set_texture_uniform(program, texture.texture_handle, *texture_count);
 		(*texture_count)++;
 	}
@@ -3339,7 +3339,7 @@ static void set_uniform(RenderState& render_state, Renderer& renderer, GLuint pr
     case rendering::ValueType::MS_TEXTURE:
 	{
 		Texture texture = render_state.texture_array[renderer.texture_data[uniform_value.ms_texture.handle - 1].handle];
-        set_int_uniform(program, location, *texture_count);
+        set_int_uniform(program, uniform_value.uniform.name, *texture_count);
 		set_ms_texture_uniform(program, texture.texture_handle, *texture_count);
 		(*texture_count)++;
 	}

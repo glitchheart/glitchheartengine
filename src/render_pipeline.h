@@ -338,6 +338,8 @@ namespace rendering
 
         i32 texture_handle;
 
+        b32 centered;
+
         math::Rect clip_rect;
         b32  clip;
         

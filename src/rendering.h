@@ -1131,6 +1131,7 @@ struct Renderer
         rendering::ShaderHandle blur_shader;
         rendering::ShaderHandle hdr_shader;
         rendering::ShaderHandle ui_quad_shader;
+        rendering::ShaderHandle textured_ui_quad_shader;
         
 		i32 shaders_to_reload[8];
 		i32 shaders_to_reload_count;
@@ -1165,8 +1166,12 @@ struct Renderer
         struct
         {
             rendering::BufferHandle quad_buffer;
+            rendering::BufferHandle textured_quad_buffer;
+            rendering::BufferHandle centered_quad_buffer;
+            rendering::BufferHandle centered_textured_quad_buffer;
             rendering::RenderPass pass;
             rendering::MaterialHandle material;
+            rendering::MaterialHandle textured_material;
         } ui;
         
         MemoryArena render_pass_arena;
