@@ -2015,53 +2015,69 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
             }
             
             model = math::translate(model, position);
-            
-            set_mat4_uniform(shader.program, "Projection", projection_matrix);
+
+            static GLint pLoc = glGetUniformLocation(shader.program, "Projection");
+            static GLint vLoc = glGetUniformLocation(shader.program, "View");
+
+            set_mat4_uniform(shader.program, pLoc, projection_matrix);
             
             if (!is_ui)
             {
-                set_mat4_uniform(shader.program, "View", view_matrix);
+                set_mat4_uniform(shader.program, vLoc, view_matrix);
             }
             
             if(shader.program == render_state.quad_shader.program)
             {
-                set_float_uniform(shader.program, "aspect",
+                static GLint aLoc = glGetUniformLocation(shader.program, "aspect");
+                static GLint sLoc = glGetUniformLocation(shader.program, "scale");
+                static GLint bwLoc = glGetUniformLocation(shader.program, "border_width");
+                static GLint bcLoc = glGetUniformLocation(shader.program, "border_color");
+                
+                set_float_uniform(shader.program, aLoc,
                                   size.x / size.y);
-                set_vec2_uniform(shader.program, "scale",
+                set_vec2_uniform(shader.program, sLoc,
                                  math::Vec2(scale.x, scale.y));
-                set_float_uniform(shader.program, "border_width", border_width);
-                set_vec4_uniform(shader.program, "border_color", border_color);
+                set_float_uniform(shader.program, bwLoc, border_width);
+                set_vec4_uniform(shader.program, bcLoc, border_color);
+            }
+            
+            static GLint uiLoc = glGetUniformLocation(shader.program, "isUI");
+            static GLint mLoc = glGetUniformLocation(shader.program, "M");
+            static GLint cLoc = glGetUniformLocation(shader.program, "color");
+
+            if(uiLoc == -1)
+            {
+                uiLoc = glGetUniformLocation(shader.program, "isUI");
             }
             
             set_float_uniform(shader.program, "isUI", (r32)is_ui);
-            set_mat4_uniform(shader.program, "M", model);
+            set_mat4_uniform(shader.program, mLoc, model);
+
+            if(cLoc == -1)
+            {
+                cLoc = glGetUniformLocation(shader.program, "color");
+            }
+            
             set_vec4_uniform(shader.program, "color", color);
-            
-            
             
             if (texture_offset.x >= 0.0f && texture_offset.y >= 0.0f)
             {
-                set_vec2_uniform(shader.program, "textureOffset", texture_offset);
-                set_vec2_uniform(shader.program, "textureSize", texture_size);
-                set_vec2_uniform(shader.program, "frameSize", math::Vec2((r32)frame_size.x, (r32)frame_size.y));
-            }
-            
-            if(rounded)
-            {
-                r32 radius = 0.08f;
+                static GLint txoLoc = glGetUniformLocation(shader.program, "textureOffset");
+                static GLint txsLoc = glGetUniformLocation(shader.program, "textureSize");
+                static GLint fLoc = glGetUniformLocation(shader.program, "frameSize");
                 
-                glBindTexture(GL_TEXTURE_2D, 0);
-                set_vec2_uniform(shader.program, "dimension", math::Vec2((r32)render_state.window_width, (r32)render_state.window_height));
-                set_vec2_uniform(shader.program, "size", math::Vec2(scale.x, scale.y));
-                set_vec3_uniform(shader.program, "position", position);
-                set_float_uniform(shader.program, "radius", radius);
-                set_float_uniform(shader.program, "border", 0.98f);
+                set_vec2_uniform(shader.program, txoLoc, texture_offset);
+                set_vec2_uniform(shader.program, txsLoc, texture_size);
+                set_vec2_uniform(shader.program, fLoc, math::Vec2((r32)frame_size.x, (r32)frame_size.y));
             }
             
             if (for_animation)
             {
-                set_vec2_uniform(shader.program, "textureSize", texture_size);
-                set_vec2_uniform(shader.program, "frameSize", math::Vec2((r32)frame_size.x, (r32)frame_size.y));
+                static GLint txsLoc = glGetUniformLocation(shader.program, "textureSize");
+                static GLint fLoc = glGetUniformLocation(shader.program, "frameSize");
+
+                set_vec2_uniform(shader.program, txsLoc, texture_size);
+                set_vec2_uniform(shader.program, fLoc, math::Vec2((r32)frame_size.x, (r32)frame_size.y));
             }
             
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)nullptr);
@@ -2092,12 +2108,17 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
             
             if (!is_ui)
             {
-                set_mat4_uniform(shader.program, "View", view_matrix);
+                static GLint vLoc = glGetUniformLocation(shader.program, "View");
+                set_mat4_uniform(shader.program, vLoc, view_matrix);
             }
+
+            static GLint uiLoc = glGetUniformLocation(shader.program, "isUI");
+            static GLint mLoc = glGetUniformLocation(shader.program, "M");
+            static GLint cLoc = glGetUniformLocation(shader.program, "color");
             
-            set_float_uniform(shader.program, "isUI", (r32)is_ui);
-            set_mat4_uniform(shader.program, "M", model);
-            set_vec4_uniform(shader.program, "color", color);
+            set_float_uniform(shader.program, uiLoc, (r32)is_ui);
+            set_mat4_uniform(shader.program, mLoc, model);
+            set_vec4_uniform(shader.program, cLoc, color);
             
             glDrawArrays(GL_LINE_LOOP, 0, 4);
         }
@@ -2922,12 +2943,19 @@ static void render_particles(RenderCommand &render_command, Renderer &renderer, 
     glVertexAttribDivisor(3, 1);
     glVertexAttribDivisor(4, 1);
     glVertexAttribDivisor(5, 1);
+
+    static GLint pLoc = glGetUniformLocation(shader.program, "projectionMatrix");
+    static GLint vLoc = glGetUniformLocation(shader.program, "viewMatrix");
+    static GLint crLoc = glGetUniformLocation(shader.program, "cameraRight");
+    static GLint cuLoc = glGetUniformLocation(shader.program, "cameraUp");
     
-    set_mat4_uniform(shader.program, "projectionMatrix", projection_matrix);
-    set_mat4_uniform(shader.program, "viewMatrix", view_matrix);
+    set_mat4_uniform(shader.program, pLoc, projection_matrix);
+    set_mat4_uniform(shader.program, vLoc, view_matrix);
     
-    set_vec3_uniform(shader.program, "cameraRight", math::Vec3(view_matrix[0][0], view_matrix[1][0], view_matrix[2][0]));
-    set_vec3_uniform(shader.program, "cameraUp", math::Vec3(view_matrix[0][1], view_matrix[1][1], view_matrix[2][1]));
+    set_vec3_uniform(shader.program, crLoc, math::Vec3(view_matrix[0][0], view_matrix[1][0], view_matrix[2][0]));
+    set_vec3_uniform(shader.program, cuLoc, math::Vec3(view_matrix[0][1], view_matrix[1][1], view_matrix[2][1]));
+
+    static GLint wLoc = glGetUniformLocation(shader.program, "withTexture");
     
     // Check for texture
     if(render_command.particles.diffuse_texture != 0)
@@ -2936,11 +2964,11 @@ static void render_particles(RenderCommand &render_command, Renderer &renderer, 
         
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
-        
-        set_bool_uniform(shader.program, "withTexture", true);
+
+        set_bool_uniform(shader.program, wLoc, true);
     }
     else
-        set_bool_uniform(shader.program, "withTexture", false);
+        set_bool_uniform(shader.program, wLoc, false);
     
     glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)nullptr, render_command.particles.particle_count);
     glDepthMask(GL_TRUE);
@@ -3418,24 +3446,23 @@ static void set_uniform(rendering::Transform transform, const rendering::RenderP
     }
 }
 
-static void render_buffer(rendering::RenderCommand& command, const rendering::RenderPass &render_pass, RenderState& render_state, Renderer& renderer, const Camera &camera, ShaderGL *shader = nullptr)
+static void render_buffer(rendering::Transform& transform, rendering::BufferHandle buffer, rendering::ShaderHandle shader, rendering::UniformValue* uniform_values, i32 uniform_value_count, rendering::UniformArray* arrays, i32 array_count, const rendering::RenderPass &render_pass, RenderState& render_state, Renderer& renderer, const Camera &camera, ShaderGL *old_shader = nullptr)
 {
-    i32 handle = renderer.render._internal_buffer_handles[command.buffer.handle - 1];
-	Buffer& buffer = render_state.gl_buffers[handle];
+    i32 handle = renderer.render._internal_buffer_handles[buffer.handle - 1];
+	Buffer& gl_buffer = render_state.gl_buffers[handle];
 	
-	bind_vertex_array(buffer.vao, render_state);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+	bind_vertex_array(gl_buffer.vao, render_state);
+    glBindBuffer(GL_ARRAY_BUFFER, gl_buffer.vbo);
     ShaderGL gl_shader;
-    rendering::Material& material = renderer.render.material_instances[command.material.handle];
-    
+        
     // If we specified a custom shader, use it
-    if(shader)
+    if(old_shader)
     {
-        gl_shader = *shader;
+        gl_shader = *old_shader;
     }
     else
     {
-        gl_shader = render_state.gl_shaders[material.shader.handle];
+        gl_shader = render_state.gl_shaders[shader.handle];
     }
     
     if(!gl_shader.program) // Use fallback if it exists
@@ -3462,38 +3489,38 @@ static void render_buffer(rendering::RenderCommand& command, const rendering::Re
 
 	i32 texture_count = 0;
 
-    for(i32 i = 0; i < material.uniform_value_count; i++)
+    for(i32 i = 0; i < uniform_value_count; i++)
 	{
-		rendering::UniformValue& uniform_value = material.uniform_values[i];
+		rendering::UniformValue& uniform_value = uniform_values[i];
 		rendering::Uniform& uniform = uniform_value.uniform;
 
         if(uniform.is_array)
         {
-            rendering::UniformArray &array = material.arrays[uniform_value.array_index];
+            rendering::UniformArray &array = arrays[uniform_value.array_index];
             for(i32 j = 0; j < array.entry_count; j++)
             {
                 rendering::UniformArrayEntry &entry = array.entries[j];
                 for(i32 k = 0; k < entry.value_count; k++)
                 {
                     rendering::UniformValue& value = entry.values[k];
-                    set_uniform(command.transform, render_pass, value, gl_shader, camera, &texture_count, render_state, renderer);
+                    set_uniform(transform, render_pass, value, gl_shader, camera, &texture_count, render_state, renderer);
                 }
             }
         }
         else
         {
-            set_uniform(command.transform, render_pass, uniform_value, gl_shader, camera, &texture_count, render_state, renderer);
+            set_uniform(transform, render_pass, uniform_value, gl_shader, camera, &texture_count, render_state, renderer);
         }
 	}
 
-	if(buffer.ibo)
+	if(gl_buffer.ibo)
 	{
         //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
-		glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)nullptr);
+		glDrawElements(GL_TRIANGLES, gl_buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)nullptr);
 	}
 	else
 	{
-		glDrawArrays(GL_TRIANGLES, 0, buffer.vertex_count / 3);
+		glDrawArrays(GL_TRIANGLES, 0, gl_buffer.vertex_count / 3);
 	}
 }
 
@@ -3505,8 +3532,13 @@ static void render_shadow_buffer(rendering::ShadowCommand &shadow_command, Rende
 	bind_vertex_array(buffer.vao, render_state);
     
     ShaderGL gl_shader = render_state.gl_shaders[renderer.render.shadow_map_shader.handle];
-    glUseProgram(gl_shader.program);
-    
+
+    if(render_state.current_state.shader_program != gl_shader.program)
+    {
+        glUseProgram(gl_shader.program);
+        render_state.current_state.shader_program = gl_shader.program;
+    }
+        
     rendering::Transform transform = shadow_command.transform;
     
     math::Mat4 model_matrix(1.0f);
@@ -3525,8 +3557,11 @@ static void render_shadow_buffer(rendering::ShadowCommand &shadow_command, Rende
     model_matrix = to_matrix(orientation) * model_matrix;    
     model_matrix = math::translate(model_matrix, transform.position);
 
-    set_mat4_uniform(gl_shader.program, "model", model_matrix);
-    set_mat4_uniform(gl_shader.program, "lightSpaceMatrix", renderer.render.light_space_matrix);
+    static GLint lsLoc = glGetUniformLocation(gl_shader.program, "lightSpaceMatrix");
+    static GLint mLoc = glGetUniformLocation(gl_shader.program, "model");
+    
+    set_mat4_uniform(gl_shader.program, lsLoc, renderer.render.light_space_matrix);
+    set_mat4_uniform(gl_shader.program, mLoc, model_matrix);
     
 	if(buffer.ibo)
 	{
@@ -3559,6 +3594,37 @@ static void render_shadows(RenderState &render_state, Renderer &renderer, Frameb
     renderer.render.shadow_command_count = 0;
 }
 
+static void render_ui_pass(RenderState& render_state, Renderer &renderer)
+{
+    rendering::RenderPass &pass = renderer.render.ui.pass;
+
+    Framebuffer &framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
+
+    glViewport(0, 0, framebuffer.width, framebuffer.height);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
+
+    for(i32 i = 0; i < pass.commands.render_command_count; i++)
+    {
+        rendering::UIRenderCommand &command = pass.ui.render_commands[i];
+
+        if(command.clip)
+        {
+            glEnable(GL_SCISSOR_TEST);
+            math::Rect clip_rect = command.clip_rect;
+            glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
+        }
+
+        render_buffer(command.transform, command.buffer, command.material.shader, command.material.uniform_values, command.material.uniform_value_count, command.material.arrays, command.material.array_count, pass, render_state, renderer, pass.camera, &render_state.gl_shaders[command.shader_handle.handle]);
+
+        if(command.clip)
+        {
+            glDisable(GL_SCISSOR_TEST);
+        }
+    }
+
+    pass.ui.render_command_count = 0;
+}
+
 static void render_all_passes(RenderState &render_state, Renderer &renderer)
 {    
     // @Incomplete: Create a better way for enabling/disabling the clipping planes
@@ -3585,7 +3651,9 @@ static void render_all_passes(RenderState &render_state, Renderer &renderer)
         {
             rendering::RenderCommand &command = pass.commands.render_commands[i];
 
-            render_buffer(command, pass, render_state, renderer, pass.camera, &render_state.gl_shaders[command.pass.shader_handle.handle]);
+            rendering::Material& material = renderer.render.material_instances[command.material.handle];
+            
+            render_buffer(command.transform, command.buffer, material.shader, material.uniform_values, material.uniform_value_count, material.arrays, material.array_count, pass, render_state, renderer, pass.camera, &render_state.gl_shaders[command.pass.shader_handle.handle]);
         }
 
         pass.commands.render_command_count = 0;
@@ -3990,7 +4058,8 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         render_all_passes(render_state, renderer);
         render_commands(render_state, renderer);
         render_post_processing_passes(render_state, renderer);
-
+        render_ui_pass(render_state, renderer);
+        
         render_ui_commands(render_state, renderer);
         
         render_state.bound_texture = 0;

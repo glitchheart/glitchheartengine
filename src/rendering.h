@@ -1130,6 +1130,7 @@ struct Renderer
         rendering::ShaderHandle bloom_shader;
         rendering::ShaderHandle blur_shader;
         rendering::ShaderHandle hdr_shader;
+        rendering::ShaderHandle ui_quad_shader;
         
 		i32 shaders_to_reload[8];
 		i32 shaders_to_reload_count;
@@ -1161,6 +1162,13 @@ struct Renderer
         rendering::FramebufferInfo framebuffers[32];
         i32 framebuffer_count;
 
+        struct
+        {
+            rendering::BufferHandle quad_buffer;
+            rendering::RenderPass pass;
+            rendering::MaterialHandle material;
+        } ui;
+        
         MemoryArena render_pass_arena;
         
 		rendering::RenderCommand *render_commands;

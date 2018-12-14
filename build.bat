@@ -1,3 +1,3 @@
 pushd %GLITCH_ENGINE%
-timecmd.bat actual_build
+actual_build.bat
 popd

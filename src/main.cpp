@@ -439,6 +439,11 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     rendering::FramebufferHandle final_framebuffer = rendering::create_framebuffer(final_info, renderer);
     rendering::set_final_framebuffer(renderer, final_framebuffer);
 
+    renderer.render.ui.quad_buffer = rendering::create_quad_buffer(renderer);
+    rendering::create_ui_render_pass(renderer);
+    renderer.render.ui_quad_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/ui_quad.shd");
+    renderer.render.ui.material = rendering::create_material(renderer, renderer.render.ui_quad_shader);
+
     // Add a hdr framebuffer as the standard pass framebuffer
     rendering::FramebufferInfo info = rendering::generate_framebuffer_info();
     info.width = renderer.framebuffer_width;
@@ -491,7 +496,7 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     // rendering::set_uniform_value(renderer, blur_2, "horizontal", false);
 
     //END BLOOM
-
+    
     // Add tonemapping pass?
 }
 
@@ -754,7 +759,7 @@ int main(int argc, char **args)
             controller_keys(GLFW_JOYSTICK_1);
         }
 
-        update_log();
+//        update_log();
         
         swap_buffers(render_state);
 

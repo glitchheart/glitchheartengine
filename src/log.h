@@ -39,7 +39,7 @@ static void _log(LogType log_type, i32 line_num, const char* file, const char* m
     
     strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);
     
-    log_state->log_buffer[log_state->log_count++] = push_string(&log_state->arena, 2096);
+    log_state->log_buffer[log_state->log_count++] = push_string(&log_state->arena, 2048);
     
     char *type_name = nullptr;
     if(log_type == LOG_INFO)

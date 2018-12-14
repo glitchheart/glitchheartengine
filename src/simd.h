@@ -335,7 +335,7 @@ union r64_4x
         h64_4x lower_bits;
     };
     r64 e[4];
-    u32 u[4];
+    u64 u[4];
     
     
 explicit    r64_4x(r64 v)
@@ -1754,6 +1754,12 @@ namespace math
         return c * t + b;
     }
 
+    inline r32_4x linear_tween(r32_4x b, r64_4x t, r32_4x _c)
+    {
+        r32_4x c = _c - b;
+        return c * t + b;
+    }
+
     inline r32_4x ease_in_quad(r32_4x b, r32_4x t, r32_4x _c)
     {
         r32_4x c = _c - b;
@@ -1876,10 +1882,11 @@ namespace math
     inline Vec4_4x lerp(Vec4_4x a, r64_4x t, Vec4_4x b)
     {
         Vec4_4x res(0.0f);
-        res.x = lerp(a.x, t, b.x);
-        res.y = lerp(a.y, t, b.y);
-        res.z = lerp(a.z, t, b.z);
-        res.w = lerp(a.w, t, b.w);
+
+        res.x = linear_tween(a.x, t, b.x);
+        res.y = linear_tween(a.y, t, b.y);
+        res.z = linear_tween(a.z, t, b.z);
+        res.w = linear_tween(a.w, t, b.w);
         
         return res;
     }
