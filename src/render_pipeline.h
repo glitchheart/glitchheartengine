@@ -319,6 +319,43 @@ namespace rendering
         } pass;
     };
 
+    enum UIScalingFlag
+    {
+        KEEP_ASPECT_RATIO = (1 << 0),
+        NO_SCALING = (1 << 1),
+        SCALE_WITH_WIDTH = (1 << 2),
+        SCALE_WITH_HEIGHT = (1 << 3),
+    };
+
+    struct CreateUICommandInfo
+    {
+        math::Vec2 position;
+        math::Vec3 rotation;
+        i32 z_layer;
+        math::Vec2 scale;
+        
+        math::Rgba color;
+
+        i32 texture_handle;
+
+        math::Rect clip_rect;
+        b32  clip;
+        
+        u64 scaling_flag;
+    };
+
+    struct UIRenderCommand
+    {
+        Material material;
+        Transform transform;
+
+        math::Rect clip_rect;
+        b32 clip;
+        
+        BufferHandle buffer;
+        rendering::ShaderHandle shader_handle;
+    };
+
     struct ShadowCommand
     {
         Transform transform;
@@ -440,6 +477,11 @@ namespace rendering
                 rendering::RenderCommand *render_commands;
                 i32 render_command_count;
             } commands;
+            struct
+            {
+                rendering::UIRenderCommand *render_commands;
+                i32 render_command_count;
+            } ui;
         };
 
         RenderPass() {}

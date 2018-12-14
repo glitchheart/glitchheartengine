@@ -1331,6 +1331,55 @@ namespace rendering
 		return { unused_handle };
 	}
 
+    static BufferHandle create_quad_buffer(Renderer& renderer)
+    {
+        assert(renderer.render.buffer_count + 1 < global_max_custom_buffers);
+
+        // @Note: Untextured
+        i32 vertex_size = 2;
+
+        RegisterBufferInfo info = create_register_buffer_info();
+        info.usage = BufferUsage::STATIC;
+        add_vertex_attrib(ValueType::FLOAT2, info);
+
+        info.data.vertex_count = 4;
+        info.data.vertex_buffer_size = info.data.vertex_count * vertex_size * (i32)sizeof(r32);
+
+        info.data.vertex_buffer = push_size(&renderer.buffer_arena, info.data.vertex_buffer_size, r32);
+
+        r32 quad_vertices[8] =
+            {
+                0.0f, 0.0f,
+                1.0f, 0.0f,
+                1.0f, 1.0f,
+                0.0f, 1.0f
+            };
+
+        u16 quad_indices[6] =
+            {
+                0, 1, 2,
+                0, 2, 3
+            };
+
+        for(i32 i = 0; i < info.data.vertex_count * vertex_size; i++)
+        {
+            info.data.vertex_buffer[i] = quad_vertices[i];
+        }
+
+        i32 index_count = 6;
+        info.data.index_buffer_size = index_count * (i32)sizeof(u16);
+        info.data.index_buffer_count = index_count;
+
+        info.data.index_buffer = push_size(&renderer.buffer_arena, info.data.index_buffer_size, u16);
+
+		for(i32 i = 0; i < index_count; i++)
+        {
+            info.data.index_buffer[i] = quad_indices[i];
+        }
+
+        return {register_buffer(renderer, info).handle };
+    }
+
 	static BufferHandle create_buffers_from_mesh(Renderer& renderer, Mesh& mesh, u64 vertex_data_flags, b32 has_normals, b32 has_uvs)
 	{
 		assert(renderer.render.buffer_count + 1 < global_max_custom_buffers);
@@ -1690,10 +1739,8 @@ namespace rendering
 		return { renderer.render.material_instance_count++ };
 	}
 
-	static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, r32 value)
+	static void set_uniform_value(Renderer& renderer, Material& material, const char* name, r32 value)
 	{
-		Material& material = renderer.render.material_instances[handle.handle];
-
 		for(i32 i = 0; i < material.uniform_value_count; i++)
         {
             UniformValue& u_v = material.uniform_values[i];
@@ -1706,10 +1753,14 @@ namespace rendering
         }
 	}
 
-	static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, math::Vec2 value)
+    static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, r32 value)
 	{
-		Material& material = renderer.render.material_instances[handle.handle];
+        Material& material = renderer.render.material_instances[handle.handle];
+        set_uniform_value(renderer, material, name, value);
+    }
 
+	static void set_uniform_value(Renderer& renderer, Material& material, const char* name, math::Vec2 value)
+	{
 		for(i32 i = 0; i < material.uniform_value_count; i++)
         {
             UniformValue& u_v = material.uniform_values[i];
@@ -1722,10 +1773,14 @@ namespace rendering
         }
 	}
 
-	static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, math::Vec3 value)
+    static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, math::Vec2 value)
 	{
-		Material& material = renderer.render.material_instances[handle.handle];
+        Material& material = renderer.render.material_instances[handle.handle];
+        set_uniform_value(renderer, material, name, value);
+    }
 
+	static void set_uniform_value(Renderer& renderer, Material& material, const char* name, math::Vec3 value)
+	{
 		for(i32 i = 0; i < material.uniform_value_count; i++)
         {
             UniformValue& u_v = material.uniform_values[i];
@@ -1738,10 +1793,15 @@ namespace rendering
         }
 	}
 
-	static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, math::Vec4 value)
+    static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, math::Vec3 value)
 	{
-		Material& material = renderer.render.material_instances[handle.handle];
+        Material& material = renderer.render.material_instances[handle.handle];
+        set_uniform_value(renderer, material, name, value);
+    }
 
+
+	static void set_uniform_value(Renderer& renderer, Material& material, const char* name, math::Vec4 value)
+	{
 		for(i32 i = 0; i < material.uniform_value_count; i++)
         {
             UniformValue& u_v = material.uniform_values[i];
@@ -1754,10 +1814,15 @@ namespace rendering
         }
 	}
 
-	static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, i32 value)
+    static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, math::Vec4 value)
 	{
-		Material& material = renderer.render.material_instances[handle.handle];
+        Material& material = renderer.render.material_instances[handle.handle];
+        set_uniform_value(renderer, material, name, value);
+    }
 
+
+	static void set_uniform_value(Renderer& renderer, Material& material, const char* name, i32 value)
+	{
 		for(i32 i = 0; i < material.uniform_value_count; i++)
         {
             UniformValue& u_v = material.uniform_values[i];
@@ -1778,10 +1843,14 @@ namespace rendering
         }
 	}
 
-	static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, math::Mat4 value)
+    static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, i32 value)
 	{
-		Material& material = renderer.render.material_instances[handle.handle];
+        Material& material = renderer.render.material_instances[handle.handle];
+        set_uniform_value(renderer, material, name, value);
+    }
 
+	static void set_uniform_value(Renderer& renderer, Material& material, const char* name, math::Mat4 value)
+	{
 		for(i32 i = 0; i < material.uniform_value_count; i++)
         {
             UniformValue& u_v = material.uniform_values[i];
@@ -1794,11 +1863,15 @@ namespace rendering
         }
 	}
 
-	static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, TextureHandle value)
+    static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, math::Mat4 value)
 	{
-		Material& material = renderer.render.material_instances[handle.handle];
+        Material& material = renderer.render.material_instances[handle.handle];
+        set_uniform_value(renderer, material, name, value);
+    }
 
-		for(i32 i = 0; i < material.uniform_value_count; i++)
+	static void set_uniform_value(Renderer& renderer, Material& material, const char* name, TextureHandle value)
+	{
+			for(i32 i = 0; i < material.uniform_value_count; i++)
         {
             UniformValue& u_v = material.uniform_values[i];
             if(strncmp(u_v.uniform.name, name, strlen(name)) == 0)
@@ -1810,10 +1883,14 @@ namespace rendering
         }
 	}
 
-    static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, MSTextureHandle value)
+    static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, TextureHandle value)
 	{
-		Material& material = renderer.render.material_instances[handle.handle];
+        Material& material = renderer.render.material_instances[handle.handle];
+        set_uniform_value(renderer, material, name, value);
+    }
 
+    static void set_uniform_value(Renderer& renderer, Material& material, const char* name, MSTextureHandle value)
+	{
 		for(i32 i = 0; i < material.uniform_value_count; i++)
         {
             UniformValue& u_v = material.uniform_values[i];
@@ -1826,12 +1903,15 @@ namespace rendering
         }
 	}
 
+    static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, MSTextureHandle value)
+	{
+        Material& material = renderer.render.material_instances[handle.handle];
+        set_uniform_value(renderer, material, name, value);
+    }
 
     
-    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, r32 value)
+    static void set_uniform_array_value(Renderer &renderer, Material& material, const char *array_name, i32 index, const char *variable_name, r32 value)
     {
-        Material &material = renderer.render.material_instances[handle.handle];
-
         for(i32 i = 0; i < material.array_count; i++)
         {
             UniformArray &array = material.arrays[i];
@@ -1853,13 +1933,16 @@ namespace rendering
                 break;
             }
         }
-    } 
+    }
 
-
-    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec2 value)
+    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, r32 value)
     {
         Material &material = renderer.render.material_instances[handle.handle];
+        set_uniform_array_value(renderer, material, array_name, index, variable_name, value);
+    }
 
+    static void set_uniform_array_value(Renderer &renderer, Material& material, const char *array_name, i32 index, const char *variable_name, math::Vec2 value)
+    {
         for(i32 i = 0; i < material.array_count; i++)
         {
             UniformArray &array = material.arrays[i];
@@ -1880,13 +1963,17 @@ namespace rendering
                 break;
             }
         }
-    } 
+    }
 
-    
-    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec3 value)
+    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec2 value)
     {
         Material &material = renderer.render.material_instances[handle.handle];
+        set_uniform_array_value(renderer, material, array_name, index, variable_name, value);
+    }
 
+    
+    static void set_uniform_array_value(Renderer &renderer, Material& material, const char *array_name, i32 index, const char *variable_name, math::Vec3 value)
+    {
         for(i32 i = 0; i < material.array_count; i++)
         {
             UniformArray &array = material.arrays[i];
@@ -1907,12 +1994,16 @@ namespace rendering
                 break;
             }
         }
-    } 
+    }
 
-    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec4 value)
+    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec3 value)
     {
         Material &material = renderer.render.material_instances[handle.handle];
+        set_uniform_array_value(renderer, material, array_name, index, variable_name, value);
+    }
 
+    static void set_uniform_array_value(Renderer &renderer, Material &material, const char *array_name, i32 index, const char *variable_name, math::Vec4 value)
+    {
         for(i32 i = 0; i < material.array_count; i++)
         {
             UniformArray &array = material.arrays[i];
@@ -1935,11 +2026,15 @@ namespace rendering
         }
     }
 
-    
-    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, i32 value)
+    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec4 value)
     {
         Material &material = renderer.render.material_instances[handle.handle];
+        set_uniform_array_value(renderer, material, array_name, index, variable_name, value);
+    }
 
+    
+    static void set_uniform_array_value(Renderer &renderer, Material& material, const char *array_name, i32 index, const char *variable_name, i32 value)
+    {
         for(i32 i = 0; i < material.array_count; i++)
         {
             UniformArray &array = material.arrays[i];
@@ -1969,10 +2064,14 @@ namespace rendering
         }
     }
 
-    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Mat4 value)
+    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, i32 value)
     {
         Material &material = renderer.render.material_instances[handle.handle];
+        set_uniform_array_value(renderer, material, array_name, index, variable_name, value);
+    }
 
+    static void set_uniform_array_value(Renderer &renderer, Material& material, const char *array_name, i32 index, const char *variable_name, math::Mat4 value)
+    {
         for(i32 i = 0; i < material.array_count; i++)
         {
             UniformArray &array = material.arrays[i];
@@ -1993,6 +2092,12 @@ namespace rendering
                 break;
             }
         }
+    }
+
+    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Mat4 value)
+    {
+        Material &material = renderer.render.material_instances[handle.handle];
+        set_uniform_array_value(renderer, material, array_name, index, variable_name, value);
     }
 
     // @Incomplete: Add MSTexture support for arrays
@@ -2067,5 +2172,126 @@ namespace rendering
         render_command.pass.shader_handle = shader_handle;
         RenderPass &pass =  renderer.render.passes[render_pass_handle.handle - 1];
         pass.commands.render_commands[pass.commands.render_command_count++] = render_command;
+    }
+
+    static math::Vec2 get_relative_size(Renderer& renderer, math::Vec2 size, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
+    {
+        math::Vec2i resolution_scale = get_scale(renderer);
+    
+        math::Vec2 scaled_size;
+    
+        if(scaling_flags & UIScalingFlag::SCALE_WITH_WIDTH)
+        {
+            scaled_size.x = (size.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+            scaled_size.y = (size.y / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+        }
+        else if(scaling_flags & UIScalingFlag::SCALE_WITH_HEIGHT)
+        {
+            scaled_size.x = (size.x / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
+            scaled_size.y = (size.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
+        }
+        else
+        {
+            scaled_size.x = (size.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+        
+            if(scaling_flags & UIScalingFlag::KEEP_ASPECT_RATIO)
+            {
+                r32 ratio = size.y / size.x;
+                scaled_size.y = scaled_size.x * ratio;
+            }
+            else
+            {
+                scaled_size.y = (size.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
+            }
+        }
+    
+        return scaled_size;
+    }
+
+    static math::Rect scale_clip_rect(Renderer& renderer, math::Rect clip_rect, u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)
+    {
+        math::Vec2i resolution_scale = get_scale(renderer);
+        math::Rect scaled_clip_rect;
+    
+        scaled_clip_rect.x = (clip_rect.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+        scaled_clip_rect.y = (clip_rect.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
+        
+        r32 clip_ratio = clip_rect.height / clip_rect.width;
+        scaled_clip_rect.width = (clip_rect.width / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+        
+        if(ui_scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)
+        {
+            scaled_clip_rect.height = scaled_clip_rect.width * clip_ratio;
+        }
+        else
+        {
+            scaled_clip_rect.height = (clip_rect.height / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
+        }
+    
+        return scaled_clip_rect;
+    }
+
+    static void push_buffer_to_ui_pass(Renderer& renderer, BufferHandle buffer_handle, ShaderHandle shader, CreateUICommandInfo info)
+    {
+        // @Incomplete: Textured
+        UIRenderCommand render_command = {};
+        render_command.buffer = buffer_handle;
+        render_command.material = renderer.render.materials[renderer.render.ui.material.handle];
+        set_uniform_value(renderer, render_command.material, "color", info.color);
+
+        Transform transform = {};
+        transform.position = math::Vec3(info.position.x, info.position.y, info.z_layer);
+        
+        render_command.transform = transform;
+        render_command.shader_handle = shader;
+        render_command.clip_rect = info.clip_rect;
+        RenderPass& pass = renderer.render.ui.pass;
+        pass.ui.render_commands[pass.ui.render_command_count++] = render_command;
+    }
+
+    static CreateUICommandInfo create_ui_command_info()
+    {
+        CreateUICommandInfo info = {};
+        info.position = math::Vec2(0.0f);
+        info.rotation = math::Vec3(0.0f);
+        info.scale = math::Vec2(0.0f);
+
+        info.z_layer = 0;
+        info.color = math::Rgba(1.0f);
+        info.clip_rect = math::Rect(0.0f);
+        info.clip = false;
+
+        info.scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO;
+
+        return info;
+    }
+
+    static void push_ui_quad(Renderer& renderer, CreateUICommandInfo info)
+    {
+        CreateUICommandInfo scaled_info = {};
+        math::Vec2i resolution_scale = get_scale(renderer);
+
+        math::Vec2 pos;
+        pos.x = (info.position.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+        pos.y = (info.position.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
+
+        scaled_info.position = pos;
+        scaled_info.z_layer = info.z_layer;
+
+        scaled_info.scale = get_relative_size(renderer, info.scale, info.scaling_flag);
+        scaled_info.clip_rect = scale_clip_rect(renderer, info.clip_rect, info.scaling_flag);
+
+        scaled_info.rotation = info.rotation;
+        
+        if(info.texture_handle != 0)
+        {
+            // @Incomplete: Push textured quad buffer with uv's
+        }
+        else
+        {
+            push_buffer_to_ui_pass(renderer, renderer.render.ui.quad_buffer, renderer.render.ui_quad_shader, scaled_info);
+        }
+        
+        
     }
 }
