@@ -3527,30 +3527,35 @@ static void render_buffer(rendering::RenderCommand& command, const rendering::Re
             size_t size = 0;
             i32 count = 0;
             void *buf_ptr = nullptr;
+            i32 num_values = 0;
             
             i32 handle = vertex_attribute.instance_buffer_handle.handle - 1;
             
             switch(vertex_attribute.attribute.type)
             {
             case rendering::ValueType::FLOAT:
+                num_values = 1;
                 buffer_handle = renderer.render.instancing.float_buffer_handles[handle];
                 buf_ptr = renderer.render.instancing.float_buffers[handle];
                 size = sizeof(r32);
                 count = renderer.render.instancing.float_buffer_counts[handle];
                 break;
             case rendering::ValueType::FLOAT2:
+                num_values = 2;
                 buffer_handle = renderer.render.instancing.float2_buffer_handles[handle];
                 buf_ptr = renderer.render.instancing.float2_buffers[handle];
                 size = sizeof(r32) * 2;
                 count = renderer.render.instancing.float2_buffer_counts[handle];
                 break;
             case rendering::ValueType::FLOAT3:
+                num_values = 3;
                 buffer_handle = renderer.render.instancing.float3_buffer_handles[handle];
                 buf_ptr = renderer.render.instancing.float3_buffers[handle];
                 size = sizeof(r32) * 3;
                 count = renderer.render.instancing.float3_buffer_counts[handle];
                 break;
             case rendering::ValueType::FLOAT4:
+                num_values = 4;
                 buffer_handle = renderer.render.instancing.float4_buffer_handles[handle];
                 buf_ptr = renderer.render.instancing.float4_buffers[handle];
                 size = sizeof(r32) * 4;
@@ -3565,7 +3570,7 @@ static void render_buffer(rendering::RenderCommand& command, const rendering::Re
             glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
             glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
             
-            glVertexAttribPointer(array_num, 3, GL_FLOAT, GL_FALSE, size, (void*)nullptr);
+            glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, size, (void*)nullptr);
             glVertexAttribDivisor(array_num, 1);
         }
         
