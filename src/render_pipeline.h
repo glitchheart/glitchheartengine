@@ -3,6 +3,9 @@
 
 namespace rendering
 {
+    
+#define MAX_INSTANCE_BUFFERS 32
+    
      struct ShaderHandle
     {
 		i32 handle;
@@ -59,11 +62,19 @@ namespace rendering
 		i32 handle;
     };
 
+    struct InstanceBufferHandle
+    {
+        ValueType type;
+        i32 handle;
+    };
+
     struct VertexAttribute
     {
 		ValueType type;
+        char name[32];
 		i32 location;
-		union
+
+        union
 		{
 			r32 float_val;
 			math::Vec2 float2_val;
@@ -75,8 +86,23 @@ namespace rendering
 			TextureHandle texture;
             MSTextureHandle ms_texture;
 		};
-
+        
 		VertexAttribute () {}
+    };
+
+    enum class VertexAttributeMappingType
+    {
+        NONE,
+        POSITION,
+        SCALE,
+        ROTATION
+    };
+
+    struct VertexAttributeInstanced
+    {
+        VertexAttributeMappingType mapping_type;
+        VertexAttribute attribute;
+        InstanceBufferHandle instance_buffer_handle;
     };
 
     enum UniformMappingType
@@ -169,7 +195,7 @@ namespace rendering
 		UniformValue () {}
 	};
 
-    struct UniformArrayEntry
+    struct UniformEntry
     {
         UniformValue values[32];
         i32 value_count;
@@ -178,7 +204,7 @@ namespace rendering
     struct UniformArray
     {
         char name[32];
-        UniformArrayEntry *entries;
+        UniformEntry *entries;
 
         i32 entry_count;
         i32 max_size;
@@ -206,8 +232,8 @@ namespace rendering
 		VertexAttribute vertex_attributes[16];
 		i32 vertex_attribute_count;
 
-        VertexAttribute instanced_vertex_attributes[16];
-        i32 instanced_attribute_count;
+        VertexAttributeInstanced instanced_vertex_attributes[16];
+        i32 instanced_vertex_attribute_count;
 
 		Uniform *uniforms;
 		i32 uniform_count;
@@ -234,6 +260,10 @@ namespace rendering
     struct Material
     {
 		ShaderHandle shader;
+        
+        VertexAttributeInstanced instanced_vertex_attributes[8];
+        i32 instanced_vertex_attribute_count;
+        
 		UniformValue uniform_values[64];
 		i32 uniform_value_count;
 
@@ -258,6 +288,7 @@ namespace rendering
     };
 
 	HANDLE(Buffer);
+    HANDLE(InternalBuffer);
 	
 	struct BufferData
 	{
@@ -312,6 +343,8 @@ namespace rendering
 		Transform transform;
 		BufferHandle buffer;
 
+        i32 count;
+        
         struct
         {
             rendering::RenderPassHandle pass_handle;

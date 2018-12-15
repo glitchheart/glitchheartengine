@@ -62,6 +62,81 @@ namespace scene
         
         return(scene);
     }
+
+    struct InstancePair
+    {
+        rendering::MaterialHandle material_handle;
+        rendering::BufferHandle buffer_handle;
+        rendering::MaterialInstanceHandle material_instances[1024];
+        i32 count;
+
+        rendering::ValueType types[8];
+        i32 type_count;
+    };
+    
+    static void allocate_instance_buffers(Scene &scene)
+    {
+        InstancePair instance_pairs[32];
+        i32 pair_count = 0;
+        
+        Renderer *renderer = scene.renderer;
+
+        // Find out how many instance buffers we need to allocate
+        for(i32 i = 0; i < scene.render_component_count; i++)
+        {
+            RenderComponent &comp = scene.render_components[i];
+            rendering::Material &material_instance = renderer->render.material_instances[comp.v2.material_handle.handle];
+
+            if(material_instance.instanced_vertex_attribute_count > 0)
+            {
+                b32 found = false;
+            
+                for(i32 j = 0; j < pair_count; j++)
+                {
+                    InstancePair &pair = instance_pairs[j];
+                    if(pair.buffer_handle.handle == comp.v2.buffer_handle.handle && pair.material_handle.handle ==  material_instance.source_material.handle)
+                    {
+                        found = true;
+                        pair.material_instances[pair.count++] = comp.v2.material_handle;
+                    }
+                }
+
+                if(!found)
+                {
+                    InstancePair &pair = instance_pairs[pair_count++];
+                    pair.type_count = 0;
+                    pair.count = 0;
+                    pair.buffer_handle = comp.v2.buffer_handle;
+                    pair.material_handle = material_instance.source_material;
+                    
+                    for(i32 j = 0; j < material_instance.instanced_vertex_attribute_count; j++)
+                    {
+                        pair.types[pair.type_count++] = material_instance.instanced_vertex_attributes[j].attribute.type;
+                    }
+                    
+                    pair.material_instances[pair.count++] = comp.v2.material_handle;
+                }
+            }
+        }
+
+        // Allocate the buffers
+        for(i32 i = 0; i < pair_count; i++)
+        {
+            InstancePair &pair = instance_pairs[i];
+
+            // Allocate all buffers
+            for(i32 j = 0; j < pair.type_count; j++)
+            {
+                rendering::InstanceBufferHandle instance_buffer_handle = rendering::allocate_instance_buffer(pair.types[j], math::power_of_two(pair.count), *renderer);
+                // Update all materials with the correct buffer handle
+                for(i32 k = 0; k < pair.count; k++)
+                {
+                    rendering::Material &material = renderer->render.material_instances[pair.material_instances[k].handle];
+                    material.instanced_vertex_attributes[j].instance_buffer_handle = instance_buffer_handle;
+                }
+            }
+        }
+    }
     
     // Zeroes all counts and frees all memory allocated for the "Scene"
     static void free_scene(Scene& scene)

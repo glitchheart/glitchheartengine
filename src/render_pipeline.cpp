@@ -1,5 +1,147 @@
 namespace rendering
 {
+    static i32 _find_next_internal_handle(i32 start, i32 max, i32 *indices)
+    {
+        for(i32 i = start; i < max; i++)
+        {
+            if(indices[i] == -1)
+                return i;
+        }
+
+        for(i32 i = 0; i < start; i++)
+        {
+            if(indices[i] == -1)
+                return i;
+        }
+        
+        // We hit max... Allocate more!
+        assert(false);
+        return -1;
+    }
+    
+    static InstanceBufferHandle allocate_instance_buffer(ValueType type, i32 instance_max, Renderer &renderer)
+    {
+        InstanceBufferHandle handle;
+        handle.type = type;
+        
+        size_t type_size = 0;
+        void **buf_ptr = nullptr;
+        InternalBufferHandle *buffer_handle = nullptr;
+        
+        switch(type)
+        {
+        case ValueType::FLOAT:
+        {
+            i32 real_handle = renderer.render.instancing.float_buffer_count;
+            type_size = sizeof(r32);
+            
+            i32 free_internal_handle = _find_next_internal_handle(renderer.render.instancing.current_internal_float_handle, 32, renderer.render.instancing._internal_float_handles);
+            renderer.render.instancing._internal_float_handles[free_internal_handle] = real_handle;
+            handle.handle = free_internal_handle + 1;
+            renderer.render.instancing.current_internal_float_handle = free_internal_handle + 1;
+
+            if(free_internal_handle + 1 == MAX_INSTANCE_BUFFERS)
+                renderer.render.instancing.current_internal_float_handle = 0;
+            
+            buf_ptr = (void **)&renderer.render.instancing.float_buffers[real_handle];
+            buffer_handle = &renderer.render.instancing.float_buffer_handles[real_handle];
+            renderer.render.instancing.float_buffer_count++;
+        }
+        break;
+        case ValueType::FLOAT2:
+        {
+            i32 real_handle = renderer.render.instancing.float2_buffer_count;
+            type_size = sizeof(r32) * 2;
+            
+            i32 free_internal_handle = _find_next_internal_handle(renderer.render.instancing.current_internal_float2_handle, 32, renderer.render.instancing._internal_float2_handles);
+            renderer.render.instancing._internal_float2_handles[free_internal_handle] = real_handle;
+            handle.handle = free_internal_handle + 1;
+            renderer.render.instancing.current_internal_float2_handle = free_internal_handle + 1;
+            if(free_internal_handle + 1 == MAX_INSTANCE_BUFFERS)
+                renderer.render.instancing.current_internal_float2_handle = 0;
+            
+            buf_ptr = (void **)&renderer.render.instancing.float2_buffers[real_handle];
+            buffer_handle = &renderer.render.instancing.float2_buffer_handles[real_handle];
+            renderer.render.instancing.float2_buffer_count++;
+        }
+        break;
+        case ValueType::FLOAT3:
+        {
+            i32 real_handle = renderer.render.instancing.float3_buffer_count;
+            type_size = sizeof(r32) * 3;
+            i32 free_internal_handle = _find_next_internal_handle(renderer.render.instancing.current_internal_float3_handle, 32, renderer.render.instancing._internal_float3_handles);
+            renderer.render.instancing._internal_float3_handles[free_internal_handle] = real_handle;
+            handle.handle = free_internal_handle + 1;
+            renderer.render.instancing.current_internal_float3_handle = free_internal_handle + 1;
+            
+            if(free_internal_handle + 1 == MAX_INSTANCE_BUFFERS)
+                renderer.render.instancing.current_internal_float3_handle = 0;
+            
+            buf_ptr = (void **)&renderer.render.instancing.float3_buffers[real_handle];
+            buffer_handle = &renderer.render.instancing.float3_buffer_handles[real_handle];
+            renderer.render.instancing.float3_buffer_count++;
+        }
+        break;
+        case ValueType::FLOAT4:
+        {
+            i32 real_handle = renderer.render.instancing.float4_buffer_count;
+            type_size = sizeof(r32) * 4;
+            i32 free_internal_handle = _find_next_internal_handle(renderer.render.instancing.current_internal_float4_handle, 32, renderer.render.instancing._internal_float4_handles);
+            renderer.render.instancing._internal_float4_handles[free_internal_handle] = real_handle;
+            handle.handle = free_internal_handle + 1;
+            renderer.render.instancing.current_internal_float4_handle = free_internal_handle + 1;
+            
+            if(free_internal_handle + 1 == MAX_INSTANCE_BUFFERS)
+                renderer.render.instancing.current_internal_float4_handle = 0;
+            
+            buf_ptr = (void **)&renderer.render.instancing.float4_buffers[real_handle];
+            buffer_handle = &renderer.render.instancing.float4_buffer_handles[real_handle];
+            renderer.render.instancing.float4_buffer_count++;
+        }
+        break;
+        default:
+            assert(false);
+        }
+
+        *buf_ptr = malloc(type_size * instance_max);
+        *buffer_handle = renderer.api_functions.create_instance_buffer(type_size * instance_max, BufferUsage::DYNAMIC, renderer.api_functions.render_state, &renderer);
+
+        return handle;
+    }
+
+    static void free_instance_buffer(InstanceBufferHandle buffer_handle)
+    {
+        // @Incomplete
+    }
+
+    static void add_instance_buffer_value(InstanceBufferHandle buffer_handle, r32 value, Renderer &renderer)
+    {
+        i32 handle = renderer.render.instancing._internal_float_handles[buffer_handle.handle - 1];
+        i32 *count = &renderer.render.instancing.float_buffer_counts[handle];
+        renderer.render.instancing.float_buffers[handle][(*count)++] = value;
+    }
+
+    static void add_instance_buffer_value(InstanceBufferHandle buffer_handle, math::Vec2 value, Renderer &renderer)
+    {
+        i32 handle = renderer.render.instancing._internal_float2_handles[buffer_handle.handle - 1];
+        i32 *count = &renderer.render.instancing.float2_buffer_counts[handle];
+        renderer.render.instancing.float2_buffers[handle][(*count)++] = value;
+    }
+    
+    static void add_instance_buffer_value(InstanceBufferHandle buffer_handle, math::Vec3 value, Renderer &renderer)
+    {
+        i32 handle = renderer.render.instancing._internal_float3_handles[buffer_handle.handle - 1];
+        i32 *count = &renderer.render.instancing.float3_buffer_counts[handle];
+        renderer.render.instancing.float3_buffers[handle][(*count)++] = value;
+    }
+    
+    static void add_instance_buffer_value(InstanceBufferHandle buffer_handle, math::Vec4 value, Renderer &renderer)
+    {
+        i32 handle = renderer.render.instancing._internal_float4_handles[buffer_handle.handle - 1];
+        i32 *count = &renderer.render.instancing.float4_buffer_counts[handle];
+        renderer.render.instancing.float4_buffers[handle][(*count)++] = value;
+    }
+    
     // @Note: Creates a RenderPass with the specified FramebufferHandle
     static RenderPassHandle create_render_pass(const char *name, FramebufferHandle framebuffer, Renderer &renderer)
     {

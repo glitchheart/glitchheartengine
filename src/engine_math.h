@@ -1972,6 +1972,21 @@ namespace math
     {
         return mul * (ceil(((r32)n / (r32)mul)));
     }
+
+    inline i32 power_of_two(i32 n)
+    {
+        i32 result = 0;
+        for(i32 i = n; i >= 1; i--)
+        {
+            if((i & (i-1)) == 0) 
+            { 
+                result = i; 
+                break; 
+            } 
+        }
+
+        return result;
+    }
     
     inline r32 length(Vec2 v)
     {
