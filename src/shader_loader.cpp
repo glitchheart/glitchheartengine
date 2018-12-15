@@ -130,6 +130,154 @@ namespace rendering
         }
         return nullptr;
     }
+
+    static VertexAttributeMappingType parse_vertex_attribute_mapping(char *mapped_buffer)
+    {
+        VertexAttributeMappingType type = VertexAttributeMappingType::NONE;
+        
+        if(starts_with(mapped_buffer, "POSITION"))
+        {
+            type = VertexAttributeMappingType::POSITION;
+        }
+        else if(starts_with(mapped_buffer, "SCALE"))
+        {
+            type = VertexAttributeMappingType::SCALE;
+        }
+        else if(starts_with(mapped_buffer, "ROTATION"))
+        {
+            type = VertexAttributeMappingType::ROTATION;
+        }
+
+        return type;
+    }
+    
+    static UniformMappingType parse_mapping(char *mapped_buffer)
+    {
+        UniformMappingType type = UniformMappingType::NONE;
+        
+        if(starts_with(mapped_buffer, "DIFFUSE_TEX"))
+        {
+            type = UniformMappingType::DIFFUSE_TEX;
+        }
+        else if(starts_with(mapped_buffer, "DIFFUSE_COLOR"))
+        {
+            type = UniformMappingType::DIFFUSE_COLOR;
+        }
+        else if(starts_with(mapped_buffer, "SPECULAR_TEX"))
+        {
+            type = UniformMappingType::SPECULAR_TEX;
+        }
+        else if(starts_with(mapped_buffer, "SPECULAR_COLOR"))
+        {
+            type = UniformMappingType::SPECULAR_COLOR;
+        }
+        else if(starts_with(mapped_buffer, "SPECULAR_EXPONENT"))
+        {
+            type = UniformMappingType::SPECULAR_EXPONENT;
+        }
+        else if(starts_with(mapped_buffer, "AMBIENT_COLOR"))
+        {
+            type = UniformMappingType::AMBIENT_COLOR;
+        }
+        else if(starts_with(mapped_buffer, "AMBIENT_TEX"))
+        {
+            type = UniformMappingType::AMBIENT_TEX;
+        }
+        else if(starts_with(mapped_buffer, "SHADOW_MAP"))
+        {
+            type = UniformMappingType::SHADOW_MAP;
+        }
+        else if(starts_with(mapped_buffer, "SHADOW_VIEW_POSITION"))
+        {
+            type = UniformMappingType::SHADOW_VIEW_POSITION;
+        }
+        else if(starts_with(mapped_buffer, "MODEL"))
+        {
+            type = UniformMappingType::MODEL;
+        }
+        else if(starts_with(mapped_buffer, "VIEW"))
+        {
+            type = UniformMappingType::VIEW;
+        }
+        else if(starts_with(mapped_buffer, "PROJECTION"))
+        {
+            type = UniformMappingType::PROJECTION;
+        }
+        else if(starts_with(mapped_buffer, "CAMERA_POSITION"))
+        {
+            type = UniformMappingType::CAMERA_POSITION;
+        }
+        else if(starts_with(mapped_buffer, "DIRECTIONAL_LIGHTS"))
+        {
+            type = UniformMappingType::DIRECTIONAL_LIGHTS;
+        }
+        else if(starts_with(mapped_buffer, "POINT_LIGHTS"))
+        {
+            type = UniformMappingType::POINT_LIGHTS;
+        }
+        else if(starts_with(mapped_buffer, "DIRECTIONAL_LIGHT_COUNT"))
+        {
+            type = UniformMappingType::DIRECTIONAL_LIGHT_COUNT;
+        }
+        else if(starts_with(mapped_buffer, "POINT_LIGHT_COUNT"))
+        {
+            type = UniformMappingType::POINT_LIGHT_COUNT;
+        }
+        else if(starts_with(mapped_buffer, "DIRECTIONAL_LIGHT_DIRECTION"))
+        {
+            type = UniformMappingType::DIRECTIONAL_LIGHT_DIRECTION;
+        }
+        else if(starts_with(mapped_buffer, "DIRECTIONAL_LIGHT_AMBIENT"))
+        {
+            type = UniformMappingType::DIRECTIONAL_LIGHT_AMBIENT;
+        }
+        else if(starts_with(mapped_buffer, "DIRECTIONAL_LIGHT_DIFFUSE"))
+        {
+            type = UniformMappingType::DIRECTIONAL_LIGHT_DIFFUSE;
+        }
+        else if(starts_with(mapped_buffer, "DIRECTIONAL_LIGHT_SPECULAR"))
+        {
+            type = UniformMappingType::DIRECTIONAL_LIGHT_SPECULAR;
+        }
+        else if(starts_with(mapped_buffer, "POINT_LIGHT_POSITION"))
+        {
+            type = UniformMappingType::POINT_LIGHT_POSITION;
+        }
+        else if(starts_with(mapped_buffer, "POINT_LIGHT_CONSTANT"))
+        {
+            type = UniformMappingType::POINT_LIGHT_CONSTANT;
+        }
+        else if(starts_with(mapped_buffer, "POINT_LIGHT_LINEAR"))
+        {
+            type = UniformMappingType::POINT_LIGHT_LINEAR;
+        }
+        else if(starts_with(mapped_buffer, "POINT_LIGHT_QUADRATIC"))
+        {
+            type = UniformMappingType::POINT_LIGHT_QUADRATIC;
+        }
+        else if(starts_with(mapped_buffer, "POINT_LIGHT_AMBIENT"))
+        {
+            type = UniformMappingType::POINT_LIGHT_AMBIENT;
+        }
+        else if(starts_with(mapped_buffer, "POINT_LIGHT_DIFFUSE"))
+        {
+            type = UniformMappingType::POINT_LIGHT_DIFFUSE;
+        }
+        else if(starts_with(mapped_buffer, "POINT_LIGHT_SPECULAR"))
+        {
+            type = UniformMappingType::POINT_LIGHT_SPECULAR;
+        }
+        else if(starts_with(mapped_buffer, "LIGHT_SPACE_MATRIX"))
+        {
+            type = UniformMappingType::LIGHT_SPACE_MATRIX;
+        }
+        else if(starts_with(mapped_buffer, "CLIPPING_PLANE"))
+        {
+            type = UniformMappingType::CLIPPING_PLANE;
+        }
+
+        return type;
+    }
     
     static void parse_uniform_array_data(char **rest, Uniform &uniform, Shader &shader)
     {
@@ -192,133 +340,7 @@ namespace rendering
                 original_buffer[strlen(original_buffer) - strlen(rest) + 2] = '\n';
                 original_buffer[strlen(original_buffer) - strlen(rest) + 1] = ';';
                 mapped_buffer[m_c] = '\0';
-
-                if(starts_with(mapped_buffer, "DIFFUSE_TEX"))
-                {
-                    uniform.mapping_type = UniformMappingType::DIFFUSE_TEX;
-                }
-                else if(starts_with(mapped_buffer, "DIFFUSE_COLOR"))
-                {
-                    uniform.mapping_type = UniformMappingType::DIFFUSE_COLOR;
-                }
-                else if(starts_with(mapped_buffer, "SPECULAR_TEX"))
-                {
-                    uniform.mapping_type = UniformMappingType::SPECULAR_TEX;
-                }
-                else if(starts_with(mapped_buffer, "SPECULAR_COLOR"))
-                {
-                    uniform.mapping_type = UniformMappingType::SPECULAR_COLOR;
-                }
-                else if(starts_with(mapped_buffer, "SPECULAR_EXPONENT"))
-                {
-                    uniform.mapping_type = UniformMappingType::SPECULAR_EXPONENT;
-                }
-                else if(starts_with(mapped_buffer, "AMBIENT_COLOR"))
-                {
-                    uniform.mapping_type = UniformMappingType::AMBIENT_COLOR;
-                }
-                else if(starts_with(mapped_buffer, "AMBIENT_TEX"))
-                {
-                    uniform.mapping_type = UniformMappingType::AMBIENT_TEX;
-                }
-                else if(starts_with(mapped_buffer, "SHADOW_MAP"))
-                {
-                    uniform.mapping_type = UniformMappingType::SHADOW_MAP;
-                }
-                else if(starts_with(mapped_buffer, "SHADOW_VIEW_POSITION"))
-                {
-                    uniform.mapping_type = UniformMappingType::SHADOW_VIEW_POSITION;
-                }
-                else if(starts_with(mapped_buffer, "MODEL"))
-                {
-                    uniform.mapping_type = UniformMappingType::MODEL;
-                }
-                else if(starts_with(mapped_buffer, "VIEW"))
-                {
-                    uniform.mapping_type = UniformMappingType::VIEW;
-                }
-                else if(starts_with(mapped_buffer, "PROJECTION"))
-                {
-                    uniform.mapping_type = UniformMappingType::PROJECTION;
-                }
-                else if(starts_with(mapped_buffer, "CAMERA_POSITION"))
-                {
-                    uniform.mapping_type = UniformMappingType::CAMERA_POSITION;
-                }
-                else if(starts_with(mapped_buffer, "DIRECTIONAL_LIGHTS"))
-                {
-                    uniform.mapping_type = UniformMappingType::DIRECTIONAL_LIGHTS;
-                }
-                else if(starts_with(mapped_buffer, "POINT_LIGHTS"))
-                {
-                    uniform.mapping_type = UniformMappingType::POINT_LIGHTS;
-                }
-                else if(starts_with(mapped_buffer, "DIRECTIONAL_LIGHT_COUNT"))
-                {
-                    uniform.mapping_type = UniformMappingType::DIRECTIONAL_LIGHT_COUNT;
-                }
-                else if(starts_with(mapped_buffer, "POINT_LIGHT_COUNT"))
-                {
-                    uniform.mapping_type = UniformMappingType::POINT_LIGHT_COUNT;
-                }
-                else if(starts_with(mapped_buffer, "DIRECTIONAL_LIGHT_DIRECTION"))
-                {
-                    uniform.mapping_type = UniformMappingType::DIRECTIONAL_LIGHT_DIRECTION;
-                }
-                else if(starts_with(mapped_buffer, "DIRECTIONAL_LIGHT_AMBIENT"))
-                {
-                    uniform.mapping_type = UniformMappingType::DIRECTIONAL_LIGHT_AMBIENT;
-                }
-                else if(starts_with(mapped_buffer, "DIRECTIONAL_LIGHT_DIFFUSE"))
-                {
-                    uniform.mapping_type = UniformMappingType::DIRECTIONAL_LIGHT_DIFFUSE;
-                }
-                else if(starts_with(mapped_buffer, "DIRECTIONAL_LIGHT_SPECULAR"))
-                {
-                    uniform.mapping_type = UniformMappingType::DIRECTIONAL_LIGHT_SPECULAR;
-                }
-                else if(starts_with(mapped_buffer, "POINT_LIGHT_POSITION"))
-                {
-                    uniform.mapping_type = UniformMappingType::POINT_LIGHT_POSITION;
-                }
-                else if(starts_with(mapped_buffer, "POINT_LIGHT_CONSTANT"))
-                {
-                    uniform.mapping_type = UniformMappingType::POINT_LIGHT_CONSTANT;
-                }
-                else if(starts_with(mapped_buffer, "POINT_LIGHT_LINEAR"))
-                {
-                    uniform.mapping_type = UniformMappingType::POINT_LIGHT_LINEAR;
-                }
-                else if(starts_with(mapped_buffer, "POINT_LIGHT_QUADRATIC"))
-                {
-                    uniform.mapping_type = UniformMappingType::POINT_LIGHT_QUADRATIC;
-                }
-                else if(starts_with(mapped_buffer, "POINT_LIGHT_AMBIENT"))
-                {
-                    uniform.mapping_type = UniformMappingType::POINT_LIGHT_AMBIENT;
-                }
-                else if(starts_with(mapped_buffer, "POINT_LIGHT_DIFFUSE"))
-                {
-                    uniform.mapping_type = UniformMappingType::POINT_LIGHT_DIFFUSE;
-                }
-                else if(starts_with(mapped_buffer, "POINT_LIGHT_SPECULAR"))
-                {
-                    uniform.mapping_type = UniformMappingType::POINT_LIGHT_SPECULAR;
-                }
-                else if(starts_with(mapped_buffer, "LIGHT_SPACE_MATRIX"))
-                {
-                    uniform.mapping_type = UniformMappingType::LIGHT_SPACE_MATRIX;
-                }
-                else if(starts_with(mapped_buffer, "CLIPPING_PLANE"))
-                {
-                    uniform.mapping_type = UniformMappingType::CLIPPING_PLANE;
-                }
-                else
-                {
-                    char error_buf[256];
-                    sprintf(error_buf, "Found invalid uniform mapping type '%s'", mapped_buffer);
-                    error(error_buf, file_path);
-                }
+                uniform.mapping_type = parse_mapping(mapped_buffer);
             }
         }
 
@@ -384,7 +406,8 @@ namespace rendering
 		auto temp_mem = begin_temporary_memory(&temp_arena);
 
 		char* result;
-
+        b32 instancing_enabled = false;
+        
 		size_t temp_current_size = strlen(source) * 10;
 		char* temp_result = push_string(&temp_arena, temp_current_size);
 
@@ -477,6 +500,16 @@ namespace rendering
                 }
 				
             }
+            else if(starts_with(buffer, "#BEGIN_INSTANCING"))
+            {
+                instancing_enabled = true;
+                continue;
+            }
+            else if(starts_with(buffer, "#END_INSTANCING"))
+            {
+                instancing_enabled = false;
+                continue;
+            }
             else if(starts_with(buffer, "#define"))
             {
                 // @Incomplete: float defines missing
@@ -533,7 +566,17 @@ namespace rendering
             }
             else if(starts_with(buffer, "layout"))
             {
-                VertexAttribute& vertex_attribute = shader.vertex_attributes[shader.vertex_attribute_count++];
+                VertexAttribute* vertex_attribute = nullptr;
+                
+                if(instancing_enabled)
+                {
+                    vertex_attribute = &shader.instanced_vertex_attributes[shader.instanced_vertex_attribute_count++].attribute;
+                }
+                else
+                {
+                    vertex_attribute = &shader.vertex_attributes[shader.vertex_attribute_count++];
+                }
+                
                 char* rest = &buffer[strlen("layout") + 1];
 		
                 while(rest[0] == ' ' || rest[0] == '(')
@@ -553,7 +596,7 @@ namespace rendering
                     if(rest[0] == '=')
                     {
                         rest++;
-                        vertex_attribute.location = strtol(rest, &rest, 10);
+                        vertex_attribute->location = strtol(rest, &rest, 10);
 
                         while(rest[0] == ' ' || rest[0] == ')')
                             rest++;
@@ -565,7 +608,24 @@ namespace rendering
 
                             rest += 2;
 			    
-                            vertex_attribute.type = get_value_type(&rest, file_path);
+                            vertex_attribute->type = get_value_type(&rest, file_path);
+
+                            eat_spaces_and_newlines(&rest);
+                            parse_word(&rest, vertex_attribute->name);
+                            eat_spaces_and_newlines(&rest);
+                            
+                            if(rest[0] == ':') // Oh boy, we've go a mapping
+                            {
+								char *start = &rest[0];
+                                rest += 1;
+                                eat_spaces_and_newlines(&rest);
+                                char mapping_name[32];
+                                parse_word(&rest, mapping_name);
+                                shader.instanced_vertex_attributes[shader.instanced_vertex_attribute_count - 1].mapping_type = parse_vertex_attribute_mapping(mapping_name);
+                                buffer[strlen(buffer) - (strlen(start) + 1) + 3] = '\0';
+                                buffer[strlen(buffer) - (strlen(start) + 1) + 2] = '\n';
+                                buffer[strlen(buffer) - (strlen(start) + 1) + 1] = ';';
+                            }
                         }
                         else if(starts_with(rest, "out"))
                         {
@@ -773,7 +833,7 @@ namespace rendering
         {
             if(strcmp(material.arrays[i].name, array_name) == 0)
             {
-                UniformArrayEntry &first_entry = material.arrays[i].entries[0];
+                UniformEntry &first_entry = material.arrays[i].entries[0];
                 
                 for(i32 j = 0; j < first_entry.value_count; j++)
                 {
@@ -825,6 +885,9 @@ namespace rendering
 
     static void set_shader_values(Material &material, Shader &shader, Renderer &renderer)
     {
+        memcpy(material.instanced_vertex_attributes, shader.instanced_vertex_attributes, sizeof(VertexAttributeInstanced) * shader.instanced_vertex_attribute_count);
+        material.instanced_vertex_attribute_count = shader.instanced_vertex_attribute_count;
+        
         UniformValue *uniform_vals = nullptr;
         UniformArray *arrays = nullptr;
 
@@ -855,7 +918,7 @@ namespace rendering
                     Structure &structure = shader.structures[u.structure_index];
 
                     i32 num_to_allocate = u.array_size;
-                    array.entries = push_array(&renderer.mesh_arena, num_to_allocate, UniformArrayEntry);
+                    array.entries = push_array(&renderer.mesh_arena, num_to_allocate, UniformEntry);
                     
                     if(u.mapping_type == UniformMappingType::DIRECTIONAL_LIGHTS || u.mapping_type == UniformMappingType::POINT_LIGHTS)
                     {
@@ -864,7 +927,7 @@ namespace rendering
                     
                     for(i32 i = 0; i < u.array_size; i++)
                     {
-                        UniformArrayEntry entry = {};
+                        UniformEntry entry = {};
                         entry.value_count = 0;
                         
                         for(i32 j = 0; j < structure.uniform_count; j++)
@@ -887,11 +950,11 @@ namespace rendering
                 else
                 {
                     i32 num_to_allocate = u.array_size;
-                    array.entries = push_array(&renderer.mesh_arena, num_to_allocate, UniformArrayEntry);
+                    array.entries = push_array(&renderer.mesh_arena, num_to_allocate, UniformEntry);
                     
                     for(i32 i = 0; i < u.array_size; i++)
                     {
-                        UniformArrayEntry entry = {};
+                        UniformEntry entry = {};
                         entry.value_count = 0;
                         
                         UniformValue u_v = {};
@@ -940,40 +1003,66 @@ namespace rendering
 		for(i32 uniform_index = 0; uniform_index < new_material.uniform_value_count; uniform_index++)
         {
             UniformValue &value = new_material.uniform_values[uniform_index];
-                
-            if(UniformValue *old_value = get_value(old_material, value.uniform.type, value.uniform.name))
+
+            if(value.uniform.is_array)
             {
-                switch(value.uniform.type)
+                // @Incomplete: NOT SUPPORTED
+                
+                // Uniform &u = value.uniform;
+                
+                // if(u.type == ValueType::STRUCTURE)
+                // {
+                    
+                // }
+                // else
+                // {
+                //     // UniformArray &array = new_material
+                //     // for(i32 i = 0; i < array.entry_count; i++)
+                //     // {
+                //     //     UniformArrayEntry &entry = array.entries[i];
+                //     //     if(Uniform
+                //     // }
+                // }
+            }
+            else
+            {
+                if(UniformValue *old_value = get_value(old_material, value.uniform.type, value.uniform.name))
                 {
-                case ValueType::FLOAT:
-                    value.float_val = old_value->float_val;
-                    break;
-                case ValueType::FLOAT2:
-                    value.float2_val = old_value->float2_val;
-                    break;
-                case ValueType::FLOAT3:
-                    value.float3_val = old_value->float3_val;
-                    break;
-                case ValueType::FLOAT4:
-                    value.float4_val = old_value->float4_val;
-                    break;
-                case ValueType::INTEGER:
-                    value.integer_val = old_value->integer_val;
-                    break;
-                case ValueType::BOOL:
-                    value.boolean_val = old_value->boolean_val;
-                    break;
-                case ValueType::MAT4:
-                    value.mat4_val = old_value->mat4_val;
-                    break;
-                case ValueType::TEXTURE:
-                    value.texture = old_value->texture;
-                    break;
-                case ValueType::MS_TEXTURE:
-                    value.ms_texture = old_value->ms_texture;
-                    break;
-                default:
-                    assert(false);
+                    switch(value.uniform.type)
+                    {
+                    case ValueType::FLOAT:
+                        value.float_val = old_value->float_val;
+                        break;
+                    case ValueType::FLOAT2:
+                        value.float2_val = old_value->float2_val;
+                        break;
+                    case ValueType::FLOAT3:
+                        value.float3_val = old_value->float3_val;
+                        break;
+                    case ValueType::FLOAT4:
+                        value.float4_val = old_value->float4_val;
+                        break;
+                    case ValueType::INTEGER:
+                        value.integer_val = old_value->integer_val;
+                        break;
+                    case ValueType::BOOL:
+                        value.boolean_val = old_value->boolean_val;
+                        break;
+                    case ValueType::MAT4:
+                        value.mat4_val = old_value->mat4_val;
+                        break;
+                    case ValueType::TEXTURE:
+                        value.texture = old_value->texture;
+                        break;
+                    case ValueType::MS_TEXTURE:
+                        value.ms_texture = old_value->ms_texture;
+                        break;
+                    case ValueType::STRUCTURE:
+                        // @Incomplete
+                        break;
+                    default:
+                        assert(false);
+                    }
                 }
             }
         }
@@ -1694,6 +1783,17 @@ namespace rendering
 	{
 		Material& material = renderer.render.material_instances[handle.handle];
 
+        for(i32 i = 0; i < material.instanced_vertex_attribute_count; i++)
+        {
+            VertexAttribute &va = material.instanced_vertex_attributes[i].attribute;
+            if(strncmp(va.name, name, strlen(name)) == 0)
+            {
+                assert(va.type == ValueType::FLOAT);
+                va.float_val = value;
+                return;
+            }
+        }
+        
 		for(i32 i = 0; i < material.uniform_value_count; i++)
         {
             UniformValue& u_v = material.uniform_values[i];
@@ -1710,6 +1810,17 @@ namespace rendering
 	{
 		Material& material = renderer.render.material_instances[handle.handle];
 
+        for(i32 i = 0; i < material.instanced_vertex_attribute_count; i++)
+        {
+            VertexAttribute &va = material.instanced_vertex_attributes[i].attribute;
+            if(strncmp(va.name, name, strlen(name)) == 0)
+            {
+                assert(va.type == ValueType::FLOAT2);
+                va.float2_val = value;
+                return;
+            }
+        }
+        
 		for(i32 i = 0; i < material.uniform_value_count; i++)
         {
             UniformValue& u_v = material.uniform_values[i];
@@ -1742,6 +1853,17 @@ namespace rendering
 	{
 		Material& material = renderer.render.material_instances[handle.handle];
 
+        for(i32 i = 0; i < material.instanced_vertex_attribute_count; i++)
+        {
+            VertexAttribute &va = material.instanced_vertex_attributes[i].attribute;
+            if(strncmp(va.name, name, strlen(name)) == 0)
+            {
+                assert(va.type == ValueType::FLOAT4);
+                va.float4_val = value;
+                return;
+            }
+        }
+        
 		for(i32 i = 0; i < material.uniform_value_count; i++)
         {
             UniformValue& u_v = material.uniform_values[i];
@@ -1758,6 +1880,25 @@ namespace rendering
 	{
 		Material& material = renderer.render.material_instances[handle.handle];
 
+        for(i32 i = 0; i < material.instanced_vertex_attribute_count; i++)
+        {
+            VertexAttribute &va = material.instanced_vertex_attributes[i].attribute;
+            if(strncmp(va.name, name, strlen(name)) == 0)
+            {
+                assert(va.type == ValueType::INTEGER || va.type == ValueType::BOOL);
+                if(va.type == ValueType::BOOL)
+                {
+                    va.boolean_val = value;
+                    return;
+                }
+                else if(va.type == ValueType::INTEGER)
+                {
+                    va.integer_val = value;
+                    return;
+                }
+            }
+        }
+        
 		for(i32 i = 0; i < material.uniform_value_count; i++)
         {
             UniformValue& u_v = material.uniform_values[i];
@@ -1781,7 +1922,7 @@ namespace rendering
 	static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, math::Mat4 value)
 	{
 		Material& material = renderer.render.material_instances[handle.handle];
-
+        
 		for(i32 i = 0; i < material.uniform_value_count; i++)
         {
             UniformValue& u_v = material.uniform_values[i];
@@ -1838,7 +1979,7 @@ namespace rendering
             
             if(strcmp(array.name, array_name) == 0)
             {
-                UniformArrayEntry &entry = array.entries[index];
+                UniformEntry &entry = array.entries[index];
             
                 for(i32 j = 0; j < entry.value_count; j++)
                 {
@@ -1865,7 +2006,7 @@ namespace rendering
             UniformArray &array = material.arrays[i];
             if(strcmp(array.name, array_name) == 0)
             {
-                UniformArrayEntry &entry = array.entries[index];
+                UniformEntry &entry = array.entries[index];
             
                 for(i32 j = 0; j < entry.value_count; j++)
                 {
@@ -1892,7 +2033,7 @@ namespace rendering
             UniformArray &array = material.arrays[i];
             if(strcmp(array.name, array_name) == 0)
             {
-                UniformArrayEntry &entry = array.entries[index];
+                UniformEntry &entry = array.entries[index];
             
                 for(i32 j = 0; j < entry.value_count; j++)
                 {
@@ -1918,7 +2059,7 @@ namespace rendering
             UniformArray &array = material.arrays[i];
             if(strcmp(array.name, array_name) == 0)
             {
-                UniformArrayEntry &entry = array.entries[index];
+                UniformEntry &entry = array.entries[index];
             
                 for(i32 j = 0; j < entry.value_count; j++)
                 {
@@ -1945,7 +2086,7 @@ namespace rendering
             UniformArray &array = material.arrays[i];
             if(strcmp(array.name, array_name) == 0)
             {
-                UniformArrayEntry &entry = array.entries[index];
+                UniformEntry &entry = array.entries[index];
             
                 for(i32 j = 0; j < entry.value_count; j++)
                 {
@@ -1978,7 +2119,7 @@ namespace rendering
             UniformArray &array = material.arrays[i];
             if(strcmp(array.name, array_name) == 0)
             {
-                UniformArrayEntry &entry = array.entries[index];
+                UniformEntry &entry = array.entries[index];
             
                 for(i32 j = 0; j < entry.value_count; j++)
                 {
@@ -2005,7 +2146,7 @@ namespace rendering
             UniformArray &array = material.arrays[i];
             if(strcmp(array.name, array_name) == 0)
             {
-                UniformArrayEntry &entry = array.entries[index];
+                UniformEntry &entry = array.entries[index];
             
                 for(i32 j = 0; j < entry.value_count; j++)
                 {
@@ -2029,25 +2170,6 @@ namespace rendering
 		// Update data in info from new_data
 	}
 
-    static void push_buffer(Renderer &renderer, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, Transform &transform, b32 casts_shadows = false)
-    {
-        assert(renderer.render.render_command_count < global_max_render_commands);
-        
-        RenderCommand render_command = {};
-        render_command.buffer = buffer_handle;
-        render_command.material = material_instance_handle;
-        render_command.transform = transform;
-        renderer.render.render_commands[renderer.render.render_command_count++] = render_command;
-
-        if(casts_shadows)
-        {
-            ShadowCommand shadow_command = {};
-            shadow_command.buffer = buffer_handle;
-            shadow_command.transform = transform;
-            renderer.render.shadow_commands[renderer.render.shadow_command_count++] = shadow_command;
-        }
-    }
-
     static void push_shadow_buffer(Renderer &renderer, BufferHandle buffer_handle, Transform &transform)
     {
         ShadowCommand shadow_command = {};
@@ -2064,6 +2186,17 @@ namespace rendering
         render_command.buffer = buffer_handle;
         render_command.material = material_instance_handle;
         render_command.transform = transform;
+        render_command.pass.shader_handle = shader_handle;
+        RenderPass &pass =  renderer.render.passes[render_pass_handle.handle - 1];
+        pass.commands.render_commands[pass.commands.render_command_count++] = render_command;
+    }
+
+    static void push_instanced_buffer_to_render_pass(Renderer &renderer, i32 count, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, ShaderHandle shader_handle, RenderPassHandle render_pass_handle)
+    {
+        RenderCommand render_command = {};
+        render_command.count = count;
+        render_command.buffer = buffer_handle;
+        render_command.material = material_instance_handle;
         render_command.pass.shader_handle = shader_handle;
         RenderPass &pass =  renderer.render.passes[render_pass_handle.handle - 1];
         pass.commands.render_commands[pass.commands.render_command_count++] = render_command;

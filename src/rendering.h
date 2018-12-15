@@ -982,11 +982,13 @@ struct RenderState;
 
 typedef void (*LoadTexture)(TextureData &texture_data, RenderState *render_state, Renderer *renderer);
 typedef void (*CreateFramebuffer)(rendering::FramebufferInfo &framebuffer_info, RenderState *render_state, Renderer *renderer);
+typedef rendering::InternalBufferHandle (*CreateInstanceBuffer)(size_t buffer_size, rendering::BufferUsage usage, RenderState *render_state, Renderer *renderer);
 
 struct GraphicsAPI
 {
     LoadTexture load_texture;
     CreateFramebuffer create_framebuffer;
+    CreateInstanceBuffer create_instance_buffer;
     RenderState *render_state;
 };
 
@@ -1151,6 +1153,39 @@ struct Renderer
     
 		i32 *removed_buffer_handles;
 		i32 removed_buffer_handle_count;
+
+        struct
+        {
+            r32 *float_buffers[MAX_INSTANCE_BUFFERS];
+            math::Vec2 *float2_buffers[MAX_INSTANCE_BUFFERS];
+            math::Vec3 *float3_buffers[MAX_INSTANCE_BUFFERS];
+            math::Vec4 *float4_buffers[MAX_INSTANCE_BUFFERS];
+            
+            rendering::InternalBufferHandle float_buffer_handles[MAX_INSTANCE_BUFFERS];
+            rendering::InternalBufferHandle float2_buffer_handles[MAX_INSTANCE_BUFFERS];
+            rendering::InternalBufferHandle float3_buffer_handles[MAX_INSTANCE_BUFFERS];
+            rendering::InternalBufferHandle float4_buffer_handles[MAX_INSTANCE_BUFFERS];
+
+            i32 float_buffer_counts[MAX_INSTANCE_BUFFERS];
+            i32 float2_buffer_counts[MAX_INSTANCE_BUFFERS];
+            i32 float3_buffer_counts[MAX_INSTANCE_BUFFERS];
+            i32 float4_buffer_counts[MAX_INSTANCE_BUFFERS];
+            
+            i32 _internal_float_handles[MAX_INSTANCE_BUFFERS];
+            i32 _internal_float2_handles[MAX_INSTANCE_BUFFERS];
+            i32 _internal_float3_handles[MAX_INSTANCE_BUFFERS];
+            i32 _internal_float4_handles[MAX_INSTANCE_BUFFERS];
+
+            i32 float_buffer_count;
+            i32 float2_buffer_count;
+            i32 float3_buffer_count;
+            i32 float4_buffer_count;
+            
+            i32 current_internal_float_handle;
+            i32 current_internal_float2_handle;
+            i32 current_internal_float3_handle;
+            i32 current_internal_float4_handle;
+        } instancing;
 
         rendering::RenderPass passes[32];
         i32 pass_count;

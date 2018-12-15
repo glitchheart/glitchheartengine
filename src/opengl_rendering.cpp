@@ -139,9 +139,9 @@ void message_callback(GLenum source,
             break;
         }
         
-        log_error("OpenGL error: %s type = 0x%x, severity = 0x%x, message = %s, source = %s, id = %ud, length %ud=",
+        /*log_error("OpenGL error: %s type = 0x%x, severity = 0x%x, message = %s, source = %s, id = %ud, length %ud=",
                   (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
-                  type, severity, message, src_str, id, length);
+                  type, severity, message, src_str, id, length);*/
     }
 }
 
@@ -293,6 +293,8 @@ static GLint shader_link_error_checking(MemoryArena* arena, const char* program_
 
 static void set_all_uniform_locations(rendering::Shader &shader, ShaderGL &gl_shader)
 {
+    gl_shader.location_count = 0;
+    
     for(i32 i = 0; i < shader.uniform_count; i++)
     {
         rendering::Uniform &uniform = shader.uniforms[i];
@@ -409,6 +411,7 @@ static void reload_shaders(RenderState &render_state, Renderer &renderer)
             delete_shader_program(gl_shader);
             clear(&shader.arena);
             rendering::load_shader(renderer, shader);
+            rendering::update_materials_with_shader(renderer, shader);
             load_shader(renderer, shader, gl_shader);
             printf("Reloaded shader: %s\n", shader.path);
         }
@@ -507,7 +510,7 @@ static GLuint load_vertex_shader(const char* file_path, Shader *shd, MemoryArena
     
     glAttachShader(shd->program, shd->geometry_shader);
     
-    glAttachShader(shd->program, shd->vertex_shader);
+    glAttachShader(shd->program, shd->vertex_shader);
     glAttachShader(shd->program, shd->fragment_shader);
     
     glLinkProgram(shd->program);
@@ -706,6 +709,46 @@ static void register_instance_buffer(RenderState &render_state, BufferData &buff
     
     if (buffer_handle == -1)
         render_state.buffer_count++;
+}
+
+GLenum get_usage(rendering::BufferUsage buffer_usage)
+{
+	GLenum usage = GL_DYNAMIC_DRAW;
+
+	// @Incomplete: Copy/Read?
+	switch(buffer_usage)
+	{
+	case rendering::BufferUsage::DYNAMIC:
+		usage = GL_DYNAMIC_DRAW;
+		break;
+	case rendering::BufferUsage::STATIC:
+		usage = GL_STATIC_DRAW;
+		break;
+	case rendering::BufferUsage::STREAM:
+		usage = GL_STREAM_DRAW;
+		break;
+	}
+
+    return usage;
+}
+
+static rendering::InternalBufferHandle new_create_instance_buffer(size_t buffer_size, rendering::BufferUsage buffer_usage, RenderState *render_state, Renderer *renderer)
+{
+    Buffer &buffer = render_state->v2.instance_buffers[render_state->buffer_count];
+    buffer = {};
+    
+    if(buffer.vbo == 0)
+    {
+        glGenBuffers(1, &buffer.vbo);
+    }
+
+    GLenum usage = get_usage(buffer_usage);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)buffer_size, nullptr, usage);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    
+    return { render_state->buffer_count++ };
 }
 
 static void register_vertex_buffer(RenderState& render_state, GLfloat* buffer_data, i32 size, ShaderType shader_type, MemoryArena* perm_arena, i32 buffer_handle = -1)
@@ -1520,6 +1563,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     renderer.api_functions.render_state = &render_state;
     renderer.api_functions.load_texture = &new_load_texture;
     renderer.api_functions.create_framebuffer = &new_create_framebuffer;
+    renderer.api_functions.create_instance_buffer = &new_create_instance_buffer;
     
     render_state.character_buffer = push_array(perm_arena, 4096, CharacterData);
     auto recreate_window = render_state.window != nullptr;
@@ -3116,21 +3160,7 @@ static void register_buffer(Buffer& buffer, rendering::RegisterBufferInfo info, 
 	
 	glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
 
-	GLenum usage = GL_DYNAMIC_DRAW;
-
-	// @Incomplete: Copy/Read?
-	switch(info.usage)
-	{
-	case rendering::BufferUsage::DYNAMIC:
-		usage = GL_DYNAMIC_DRAW;
-		break;
-	case rendering::BufferUsage::STATIC:
-		usage = GL_STATIC_DRAW;
-		break;
-	case rendering::BufferUsage::STREAM:
-		usage = GL_STREAM_DRAW;
-		break;
-	}
+	GLenum usage = get_usage(info.usage);
 	
 	glBufferData(GL_ARRAY_BUFFER, info.data.vertex_buffer_size, info.data.vertex_buffer, usage);
 
@@ -3424,7 +3454,7 @@ static void render_buffer(rendering::RenderCommand& command, const rendering::Re
 	Buffer& buffer = render_state.gl_buffers[handle];
 	
 	bind_vertex_array(buffer.vao, render_state);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+    //glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
     ShaderGL gl_shader;
     rendering::Material& material = renderer.render.material_instances[command.material.handle];
     
@@ -3472,7 +3502,7 @@ static void render_buffer(rendering::RenderCommand& command, const rendering::Re
             rendering::UniformArray &array = material.arrays[uniform_value.array_index];
             for(i32 j = 0; j < array.entry_count; j++)
             {
-                rendering::UniformArrayEntry &entry = array.entries[j];
+                rendering::UniformEntry &entry = array.entries[j];
                 for(i32 k = 0; k < entry.value_count; k++)
                 {
                     rendering::UniformValue& value = entry.values[k];
@@ -3486,15 +3516,73 @@ static void render_buffer(rendering::RenderCommand& command, const rendering::Re
         }
 	}
 
-	if(buffer.ibo)
-	{
-        //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
-		glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)nullptr);
-	}
-	else
-	{
-		glDrawArrays(GL_TRIANGLES, 0, buffer.vertex_count / 3);
-	}
+    if(material.instanced_vertex_attribute_count > 0)
+    {
+        for(i32 i = 0; i < material.instanced_vertex_attribute_count; i++)
+        {
+            rendering::VertexAttributeInstanced &vertex_attribute = material.instanced_vertex_attributes[i];
+
+            i32 array_num = material.instanced_vertex_attribute_count + i;
+            rendering::InternalBufferHandle buffer_handle = { -1 };
+            size_t size = 0;
+            i32 count = 0;
+            void *buf_ptr = nullptr;
+            
+            i32 handle = vertex_attribute.instance_buffer_handle.handle - 1;
+            
+            switch(vertex_attribute.attribute.type)
+            {
+            case rendering::ValueType::FLOAT:
+                buffer_handle = renderer.render.instancing.float_buffer_handles[handle];
+                buf_ptr = renderer.render.instancing.float_buffers[handle];
+                size = sizeof(r32);
+                count = renderer.render.instancing.float_buffer_counts[handle];
+                break;
+            case rendering::ValueType::FLOAT2:
+                buffer_handle = renderer.render.instancing.float2_buffer_handles[handle];
+                buf_ptr = renderer.render.instancing.float2_buffers[handle];
+                size = sizeof(r32) * 2;
+                count = renderer.render.instancing.float2_buffer_counts[handle];
+                break;
+            case rendering::ValueType::FLOAT3:
+                buffer_handle = renderer.render.instancing.float3_buffer_handles[handle];
+                buf_ptr = renderer.render.instancing.float3_buffers[handle];
+                size = sizeof(r32) * 3;
+                count = renderer.render.instancing.float3_buffer_counts[handle];
+                break;
+            case rendering::ValueType::FLOAT4:
+                buffer_handle = renderer.render.instancing.float4_buffer_handles[handle];
+                buf_ptr = renderer.render.instancing.float4_buffers[handle];
+                size = sizeof(r32) * 4;
+                count = renderer.render.instancing.float4_buffer_counts[handle];
+                break;
+            }
+
+            assert(buffer_handle.handle >= 0);
+            Buffer &buffer = render_state.v2.instance_buffers[buffer_handle.handle];
+            
+            glEnableVertexAttribArray(array_num);
+            glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
+            
+            glVertexAttribPointer(array_num, 3, GL_FLOAT, GL_FALSE, size, (void*)nullptr);
+            glVertexAttribDivisor(array_num, 1);
+        }
+        
+        glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)nullptr, command.count);
+    }
+    else
+    {
+        if(buffer.ibo)
+        {
+            //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
+            glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)nullptr);
+        }
+        else
+        {
+            glDrawArrays(GL_TRIANGLES, 0, buffer.vertex_count / 3);
+        }
+    }
 }
 
 static void render_shadow_buffer(rendering::ShadowCommand &shadow_command, RenderState &render_state, Renderer &renderer)
@@ -3505,6 +3593,8 @@ static void render_shadow_buffer(rendering::ShadowCommand &shadow_command, Rende
 	bind_vertex_array(buffer.vao, render_state);
     
     ShaderGL gl_shader = render_state.gl_shaders[renderer.render.shadow_map_shader.handle];
+
+    
     glUseProgram(gl_shader.program);
     
     rendering::Transform transform = shadow_command.transform;
@@ -3560,39 +3650,44 @@ static void render_shadows(RenderState &render_state, Renderer &renderer, Frameb
 }
 
 static void render_all_passes(RenderState &render_state, Renderer &renderer)
-{    
-    // @Incomplete: Create a better way for enabling/disabling the clipping planes
-    // Check if we have clipping planes
-    glEnable(GL_CLIP_PLANE0);
-    
-    // Go backwards through the array to enable easy render pass adding
-    for(i32 pass_index = renderer.render.pass_count - 1; pass_index >= 0; pass_index--)
-    {
-        rendering::RenderPass &pass = renderer.render.passes[pass_index];
+{
+	// @Incomplete: Create a better way for enabling/disabling the clipping planes
+	// Check if we have clipping planes
+	glEnable(GL_CLIP_PLANE0);
 
-        Framebuffer &framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
+	// Go backwards through the array to enable easy render pass adding
+	for (i32 pass_index = renderer.render.pass_count - 1; pass_index >= 0; pass_index--)
+	{
+		rendering::RenderPass &pass = renderer.render.passes[pass_index];
 
-        glViewport(0, 0, framebuffer.width, framebuffer.height);
-        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
+		Framebuffer &framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
 
-        // @Incomplete: Not all framebuffers should have depth testing or clear both bits
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LESS);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glClearColor(renderer.clear_color.r, renderer.clear_color.g, renderer.clear_color.b, renderer.clear_color.a);
-        
-        for(i32 i = 0; i < pass.commands.render_command_count; i++)
-        {
-            rendering::RenderCommand &command = pass.commands.render_commands[i];
+		glViewport(0, 0, framebuffer.width, framebuffer.height);
+		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
 
-            render_buffer(command, pass, render_state, renderer, pass.camera, &render_state.gl_shaders[command.pass.shader_handle.handle]);
-        }
+		// @Incomplete: Not all framebuffers should have depth testing or clear both bits
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LESS);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClearColor(renderer.clear_color.r, renderer.clear_color.g, renderer.clear_color.b, renderer.clear_color.a);
 
-        pass.commands.render_command_count = 0;
-    }
-    
-    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glActiveTexture(GL_TEXTURE0);
+		for (i32 i = 0; i < pass.commands.render_command_count; i++)
+		{
+			rendering::RenderCommand &command = pass.commands.render_commands[i];
+
+			render_buffer(command, pass, render_state, renderer, pass.camera, &render_state.gl_shaders[command.pass.shader_handle.handle]);
+		}
+
+		pass.commands.render_command_count = 0;
+	}
+
+	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glActiveTexture(GL_TEXTURE0);
+
+	for (i32 i = 0; i < renderer.render.instancing.float3_buffer_count; i++)
+	{
+		renderer.render.instancing.float3_buffer_counts[i] = 0;
+	}
 }
 
 static void render_new_commands(RenderState &render_state, Renderer &renderer)
@@ -3614,52 +3709,52 @@ static void render_ui_commands(RenderState &render_state, Renderer &renderer)
 {
     for (i32 index = 0; index < renderer.ui_command_count; index++)
     {
-        const RenderCommand& command = renderer.ui_commands[index];
-        
-        if(command.clip)
-        {
-            glEnable(GL_SCISSOR_TEST);
-            math::Rect clip_rect = command.clip_rect;
-            
-            glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
-        }
-        
-        switch (command.type)
-        {
-            case RENDER_COMMAND_LINE:
-            {
-                render_line(command, render_state, renderer.ui_projection_matrix, renderer.camera.view_matrix);
-            }
-            break;
-            case RENDER_COMMAND_TEXT:
-            {
-                render_text(command, render_state, renderer, renderer.camera.view_matrix, renderer.ui_projection_matrix);
-            }
-            break;
-            case RENDER_COMMAND_QUAD:
-            {
-                render_quad(command, render_state, renderer.ui_projection_matrix, renderer.camera.view_matrix);
-            }
-            break;
-            case RENDER_COMMAND_MODEL:
-            {
-                //render_model(command, render_state, renderer.camera.projection_matrix, renderer.camera.view_matrix);
-            }
-            break;
-            case RENDER_COMMAND_BUFFER:
-            {
-                render_buffer(command, render_state, renderer, renderer.camera.projection_matrix, renderer.camera.view_matrix);
-            }
-            break;
-            case RENDER_COMMAND_DEPTH_TEST:
-            {
-                // @Incomplete: Do we need depth test commands for UI stuff?
-            }
-            break;
-            default:
-            break;
-        }
-        glDisable(GL_SCISSOR_TEST);
+       const RenderCommand& command = renderer.ui_commands[index];
+       
+       if(command.clip)
+       {
+           glEnable(GL_SCISSOR_TEST);
+           math::Rect clip_rect = command.clip_rect;
+           
+           glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
+       }
+       
+       switch (command.type)
+       {
+           case RENDER_COMMAND_LINE:
+           {
+               render_line(command, render_state, renderer.ui_projection_matrix, renderer.camera.view_matrix);
+           }
+           break;
+           case RENDER_COMMAND_TEXT:
+           {
+               render_text(command, render_state, renderer, renderer.camera.view_matrix, renderer.ui_projection_matrix);
+           }
+           break;
+           case RENDER_COMMAND_QUAD:
+           {
+               render_quad(command, render_state, renderer.ui_projection_matrix, renderer.camera.view_matrix);
+           }
+           break;
+           case RENDER_COMMAND_MODEL:
+           {
+               //render_model(command, render_state, renderer.camera.projection_matrix, renderer.camera.view_matrix);
+           }
+           break;
+           case RENDER_COMMAND_BUFFER:
+           {
+               render_buffer(command, render_state, renderer, renderer.camera.projection_matrix, renderer.camera.view_matrix);
+           }
+           break;
+           case RENDER_COMMAND_DEPTH_TEST:
+           {
+               // @Incomplete: Do we need depth test commands for UI stuff?
+           }
+           break;
+           default:
+           break;
+       }
+       glDisable(GL_SCISSOR_TEST);
     }
     
     renderer.particles._tagged_removed_count = 0;
@@ -3714,11 +3809,11 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
                 
     //         }
     //         break;
-            case RENDER_COMMAND_PARTICLES:
-            {
-                render_particles(command, renderer, render_state, renderer.camera.projection_matrix, renderer.camera.view_matrix);
-            }
-            break;
+            // case RENDER_COMMAND_PARTICLES:
+            // {
+            //     render_particles(command, renderer, render_state, renderer.camera.projection_matrix, renderer.camera.view_matrix);
+            // }
+            // break;
     //         case RENDER_COMMAND_MESH_INSTANCED:
     //         {
     //             render_mesh_instanced(command, renderer, render_state, renderer.camera.projection_matrix, renderer.camera.view_matrix, false, &renderer.shadow_map_matrices);
