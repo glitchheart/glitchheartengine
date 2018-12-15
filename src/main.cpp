@@ -439,11 +439,25 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     rendering::FramebufferHandle final_framebuffer = rendering::create_framebuffer(final_info, renderer);
     rendering::set_final_framebuffer(renderer, final_framebuffer);
 
-    renderer.render.ui.quad_buffer = rendering::create_quad_buffer(renderer);
-    renderer.render.ui.textured_quad_buffer = rendering::create_quad_buffer(renderer, math::Vec2(0.0f), true);
-    renderer.render.ui.centered_quad_buffer = rendering::create_quad_buffer(renderer, math::Vec2(0.5f));
-    renderer.render.ui.centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, math::Vec2(0.5f), true);
-    
+    renderer.render.ui.top_left_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::LEFT);
+    renderer.render.ui.top_left_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::LEFT, true);
+    renderer.render.ui.top_right_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::RIGHT);
+    renderer.render.ui.top_right_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::RIGHT, true);
+    renderer.render.ui.bottom_left_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM | rendering::UIAlignment::LEFT);
+    renderer.render.ui.bottom_left_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM | rendering::UIAlignment::LEFT, true);
+    renderer.render.ui.bottom_right_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM | rendering::UIAlignment::RIGHT);
+    renderer.render.ui.bottom_right_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM | rendering::UIAlignment::RIGHT, true);
+    renderer.render.ui.top_x_centered_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP);
+    renderer.render.ui.top_x_centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP, true);
+    renderer.render.ui.bottom_x_centered_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM);
+    renderer.render.ui.bottom_x_centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM, true);
+    renderer.render.ui.left_y_centered_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::LEFT);
+    renderer.render.ui.left_y_centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::LEFT, true);
+    renderer.render.ui.right_y_centered_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::RIGHT);
+    renderer.render.ui.right_y_centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::RIGHT, true);
+    renderer.render.ui.centered_quad_buffer = rendering::create_quad_buffer(renderer, 0);
+    renderer.render.ui.centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, 0, true);
+
     rendering::create_ui_render_pass(renderer);
     renderer.render.ui_quad_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/ui_quad.shd");
     renderer.render.textured_ui_quad_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/ui_texture_quad.shd");

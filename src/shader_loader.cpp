@@ -1021,7 +1021,7 @@ namespace rendering
         return &renderer.render.material_instances[instance_handle.handle];
     }
 
-	static void load_texture(const char* full_texture_path, Renderer& renderer, TextureFiltering filtering, i32* handle = 0)
+	static void load_texture(const char* full_texture_path, Renderer& renderer, TextureFiltering filtering, TextureHandle* handle = 0)
 	{
 		TextureData* texture_data = &renderer.texture_data[renderer.texture_count];
 		texture_data->filtering = filtering;
@@ -1053,7 +1053,7 @@ namespace rendering
         }
             
 		if(handle)
-			*handle = texture_data->handle + 1; // We add one to the handle, since we want 0 to be an invalid handle
+			handle->handle = texture_data->handle + 1; // We add one to the handle, since we want 0 to be an invalid handle
 	}
 
 
@@ -1154,9 +1154,9 @@ namespace rendering
                         sscanf(buffer, "map_Ka %s", name);
 						
                         if(name[0] == '.')
-                            load_texture(name, renderer, LINEAR, &u->texture.handle);
+                            load_texture(name, renderer, LINEAR, &u->texture);
                         else
-                            load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &u->texture.handle);
+                            load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &u->texture);
                     }
                 }
                 else if(starts_with(buffer, "map_Kd")) // diffuse map
@@ -1167,9 +1167,9 @@ namespace rendering
                         sscanf(buffer, "map_Kd %s", name);
 						
                         if(name[0] == '.')
-                            load_texture(name, renderer, LINEAR, &u->texture.handle);
+                            load_texture(name, renderer, LINEAR, &u->texture);
                         else
-                            load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &u->texture.handle);
+                            load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &u->texture);
                     }
                 }
                 else if(starts_with(buffer, "map_Ks")) // specular map
@@ -1180,9 +1180,9 @@ namespace rendering
                         sscanf(buffer, "map_Ks %s", name);
 						
                         if(name[0] == '.')
-                            load_texture(name, renderer, LINEAR, &u->texture.handle);
+                            load_texture(name, renderer, LINEAR, &u->texture);
                         else
-                            load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &u->texture.handle);
+                            load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &u->texture);
                     }
                 }
                 else if(starts_with(buffer, "map_Ns")) // specular intensity map
@@ -1193,9 +1193,9 @@ namespace rendering
                         sscanf(buffer, "map_Ns %s", name);
 						
                         if(name[0] == '.')
-                            load_texture(name, renderer, LINEAR, &u->texture.handle);
+                            load_texture(name, renderer, LINEAR, &u->texture);
                         else
-                            load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &u->texture.handle);
+                            load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &u->texture);
                     }
                 }	
             }
@@ -1331,7 +1331,25 @@ namespace rendering
 		return { unused_handle };
 	}
 
-    static BufferHandle create_quad_buffer(Renderer& renderer, math::Vec2 pivot = math::Vec2(0.0f), b32 uvs = false)
+    static void update_buffer(Renderer& renderer, UpdateBufferInfo update_info)
+	{
+        assert(renderer.render.updated_buffer_handle_count + 1 < global_max_custom_buffers);
+        assert(renderer.render._internal_buffer_handles);
+        
+		// @Incomplete: Update from data
+		// Find RegisterBufferInfo from handle
+		// Update data in info from new_data
+
+        i32 internal_handle = renderer.render._internal_buffer_handles[update_info.buffer.handle - 1];
+        
+        renderer.render.buffers[internal_handle].data = update_info.update_data;
+
+        renderer.render.updated_buffer_handles[renderer.render.updated_buffer_handle_count++] = internal_handle;
+	}
+
+    
+
+    static BufferHandle create_quad_buffer(Renderer& renderer, u64 anchor = 0, b32 uvs = false)
     {
         assert(renderer.render.buffer_count + 1 < global_max_custom_buffers);
 
@@ -1343,6 +1361,26 @@ namespace rendering
         add_vertex_attrib(ValueType::FLOAT2, info);
 
         r32 *quad_vertices = nullptr;
+
+        math::Vec2 pivot = math::Vec2(0.5f);
+
+        if(anchor & UIAlignment::BOTTOM)
+        {
+            pivot.y = 0.0f;
+        }
+        else if(anchor & UIAlignment::TOP)
+        {
+            pivot.y = 1.0f;
+        }
+
+        if(anchor & UIAlignment::LEFT)
+        {
+            pivot.x = 0.0f;
+        }
+        else if(anchor & UIAlignment::RIGHT)
+        {
+            pivot.x = 1.0f;
+        }
         
         if(uvs)
         {
@@ -2149,13 +2187,6 @@ namespace rendering
         }
     }
 
-	static void update_buffer(Renderer& renderer, BufferHandle handle, BufferData new_data)
-	{
-		// @Incomplete: Update from data
-		// Find RegisterBufferInfo from handle
-		// Update data in info from new_data
-	}
-
     static void push_buffer(Renderer &renderer, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, Transform &transform, b32 casts_shadows = false)
     {
         assert(renderer.render.render_command_count < global_max_render_commands);
@@ -2230,6 +2261,18 @@ namespace rendering
         return scaled_size;
     }
 
+    static void calculate_current_x_from_line_data(r32 *x, math::Vec2 text_size, u64 alignment_flags)
+    {
+        if(alignment_flags & UIAlignment::RIGHT)
+        {
+            *x -= text_size.x;
+        }
+        else
+        {
+            *x -= text_size.x / 2.0f;
+        }
+    }
+
     static math::Rect scale_clip_rect(Renderer& renderer, math::Rect clip_rect, u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)
     {
         math::Vec2i resolution_scale = get_scale(renderer);
@@ -2253,19 +2296,111 @@ namespace rendering
         return scaled_clip_rect;
     }
 
+    static void push_text(Renderer& renderer, CreateTextCommandInfo info)
+    {
+        RenderPass& pass = renderer.render.ui.pass;
+        TextRenderCommand& command = pass.ui.text_commands[pass.ui.text_command_count];
+
+        CharacterData *coords = pass.ui.coords[pass.ui.text_command_count];
+        
+        command.buffer = { pass.ui.text_command_count++ };
+
+        math::Vec2i resolution_scale = get_scale(renderer);
+
+        math::Vec3 pos;
+        pos.x = (info.position.x / UI_COORD_DIMENSION) * resolution_scale.x;
+        pos.y = (info.position.y / UI_COORD_DIMENSION) * resolution_scale.y;
+        pos.z = (r32)info.z_layer;
+        
+        Transform transform = {};
+        transform.position = pos;
+
+        math::Rect scaled_clip_rect = scale_clip_rect(renderer, info.clip_rect);
+
+        command.clip = info.clip;
+        command.clip_rect = scaled_clip_rect;
+
+        // @Incomplete: Set material?
+        
+        // @Note: Compute the coord buffer
+        i32 n = 0;
+
+        TrueTypeFontInfo font_info = renderer.tt_font_infos[info.font.handle];
+        
+        LineData line_data = get_line_size_data(info.text, font_info);
+
+        r32 start_x = pos.x;
+        r32 y = pos.y;
+        r32 x = pos.x;
+        i32 current_line;
+
+        if(info.alignment_flags & UIAlignment::TOP)
+        {
+            //y = line_data.total_height;
+        }
+        else if(info.alignment_flags & UIAlignment::BOTTOM)
+        {
+            y += line_data.total_height;
+        }
+        else
+        {
+            y -= line_data.line_sizes[0].y * 0.5f;
+        }
+
+        FramebufferInfo framebuffer = renderer.render.framebuffers[pass.framebuffer.handle - 1];
+        
+        y = framebuffer.height - y;
+
+        calculate_current_x_from_line_data(&x, line_data.line_sizes[current_line], command.alignment_flags);
+
+        for(u32 i = 0; i < strlen(info.text); i++)
+        {
+            char c = info.text[i];
+
+            if(c == '\n')
+            {
+                current_line++;
+
+                y += font_info.line_height;
+                x = start_x;
+
+                if(current_line != line_data.line_count)
+                {
+                    calculate_current_x_from_line_data(&x, line_data.line_sizes[current_line], info.alignment_flags);
+                }
+
+                continue;
+            }
+
+            stbtt_aligned_quad quad;
+            stbtt_GetPackedQuad(font_info.char_data, font_info.atlas_width, font_info.atlas_height, info.text[i] - font_info.first_char, &x, &y, &quad, 1);
+
+            r32 x_min = quad.x0;
+            r32 x_max = quad.x1;
+            r32 y_min = framebuffer.height - quad.y0;
+            r32 y_max = framebuffer.height - quad.y1;
+
+            coords[n++] = { x_max, y_max, quad.s1, quad.t1 };
+            coords[n++] = { x_max, y_min, quad.s1, quad.t0 };
+            coords[n++] = { x_min, y_min, quad.s0, quad.t0 };
+            coords[n++] = { x_min, y_max, quad.s0, quad.t1 };
+            coords[n++] = { x_max, y_max, quad.s1, quad.t1 };
+            coords[n++] = { x_min, y_min, quad.s0, quad.t0 };
+        
+            i32 kerning = stbtt_GetCodepointKernAdvance(&font_info.info, info.text[i] - font_info.first_char, info.text[i + 1] - font_info.first_char);
+            x += (r32)kerning * font_info.scale;
+        }
+    }
+
     static void push_buffer_to_ui_pass(Renderer& renderer, BufferHandle buffer_handle, ShaderHandle shader, CreateUICommandInfo info)
     {
-        // @Incomplete: Textured
         UIRenderCommand render_command = {};
         render_command.buffer = buffer_handle;
 
-        printf("centered: %d\n", info.centered);
-        
-        if(info.texture_handle != 0)
+        if(info.texture_handle.handle != 0)
         {
             render_command.material = renderer.render.materials[renderer.render.ui.textured_material.handle];
-            TextureHandle tex = {info.texture_handle};
-            set_uniform_value(renderer, render_command.material, "tex0", tex);
+            set_uniform_value(renderer, render_command.material, "tex0", info.texture_handle);
         }
         else
         {
@@ -2279,10 +2414,22 @@ namespace rendering
         transform.rotation = info.rotation;
         
         render_command.transform = transform;
-        render_command.shader_handle = shader;
+        render_command.shader_handle = render_command.material.shader;
         render_command.clip_rect = info.clip_rect;
         RenderPass& pass = renderer.render.ui.pass;
         pass.ui.render_commands[pass.ui.render_command_count++] = render_command;
+    }
+
+    static UpdateBufferInfo create_update_buffer_info(Renderer &renderer, BufferHandle handle)
+    {
+        i32 internal_handle = renderer.render._internal_buffer_handles[handle.handle - 1];
+        
+        RegisterBufferInfo reg_info = renderer.render.buffers[internal_handle];
+        UpdateBufferInfo info = {};
+        info.buffer = handle;
+        info.update_data = reg_info.data;
+
+        return info;
     }
 
     static CreateUICommandInfo create_ui_command_info()
@@ -2297,6 +2444,7 @@ namespace rendering
         info.color = math::Rgba(1.0f);
         info.clip_rect = math::Rect(0.0f);
         info.clip = true;
+        info.anchor_flag = 0;
 
         info.scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO;
         info.texture_handle = { 0 };
@@ -2321,30 +2469,110 @@ namespace rendering
 
         scaled_info.rotation = info.rotation;
         scaled_info.color = info.color;
+        scaled_info.anchor_flag = info.anchor_flag;
+
+        u64 anchor = info.anchor_flag;
+
+        BufferHandle buffer = {};
+        ShaderHandle shader = {};
         
-        if(info.texture_handle != 0)
+        if(info.texture_handle.handle != 0)
         {
-            if(info.centered)
+            if(anchor & UIAlignment::TOP)
             {
-                push_buffer_to_ui_pass(renderer, renderer.render.ui.centered_textured_quad_buffer, renderer.render.textured_ui_quad_shader, scaled_info);
+                if(anchor & UIAlignment::LEFT)
+                {
+                    buffer = renderer.render.ui.top_left_textured_quad_buffer;
+                }
+                else if(anchor & UIAlignment::RIGHT)
+                {
+                    buffer = renderer.render.ui.top_right_textured_quad_buffer;
+                }
+                else
+                {
+                    buffer = renderer.render.ui.top_x_centered_textured_quad_buffer;
+                }
+            }
+            else if(anchor & UIAlignment::BOTTOM)
+            {
+                if(anchor & UIAlignment::LEFT)
+                {
+                    buffer = renderer.render.ui.bottom_left_textured_quad_buffer;
+                }
+                else if(anchor & UIAlignment::RIGHT)
+                {
+                    buffer = renderer.render.ui.bottom_right_textured_quad_buffer;
+                }
+                else
+                {
+                    buffer = renderer.render.ui.bottom_x_centered_textured_quad_buffer;
+                }
             }
             else
             {
-                push_buffer_to_ui_pass(renderer, renderer.render.ui.textured_quad_buffer, renderer.render.textured_ui_quad_shader, scaled_info);
+                if(anchor & UIAlignment::LEFT)
+                {
+                    buffer = renderer.render.ui.left_y_centered_textured_quad_buffer;
+                }
+                else if(anchor & UIAlignment::RIGHT)
+                {
+                    buffer = renderer.render.ui.right_y_centered_textured_quad_buffer;
+                }
+                else
+                {
+                    buffer = renderer.render.ui.centered_textured_quad_buffer;
+                }
             }
         }
         else
         {
-            if(info.centered)
+            if(anchor & UIAlignment::TOP)
             {
-                push_buffer_to_ui_pass(renderer, renderer.render.ui.centered_quad_buffer, renderer.render.ui_quad_shader, scaled_info);
+                if(anchor & UIAlignment::LEFT)
+                {
+                    buffer = renderer.render.ui.top_left_quad_buffer;
+                }
+                else if(anchor & UIAlignment::RIGHT)
+                {
+                    buffer = renderer.render.ui.top_right_quad_buffer;
+                }
+                else
+                {
+                    buffer = renderer.render.ui.top_x_centered_quad_buffer;
+                }
+            }
+            else if(anchor & UIAlignment::BOTTOM)
+            {
+                if(anchor & UIAlignment::LEFT)
+                {
+                    buffer = renderer.render.ui.bottom_left_quad_buffer;
+                }
+                else if(anchor & UIAlignment::RIGHT)
+                {
+                    buffer = renderer.render.ui.bottom_right_quad_buffer;
+                }
+                else
+                {
+                    buffer = renderer.render.ui.bottom_x_centered_quad_buffer;
+                }
             }
             else
             {
-                push_buffer_to_ui_pass(renderer, renderer.render.ui.quad_buffer, renderer.render.ui_quad_shader, scaled_info);
+                if(anchor & UIAlignment::LEFT)
+                {
+                    buffer = renderer.render.ui.left_y_centered_quad_buffer;
+                }
+                else if(anchor & UIAlignment::RIGHT)
+                {
+                    buffer = renderer.render.ui.right_y_centered_quad_buffer;
+                }
+                else
+                {
+                    buffer = renderer.render.ui.centered_quad_buffer;
+                }
             }
         }
-        
-        
+
+        push_buffer_to_ui_pass(renderer, buffer, shader, scaled_info);
     }
 }

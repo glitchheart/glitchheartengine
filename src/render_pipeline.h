@@ -299,6 +299,12 @@ namespace rendering
 		RegisterBufferInfo() {}
 	};
 
+    struct UpdateBufferInfo
+    {
+        BufferHandle buffer;
+        BufferData update_data;
+    };
+    
     struct Transform
     {
 		math::Vec3 position;
@@ -327,6 +333,69 @@ namespace rendering
         SCALE_WITH_HEIGHT = (1 << 3),
     };
 
+    // @Note: 0 is centered
+    enum UIAlignment
+    {
+        LEFT = (1 << 0),
+        RIGHT = (1 << 1),
+        TOP = (1 << 2),
+        BOTTOM = (1 << 3),
+    };
+
+    struct FontHandle
+    {
+        i32 handle;
+    };
+
+    struct CreateTextCommandInfo
+    {
+        math::Vec2 position;
+        math::Vec3 rotation;
+
+        i32 z_layer;
+
+        math::Vec2 scale;
+
+        math::Rgba color;
+
+        FontHandle font;
+        
+        math::Rect clip_rect;
+        b32 clip;
+
+        u64 alignment_flags;
+
+        // @Robustness: Consider longer text
+        char text[256];
+    };
+
+    struct CharacterData
+    {
+        r32 x;
+        r32 y;
+        r32 tx;
+        r32 ty;
+    };
+
+    struct CharacterBufferHandle
+    {
+        i32 handle;
+    };
+
+    struct TextRenderCommand
+    {
+        Material material;
+        Transform transform;
+
+        math::Rect clip_rect;
+        b32 clip;
+
+        FontHandle font;
+
+        u64 alignment_flags;
+        CharacterBufferHandle buffer;
+    };
+
     struct CreateUICommandInfo
     {
         math::Vec2 position;
@@ -336,7 +405,7 @@ namespace rendering
         
         math::Rgba color;
 
-        i32 texture_handle;
+        TextureHandle texture_handle;
 
         b32 centered;
 
@@ -344,6 +413,7 @@ namespace rendering
         b32  clip;
         
         u64 scaling_flag;
+        u64 anchor_flag;
     };
 
     struct UIRenderCommand
@@ -483,6 +553,11 @@ namespace rendering
             {
                 rendering::UIRenderCommand *render_commands;
                 i32 render_command_count;
+
+                //@Cleanup: An extra 8 + 8 + 8 bytes?
+                rendering::CharacterData **coords;
+                rendering::TextRenderCommand *text_commands;
+                i32 text_command_count;
             } ui;
         };
 

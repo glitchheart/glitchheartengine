@@ -565,9 +565,9 @@ void emit_particle(Renderer& renderer, ParticleSystemInfo &particle_system, i32*
 
 	math::Vec2 tex_size(1);
 
-	if (particle_system.attributes.texture_handle != 0)
+	if (particle_system.attributes.texture_handle.handle != 0)
 	{
-		math::Vec2i i_size = get_texture_size(particle_system.attributes.texture_handle);
+		math::Vec2i i_size = get_texture_size(particle_system.attributes.texture_handle.handle);
 		r32 max = MAX((r32)i_size.x, (r32)i_size.y);
 		tex_size = math::Vec2((r32)i_size.x / max, (r32)i_size.y / max);
 	}

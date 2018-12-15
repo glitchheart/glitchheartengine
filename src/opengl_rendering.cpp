@@ -1515,11 +1515,17 @@ static void new_load_texture(TextureData &texture_data, RenderState *render_stat
     load_texture(texture_data, &render_state->texture_array[render_state->texture_index++]);
 }
 
+static void new_load_font(RenderState* render_state, Renderer* renderer, char* path, i32 size)
+{
+    load_font(*render_state, *renderer, path, size);
+}
+
 static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char* title, MemoryArena *perm_arena, b32 *do_save_config)
 {
     renderer.api_functions.render_state = &render_state;
     renderer.api_functions.load_texture = &new_load_texture;
     renderer.api_functions.create_framebuffer = &new_create_framebuffer;
+    renderer.api_functions.load_font = &new_load_font;
     
     render_state.character_buffer = push_array(perm_arena, 4096, CharacterData);
     auto recreate_window = render_state.window != nullptr;
@@ -2191,20 +2197,20 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
     
     for(u32 i = 0; i < strlen(text); i++)
     {
-	char c = text[i];
+        char c = text[i];
 	
-	if(c == '\n')
-	{
-	    current_line++;
+        if(c == '\n')
+        {
+            current_line++;
 	    
-	    y += font_info.line_height;
-	    x = start_x;
+            y += font_info.line_height;
+            x = start_x;
 
-	    if(current_line != line_data.line_count)
-		calculate_current_x_from_line_data(&x, line_data.line_sizes[current_line], alignment_flags);
+            if(current_line != line_data.line_count)
+                calculate_current_x_from_line_data(&x, line_data.line_sizes[current_line], alignment_flags);
 
-	    continue;
-	}
+            continue;
+        }
 	
         stbtt_aligned_quad quad;
         stbtt_GetPackedQuad(font_info.char_data, font_info.atlas_width, font_info.atlas_height,
@@ -3131,6 +3137,38 @@ static void register_buffers(RenderState& render_state, Renderer& renderer)
     renderer.updated_buffer_handle_count = 0;
 }
 
+// @Incomplete: Ignores if the register info has new vertex attributes
+static void update_buffer(Buffer& buffer, rendering::RegisterBufferInfo info, RenderState &render_state)
+{
+    GLenum usage = GL_DYNAMIC_DRAW;
+
+	// @Incomplete: Copy/Read?
+	switch(info.usage)
+	{
+	case rendering::BufferUsage::DYNAMIC:
+    usage = GL_DYNAMIC_DRAW;
+    break;
+	case rendering::BufferUsage::STATIC:
+    usage = GL_STATIC_DRAW;
+    break;
+	case rendering::BufferUsage::STREAM:
+    usage = GL_STREAM_DRAW;
+    break;
+	}
+
+    bind_vertex_array(buffer.vao, render_state);
+    
+    glBufferData(GL_ARRAY_BUFFER, info.data.vertex_buffer_size, info.data.vertex_buffer, usage);
+
+    if(info.data.index_buffer_count > 0)
+	{
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, info.data.index_buffer_size, info.data.index_buffer, usage);
+	}
+
+    bind_vertex_array(0, render_state);
+}
+
 static void register_buffer(Buffer& buffer, rendering::RegisterBufferInfo info, RenderState &render_state)
 {
     buffer.vertex_buffer_size = info.data.vertex_buffer_size;
@@ -3287,6 +3325,19 @@ static void register_new_buffers(RenderState& render_state, Renderer& renderer)
 	}
 
 	render_state.gl_buffer_count = renderer.render.buffer_count;
+}
+
+static void update_new_buffers(RenderState& render_state, Renderer& renderer)
+{
+    for(i32 index = 0; renderer.render.updated_buffer_handle_count; index++)
+    {
+        i32 handle = renderer.render.updated_buffer_handles[index];
+        rendering::RegisterBufferInfo& info = renderer.render.buffers[handle];
+        Buffer& gl_buffer = render_state.gl_buffers[handle];
+        update_buffer(gl_buffer, info, render_state);
+    }
+
+    renderer.updated_buffer_handle_count = 0;
 }
 
 static void set_uniform(RenderState& render_state, Renderer& renderer, GLuint program, rendering::UniformValue& uniform_value, GLuint location, i32 *texture_count = nullptr)
@@ -3614,14 +3665,16 @@ static void render_ui_pass(RenderState& render_state, Renderer &renderer)
             glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
         }
 
-        render_buffer(command.transform, command.buffer, command.material.shader, command.material.uniform_values, command.material.uniform_value_count, command.material.arrays, command.material.array_count, pass, render_state, renderer, pass.camera, &render_state.gl_shaders[command.shader_handle.handle]);
+        render_buffer(command.transform, command.buffer, command.material.shader, command.material.uniform_values,
+                      command.material.uniform_value_count, command.material.arrays, command.material.array_count,
+                      pass, render_state, renderer, pass.camera, &render_state.gl_shaders[command.shader_handle.handle]);
 
         if(command.clip)
         {
             glDisable(GL_SCISSOR_TEST);
         }
     }
-
+    
     pass.ui.render_command_count = 0;
 }
 
@@ -4077,6 +4130,9 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         i32 height = render_state.framebuffer_height;
 
         glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+        // @Incomplete: Remove when we remember to always check this in all render calls
+        render_state.current_state.shader_program = 0;
 
         /////// NOTHING WITH FRAMEBUFFERS ///////
 

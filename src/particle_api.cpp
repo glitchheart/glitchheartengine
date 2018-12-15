@@ -1,3 +1,4 @@
+
 static ParticleSystemInfo* get_particle_system_info(ParticleSystemHandle handle, Renderer& renderer)
 {
     i32 _internal_handle = renderer.particles._internal_handles[handle.handle - 1];
@@ -72,7 +73,7 @@ static ParticleSystemAttributes get_default_particle_system_attributes()
     attributes.speed.constant.start_speed = 1.0f;
     attributes.spread = 1.0f;
     attributes.particles_per_second = 100;
-    attributes.texture_handle = 0;
+    attributes.texture_handle.handle = 0;
     
     attributes.emission_module.rate_over_distance = 0.0f;
     attributes.emission_module.burst_over_lifetime.value_count = 0;
@@ -124,7 +125,7 @@ static void _allocate_particle_system(Renderer& renderer, ParticleSystemInfo& sy
     system_info.particles.relative_position = push_array_simd(memory_arena, max_over_four, Vec3_4x);
     
     system_info.particles.life = push_array_simd(memory_arena, max_over_four, r64_4x);
-    system_info.particles.texture_handle = push_array(memory_arena, system_info.max_particles, i32);
+    system_info.particles.texture_handle = push_array(memory_arena, system_info.max_particles, rendering::TextureHandle);
     
     system_info.offsets = push_array(memory_arena, system_info.max_particles, math::Vec3);
     
