@@ -4,7 +4,7 @@
 namespace rendering
 {
     
-#define MAX_INSTANCE_BUFFERS 32
+#define MAX_INSTANCE_BUFFERS 64
     
      struct ShaderHandle
     {
