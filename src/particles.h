@@ -142,7 +142,7 @@ struct ParticleSystemAttributes
 
     r32 spread;
     i32 particles_per_second;
-    i32 texture_handle;
+    rendering::TextureHandle texture_handle;
     r32 gravity;
     
     EmissionModule emission_module;
@@ -166,7 +166,7 @@ struct Particles
     
     r64_4x *life;
     
-    i32 *texture_handle;
+    rendering::TextureHandle *texture_handle;
 };
 
 struct ParticleSystemHandle

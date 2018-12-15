@@ -64,7 +64,7 @@ static void load_shader(MemoryArena* arena, const char* full_shader_path, Render
 
 
 
-static void load_texture(const char* full_texture_path, Renderer& renderer, TextureFiltering filtering, i32* handle = 0)
+static void load_texture(const char* full_texture_path, Renderer& renderer, TextureFiltering filtering, TextureHandle* handle = nullptr)
 {
     TextureData* texture_data = &renderer.texture_data[renderer.texture_count];
     texture_data->filtering = filtering;
@@ -98,7 +98,7 @@ static void load_texture(const char* full_texture_path, Renderer& renderer, Text
     }
     
     if(handle)
-        *handle = texture_data->handle + 1; // We add one to the handle, since we want 0 to be an invalid handle
+        handle->handle = texture_data->handle + 1; // We add one to the handle, since we want 0 to be an invalid handle
 }
 
 static RenderCommand* push_next_command(Renderer& renderer, b32 is_ui)
@@ -1175,27 +1175,22 @@ render_command->is_ui = false;
 }
 */
 
-static i32 load_font(Renderer& renderer, char* path, i32 size, char* name)
+static rendering::FontHandle load_font(Renderer& renderer, char* path, i32 size, char* name)
 {
     assert(renderer.font_count + 1 < global_max_fonts);
-    FontData data = {};
-    data.path = push_string(&renderer.font_arena, path);
-    data.size = size;
-    data.name = push_string(&renderer.font_arena, name);
-    
-    renderer.fonts[renderer.font_count] = data;
-    return renderer.font_count++;
+
+    renderer.api_functions.load_font(renderer.api_functions.render_state, &renderer, path, size);
+    renderer.font_count++;
+
+    return { renderer.font_count };
 }
 
-static void load_font(Renderer& renderer, char* path, i32 size, i32* handle)
+static void load_font(Renderer& renderer, char* path, i32 size, rendering::FontHandle handle)
 {
     assert(renderer.font_count + 1 < global_max_fonts);
-    FontData data = {};
-    data.path = push_string(&renderer.font_arena, path);
-    data.size = size;
-    
-    renderer.fonts[renderer.font_count] = data;
-    *handle = renderer.font_count++;
+
+    renderer.api_functions.load_font(renderer.api_functions.render_state, &renderer, path, size);
+    handle.handle = renderer.font_count++;
 }
 
 static b32 is_eof(ChunkFormat& format)
@@ -1281,9 +1276,9 @@ static void load_material(Renderer &renderer, char *file_path, MaterialHandle *m
                 sscanf(buffer, "map_Ka %s", name);
                 
                 if(name[0] == '.')
-                    load_texture(name, renderer, LINEAR, &material.ambient_texture.handle);
+                    load_texture(name, renderer, LINEAR, &material.ambient_texture);
                 else
-                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.ambient_texture.handle);
+                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.ambient_texture);
             }
             else if(starts_with(buffer, "map_Kd")) // diffuse map
             {
@@ -1291,21 +1286,21 @@ static void load_material(Renderer &renderer, char *file_path, MaterialHandle *m
                 sscanf(buffer, "map_Kd %s", name);
                 
                 if(name[0] == '.')
-                    load_texture(name, renderer, LINEAR, &material.diffuse_texture.handle);
+                    load_texture(name, renderer, LINEAR, &material.diffuse_texture);
                 else
-                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.diffuse_texture.handle);
+                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.diffuse_texture);
             }
             else if(starts_with(buffer, "map_Ks")) // specular map
             {
                 char name[64];
                 sscanf(buffer, "map_Ks %s", name);
                 
-                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_texture.handle);
+                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_texture);
                 
                 if(name[0] == '.')
-                    load_texture(name, renderer, LINEAR, &material.specular_texture.handle);
+                    load_texture(name, renderer, LINEAR, &material.specular_texture);
                 else
-                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_texture.handle);
+                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_texture);
             }
             else if(starts_with(buffer, "map_Ns")) // specular intensity map
             {
@@ -1313,9 +1308,9 @@ static void load_material(Renderer &renderer, char *file_path, MaterialHandle *m
                 sscanf(buffer, "map_Ns %s", name);
                 
                 if(name[0] == '.')
-                    load_texture(name, renderer, LINEAR, &material.specular_intensity_texture.handle);
+                    load_texture(name, renderer, LINEAR, &material.specular_intensity_texture);
                 else
-                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_intensity_texture.handle);
+                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_intensity_texture);
             }
         }
         
@@ -1786,7 +1781,7 @@ static void push_particle_system(Renderer &renderer, ParticleSystemInfo &particl
     render_command->particles.sizes = particle_info.sizes;
     render_command->particles.angles = particle_info.angles;
     
-    render_command->particles.diffuse_texture = particle_info.attributes.texture_handle;
+    render_command->particles.diffuse_texture = particle_info.attributes.texture_handle.handle;
     render_command->particles.blend_mode = blend_mode;
 }
 

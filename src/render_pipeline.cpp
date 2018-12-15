@@ -35,6 +35,15 @@ namespace rendering
         pass.camera = camera;
         strncpy(pass.name, "UI Pass", strlen("UI Pass") + 1);
         pass.ui.render_commands = push_array(&renderer.render.render_pass_arena, global_max_ui_commands, UIRenderCommand);
+        pass.ui.coords = push_array(&renderer.render.render_pass_arena, global_max_ui_commands, CharacterData*);
+
+        for(i32 i = 0; i < global_max_ui_commands; i++)
+        {
+            pass.ui.coords[i] = push_array(&renderer.render.render_pass_arena, 4096, CharacterData);
+        }
+        
+        pass.ui.text_commands = push_array(&renderer.render.render_pass_arena, global_max_ui_commands, TextRenderCommand);
+        pass.ui.text_command_count = 0;
     }
 
     static void set_uniforms_from_shader(Renderer& renderer, RenderPass& pass, ShaderHandle shader_handle)

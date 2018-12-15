@@ -982,10 +982,12 @@ struct RenderState;
 
 typedef void (*LoadTexture)(TextureData &texture_data, RenderState *render_state, Renderer *renderer);
 typedef void (*CreateFramebuffer)(rendering::FramebufferInfo &framebuffer_info, RenderState *render_state, Renderer *renderer);
+typedef void (*LoadFont)(RenderState *render_state, Renderer* renderer, char* path, i32 size);
 
 struct GraphicsAPI
 {
     LoadTexture load_texture;
+    LoadFont load_font;
     CreateFramebuffer create_framebuffer;
     RenderState *render_state;
 };
@@ -1165,13 +1167,29 @@ struct Renderer
 
         struct
         {
-            rendering::BufferHandle quad_buffer;
-            rendering::BufferHandle textured_quad_buffer;
+            rendering::BufferHandle top_left_quad_buffer;
+            rendering::BufferHandle top_left_textured_quad_buffer;
+            rendering::BufferHandle top_right_quad_buffer;
+            rendering::BufferHandle top_right_textured_quad_buffer;
+            rendering::BufferHandle bottom_left_quad_buffer;
+            rendering::BufferHandle bottom_left_textured_quad_buffer;
+            rendering::BufferHandle bottom_right_quad_buffer;
+            rendering::BufferHandle bottom_right_textured_quad_buffer;
+            rendering::BufferHandle top_x_centered_quad_buffer;
+            rendering::BufferHandle top_x_centered_textured_quad_buffer;
+            rendering::BufferHandle bottom_x_centered_quad_buffer;
+            rendering::BufferHandle bottom_x_centered_textured_quad_buffer;
+            rendering::BufferHandle left_y_centered_quad_buffer;
+            rendering::BufferHandle left_y_centered_textured_quad_buffer;
+            rendering::BufferHandle right_y_centered_quad_buffer;
+            rendering::BufferHandle right_y_centered_textured_quad_buffer;
             rendering::BufferHandle centered_quad_buffer;
             rendering::BufferHandle centered_textured_quad_buffer;
             rendering::RenderPass pass;
             rendering::MaterialHandle material;
             rendering::MaterialHandle textured_material;
+
+            rendering::BufferHandle font_buffer;
         } ui;
         
         MemoryArena render_pass_arena;
@@ -1310,6 +1328,11 @@ static math::Vec2i texture_size(i32 texture_handle, Renderer& renderer)
         return math::Vec2i(data.width, data.height);
     }
 	return math::Vec2i();
+}
+
+static math::Vec2i texture_size(rendering::TextureHandle texture_handle, Renderer& renderer)
+{
+    return get_texture_size(texture_handle.handle);
 }
 
 static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo font)
