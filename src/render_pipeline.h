@@ -95,7 +95,8 @@ namespace rendering
         NONE,
         POSITION,
         SCALE,
-        ROTATION
+        ROTATION,
+        MODEL
     };
 
     struct VertexAttributeInstanced

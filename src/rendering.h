@@ -414,24 +414,6 @@ struct Mesh
 	i32 instance_scale_buffer_handle;
 };
 
-struct InstancedRenderCommand
-{
-	i32 mesh_handle;
-	i32 material_handle;
-	i32 original_material_handle;
-	i32 count;
-	math::Vec3 scale = math::Vec3(1, 1, 1);
-
-	b32 has_particles;
-	i32 particle_systems[256];
-	u32 particle_count;
-    
-	b32 receives_shadows;
-	b32 cast_shadows;
-
-    InstancedRenderCommand () {}
-};
-
 struct BatchedCommand
 {
     rendering::MaterialInstanceHandle material_handle;
@@ -443,30 +425,13 @@ struct BatchedCommand
     i32 pass_count;
 };
 
-struct NormalRenderCommand
+struct QueuedRenderCommand
 {
-	rendering::BufferHandle buffer_handle;
+    rendering::BufferHandle buffer_handle;
     rendering::MaterialHandle original_material;
 
     BatchedCommand commands[128];
     i32 count;
-};
-
-enum QueuedRenderCommandType
-{
-    NORMAL,
-    INSTANCED
-};
-
-struct QueuedRenderCommand
-{
-	QueuedRenderCommandType type;
-	union
-	{
-		NormalRenderCommand normal;
-	};
-
-    QueuedRenderCommand () {}
 };
 
 struct TextureInfo
@@ -1160,31 +1125,37 @@ struct Renderer
             math::Vec2 *float2_buffers[MAX_INSTANCE_BUFFERS];
             math::Vec3 *float3_buffers[MAX_INSTANCE_BUFFERS];
             math::Vec4 *float4_buffers[MAX_INSTANCE_BUFFERS];
+            math::Mat4 *mat4_buffers[MAX_INSTANCE_BUFFERS];
             
             rendering::InternalBufferHandle float_buffer_handles[MAX_INSTANCE_BUFFERS];
             rendering::InternalBufferHandle float2_buffer_handles[MAX_INSTANCE_BUFFERS];
             rendering::InternalBufferHandle float3_buffer_handles[MAX_INSTANCE_BUFFERS];
             rendering::InternalBufferHandle float4_buffer_handles[MAX_INSTANCE_BUFFERS];
+            rendering::InternalBufferHandle mat4_buffer_handles[MAX_INSTANCE_BUFFERS];
 
             i32 float_buffer_counts[MAX_INSTANCE_BUFFERS];
             i32 float2_buffer_counts[MAX_INSTANCE_BUFFERS];
             i32 float3_buffer_counts[MAX_INSTANCE_BUFFERS];
             i32 float4_buffer_counts[MAX_INSTANCE_BUFFERS];
+            i32 mat4_buffer_counts[MAX_INSTANCE_BUFFERS];
             
             i32 _internal_float_handles[MAX_INSTANCE_BUFFERS];
             i32 _internal_float2_handles[MAX_INSTANCE_BUFFERS];
             i32 _internal_float3_handles[MAX_INSTANCE_BUFFERS];
             i32 _internal_float4_handles[MAX_INSTANCE_BUFFERS];
+            i32 _internal_mat4_handles[MAX_INSTANCE_BUFFERS];
 
             i32 float_buffer_count;
             i32 float2_buffer_count;
             i32 float3_buffer_count;
             i32 float4_buffer_count;
+            i32 mat4_buffer_count;
             
             i32 current_internal_float_handle;
             i32 current_internal_float2_handle;
             i32 current_internal_float3_handle;
             i32 current_internal_float4_handle;
+            i32 current_internal_mat4_handle;
         } instancing;
 
         rendering::RenderPass passes[32];
