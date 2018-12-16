@@ -38,6 +38,14 @@ struct TrueTypeFontInfo
 	r32 largest_character_height;
 	stbtt_fontinfo info;
 	stbtt_packedchar char_data['~' - ' '];
+
+    struct
+    {
+        i32 width;
+        i32 height;
+    } resolution_loaded_for;
+
+    rendering::TextureHandle texture;
 };
 
 struct FontData
@@ -914,9 +922,26 @@ enum TextureFiltering
     NEAREST
 };
 
+enum TextureWrap
+{
+    REPEAT,
+    CLAMP_TO_EDGE,
+    CLAMP_TO_BORDER,
+};
+
+enum TextureFormat
+{
+    RGBA,
+    RGB,
+    RED
+};
+
 struct TextureData
 {
 	TextureFiltering filtering;
+    TextureWrap wrap;
+    TextureFormat format;
+    
 	i32 handle;
 	char* name;
 	i32 width;
@@ -980,14 +1005,12 @@ struct ParticleSystemInfo;
 
 struct RenderState;
 
-typedef void (*LoadTexture)(TextureData &texture_data, RenderState *render_state, Renderer *renderer);
+typedef void (*LoadTexture)(TextureData &texture_data, RenderState *render_state, Renderer *renderer, b32 free_buffer);
 typedef void (*CreateFramebuffer)(rendering::FramebufferInfo &framebuffer_info, RenderState *render_state, Renderer *renderer);
-typedef void (*LoadFont)(RenderState *render_state, Renderer* renderer, char* path, i32 size);
 
 struct GraphicsAPI
 {
     LoadTexture load_texture;
-    LoadFont load_font;
     CreateFramebuffer create_framebuffer;
     RenderState *render_state;
 };
@@ -1010,9 +1033,6 @@ struct Renderer
 	
 	RenderCommand *commands;
 	i32 command_count;
-    
-	RenderCommand *ui_commands;
-	i32 ui_command_count;
     
 	MemoryArena command_arena;
     
@@ -1134,6 +1154,7 @@ struct Renderer
         rendering::ShaderHandle hdr_shader;
         rendering::ShaderHandle ui_quad_shader;
         rendering::ShaderHandle textured_ui_quad_shader;
+        rendering::ShaderHandle font_shader;
         
 		i32 shaders_to_reload[8];
 		i32 shaders_to_reload_count;
@@ -1189,6 +1210,7 @@ struct Renderer
             rendering::MaterialHandle material;
             rendering::MaterialHandle textured_material;
 
+            rendering::MaterialHandle font_material;
             rendering::BufferHandle font_buffer;
         } ui;
         

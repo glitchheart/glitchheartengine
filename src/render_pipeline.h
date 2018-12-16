@@ -347,6 +347,7 @@ namespace rendering
         i32 handle;
     };
 
+    #define MAX_TEXT_LENGTH 256
     struct CreateTextCommandInfo
     {
         math::Vec2 position;
@@ -364,9 +365,6 @@ namespace rendering
         b32 clip;
 
         u64 alignment_flags;
-
-        // @Robustness: Consider longer text
-        char text[256];
     };
 
     struct CharacterData
@@ -385,14 +383,15 @@ namespace rendering
     struct TextRenderCommand
     {
         Material material;
-        Transform transform;
 
         math::Rect clip_rect;
         b32 clip;
 
         FontHandle font;
 
-        u64 alignment_flags;
+        ShaderHandle shader_handle;
+        size_t text_length;
+        
         CharacterBufferHandle buffer;
     };
 
@@ -406,8 +405,6 @@ namespace rendering
         math::Rgba color;
 
         TextureHandle texture_handle;
-
-        b32 centered;
 
         math::Rect clip_rect;
         b32  clip;

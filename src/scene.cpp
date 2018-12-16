@@ -358,8 +358,8 @@ namespace scene
                                 templ.render.is_new_version = true;
                                 templ.render.v2.buffer_handle = rendering::load_obj(*scene.renderer, obj_file, &templ.render.v2.material_handle);
                             }
-                            else
-                                load_obj(*scene.renderer, obj_file, &templ.render.mesh_handle, &templ.render.material_handle);
+                            // else
+                            //     load_obj(*scene.renderer, obj_file, &templ.render.mesh_handle, &templ.render.material_handle);
                         }
                         else if(starts_with(buffer, "prim"))
                         {
@@ -407,7 +407,7 @@ namespace scene
                             }
                             else
                             {
-                                load_material(*scene.renderer, mtl_file, &templ.render.material_handle);
+                                // load_material(*scene.renderer, mtl_file, &templ.render.material_handle);
                             }
                         }
                     }
@@ -492,7 +492,7 @@ namespace scene
                         {
                             char texture_path[128];
                             sscanf(buffer, "texture: %s", texture_path);
-                            load_texture(texture_path, *scene.renderer, LINEAR, &attributes.texture_handle);
+                            load_texture(texture_path, *scene.renderer, LINEAR, REPEAT, TextureFormat::RGBA, &attributes.texture_handle);
                         }
                         else if(starts_with(buffer, "gravity"))
                         {
