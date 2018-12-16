@@ -126,6 +126,27 @@ namespace rendering
         return handle;
     }
 
+    static void free_all_instance_buffers(Renderer &renderer)
+    {
+        renderer.api_functions.delete_all_instance_buffers(renderer.api_functions.render_state, &renderer);
+        renderer.render.instancing = {};
+        
+        for(i32 i = 0; i < MAX_INSTANCE_BUFFERS; i++)
+        {
+			renderer.render.instancing.float_buffer_counts[i] = 0;
+			renderer.render.instancing.float2_buffer_counts[i] = 0;
+			renderer.render.instancing.float3_buffer_counts[i] = 0;
+			renderer.render.instancing.float4_buffer_counts[i] = 0;
+			renderer.render.instancing.mat4_buffer_counts[i] = 0;
+
+            renderer.render.instancing._internal_float_handles[i] = -1;
+            renderer.render.instancing._internal_float2_handles[i] = -1;
+            renderer.render.instancing._internal_float3_handles[i] = -1;
+            renderer.render.instancing._internal_float4_handles[i] = -1;
+            renderer.render.instancing._internal_mat4_handles[i] = -1;
+        }
+    }
+
     static void free_instance_buffer(InstanceBufferHandle buffer_handle)
     {
         // @Incomplete

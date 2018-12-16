@@ -1973,18 +1973,11 @@ namespace math
         return mul * (ceil(((r32)n / (r32)mul)));
     }
 
-    inline i32 power_of_two(i32 n)
+    inline i32 next_power_of_two(i32 n)
     {
         i32 result = 0;
-        for(i32 i = n; i >= 1; i--)
-        {
-            if((i & (i-1)) == 0) 
-            { 
-                result = i; 
-                break; 
-            } 
-        }
 
+        result = (i32)pow(2, ceil((r32)log(n)/(r32)log(2)));
         return result;
     }
     

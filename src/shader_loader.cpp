@@ -396,13 +396,8 @@ namespace rendering
         total_buffer[i++] = '\0';
     }
 
-    static char* load_shader_text(MemoryArena* arena, char* source, Shader& shader, Uniform **uniforms_array, i32 *uniform_count, const char* file_path, size_t* file_size = nullptr)
+    static char* load_shader_text(MemoryArena* arena, char* source, bool is_vertex_shader, Shader& shader, Uniform **uniforms_array, i32 *uniform_count, const char* file_path, size_t* file_size = nullptr)
     {
-        shader.vertex_attribute_count = 0;
-        shader.uniform_count = 0;
-        shader.structure_count = 0;
-        shader.defined_value_count = 0;
-        
 		size_t i = 0;
 
 		MemoryArena temp_arena = {};
@@ -420,7 +415,7 @@ namespace rendering
         {
             if(starts_with(buffer, "#vert") || starts_with(buffer, "#frag"))
             {
-                break;
+				break;
             }
             else if(starts_with(buffer, "#include \""))
             {
@@ -437,7 +432,7 @@ namespace rendering
                     char* included_source = read_file_into_buffer(&temp_arena, included_shd);
                     char* path = concat(concat(file_path, "<-", &temp_arena), included_path, &temp_arena);
 					
-                    char* included_text = load_shader_text(&temp_arena, included_source, shader, uniforms_array, uniform_count, path);
+                    char* included_text = load_shader_text(&temp_arena, included_source, is_vertex_shader, shader, uniforms_array, uniform_count, path);
 
                     if(i + strlen(buffer) > temp_current_size)
                     {
@@ -476,7 +471,7 @@ namespace rendering
                     char* included_source = read_file_into_buffer(&temp_arena, included_shd);
                     char* path = concat(concat(file_path, "<-", &temp_arena), included_path, &temp_arena);
 					
-                    char* included_text = load_shader_text(&temp_arena, included_source, shader, uniforms_array, uniform_count, path);
+                    char* included_text = load_shader_text(&temp_arena, included_source, is_vertex_shader, shader, uniforms_array, uniform_count, path);
                     
                     if(i + strlen(buffer) > temp_current_size)
                     {
@@ -569,85 +564,88 @@ namespace rendering
             }
             else if(starts_with(buffer, "layout"))
             {
-                VertexAttribute* vertex_attribute = nullptr;
-                
-                if(instancing_enabled)
-                {
-                    vertex_attribute = &shader.instanced_vertex_attributes[shader.instanced_vertex_attribute_count++].attribute;
-                }
-                else
-                {
-                    vertex_attribute = &shader.vertex_attributes[shader.vertex_attribute_count++];
-                }
-                
-                char* rest = &buffer[strlen("layout") + 1];
-		
-                while(rest[0] == ' ' || rest[0] == '(')
-                {
-                    rest++;
-                }
+				if (is_vertex_shader)
+				{
+					VertexAttribute* vertex_attribute = nullptr;
 
-                if(starts_with(rest, "location"))
-                {
-                    rest += strlen("location");
-                    // @Note: Eat spaces until we see =
-                    while(rest[0] == ' ')
-                    {
-                        rest++;
-                    }
+					if (instancing_enabled)
+					{
+						vertex_attribute = &shader.instanced_vertex_attributes[shader.instanced_vertex_attribute_count++].attribute;
+					}
+					else
+					{
+						vertex_attribute = &shader.vertex_attributes[shader.vertex_attribute_count++];
+					}
 
-                    if(rest[0] == '=')
-                    {
-                        rest++;
-                        vertex_attribute->location = strtol(rest, &rest, 10);
+					char* rest = &buffer[strlen("layout") + 1];
 
-                        while(rest[0] == ' ' || rest[0] == ')')
-                            rest++;
+					while (rest[0] == ' ' || rest[0] == '(')
+					{
+						rest++;
+					}
 
-                        if(starts_with(rest, "in"))
-                        {
-                            while(rest[0] == ' ')
-                                rest++;
+					if (starts_with(rest, "location"))
+					{
+						rest += strlen("location");
+						// @Note: Eat spaces until we see =
+						while (rest[0] == ' ')
+						{
+							rest++;
+						}
 
-                            rest += 2;
-			    
-                            vertex_attribute->type = get_value_type(&rest, file_path);
+						if (rest[0] == '=')
+						{
+							rest++;
+							vertex_attribute->location = strtol(rest, &rest, 10);
 
-                            eat_spaces_and_newlines(&rest);
-                            parse_word(&rest, vertex_attribute->name);
-                            eat_spaces_and_newlines(&rest);
-                            
-                            if(rest[0] == ':') // Oh boy, we've go a mapping
-                            {
-								char *start = &rest[0];
-                                rest += 1;
-                                eat_spaces_and_newlines(&rest);
-                                char mapping_name[32];
-                                parse_word(&rest, mapping_name);
-                                shader.instanced_vertex_attributes[shader.instanced_vertex_attribute_count - 1].mapping_type = parse_vertex_attribute_mapping(mapping_name);
-                                buffer[strlen(buffer) - (strlen(start) + 1) + 3] = '\0';
-                                buffer[strlen(buffer) - (strlen(start) + 1) + 2] = '\n';
-                                buffer[strlen(buffer) - (strlen(start) + 1) + 1] = ';';
-                            }
-                        }
-                        else if(starts_with(rest, "out"))
-                        {
-                            // @Incomplete: IGNORE
-                        }
-                        else
-                        {
-                            error("layout 'in' keyword missing", file_path);
-                        }
-                    }
-                    else
-                    {
-                        error("layout location invalid, found no =", file_path);
-                    }
-                }
-                else
-                {
-                    error("layout location not found", file_path);
-                }
+							while (rest[0] == ' ' || rest[0] == ')')
+								rest++;
+
+							if (starts_with(rest, "in"))
+							{
+								while (rest[0] == ' ')
+									rest++;
+
+								rest += 2;
+
+								vertex_attribute->type = get_value_type(&rest, file_path);
+
+								eat_spaces_and_newlines(&rest);
+								parse_word(&rest, vertex_attribute->name);
+								eat_spaces_and_newlines(&rest);
+
+								if (rest[0] == ':') // Oh boy, we've go a mapping
+								{
+									char *start = &rest[0];
+									rest += 1;
+									eat_spaces_and_newlines(&rest);
+									char mapping_name[32];
+									parse_word(&rest, mapping_name);
+									shader.instanced_vertex_attributes[shader.instanced_vertex_attribute_count - 1].mapping_type = parse_vertex_attribute_mapping(mapping_name);
+									buffer[strlen(buffer) - (strlen(start) + 1) + 3] = '\0';
+									buffer[strlen(buffer) - (strlen(start) + 1) + 2] = '\n';
+									buffer[strlen(buffer) - (strlen(start) + 1) + 1] = ';';
+								}
+							}
+							else if (starts_with(rest, "out"))
+							{
+								// @Incomplete: IGNORE
+							}
+							else
+							{
+								error("layout 'in' keyword missing", file_path);
+							}
+						}
+						else
+						{
+							error("layout location invalid, found no =", file_path);
+						}
+					}
+					else
+					{
+						error("layout location not found", file_path);
+					}
+				}
             }
 
             if(i + strlen(buffer) > temp_current_size)
@@ -728,15 +726,20 @@ namespace rendering
             Uniform *uniforms = (Uniform*)malloc(sizeof(Uniform) * 512);
             i32 uniform_count = 0;
             
+            shader.vertex_attribute_count = 0;
+            shader.uniform_count = 0;
+            shader.structure_count = 0;
+            shader.defined_value_count = 0;
+            
             for(size_t i = 0; i < size; i++)
             {
                 if(starts_with(&source[i], "#vert"))
                 {
-                    shader.vert_shader = load_shader_text(&renderer.shader_arena, &source[i + strlen("#vert") + 1], shader, &uniforms, &uniform_count, shader.path, &i);
+                    shader.vert_shader = load_shader_text(&renderer.shader_arena, &source[i + strlen("#vert") + 1], true, shader, &uniforms, &uniform_count, shader.path, &i);
                 }
                 else if(starts_with(&source[i], "#frag"))
                 {
-                    shader.frag_shader = load_shader_text(&renderer.shader_arena, &source[i + strlen("#frag") + 1], shader, &uniforms, &uniform_count, shader.path, &i);
+                    shader.frag_shader = load_shader_text(&renderer.shader_arena, &source[i + strlen("#frag") + 1], false, shader, &uniforms, &uniform_count, shader.path, &i);
                 }
             }
 
@@ -2217,5 +2220,16 @@ namespace rendering
         render_command.pass.shader_handle = shader_handle;
         RenderPass &pass =  renderer.render.passes[render_pass_handle.handle - 1];
         pass.commands.render_commands[pass.commands.render_command_count++] = render_command;
+    }
+
+
+    static void push_instanced_buffer_to_shadow_pass(Renderer &renderer, i32 count, BufferHandle buffer_handle, VertexAttributeInstanced *instanced_attrs, i32 attr_count)
+    {
+        ShadowCommand shadow_command = {};
+        memcpy(shadow_command.instanced_vertex_attributes, instanced_attrs, attr_count * sizeof(VertexAttributeInstanced));
+        shadow_command.instanced_vertex_attribute_count = attr_count;
+        shadow_command.count = count;
+        shadow_command.buffer = buffer_handle;
+        renderer.render.shadow_commands[renderer.render.shadow_command_count++] = shadow_command;
     }
 }

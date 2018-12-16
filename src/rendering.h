@@ -948,12 +948,16 @@ struct RenderState;
 typedef void (*LoadTexture)(TextureData &texture_data, RenderState *render_state, Renderer *renderer);
 typedef void (*CreateFramebuffer)(rendering::FramebufferInfo &framebuffer_info, RenderState *render_state, Renderer *renderer);
 typedef rendering::InternalBufferHandle (*CreateInstanceBuffer)(size_t buffer_size, rendering::BufferUsage usage, RenderState *render_state, Renderer *renderer);
+typedef void (*DeleteInstanceBuffer)(rendering::InternalBufferHandle handle, RenderState *render_state, Renderer *renderer);
+typedef void (*DeleteAllInstanceBuffers)(RenderState *render_state, Renderer *renderer);
 
 struct GraphicsAPI
 {
     LoadTexture load_texture;
     CreateFramebuffer create_framebuffer;
     CreateInstanceBuffer create_instance_buffer;
+    DeleteInstanceBuffer delete_instance_buffer;
+    DeleteAllInstanceBuffers delete_all_instance_buffers;
     RenderState *render_state;
 };
 
