@@ -2127,10 +2127,10 @@ static void update_lighting_for_material(BatchedCommand &render_command, Rendere
         }
     }
     
-    /*for(i32 i = 0; i < particles_count; i++)
+    for(i32 i = 0; i < particles_count; i++)
     {
     	i32 _internal_handle = renderer.particles._internal_handles[particles_to_push[i] - 1];
     	ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
     	push_particle_system(renderer, system, particles_to_push[i]);
-    }*/
+    }
 }
