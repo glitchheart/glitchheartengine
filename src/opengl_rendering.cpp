@@ -3952,7 +3952,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
     //         break;
             case RENDER_COMMAND_PARTICLES:
             {
-                //render_particles(command, renderer, render_state, renderer.camera.projection_matrix, renderer.camera.view_matrix);
+                render_particles(command, renderer, render_state, renderer.camera.projection_matrix, renderer.camera.view_matrix);
             }
             break;
     //         case RENDER_COMMAND_MESH_INSTANCED:
