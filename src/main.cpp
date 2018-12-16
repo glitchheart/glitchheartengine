@@ -500,6 +500,7 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
         renderer.render.instancing._internal_float2_handles[i] = -1;
         renderer.render.instancing._internal_float3_handles[i] = -1;
         renderer.render.instancing._internal_float4_handles[i] = -1;
+        renderer.render.instancing._internal_mat4_handles[i] = -1;
     }
 }
 
@@ -762,7 +763,7 @@ int main(int argc, char **args)
             controller_keys(GLFW_JOYSTICK_1);
         }
 
-        //update_log();
+        update_log();
         
         swap_buffers(render_state);
 

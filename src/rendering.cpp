@@ -1947,8 +1947,8 @@ static void update_lighting_for_material(BatchedCommand &render_command, Rendere
                     for(i32 i = 0; i < normal_count; i++)
                     {
                         QueuedRenderCommand &cmd = queued_commands[i];
-                        if(cmd.normal.buffer_handle.handle == render.v2.buffer_handle.handle
-                            && cmd.normal.original_material.handle == instance.source_material.handle)
+                        if(cmd.buffer_handle.handle == render.v2.buffer_handle.handle
+                            && cmd.original_material.handle == instance.source_material.handle)
                         {
                             // It's a doozy
                             command = &cmd;
@@ -1959,10 +1959,9 @@ static void update_lighting_for_material(BatchedCommand &render_command, Rendere
                     if(!command)
                     {
                         command = &queued_commands[normal_count++];
-                        command->type = QueuedRenderCommandType::NORMAL;
-                        command->normal.buffer_handle = render.v2.buffer_handle;
-                        command->normal.original_material = instance.source_material;
-                        command->normal.count = 0;
+                        command->buffer_handle = render.v2.buffer_handle;
+                        command->original_material = instance.source_material;
+                        command->count = 0;
                     }
                     
                     rendering::Transform t;
@@ -1972,7 +1971,7 @@ static void update_lighting_for_material(BatchedCommand &render_command, Rendere
 
                     if(render.v2.render_pass_count > 0)
                     {
-                        BatchedCommand &batch_command = command->normal.commands[command->normal.count];
+                        BatchedCommand &batch_command = command->commands[command->count];
                         batch_command.transform = t;
                         batch_command.material_handle = render.v2.material_handle;
                         batch_command.casts_shadows = render.casts_shadows;
@@ -1984,18 +1983,7 @@ static void update_lighting_for_material(BatchedCommand &render_command, Rendere
                             batch_command.shader_handles[i] = render.v2.shader_handles[i];
                         }
                         
-                        command->normal.count++;
-                    }
-					else
-                    {
-                        // QueuedRenderCommand &command = queued_commands[normal_count];
-                    
-                        // queued_commands[normal_count].type = QueuedRenderCommandType::NORMAL;
-                        // command.normal.transform = t;
-                        // command.normal.buffer_handle = render.v2.buffer_handle;
-                        // command.normal.material_handle = render.v2.material_handle;
-                        // command.normal.casts_shadows = render.casts_shadows;
-                        // normal_count++;
+                        command->count++;
                     }
                 }
             }
@@ -2033,17 +2021,15 @@ static void update_lighting_for_material(BatchedCommand &render_command, Rendere
     {
         QueuedRenderCommand &queued_command = queued_commands[index];
         
-		if(queued_command.type == QueuedRenderCommandType::NORMAL)
-		{
-            BatchedCommand &first_command = queued_command.normal.commands[0];
+            BatchedCommand &first_command = queued_command.commands[0];
             rendering::Material *material = rendering::get_material(first_command.material_handle, renderer);
 
             if(material->lighting.receives_light)
                 update_lighting_for_material(first_command, renderer);
 
-            for(i32 batch_index = 0; batch_index < queued_command.normal.count; batch_index++)
+            for(i32 batch_index = 0; batch_index < queued_command.count; batch_index++)
             {
-                BatchedCommand &render_command = queued_command.normal.commands[batch_index];
+                BatchedCommand &render_command = queued_command.commands[batch_index];
 
                 rendering::Material &mat_instance = renderer.render.material_instances[render_command.material_handle.handle];
 
@@ -2051,8 +2037,9 @@ static void update_lighting_for_material(BatchedCommand &render_command, Rendere
 				{
 					for (i32 pass_index = 0; pass_index < render_command.pass_count; pass_index++)
 					{
-						rendering::push_buffer_to_render_pass(renderer, queued_command.normal.buffer_handle, render_command.material_handle, render_command.transform, render_command.shader_handles[pass_index], render_command.passes[pass_index]);
+						rendering::push_buffer_to_render_pass(renderer, queued_command.buffer_handle, render_command.material_handle, render_command.transform, render_command.shader_handles[pass_index], render_command.passes[pass_index]);
 					}
+					continue;
 				}
 				else
 				{
@@ -2088,54 +2075,59 @@ static void update_lighting_for_material(BatchedCommand &render_command, Rendere
 						case rendering::ValueType::FLOAT4:
 							rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float4_val, renderer);
 							break;
+                        case rendering::ValueType::MAT4:
+                        {
+                            math::Mat4 val = attr.mat4_val;
+                            
+                            if(va.mapping_type == rendering::VertexAttributeMappingType::MODEL)
+                            {
+                                rendering::Transform &transform = render_command.transform;
+                                
+                                math::Mat4 model_matrix(1.0f);
+                                model_matrix = math::scale(model_matrix, transform.scale);
+    
+                                math::Vec3 rotation = transform.rotation;
+                                auto x_axis = rotation.x > 0.0f ? 1.0f : 0.0f;
+                                auto y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
+                                auto z_axis = rotation.z > 0.0f ? 1.0f : 0.0f;
+    
+                                math::Quat orientation = math::Quat();
+                                orientation = math::rotate(orientation, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
+                                orientation = math::rotate(orientation, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
+                                orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
+    
+                                model_matrix = to_matrix(orientation) * model_matrix;
+    
+                                model_matrix = math::translate(model_matrix, transform.position);
+                                val = model_matrix;
+                            }
+                            rendering::add_instance_buffer_value(va.instance_buffer_handle, val, renderer);
+                        }
+                        break;
 						default:
 							assert(false);
 						}
 					}
-
-					// // Push the command to the shadow buffer if it casts shadows
-			   // if(render_command.casts_shadows)
-			   // {
-			   //     rendering::push_shadow_buffer_instanced(renderer, queued_command.normal.buffer_handle, render_command.transform);
-			   // }
-
-			   // Push the command to the correct render passes
-					for (i32 pass_index = 0; pass_index < render_command.pass_count; pass_index++)
-					{
-						rendering::push_instanced_buffer_to_render_pass(renderer, queued_command.normal.count, queued_command.normal.buffer_handle, render_command.material_handle, render_command.shader_handles[pass_index], render_command.passes[pass_index]);
-					}
 				}
-            }
+
+			// // Push the command to the shadow buffer if it casts shadows
+			// if(render_command.casts_shadows)
+			// {
+			//     rendering::push_shadow_buffer_instanced(renderer, queued_command.normal.buffer_handle, render_command.transform);
+			// }
+
+			// Push the command to the correct render passes
+			for (i32 pass_index = 0; pass_index < first_command.pass_count; pass_index++)
+			{
+				rendering::push_instanced_buffer_to_render_pass(renderer, queued_command.count, queued_command.buffer_handle, first_command.material_handle, first_command.shader_handles[pass_index], first_command.passes[pass_index]);
+			}
 		}
     }
-
-    // for(i32 com_index = 0; com_index < command_count; com_index++)
-    // {
-	// 	QueuedRenderCommand &render_command = instanced_commands[com_index];
-        
-    //     if(render_command.type == QueuedRenderCommandType::INSTANCED)
-	// 	{
-	// 		InstancedRenderCommand command = render_command.instanced;
-	// 		Material material = scene.material_instances[command.material_handle];
-	// 		MeshInfo mesh_info = {};
-	// 		mesh_info.transform.scale = command.scale;
-	// 		Mesh &mesh = renderer.meshes[command.mesh_handle];
-	// 		mesh_info.instance_offset_buffer_handle = mesh.instance_offset_buffer_handle;
-	// 		mesh_info.instance_rotation_buffer_handle = mesh.instance_rotation_buffer_handle;
-	// 		mesh_info.instance_color_buffer_handle = mesh.instance_color_buffer_handle;
-	// 		mesh_info.instance_scale_buffer_handle = mesh.instance_scale_buffer_handle;
-	// 		mesh_info.material = material;
-	// 		mesh_info.mesh_handle = command.mesh_handle;
-	// 		mesh_info.receives_shadows = command.receives_shadows;
-	// 		mesh_info.cast_shadows = command.cast_shadows;
-	// 		push_mesh_instanced(renderer, mesh_info, &positions[com_index * 1024], &colors[com_index * 1024], &rotations[com_index * 1024], &scalings[com_index * 1024], command.count);
-	// 	}
-    // }
     
-    for(i32 i = 0; i < particles_count; i++)
+    /*for(i32 i = 0; i < particles_count; i++)
     {
     	i32 _internal_handle = renderer.particles._internal_handles[particles_to_push[i] - 1];
     	ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
     	push_particle_system(renderer, system, particles_to_push[i]);
-    }
+    }*/
 }

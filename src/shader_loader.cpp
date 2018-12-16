@@ -147,7 +147,10 @@ namespace rendering
         {
             type = VertexAttributeMappingType::ROTATION;
         }
-
+        else if(starts_with(mapped_buffer, "MODEL"))
+        {
+            type = VertexAttributeMappingType::MODEL;
+        }
         return type;
     }
     
@@ -1922,6 +1925,20 @@ namespace rendering
 	static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, math::Mat4 value)
 	{
 		Material& material = renderer.render.material_instances[handle.handle];
+
+        for(i32 i = 0; i < material.instanced_vertex_attribute_count; i++)
+        {
+            VertexAttribute &va = material.instanced_vertex_attributes[i].attribute;
+            if(strncmp(va.name, name, strlen(name)) == 0)
+            {
+                assert(va.type == ValueType::MAT4);
+                if(va.type == ValueType::MAT4)
+                {
+                    va.mat4_val = value;
+                    return;
+                }
+            }
+        }
         
 		for(i32 i = 0; i < material.uniform_value_count; i++)
         {
