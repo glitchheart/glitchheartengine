@@ -1881,6 +1881,7 @@ static void update_lighting_for_material(BatchedCommand &render_command, Rendere
 }
 
 #define STANDARD_PASS_HANDLE { 1 }
+
     static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, math::Vec3 *positions, math::Vec3 *rotations, math::Vec3 *scalings, math::Rgba *colors)
 {
     renderer.camera = scene.camera;
@@ -2021,107 +2022,109 @@ static void update_lighting_for_material(BatchedCommand &render_command, Rendere
     {
         QueuedRenderCommand &queued_command = queued_commands[index];
         
-            BatchedCommand &first_command = queued_command.commands[0];
-            rendering::Material *material = rendering::get_material(first_command.material_handle, renderer);
+        BatchedCommand &first_command = queued_command.commands[0];
+        rendering::Material *material = rendering::get_material(first_command.material_handle, renderer);
 
-            if(material->lighting.receives_light)
-                update_lighting_for_material(first_command, renderer);
+        if(material->lighting.receives_light)
+            update_lighting_for_material(first_command, renderer);
 
-            for(i32 batch_index = 0; batch_index < queued_command.count; batch_index++)
+        for(i32 batch_index = 0; batch_index < queued_command.count; batch_index++)
+        {
+            BatchedCommand &render_command = queued_command.commands[batch_index];
+
+            rendering::Material &mat_instance = renderer.render.material_instances[render_command.material_handle.handle];
+
+            if (mat_instance.instanced_vertex_attribute_count == 0)
             {
-                BatchedCommand &render_command = queued_command.commands[batch_index];
-
-                rendering::Material &mat_instance = renderer.render.material_instances[render_command.material_handle.handle];
-
-				if (mat_instance.instanced_vertex_attribute_count == 0)
-				{
-					for (i32 pass_index = 0; pass_index < render_command.pass_count; pass_index++)
-					{
-						rendering::push_buffer_to_render_pass(renderer, queued_command.buffer_handle, render_command.material_handle, render_command.transform, render_command.shader_handles[pass_index], render_command.passes[pass_index]);
-					}
-					continue;
-				}
-				else
-				{
-					for (i32 i = 0; i < mat_instance.instanced_vertex_attribute_count; i++)
-					{
-						rendering::VertexAttributeInstanced &va = mat_instance.instanced_vertex_attributes[i];
-						rendering::VertexAttribute &attr = va.attribute;
+                // Just push the buffer as a normal draw call
+                for (i32 pass_index = 0; pass_index < render_command.pass_count; pass_index++)
+                {
+                    rendering::push_buffer_to_render_pass(renderer, queued_command.buffer_handle, first_command.material_handle, render_command.transform, render_command.shader_handles[pass_index], render_command.passes[pass_index]);
+                }
+                continue;
+            }
+            else
+            {
+                // We can make one call instead
+                for (i32 i = 0; i < mat_instance.instanced_vertex_attribute_count; i++)
+                {
+                    rendering::VertexAttributeInstanced &va = mat_instance.instanced_vertex_attributes[i];
+                    rendering::VertexAttribute &attr = va.attribute;
                         
-						switch (attr.type)
-						{
-						case rendering::ValueType::FLOAT:
-							rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float_val, renderer);
-							break;
-						case rendering::ValueType::FLOAT2:
-							rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float2_val, renderer);
-							break;
-						case rendering::ValueType::FLOAT3:
-                        {
-                            math::Vec3 val = attr.float3_val;
+                    switch (attr.type)
+                    {
+                    case rendering::ValueType::FLOAT:
+                    rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float_val, renderer);
+                    break;
+                    case rendering::ValueType::FLOAT2:
+                    rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float2_val, renderer);
+                    break;
+                    case rendering::ValueType::FLOAT3:
+                    {
+                        math::Vec3 val = attr.float3_val;
                             
-                            if(va.mapping_type != rendering::VertexAttributeMappingType::NONE)
-                            {
-                                if(va.mapping_type == rendering::VertexAttributeMappingType::POSITION)
-                                    val = render_command.transform.position;
-                                else if(va.mapping_type == rendering::VertexAttributeMappingType::ROTATION)
-                                    val = render_command.transform.rotation;
-                                else if(va.mapping_type == rendering::VertexAttributeMappingType::SCALE)
-                                    val = render_command.transform.scale;
-                            }
-							rendering::add_instance_buffer_value(va.instance_buffer_handle, val, renderer);
+                        if(va.mapping_type != rendering::VertexAttributeMappingType::NONE)
+                        {
+                            if(va.mapping_type == rendering::VertexAttributeMappingType::POSITION)
+                                val = render_command.transform.position;
+                            else if(va.mapping_type == rendering::VertexAttributeMappingType::ROTATION)
+                                val = render_command.transform.rotation;
+                            else if(va.mapping_type == rendering::VertexAttributeMappingType::SCALE)
+                                val = render_command.transform.scale;
                         }
-                        break;
-						case rendering::ValueType::FLOAT4:
-							rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float4_val, renderer);
-							break;
-                        case rendering::ValueType::MAT4:
-                        {
-                            math::Mat4 val = attr.mat4_val;
+                        rendering::add_instance_buffer_value(va.instance_buffer_handle, val, renderer);
+                    }
+                    break;
+                    case rendering::ValueType::FLOAT4:
+                    rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float4_val, renderer);
+                    break;
+                    case rendering::ValueType::MAT4:
+                    {
+                        math::Mat4 val = attr.mat4_val;
                             
-                            if(va.mapping_type == rendering::VertexAttributeMappingType::MODEL)
-                            {
-                                rendering::Transform &transform = render_command.transform;
+                        if(va.mapping_type == rendering::VertexAttributeMappingType::MODEL)
+                        {
+                            rendering::Transform &transform = render_command.transform;
                                 
-                                math::Mat4 model_matrix(1.0f);
-                                model_matrix = math::scale(model_matrix, transform.scale);
+                            math::Mat4 model_matrix(1.0f);
+                            model_matrix = math::scale(model_matrix, transform.scale);
     
-                                math::Vec3 rotation = transform.rotation;
-                                auto x_axis = rotation.x > 0.0f ? 1.0f : 0.0f;
-                                auto y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
-                                auto z_axis = rotation.z > 0.0f ? 1.0f : 0.0f;
+                            math::Vec3 rotation = transform.rotation;
+                            auto x_axis = rotation.x > 0.0f ? 1.0f : 0.0f;
+                            auto y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
+                            auto z_axis = rotation.z > 0.0f ? 1.0f : 0.0f;
     
-                                math::Quat orientation = math::Quat();
-                                orientation = math::rotate(orientation, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
-                                orientation = math::rotate(orientation, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
-                                orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
+                            math::Quat orientation = math::Quat();
+                            orientation = math::rotate(orientation, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
+                            orientation = math::rotate(orientation, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
+                            orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
     
-                                model_matrix = to_matrix(orientation) * model_matrix;
+                            model_matrix = to_matrix(orientation) * model_matrix;
     
-                                model_matrix = math::translate(model_matrix, transform.position);
-                                val = model_matrix;
-                            }
-                            rendering::add_instance_buffer_value(va.instance_buffer_handle, val, renderer);
+                            model_matrix = math::translate(model_matrix, transform.position);
+                            val = model_matrix;
                         }
-                        break;
-						default:
-							assert(false);
-						}
-					}
-				}
-
-			// // Push the command to the shadow buffer if it casts shadows
-			// if(render_command.casts_shadows)
-			// {
-			//     rendering::push_shadow_buffer_instanced(renderer, queued_command.normal.buffer_handle, render_command.transform);
-			// }
-
-			// Push the command to the correct render passes
-			for (i32 pass_index = 0; pass_index < first_command.pass_count; pass_index++)
-			{
-				rendering::push_instanced_buffer_to_render_pass(renderer, queued_command.count, queued_command.buffer_handle, first_command.material_handle, first_command.shader_handles[pass_index], first_command.passes[pass_index]);
-			}
+                        rendering::add_instance_buffer_value(va.instance_buffer_handle, val, renderer);
+                    }
+                    break;
+                    default:
+                    assert(false);
+                    }
+                }
+            }
 		}
+        
+        // Push the command to the shadow buffer if it casts shadows
+        if(first_command.casts_shadows)
+        {
+            rendering::push_instanced_buffer_to_shadow_pass(renderer, queued_command.count, queued_command.buffer_handle, material->instanced_vertex_attributes, material->instanced_vertex_attribute_count);
+        }
+        
+        // Push the command to the correct render passes
+        for (i32 pass_index = 0; pass_index < first_command.pass_count; pass_index++)
+        {
+            rendering::push_instanced_buffer_to_render_pass(renderer, queued_command.count, queued_command.buffer_handle, first_command.material_handle, first_command.shader_handles[pass_index], first_command.passes[pass_index]);
+        }
     }
     
     /*for(i32 i = 0; i < particles_count; i++)

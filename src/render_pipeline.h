@@ -355,8 +355,15 @@ namespace rendering
 
     struct ShadowCommand
     {
-        Transform transform;
+        i32 count;
         BufferHandle buffer;
+
+        // Single call
+        Transform transform;
+
+        // Instanced call
+        VertexAttributeInstanced instanced_vertex_attributes[8];
+        i32 instanced_vertex_attribute_count;
     };
     
     enum FramebufferType

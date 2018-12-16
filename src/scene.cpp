@@ -127,7 +127,8 @@ namespace scene
             // Allocate all buffers
             for(i32 j = 0; j < pair.type_count; j++)
             {
-                rendering::InstanceBufferHandle instance_buffer_handle = rendering::allocate_instance_buffer(pair.types[j], math::power_of_two(pair.count), *renderer);
+                rendering::InstanceBufferHandle instance_buffer_handle = rendering::allocate_instance_buffer(pair.types[j], math::next_power_of_two(pair.count), *renderer);
+
                 // Update all materials with the correct buffer handle
                 for(i32 k = 0; k < pair.count; k++)
                 {
@@ -156,6 +157,8 @@ namespace scene
                     ParticleSystemComponent& ps_comp = scene.particle_system_components[index];
                     remove_particle_system(*scene.renderer, ps_comp.handle);
                 }
+
+                rendering::free_all_instance_buffers(*scene.renderer);
             
                 scene.particle_system_component_count = 0;
                 scene.material_count = 0;
