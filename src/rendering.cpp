@@ -62,8 +62,6 @@ static void load_shader(MemoryArena* arena, const char* full_shader_path, Render
     end_temporary_memory(temp_mem);
 }
 
-
-
 static void load_texture(const char* full_texture_path, Renderer& renderer, TextureFiltering filtering, TextureHandle* handle = nullptr)
 {
     TextureData* texture_data = &renderer.texture_data[renderer.texture_count];
@@ -89,7 +87,7 @@ static void load_texture(const char* full_texture_path, Renderer& renderer, Text
         end_temporary_memory(temp_mem);
 
         assert(renderer.api_functions.load_texture);
-        renderer.api_functions.load_texture(*texture_data, renderer.api_functions.render_state, &renderer);
+        renderer.api_functions.load_texture(*texture_data, renderer.api_functions.render_state, &renderer, true);
     }
     else
     {
@@ -103,21 +101,10 @@ static void load_texture(const char* full_texture_path, Renderer& renderer, Text
 
 static RenderCommand* push_next_command(Renderer& renderer, b32 is_ui)
 {
-    if(is_ui)
-    {
-        assert(renderer.ui_command_count + 1 < global_max_ui_commands);
-        RenderCommand* command = &renderer.ui_commands[renderer.ui_command_count++];
-        *command = {};
-        command->shader_handle = -1;
-        return command;
-    }
-    else
-    {
-        assert(renderer.command_count + 1 < global_max_render_commands);
-        RenderCommand* command = &renderer.commands[renderer.command_count++];
-        command->shader_handle = -1;
-        return command;
-    }
+    assert(renderer.command_count + 1 < global_max_render_commands);
+    RenderCommand* command = &renderer.commands[renderer.command_count++];
+    command->shader_handle = -1;
+    return command;
 }
 
 static void set_new_resolution(Renderer &renderer, i32 new_width, i32 new_height)
@@ -174,110 +161,6 @@ static void push_line(Renderer& renderer, math::Vec3 point1, math::Vec3 point2, 
     render_command->line.line_width = line_width;
     render_command->line.color = color;
     render_command->is_ui = is_ui;
-}
-
-static math::Rect scale_clip_rect(Renderer& renderer, math::Rect clip_rect, b32 clip = true, u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)
-{
-    math::Vec2i resolution_scale = get_scale(renderer);
-    math::Rect scaled_clip_rect;
-    
-    if(clip && clip_rect.height != 0 && clip_rect.width != 0)
-    {
-        scaled_clip_rect.x = (clip_rect.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-        scaled_clip_rect.y = (clip_rect.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-        
-        r32 clip_ratio = clip_rect.height / clip_rect.width;
-        scaled_clip_rect.width = (clip_rect.width / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-        
-        if(ui_scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)
-        {
-            scaled_clip_rect.height = scaled_clip_rect.width * clip_ratio;
-        }
-        else
-        {
-            scaled_clip_rect.height = (clip_rect.height / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-        }
-    }
-    
-    return scaled_clip_rect;
-}
-
-static void push_3d_text(Renderer &renderer, const char* text, math::Vec3 position, i32 font_handle, math::Rgba color = math::Rgba(1.0f), math::Vec3 rotation = math::Vec3(), math::Vec3 scale = math::Vec3(1.0f), u64 alignment_flags = ALIGNMENT_LEFT)
-{
-    RenderCommand* render_command = push_next_command(renderer, false);
-    
-    assert(font_handle < renderer.font_count);
-    
-    render_command->type = RENDER_COMMAND_3D_TEXT;
-    
-    strcpy(render_command->text_3d.text, text);
-    render_command->position = position;
-    render_command->rotation = rotation;
-    render_command->scale = scale;
-    render_command->text_3d.font_handle = font_handle;
-    render_command->text_3d.color = color;
-    render_command->text_3d.alignment_flags = alignment_flags;
-    render_command->is_ui = false;
-}
-
-#define PUSH_UI_TEXT(text, position, color, font_handle, ...) push_ui_text(renderer, text, position, font_handle, color, ##__VA_ARGS__)
-#define PUSH_CENTERED_UI_TEXT(text, position, color, font_handle, z) push_ui_text(renderer, text, position, font_handle, color, ALIGNMENT_CENTER_X | ALIGNMENT_CENTER_Y, z)
-static void push_ui_text(Renderer &renderer, const char* text, math::Vec2 position, i32 font_handle, math::Rgba color, u64 alignment_flags = ALIGNMENT_LEFT, i32 z = 0, b32 clip = false, math::Rect clip_rect = math::Rect(0, 0, 0, 0), u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)
-{
-    RenderCommand* render_command = push_next_command(renderer, true);
-    
-    assert(font_handle < renderer.font_count);
-    
-    math::Vec2i resolution_scale = get_scale(renderer);
-    
-    render_command->type = RENDER_COMMAND_TEXT;
-    strcpy(render_command->text.text, text);
-    
-    math::Vec3 pos; 
-    pos.x = (position.x / UI_COORD_DIMENSION) * resolution_scale.x;
-    pos.y = (position.y / UI_COORD_DIMENSION) * resolution_scale.y;
-    pos.z = 0.0f;
-
-    render_command->text.position = pos;
-    render_command->text.font_handle = font_handle;
-    render_command->text.color = color;
-    render_command->text.alignment_flags = alignment_flags;
-    render_command->text.z_layer = z;
-    render_command->is_ui = true;
-    
-    math::Rect scaled_clip_rect = scale_clip_rect(renderer, clip_rect, clip);
-    
-    render_command->clip = clip;
-    render_command->clip_rect = scaled_clip_rect;
-}
-
-#define PUSH_TEXT(text, position, pcolor, font_handle) push_text(renderer, text, position, 1.0f, font_handle, color)
-#define PUSH_CENTERED_TEXT(text, position, color, font_handle) push_text(renderer, text, position, 1.0f, font_handle, color, ALIGNMENT_CENTER_X | ALIGNMENT_CENTER_Y)
-static void push_text(Renderer& renderer, const char* text, math::Vec3 position, r32 scale, i32 font_handle, math::Rgba color, u64 alignment_flags = ALIGNMENT_LEFT, b32 is_ui = true)
-{
-    RenderCommand* render_command = push_next_command(renderer, is_ui);
-    
-    assert(font_handle < renderer.font_count);
-    
-    render_command->type = RENDER_COMMAND_TEXT;
-    
-    strcpy(render_command->text.text, text);
-    
-    render_command->text.position = position;
-    if(scale == 0.0f)
-        render_command->text.scale = 1.0f;
-    else
-        render_command->text.scale = scale;
-    
-    render_command->text.font_handle = font_handle;
-    render_command->text.color = color;
-    render_command->text.alignment_flags = alignment_flags;
-    render_command->is_ui = is_ui;
-}
-
-static void push_text(Renderer& renderer, TextInfo text_info)
-{
-    push_text(renderer, text_info.text, text_info.position, text_info.scale, text_info.font_handle, text_info.render_info.color, text_info.alignment_flags, text_info.render_info.is_ui);
 }
 
 static void push_filled_quad(Renderer& renderer, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 is_ui = true, r32 border_width = 0.0f, math::Rgba border_color = math::Rgba(1.0f), b32 rounded = false, i32 animation_controller_handle = 0, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f), b32 clip = false, math::Rect clip_rect = math::Rect(0, 0, 0, 0), i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
@@ -340,126 +223,6 @@ static void push_filled_quad_not_centered(Renderer& renderer, math::Vec3 positio
     push_filled_quad(renderer, position, flipped, size, rotation, color, texture_handle, is_ui, border_width, border_color, rounded, animation_controller_handle, true, math::Vec2(0.0f), clip, clip_rect, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size); 
 }
 
-static math::Vec2 get_relative_size(Renderer& renderer, math::Vec2 size, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
-{
-    math::Vec2i resolution_scale = get_scale(renderer);
-    
-    math::Vec2 scaled_size;
-    
-    if(scaling_flags & UIScalingFlag::SCALE_WITH_WIDTH)
-    {
-        scaled_size.x = (size.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-        scaled_size.y = (size.y / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    }
-    else if(scaling_flags & UIScalingFlag::SCALE_WITH_HEIGHT)
-    {
-        scaled_size.x = (size.x / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-        scaled_size.y = (size.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-    }
-    else
-    {
-        scaled_size.x = (size.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-        
-        if(scaling_flags & UIScalingFlag::KEEP_ASPECT_RATIO)
-        {
-            r32 ratio = size.y / size.x;
-            scaled_size.y = scaled_size.x * ratio;
-        }
-        else
-        {
-            scaled_size.y = (size.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-        }
-    }
-    
-    return scaled_size;
-}
-
-
-static math::Vec3 get_relative_size_vec3(Renderer& renderer, math::Vec2 size,  u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
-{
-    math::Vec2 res = get_relative_size(renderer, size, scaling_flags);
-    
-    return {res.x, res.y, 0.0f};
-}
-
-static void push_filled_ui_quad_not_centered(Renderer& renderer, math::Vec2 position, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 rounded = false, r32 border_width = 0.0f, math::Rgba border_color = math::Rgba(1.0f), i32 animation_controller_handle = 0, i32 z_layer = 0, b32 clip = false,  math::Rect clip_rect = math::Rect(0, 0, 0, 0), u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO, i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
-{
-    math::Vec2i resolution_scale = get_scale(renderer);
-    
-    math::Vec3 pos;
-    pos.x = (position.x / UI_COORD_DIMENSION) * resolution_scale.x;
-    pos.y = (position.y / UI_COORD_DIMENSION) * resolution_scale.y;
-    pos.z = (r32)z_layer;
-    
-    math::Vec3 scaled_size = get_relative_size_vec3(renderer, size, ui_scaling_flag);
-    
-    math::Rect scaled_clip_rect = scale_clip_rect(renderer, clip_rect, clip, ui_scaling_flag);
-    
-    push_filled_quad_not_centered(renderer, pos, flipped, scaled_size, rotation, color, texture_handle, true, border_width, border_color, rounded, clip, scaled_clip_rect, animation_controller_handle, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
-}
-
-#if DEBUG
-#define push_debug_ui_quad_not_centered(renderer, position, size, clip, clip_rect, ui_scaling_flag) \
-    {static r32 rand_r = (r32)(rand() % 255) / 255.0f;                  \
-        static r32 rand_g = (r32)(rand() % 255) / 255.0f;               \
-        static r32 rand_b = (r32)(rand() % 255) / 255.0f;               \
-        static math::Rgba color = math::Rgba(rand_r, rand_g, rand_b, 1.0f); \
-        _push_debug_ui_quad_not_centered(renderer, position, size, color, clip, clip_rect, ui_scaling_flag);}
-static void _push_debug_ui_quad_not_centered(Renderer& renderer, math::Vec2 position, math::Vec2 size, math::Rgba color, b32 clip = false, math::Rect clip_rect = math::Rect(0, 0, 0, 0), u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)
-{
-    push_filled_ui_quad_not_centered(renderer, position, false, size, math::Vec3(), color, 0, false, 1.0f, COLOR_WHITE, 0, 500, clip, clip_rect, ui_scaling_flag);
-}
-#else
-#define push_debug_ui_quad_not_centered(renderer, position, size, clip, clip_rect, ui_scaling_flag)
-#endif
-
-static void push_filled_ui_quad(Renderer& renderer, math::Vec2 position, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, r32 border_width = 0.0f, math::Rgba border_color = math::Rgba(1.0f), b32 rounded = false, i32 animation_controller_handle = 0, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f), i32 z_layer = 0, b32 clip = false,  math::Rect clip_rect = math::Rect(0, 0, 0, 0), u64  ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO, i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
-{
-    math::Vec2i resolution_scale = get_scale(renderer);
-    
-    math::Vec3 pos;
-    pos.x = (position.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    pos.y = (position.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-    pos.z = (r32)z_layer;
-    
-    math::Vec3 scaled_size = get_relative_size_vec3(renderer, size, ui_scaling_flag);
-    
-    math::Rect scaled_clip_rect = scale_clip_rect(renderer, clip_rect, clip, ui_scaling_flag);
-    
-    push_filled_quad(renderer, pos, flipped, scaled_size, rotation, color, texture_handle, true, border_width, border_color, rounded,  animation_controller_handle, with_origin, origin, clip, scaled_clip_rect, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
-}
-
-
-#if DEBUG
-#define push_debug_ui_quad(renderer, position, size, clip, clip_rect, ui_scaling_flag) \
-    {static r32 rand_r = (r32)(rand() % 255) / 255.0f;                  \
-        static r32 rand_g = (r32)(rand() % 255) / 255.0f;               \
-        static r32 rand_b = (r32)(rand() % 255) / 255.0f;               \
-        static math::Rgba color = math::Rgba(rand_r, rand_g, rand_b, 1.0f); \
-        _push_debug_ui_quad(renderer, position, size, color, clip, clip_rect, ui_scaling_flag);}
-static void _push_debug_ui_quad(Renderer& renderer, math::Vec2 position, math::Vec2 size, math::Rgba color, b32 clip = false, math::Rect clip_rect = math::Rect(0, 0, 0, 0), u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)
-{
-    push_filled_ui_quad(renderer, position, false, size, math::Vec3(), color, 0, 1.0f, COLOR_WHITE, false,  0, false, math::Vec2(0.0f), 500, clip, clip_rect, ui_scaling_flag);
-}
-#else
-#define push_debug_ui_quad(renderer, position, size, clip, clip_rect, ui_scaling_flag)
-#endif
-
-static void push_outlined_quad(Renderer& renderer, math::Vec3 position,  math::Vec3 size, math::Vec3 rotation, math::Rgba color, b32 is_ui = false, r32 line_width = 1.0f)
-{
-    RenderCommand* render_command = push_next_command(renderer, is_ui);
-    
-    render_command->type = RENDER_COMMAND_QUAD;
-    render_command->position = position;
-    render_command->rotation = rotation;
-    render_command->scale = size;
-    render_command->quad.color = color;
-    render_command->quad.outlined = true;
-    render_command->quad.texture_handle = 0;
-    render_command->quad.line_width = line_width;
-    render_command->is_ui = is_ui;
-}
-
 // @Note Gets info about UI position for rendering things relative to each other
 // We often want to be able to render things next to each other perfectly on different scales
 // This function should help with that
@@ -484,11 +247,11 @@ static RelativeUIQuadInfo get_relative_info(Renderer& renderer, math::Vec2 posit
     pos.x -= origin.x;
     pos.y -= origin.y;
     
-    math::Vec3 scaled_size = get_relative_size_vec3(renderer, relative_size, scaling_flags);
+    math::Vec3 scaled_size = math::Vec3(rendering::get_relative_size(renderer, relative_size, scaling_flags), 0.0f);
     
     math::Vec3 relative_pos = math::Vec3(pos.x, pos.y, 0.0f);
     
-    math::Vec3 new_size = get_relative_size_vec3(renderer, size, scaling_flags);
+    math::Vec3 new_size = math::Vec3(rendering::get_relative_size(renderer, size, scaling_flags), 0.0f);
     
     r32 factor_x = scaled_size.x / origin.x;
     r32 factor_y = scaled_size.y / origin.y;
@@ -545,73 +308,6 @@ static RelativeUIQuadInfo get_relative_info(Renderer& renderer, math::Vec2 posit
     ui_position.y = ((relative_pos.y / (r32)resolution_scale.y) * UI_COORD_DIMENSION);
     
     return {math::Vec2(relative_pos.x, relative_pos.y), math::Vec2(new_size.x, new_size.y), ui_position};
-}
-
-static RelativeUIQuadInfo push_filled_ui_quad_relative_not_centered(Renderer& renderer, math::Vec2 position, math::Vec2 relative_size, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), RelativeFlag relative = RELATIVE_TOP, i32 texture_handle = 0, r32 border_width = 0.0f,
-                                                                    math::Rgba border_color = math::Rgba(1.0f),
-                                                                    b32 rounded = false, i32 animation_controller_handle = 0,
-                                                                    i32 z_layer = 0,
-                                                                    b32 clip = false,
-                                                                    math::Rect clip_rect = math::Rect(0, 0, 0, 0), 
-                                                                    u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO,
-                                                                    i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
-{
-    math::Vec2i resolution_scale = get_scale(renderer);
-    
-    RelativeUIQuadInfo info = get_relative_info(renderer, position, relative_size, size, relative, false, ui_scaling_flag);
-    
-    math::Rect scaled_clip_rect = scale_clip_rect(renderer, clip_rect, clip, ui_scaling_flag);
-    
-    push_filled_quad_not_centered(renderer, math::Vec3(info.position.x, info.position.y, z_layer), flipped, math::Vec3(info.scale.x, info.scale.y, 0.0f), rotation, color, texture_handle, true, border_width, border_color, rounded, clip, scaled_clip_rect, animation_controller_handle, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
-    
-    return info;
-}
-
-
-static RelativeUIQuadInfo push_filled_ui_quad_relative(Renderer& renderer, math::Vec2 position, math::Vec2 relative_size, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), RelativeFlag relative = RELATIVE_TOP, i32 texture_handle = 0, r32 border_width = 0.0f,
-                                                       math::Rgba border_color = math::Rgba(1.0f), b32 rounded = false, i32 animation_controller_handle = 0, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f),
-                                                       i32 z_layer = 0,
-                                                       b32 clip = false,
-                                                       math::Rect clip_rect = math::Rect(0, 0, 0, 0),
-                                                       u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO,
-                                                       i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
-{
-    math::Vec2i resolution_scale = get_scale(renderer);
-    
-    RelativeUIQuadInfo info = get_relative_info(renderer, position, relative_size, size, relative, true, scaling_flags, origin);
-    
-    math::Rect scaled_clip_rect = scale_clip_rect(renderer, clip_rect, clip, scaling_flags);
-    
-    push_filled_quad(renderer, math::Vec3(info.position.x, info.position.y, z_layer), flipped, math::Vec3(info.scale.x, info.scale.y, 0.0f), rotation, color, texture_handle, true, border_width, border_color, rounded,  animation_controller_handle, with_origin, math::Vec2(0.0f), clip, scaled_clip_rect, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
-    
-    return info;
-}
-
-static void push_outlined_ui_quad(Renderer& renderer, math::Vec2i position,  math::Vec2i size, math::Vec3 rotation, math::Rgba color, b32 is_ui = false, r32 line_width = 1.0f)
-{
-    math::Vec2i resolution_scale = get_scale(renderer);
-    
-    RenderCommand* render_command = push_next_command(renderer, is_ui);
-    
-    math::Vec3 pos;
-    pos.x = (position.x / UI_COORD_DIMENSION) * resolution_scale.x;
-    pos.y = (position.y / UI_COORD_DIMENSION) * resolution_scale.y;
-    pos.z = 0.0f;
-    
-    math::Vec3 scaled_size;
-    scaled_size.x = (size.x / UI_COORD_DIMENSION) * resolution_scale.x;
-    scaled_size.y = (size.y / UI_COORD_DIMENSION) * resolution_scale.y;
-    scaled_size.z = 0.0f;
-    
-    render_command->type = RENDER_COMMAND_QUAD;
-    render_command->position = pos;
-    render_command->rotation = rotation;
-    render_command->scale = scaled_size;
-    render_command->quad.color = color;
-    render_command->quad.outlined = true;
-    render_command->quad.texture_handle = 0;
-    render_command->quad.line_width = line_width;
-    render_command->is_ui = is_ui;
 }
 
 static void push_buffer(Renderer& renderer, i32 buffer_handle, i32 texture_handle, math::Vec3 rotation = math::Vec3(), b32 is_ui = false, math::Vec3 position = math::Vec3(), math::Vec3 scale = math::Vec3(1.0f), math::Rgba color = math::Rgba(1, 1, 1, 1))
@@ -673,7 +369,6 @@ static void generate_index_buffer(u16* index_buffer, Face* faces, i32 face_count
         index_buffer[base_index + 2] = face.indices[2];
     }
 }
-
 
 static i32 _find_unused_handle(Renderer& renderer)
 {
@@ -1175,24 +870,6 @@ render_command->is_ui = false;
 }
 */
 
-static rendering::FontHandle load_font(Renderer& renderer, char* path, i32 size, char* name)
-{
-    assert(renderer.font_count + 1 < global_max_fonts);
-
-    renderer.api_functions.load_font(renderer.api_functions.render_state, &renderer, path, size);
-    renderer.font_count++;
-
-    return { renderer.font_count };
-}
-
-static void load_font(Renderer& renderer, char* path, i32 size, rendering::FontHandle handle)
-{
-    assert(renderer.font_count + 1 < global_max_fonts);
-
-    renderer.api_functions.load_font(renderer.api_functions.render_state, &renderer, path, size);
-    handle.handle = renderer.font_count++;
-}
-
 static b32 is_eof(ChunkFormat& format)
 {
     return strcmp(format.format, "EOF") == 0;
@@ -1204,126 +881,126 @@ static b32 vertex_equals(Vertex &v1, Vertex &v2)
     
 }
 
-static void load_material(Renderer &renderer, char *file_path, MaterialHandle *material_handle)
-{
-    // @Incomplete: We need a better way to do this!
-    // Find the directory of the file
-    size_t index = 0;
-    for(size_t i = 0; i < strlen(file_path); i++)
-    {
-        if(file_path[i] == '/')
-        {
-            index = i + 1;
-        }
-    }
+// static void load_material(Renderer &renderer, char *file_path, MaterialHandle *material_handle)
+// {
+//     // @Incomplete: We need a better way to do this!
+//     // Find the directory of the file
+//     size_t index = 0;
+//     for(size_t i = 0; i < strlen(file_path); i++)
+//     {
+//         if(file_path[i] == '/')
+//         {
+//             index = i + 1;
+//         }
+//     }
     
-    auto temp_block = begin_temporary_memory(&renderer.temp_arena);
+//     auto temp_block = begin_temporary_memory(&renderer.temp_arena);
     
-    char *dir = push_string(temp_block.arena, index);
-    strncpy(dir, file_path, index);
+//     char *dir = push_string(temp_block.arena, index);
+//     strncpy(dir, file_path, index);
     
-    dir[index] = 0;
-    FILE* mtl_file = fopen(file_path, "r");
-    if(mtl_file)
-    {
-        char buffer[256];
+//     dir[index] = 0;
+//     FILE* mtl_file = fopen(file_path, "r");
+//     if(mtl_file)
+//     {
+//         char buffer[256];
         
-        Material &material = renderer.materials[renderer.material_count];
-        material = {};
-        material.type = RM_TEXTURED;
-        material.source_handle = { renderer.material_count++ };
-        material.diffuse_color = COLOR_WHITE;
-        material.diffuse_texture = { 0 };
-        material.ambient_texture = { 0 };
-        material.specular_texture = { 0 };
-        material.dissolve = 1.0f;
+//         Material &material = renderer.materials[renderer.material_count];
+//         material = {};
+//         material.type = RM_TEXTURED;
+//         material.source_handle = { renderer.material_count++ };
+//         material.diffuse_color = COLOR_WHITE;
+//         material.diffuse_texture = { 0 };
+//         material.ambient_texture = { 0 };
+//         material.specular_texture = { 0 };
+//         material.dissolve = 1.0f;
         
-        while((fgets(buffer, sizeof(buffer), mtl_file) != NULL))
-        {
-            if(starts_with(buffer, "newmtl"))
-            {
-                // @Incomplete: Save name
-            }
-            else if(starts_with(buffer, "illum")) // illumination
-            {
-            }
-            else if(starts_with(buffer, "Ka")) // ambient color
-            {
-                sscanf(buffer, "Ka %f %f %f", &material.ambient_color.r, &material.ambient_color.g, &material.ambient_color.b);
-                material.ambient_color.a = 1.0f;
-            }
-            else if(starts_with(buffer, "Kd")) // diffuse color
-            {
-                sscanf(buffer, "Kd %f %f %f", &material.diffuse_color.r, &material.diffuse_color.g, &material.diffuse_color.b);
-                material.diffuse_color.a = 1.0f;
-            }
-            else if(starts_with(buffer, "Ks")) // specular color
-            {
-                sscanf(buffer, "Ks %f %f %f", &material.specular_color.r, &material.specular_color.g, &material.specular_color.b);
-                material.specular_color.a = 1.0f;
-            }
-            else if(starts_with(buffer, "Ns")) // specular exponent
-            {
-                sscanf(buffer, "Ns %f", &material.specular_exponent);
-            }
-			else if(starts_with(buffer, "d"))
-			{
-				sscanf(buffer, "d %f", &material.dissolve);
-			}
-            else if(starts_with(buffer, "map_Ka")) // ambient map
-            {
-                char name[64];
-                sscanf(buffer, "map_Ka %s", name);
+//         while((fgets(buffer, sizeof(buffer), mtl_file) != NULL))
+//         {
+//             if(starts_with(buffer, "newmtl"))
+//             {
+//                 // @Incomplete: Save name
+//             }
+//             else if(starts_with(buffer, "illum")) // illumination
+//             {
+//             }
+//             else if(starts_with(buffer, "Ka")) // ambient color
+//             {
+//                 sscanf(buffer, "Ka %f %f %f", &material.ambient_color.r, &material.ambient_color.g, &material.ambient_color.b);
+//                 material.ambient_color.a = 1.0f;
+//             }
+//             else if(starts_with(buffer, "Kd")) // diffuse color
+//             {
+//                 sscanf(buffer, "Kd %f %f %f", &material.diffuse_color.r, &material.diffuse_color.g, &material.diffuse_color.b);
+//                 material.diffuse_color.a = 1.0f;
+//             }
+//             else if(starts_with(buffer, "Ks")) // specular color
+//             {
+//                 sscanf(buffer, "Ks %f %f %f", &material.specular_color.r, &material.specular_color.g, &material.specular_color.b);
+//                 material.specular_color.a = 1.0f;
+//             }
+//             else if(starts_with(buffer, "Ns")) // specular exponent
+//             {
+//                 sscanf(buffer, "Ns %f", &material.specular_exponent);
+//             }
+// 			else if(starts_with(buffer, "d"))
+// 			{
+// 				sscanf(buffer, "d %f", &material.dissolve);
+// 			}
+//             else if(starts_with(buffer, "map_Ka")) // ambient map
+//             {
+//                 char name[64];
+//                 sscanf(buffer, "map_Ka %s", name);
                 
-                if(name[0] == '.')
-                    load_texture(name, renderer, LINEAR, &material.ambient_texture);
-                else
-                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.ambient_texture);
-            }
-            else if(starts_with(buffer, "map_Kd")) // diffuse map
-            {
-                char name[64];
-                sscanf(buffer, "map_Kd %s", name);
+//                 if(name[0] == '.')
+//                     load_texture(name, renderer, LINEAR, &material.ambient_texture);
+//                 else
+//                     load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.ambient_texture);
+//             }
+//             else if(starts_with(buffer, "map_Kd")) // diffuse map
+//             {
+//                 char name[64];
+//                 sscanf(buffer, "map_Kd %s", name);
                 
-                if(name[0] == '.')
-                    load_texture(name, renderer, LINEAR, &material.diffuse_texture);
-                else
-                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.diffuse_texture);
-            }
-            else if(starts_with(buffer, "map_Ks")) // specular map
-            {
-                char name[64];
-                sscanf(buffer, "map_Ks %s", name);
+//                 if(name[0] == '.')
+//                     load_texture(name, renderer, LINEAR, &material.diffuse_texture);
+//                 else
+//                     load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.diffuse_texture);
+//             }
+//             else if(starts_with(buffer, "map_Ks")) // specular map
+//             {
+//                 char name[64];
+//                 sscanf(buffer, "map_Ks %s", name);
                 
-                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_texture);
+//                 load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_texture);
                 
-                if(name[0] == '.')
-                    load_texture(name, renderer, LINEAR, &material.specular_texture);
-                else
-                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_texture);
-            }
-            else if(starts_with(buffer, "map_Ns")) // specular intensity map
-            {
-                char name[64];
-                sscanf(buffer, "map_Ns %s", name);
+//                 if(name[0] == '.')
+//                     load_texture(name, renderer, LINEAR, &material.specular_texture);
+//                 else
+//                     load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_texture);
+//             }
+//             else if(starts_with(buffer, "map_Ns")) // specular intensity map
+//             {
+//                 char name[64];
+//                 sscanf(buffer, "map_Ns %s", name);
                 
-                if(name[0] == '.')
-                    load_texture(name, renderer, LINEAR, &material.specular_intensity_texture);
-                else
-                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_intensity_texture);
-            }
-        }
+//                 if(name[0] == '.')
+//                     load_texture(name, renderer, LINEAR, &material.specular_intensity_texture);
+//                 else
+//                     load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_intensity_texture);
+//             }
+//         }
         
-        fclose(mtl_file);
+//         fclose(mtl_file);
         
-        if(material_handle)
-            *material_handle = material.source_handle;
-    }
-    else
-        debug("Could not read %s\n", file_path);
+//         if(material_handle)
+//             *material_handle = material.source_handle;
+//     }
+//     else
+//         debug("Could not read %s\n", file_path);
     
-    end_temporary_memory(temp_block);
-}
+//     end_temporary_memory(temp_block);
+// }
 
 static i32 check_for_identical_vertex(Vertex &vertex, math::Vec2 uv, math::Vec3 normal, Vertex *final_vertices, b32* should_add)
 {
@@ -1346,232 +1023,232 @@ static i32 check_for_identical_vertex(Vertex &vertex, math::Vec2 uv, math::Vec3 
     return (i32)current_size;
 }
 
-static void load_obj(Renderer &renderer, char *file_path, MeshHandle *mesh_handle = nullptr, MaterialHandle *material_handle = nullptr)
-{
-    FILE *file = fopen(file_path, "r");
+// static void load_obj(Renderer &renderer, char *file_path, MeshHandle *mesh_handle = nullptr, MaterialHandle *material_handle = nullptr)
+// {
+//     FILE *file = fopen(file_path, "r");
     
-    b32 with_uvs = false;
-    b32 with_normals = false;
+//     b32 with_uvs = false;
+//     b32 with_normals = false;
     
-    Vertex *vertices = nullptr;
-    math::Vec3 *normals = nullptr;
-    math::Vec2 *uvs = nullptr;
+//     Vertex *vertices = nullptr;
+//     math::Vec3 *normals = nullptr;
+//     math::Vec2 *uvs = nullptr;
     
-    Vertex *final_vertices = nullptr;
+//     Vertex *final_vertices = nullptr;
     
-    Face *faces = nullptr;
+//     Face *faces = nullptr;
     
-    i32 vert_index = 0;
-    i32 normal_index = 0;
-    i32 uv_index = 0;
+//     i32 vert_index = 0;
+//     i32 normal_index = 0;
+//     i32 uv_index = 0;
     
-    // Right now we only support one mtl-file per obj-file
-    // And since we only support one mesh per obj-file at the moment that should be fine.
-    // @Robustness: We have to support more advanced files later... Maybe...
-    b32 has_mtl_file = false;
-    char mtl_file_name[32];
+//     // Right now we only support one mtl-file per obj-file
+//     // And since we only support one mesh per obj-file at the moment that should be fine.
+//     // @Robustness: We have to support more advanced files later... Maybe...
+//     b32 has_mtl_file = false;
+//     char mtl_file_name[32];
     
-    if(file)
-    {
-        char buffer[256];
+//     if(file)
+//     {
+//         char buffer[256];
         
-        while((fgets(buffer, sizeof(buffer), file) != NULL))
-        {
-            if(starts_with(buffer, "g")) // we're starting with new geometry
-            {
-                // @Incomplete: Save the name of the geometry
-            }
-            else if(starts_with(buffer, "mtllib")) // Material file
-            {
-                // Read the material file-name
-                sscanf(buffer, "mtllib %s", mtl_file_name);
-            }
-            else if(starts_with(buffer, "usemtl")) // Used material for geometry
-            {
-                has_mtl_file = true;
-                // Ignored, for now.
-                // This is only relevant when we've got multiple materials
-            }
-            else if(starts_with(buffer, "v ")) // vertex
-            {
-                Vertex vertex = {};
-                sscanf(buffer, "v %f %f %f", &vertex.position.x, &vertex.position.y, &vertex.position.z);
-                buf_push(vertices, vertex);
-                vert_index++;
-            }
-            else if(starts_with(buffer, "vn")) // vertex normal
-            {
-                with_normals = true;
-                math::Vec3 normal(0.0f);
-                sscanf(buffer, "vn %f %f %f", &normal.x, &normal.y, &normal.z);
-                buf_push(normals, normal);
-                normal_index++;
-            }
-            else if(starts_with(buffer, "vt")) // vertex uv
-            {
-                with_uvs = true;
-                math::Vec2 uv(0.0f);
-                sscanf(buffer, "vt %f %f", &uv.x, &uv.y);
-                uv.y = 1.0f - uv.y;
-                buf_push(uvs, uv);
-                uv_index++;
-            }
-            else if(starts_with(buffer, "f")) // face
-            {
-                Face face = {};
-                math::Vec3i normal_indices = {};
-                math::Vec3i uv_indices = {};
+//         while((fgets(buffer, sizeof(buffer), file) != NULL))
+//         {
+//             if(starts_with(buffer, "g")) // we're starting with new geometry
+//             {
+//                 // @Incomplete: Save the name of the geometry
+//             }
+//             else if(starts_with(buffer, "mtllib")) // Material file
+//             {
+//                 // Read the material file-name
+//                 sscanf(buffer, "mtllib %s", mtl_file_name);
+//             }
+//             else if(starts_with(buffer, "usemtl")) // Used material for geometry
+//             {
+//                 has_mtl_file = true;
+//                 // Ignored, for now.
+//                 // This is only relevant when we've got multiple materials
+//             }
+//             else if(starts_with(buffer, "v ")) // vertex
+//             {
+//                 Vertex vertex = {};
+//                 sscanf(buffer, "v %f %f %f", &vertex.position.x, &vertex.position.y, &vertex.position.z);
+//                 buf_push(vertices, vertex);
+//                 vert_index++;
+//             }
+//             else if(starts_with(buffer, "vn")) // vertex normal
+//             {
+//                 with_normals = true;
+//                 math::Vec3 normal(0.0f);
+//                 sscanf(buffer, "vn %f %f %f", &normal.x, &normal.y, &normal.z);
+//                 buf_push(normals, normal);
+//                 normal_index++;
+//             }
+//             else if(starts_with(buffer, "vt")) // vertex uv
+//             {
+//                 with_uvs = true;
+//                 math::Vec2 uv(0.0f);
+//                 sscanf(buffer, "vt %f %f", &uv.x, &uv.y);
+//                 uv.y = 1.0f - uv.y;
+//                 buf_push(uvs, uv);
+//                 uv_index++;
+//             }
+//             else if(starts_with(buffer, "f")) // face
+//             {
+//                 Face face = {};
+//                 math::Vec3i normal_indices = {};
+//                 math::Vec3i uv_indices = {};
                 
-                if(with_uvs && with_normals)
-                {
-                    sscanf(buffer, "f %hd/%d/%d %hd/%d/%d %hd/%d/%d", &face.indices[0], &uv_indices.x, &normal_indices.x, &face.indices[1], &uv_indices.y, &normal_indices.y, &face.indices[2], &uv_indices.z, &normal_indices.z);
-                }
-                else if(with_uvs)
-                {
-                    sscanf(buffer, "f %hd/%d %hd/%d %hd/%d", &face.indices[0], &uv_indices.x, &face.indices[1], &uv_indices.y, &face.indices[2], &uv_indices.z);
-                }
+//                 if(with_uvs && with_normals)
+//                 {
+//                     sscanf(buffer, "f %hd/%d/%d %hd/%d/%d %hd/%d/%d", &face.indices[0], &uv_indices.x, &normal_indices.x, &face.indices[1], &uv_indices.y, &normal_indices.y, &face.indices[2], &uv_indices.z, &normal_indices.z);
+//                 }
+//                 else if(with_uvs)
+//                 {
+//                     sscanf(buffer, "f %hd/%d %hd/%d %hd/%d", &face.indices[0], &uv_indices.x, &face.indices[1], &uv_indices.y, &face.indices[2], &uv_indices.z);
+//                 }
                 
-                else if(with_normals)
-                {
-                    sscanf(buffer, "f %hd//%d %hd//%d %hd//%d", &face.indices[0], &normal_indices.x, &face.indices[1], &normal_indices.y, &face.indices[2], &normal_indices.z);
-                }
+//                 else if(with_normals)
+//                 {
+//                     sscanf(buffer, "f %hd//%d %hd//%d %hd//%d", &face.indices[0], &normal_indices.x, &face.indices[1], &normal_indices.y, &face.indices[2], &normal_indices.z);
+//                 }
                 
-                // The obj-format was made by geniuses and therefore the indices are not 0-indexed. Such wow.
-                face.indices[0] -= 1;
-                face.indices[1] -= 1;
-                face.indices[2] -= 1;
+//                 // The obj-format was made by geniuses and therefore the indices are not 0-indexed. Such wow.
+//                 face.indices[0] -= 1;
+//                 face.indices[1] -= 1;
+//                 face.indices[2] -= 1;
                 
-                b32 should_add = false;
-                Vertex v1 = vertices[face.indices[0]];
-                math::Vec2 uv1(0.0f);
-                math::Vec3 n1(0.0f);
+//                 b32 should_add = false;
+//                 Vertex v1 = vertices[face.indices[0]];
+//                 math::Vec2 uv1(0.0f);
+//                 math::Vec3 n1(0.0f);
                 
-                if(with_uvs)
-                {
-                    uv1 = uvs[uv_indices.x - 1];
-                }
+//                 if(with_uvs)
+//                 {
+//                     uv1 = uvs[uv_indices.x - 1];
+//                 }
                 
-                if(with_normals)
-                {
-                    n1 = normals[normal_indices.x - 1];
-                }
+//                 if(with_normals)
+//                 {
+//                     n1 = normals[normal_indices.x - 1];
+//                 }
                 
-                face.indices[0] = (u16)check_for_identical_vertex(v1, uv1, n1, final_vertices, &should_add);
+//                 face.indices[0] = (u16)check_for_identical_vertex(v1, uv1, n1, final_vertices, &should_add);
                 
-                if(should_add)
-                {
-                    buf_push(final_vertices, v1);
-                }
+//                 if(should_add)
+//                 {
+//                     buf_push(final_vertices, v1);
+//                 }
                 
-                should_add = false;
-                Vertex &v2 = vertices[face.indices[1]];
-                math::Vec2 uv2(0.0f);
-                math::Vec3 n2(0.0f);
+//                 should_add = false;
+//                 Vertex &v2 = vertices[face.indices[1]];
+//                 math::Vec2 uv2(0.0f);
+//                 math::Vec3 n2(0.0f);
                 
-                if(with_uvs)
-                {
-                    uv2 = uvs[uv_indices.y - 1];
-                }
+//                 if(with_uvs)
+//                 {
+//                     uv2 = uvs[uv_indices.y - 1];
+//                 }
                 
-                if(with_normals)
-                {
-                    n2 = normals[normal_indices.y - 1];
-                }
+//                 if(with_normals)
+//                 {
+//                     n2 = normals[normal_indices.y - 1];
+//                 }
                 
-                face.indices[1] = (u16)check_for_identical_vertex(v2, uv2, n2, final_vertices, &should_add);
+//                 face.indices[1] = (u16)check_for_identical_vertex(v2, uv2, n2, final_vertices, &should_add);
                 
-                if(should_add)
-                {
-                    buf_push(final_vertices, v2);
-                }
+//                 if(should_add)
+//                 {
+//                     buf_push(final_vertices, v2);
+//                 }
                 
-                should_add = false;
-                Vertex &v3 = vertices[face.indices[2]];
+//                 should_add = false;
+//                 Vertex &v3 = vertices[face.indices[2]];
                 
-                math::Vec2 uv3(0.0f);
-                math::Vec3 n3(0.0f);
+//                 math::Vec2 uv3(0.0f);
+//                 math::Vec3 n3(0.0f);
                 
-                if(with_uvs)
-                {
-                    uv3 = uvs[uv_indices.z - 1];
-                }
+//                 if(with_uvs)
+//                 {
+//                     uv3 = uvs[uv_indices.z - 1];
+//                 }
                 
-                if(with_normals)
-                {
-                    n3 = normals[normal_indices.z - 1];
-                }
+//                 if(with_normals)
+//                 {
+//                     n3 = normals[normal_indices.z - 1];
+//                 }
                 
-                face.indices[2] = (u16)check_for_identical_vertex(v3, uv3, n3, final_vertices,  &should_add);
+//                 face.indices[2] = (u16)check_for_identical_vertex(v3, uv3, n3, final_vertices,  &should_add);
                 
-                if(should_add)
-                {
-                    buf_push(final_vertices, v3);
-                }
+//                 if(should_add)
+//                 {
+//                     buf_push(final_vertices, v3);
+//                 }
                 
-                buf_push(faces, face);
-            }
-        }
-        fclose(file);
-    }
+//                 buf_push(faces, face);
+//             }
+//         }
+//         fclose(file);
+//     }
     
-    assert(renderer.mesh_count + 1 < global_max_meshes);
-    MeshHandle handle =  { renderer.mesh_count++ };
-    Mesh &mesh = renderer.meshes[handle.handle];
-    mesh = {};
+//     assert(renderer.mesh_count + 1 < global_max_meshes);
+//     MeshHandle handle =  { renderer.mesh_count++ };
+//     Mesh &mesh = renderer.meshes[handle.handle];
+//     mesh = {};
     
-    mesh.vertices = push_array(&renderer.mesh_arena, buf_len(final_vertices), Vertex);
-    mesh.faces = push_array(&renderer.mesh_arena, buf_len(faces), Face);
-    mesh.vertex_count = (i32)buf_len(final_vertices);
-    mesh.face_count = (i32)buf_len(faces);
+//     mesh.vertices = push_array(&renderer.mesh_arena, buf_len(final_vertices), Vertex);
+//     mesh.faces = push_array(&renderer.mesh_arena, buf_len(faces), Face);
+//     mesh.vertex_count = (i32)buf_len(final_vertices);
+//     mesh.face_count = (i32)buf_len(faces);
     
-    memcpy(mesh.vertices, final_vertices, mesh.vertex_count * sizeof(Vertex));
-    memcpy(mesh.faces, faces, mesh.face_count * sizeof(Face));
+//     memcpy(mesh.vertices, final_vertices, mesh.vertex_count * sizeof(Vertex));
+//     memcpy(mesh.faces, faces, mesh.face_count * sizeof(Face));
     
-    buf_free(final_vertices);
-    buf_free(vertices);
-    buf_free(normals);
-    buf_free(uvs);
-    buf_free(faces);
+//     buf_free(final_vertices);
+//     buf_free(vertices);
+//     buf_free(normals);
+//     buf_free(uvs);
+//     buf_free(faces);
     
-    create_buffers_from_mesh(renderer, mesh, 0, true, true);
+//     create_buffers_from_mesh(renderer, mesh, 0, true, true);
     
-    assert(renderer.buffer_count + 2 < global_max_custom_buffers);
-    register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_offset_buffer_handle);
+//     assert(renderer.buffer_count + 2 < global_max_custom_buffers);
+//     register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_offset_buffer_handle);
     
-    register_instance_buffer(renderer, sizeof(math::Rgba) * 1024, &mesh.instance_color_buffer_handle);
+//     register_instance_buffer(renderer, sizeof(math::Rgba) * 1024, &mesh.instance_color_buffer_handle);
     
-    register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_rotation_buffer_handle);
+//     register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_rotation_buffer_handle);
     
-    register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_scale_buffer_handle);
+//     register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_scale_buffer_handle);
     
-    if(mesh_handle)
-        *mesh_handle = handle;
+//     if(mesh_handle)
+//         *mesh_handle = handle;
     
-    if(has_mtl_file)
-    {
-        // Find the directory of the file
-        size_t index = 0;
-        for(size_t i = 0; i < strlen(file_path); i++)
-        {
-            if(file_path[i] == '/')
-            {
-                index = i + 1;
-            }
-        }
+//     if(has_mtl_file)
+//     {
+//         // Find the directory of the file
+//         size_t index = 0;
+//         for(size_t i = 0; i < strlen(file_path); i++)
+//         {
+//             if(file_path[i] == '/')
+//             {
+//                 index = i + 1;
+//             }
+//         }
         
-        auto temp_block = begin_temporary_memory(&renderer.temp_arena);
+//         auto temp_block = begin_temporary_memory(&renderer.temp_arena);
         
-        char *dir = push_string(temp_block.arena, index);
-        strncpy(dir, file_path, index);
+//         char *dir = push_string(temp_block.arena, index);
+//         strncpy(dir, file_path, index);
         
-        dir[index] = 0;
-		char *material_file_path = concat(dir, mtl_file_name, &renderer.temp_arena);
-        if(material_handle)
-            load_material(renderer, material_file_path, material_handle);
+//         dir[index] = 0;
+// 		char *material_file_path = concat(dir, mtl_file_name, &renderer.temp_arena);
+//         if(material_handle)
+//             load_material(renderer, material_file_path, material_handle);
         
-        end_temporary_memory(temp_block);
-    }
-}
+//         end_temporary_memory(temp_block);
+//     }
+// }
 
 static void load_obj(Renderer &renderer, char *file_path, MeshInfo &mesh_info, b32 with_instancing = false)
 {

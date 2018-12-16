@@ -363,7 +363,6 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     renderer.animation_controllers = push_array(&renderer.animation_arena, 64, AnimationController);
     renderer.spritesheet_animations = push_array(&renderer.animation_arena, global_max_spritesheet_animations, SpritesheetAnimation);
     renderer.commands = push_array(&renderer.command_arena, global_max_render_commands, RenderCommand);
-    renderer.ui_commands = push_array(&renderer.command_arena, global_max_ui_commands, RenderCommand);
     renderer.buffers = push_array(&renderer.buffer_arena, global_max_custom_buffers, BufferData);
     renderer.updated_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
     renderer.texture_data = push_array(&renderer.texture_arena, global_max_textures, TextureData);
@@ -463,6 +462,17 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     renderer.render.textured_ui_quad_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/ui_texture_quad.shd");
     renderer.render.ui.material = rendering::create_material(renderer, renderer.render.ui_quad_shader);
     renderer.render.ui.textured_material = rendering::create_material(renderer, renderer.render.textured_ui_quad_shader);
+
+    // Initialize font material
+    renderer.render.font_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/font.shd");
+    renderer.render.ui.font_material = rendering::create_material(renderer, renderer.render.font_shader);
+
+    rendering::RegisterBufferInfo font_info = rendering::create_register_buffer_info();
+
+    add_vertex_attrib(rendering::ValueType::FLOAT4, font_info);
+    font_info.usage = rendering::BufferUsage::DYNAMIC;
+
+    renderer.render.ui.font_buffer = rendering::register_buffer(renderer, font_info);
 
     // Add a hdr framebuffer as the standard pass framebuffer
     rendering::FramebufferInfo info = rendering::generate_framebuffer_info();
