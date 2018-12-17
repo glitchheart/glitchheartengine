@@ -66,7 +66,7 @@ struct ShaderGL
 	GLuint vert_program;
 	GLuint frag_program;
 
-    GLint uniform_locations[128];
+    GLint uniform_locations[1024];
     i32 location_count;
 };
 
@@ -347,7 +347,7 @@ struct RenderState
         };
     };
     
-	ShaderGL gl_shaders[32];
+	ShaderGL *gl_shaders;
 	i32 gl_shader_count;
     
     Texture texture_array[150];
@@ -374,5 +374,13 @@ struct RenderState
     MemoryArena string_arena;
     //MemoryArena perm_arena;
 };
+
+struct RenderingState
+{
+    RenderState *render_state;
+    Renderer *renderer;
+};
+
+RenderingState rendering_state;
 
 #endif

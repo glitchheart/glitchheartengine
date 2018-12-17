@@ -23,7 +23,7 @@ static void bind_vertex_array(GLuint vao, RenderState &render_state)
 {
     if(vao != render_state.current_state.vao)
     {
-        render_state.current_state.vao;
+        render_state.current_state.vao = vao;
         glBindVertexArray(vao);
     }
 }
@@ -821,6 +821,11 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
         rendering::ColorAttachment &attachment = info.color_attachments.attachments[i];
         if(attachment.type == rendering::ColorAttachmentType::RENDER_BUFFER)
         {
+            if(framebuffer.tex_color_buffer_handles[i] != 0)
+            {
+                glDeleteRenderbuffers(1, &framebuffer.tex_color_buffer_handles[i]);
+            }
+                
             if(attachment.flags & rendering::ColorAttachmentFlags::MULTISAMPLED)
             {
                 if(framebuffer.tex_color_buffer_handles[i] != 0)
@@ -863,9 +868,14 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
         }
         else
         {
+            if(framebuffer.tex_color_buffer_handles[i] != 0)
+            {
+                glDeleteTextures(1, &framebuffer.tex_color_buffer_handles[i]);
+            }
+            
             Texture texture;
             glGenTextures(1, &texture.texture_handle);
-
+            
             i32 handle = render_state.texture_index + 1;
             
             if(attachment.flags & rendering::ColorAttachmentFlags::MULTISAMPLED)
@@ -974,7 +984,7 @@ static void create_shadow_map(Framebuffer& framebuffer,  i32 width, i32 height)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);  
 }
 
-static void create_new_framebuffer(RenderState &render_state, Renderer &renderer, rendering::FramebufferInfo &info, Framebuffer &framebuffer)
+static void create_new_framebuffer(rendering::FramebufferInfo &info, Framebuffer &framebuffer, RenderState &render_state, Renderer &renderer)
 {
     framebuffer.width = info.width;
     framebuffer.height = info.height;
@@ -1006,6 +1016,22 @@ static void create_new_framebuffer(RenderState &render_state, Renderer &renderer
         log_error("Error: Framebuffer incomplete");
         error_gl();
     }
+}
+
+static void reload_framebuffer(rendering::FramebufferInfo &info, Framebuffer &framebuffer, RenderState &render_state, Renderer &renderer, i32 width, i32 height)
+{
+    switch(info.size_ratio)
+    {
+    case 0:
+    return;
+    break;
+    default:
+    info.width = width * info.size_ratio;
+    info.height = height * info.size_ratio;
+    break;
+    }
+    // @Note(Daniel): Right now this call is identical to create_new_framebuffer, but we might want to do more here later
+    create_new_framebuffer(info, framebuffer, render_state, renderer);
 }
 
 static void create_framebuffer(RenderState& render_state, Framebuffer& framebuffer, i32 width, i32 height, Shader& shader, MemoryArena* arena, r32* vertices, u32 vertices_size, u32* indices, u32 indices_size, b32 multisampled, i32 samples = 0, b32 hdr = false, i32 color_buffer_count = 1)
@@ -1080,11 +1106,15 @@ void window_iconify_callback(GLFWwindow *window, i32 iconified)
     }
 }
 
+static void reload_framebuffer(rendering::FramebufferInfo &info, Framebuffer &framebuffer, RenderState &render_state, Renderer &renderer, i32 width, i32 height);
+    
 void frame_buffer_size_callback(GLFWwindow *window, int width, int height)
 {
     if(width != 0 && height != 0)
     {
-        RenderState* render_state = (RenderState*)glfwGetWindowUserPointer(window);
+
+        RenderState *render_state = rendering_state.render_state;
+        Renderer *renderer = rendering_state.renderer;
         
         glViewport(0, 0, width, height);
         render_state->framebuffer_width = width;
@@ -1094,10 +1124,12 @@ void frame_buffer_size_callback(GLFWwindow *window, int width, int height)
         glGetIntegerv(GL_VIEWPORT, viewport);
         memcpy(render_state->viewport, viewport, sizeof(GLint) * 4);
 
-        Framebuffer& framebuffer = render_state->framebuffers[render_state->current_framebuffer];
-        
-        create_framebuffer(*render_state, framebuffer, width, height, render_state->frame_buffer_shader, &render_state->framebuffer_arena, render_state->framebuffer_quad_vertices,
-                           render_state->framebuffer_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices), framebuffer.multisampled, framebuffer.samples, framebuffer.hdr, framebuffer.tex_color_buffer_count);
+        for(i32 i = 0; i < renderer->render.framebuffer_count; i++)
+        {
+            rendering::FramebufferInfo &info = renderer->render.framebuffers[i];
+            Framebuffer &framebuffer = render_state->v2.framebuffers[i];
+            reload_framebuffer(info, framebuffer, *render_state, *renderer, width, height);
+        }
 
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
         
@@ -1573,7 +1605,7 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
 static void new_create_framebuffer(rendering::FramebufferInfo &info, RenderState *render_state, Renderer *renderer)
 {
     Framebuffer &framebuffer = render_state->v2.framebuffers[render_state->v2.framebuffer_count++];
-    create_new_framebuffer(*render_state, *renderer, info, framebuffer);
+    create_new_framebuffer(info, framebuffer, *render_state, *renderer);
 }
 
 static void new_load_texture(TextureData &texture_data, RenderState *render_state, Renderer *renderer)
@@ -1697,8 +1729,11 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     log("%s", glGetString(GL_VERSION));
     log("Shading language supported: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
     log("Glad Version: %d.%d", GLVersion.major, GLVersion.minor);
+
+    rendering_state.render_state = &render_state;
+    rendering_state.renderer = &renderer;
     
-    glfwSetWindowUserPointer(render_state.window, &render_state);
+    glfwSetWindowUserPointer(render_state.window, &rendering_state);
     glfwSetKeyCallback(render_state.window, key_callback);
     glfwSetCharCallback(render_state.window, character_callback);
     glfwSetCursorPosCallback(render_state.window, cursor_position_callback);
@@ -3279,7 +3314,7 @@ static void register_framebuffers(RenderState &render_state, Renderer &renderer)
     {
         rendering::FramebufferInfo &info = renderer.render.framebuffers[index];
         Framebuffer &framebuffer = render_state.v2.framebuffers[index];
-        create_new_framebuffer(render_state, renderer, info, framebuffer);
+        create_new_framebuffer(info, framebuffer, render_state, renderer);
 
         for(i32 i = 0; i < info.pending_textures.count; i++)
         {
@@ -3603,8 +3638,7 @@ static void render_buffer(rendering::RenderCommand& command, const rendering::Re
 	Buffer& buffer = render_state.gl_buffers[handle];
 	
 	bind_vertex_array(buffer.vao, render_state);
-   
-    //glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+
     ShaderGL gl_shader;
     rendering::Material& material = renderer.render.material_instances[command.material.handle];
     rendering::Shader &shader_info = renderer.render.shaders[material.shader.handle];
@@ -3618,9 +3652,13 @@ static void render_buffer(rendering::RenderCommand& command, const rendering::Re
     {
         gl_shader = render_state.gl_shaders[material.shader.handle];
     }
+
+    b32 fallback = false;
     
     if(!gl_shader.program) // Use fallback if it exists
     {
+        fallback = true;
+        
         gl_shader = render_state.gl_shaders[renderer.render.fallback_shader.handle];
 
         if(!gl_shader.program)
@@ -3641,6 +3679,20 @@ static void render_buffer(rendering::RenderCommand& command, const rendering::Re
         }
     }
 
+    if(fallback)
+    {
+         if(buffer.ibo)
+        {
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
+            glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)nullptr);
+        }
+        else
+        {
+            glDrawArrays(GL_TRIANGLES, 0, buffer.vertex_count / 3);
+        }
+         return; 
+    }
+    
 	i32 texture_count = 0;
 
     for(i32 i = 0; i < material.uniform_value_count; i++)
@@ -3694,7 +3746,7 @@ static void render_shadow_buffer(rendering::ShadowCommand &shadow_command, Rende
 	Buffer& buffer = render_state.gl_buffers[handle];
 	
 	bind_vertex_array(buffer.vao, render_state);
-    
+
     ShaderGL gl_shader = render_state.gl_shaders[renderer.render.shadow_map_shader.handle];
 
     glUseProgram(gl_shader.program);
@@ -3787,6 +3839,8 @@ static void render_shadows(RenderState &render_state, Renderer &renderer, Frameb
 
 static void render_all_passes(RenderState &render_state, Renderer &renderer)
 {
+	bind_vertex_array(0, render_state);
+	
 	// @Incomplete: Create a better way for enabling/disabling the clipping planes
 	// Check if we have clipping planes
 	glEnable(GL_CLIP_PLANE0);

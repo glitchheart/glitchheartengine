@@ -230,6 +230,8 @@ namespace rendering
     
     struct Shader
     {
+        i32 index;
+        
 		VertexAttribute vertex_attributes[16];
 		i32 vertex_attribute_count;
 
@@ -414,6 +416,8 @@ namespace rendering
         
         u32 width;
         u32 height;
+
+        i32 size_ratio; // A size ratio of 0 means that we don't scale with the standard framebuffer
 
         struct
         {        

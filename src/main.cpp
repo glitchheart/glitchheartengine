@@ -615,6 +615,7 @@ int main(int argc, char **args)
     render_state.string_arena = {};
     render_state.gl_shader_count = 0;
     render_state.gl_buffer_count = 0;
+    render_state.gl_shaders = push_array(&platform_state->perm_arena, 64, ShaderGL);
 
     
     Renderer *renderer_alloc = push_struct(&platform_state->perm_arena, Renderer);
