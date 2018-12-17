@@ -372,7 +372,6 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     renderer.materials = push_array(&renderer.mesh_arena, global_max_materials, Material);
     renderer.meshes = push_array(&renderer.mesh_arena, global_max_meshes, Mesh);
     renderer.shader_data = push_array(&renderer.shader_arena, global_max_shaders, ShaderData);
-    renderer.fonts = push_array(&renderer.font_arena, global_max_fonts, FontData);
     renderer.tt_font_infos = push_array(&renderer.font_arena, global_max_fonts, TrueTypeFontInfo);
     renderer._internal_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
     renderer._current_internal_buffer_handle = 0;
@@ -637,7 +636,6 @@ int main(int argc, char **args)
     render_state.texture_index = 0;
     render_state.frame_delta = 0.0;
 
-    render_state.font_arena = {};
     render_state.string_arena = {};
     render_state.gl_shader_count = 0;
     render_state.gl_buffer_count = 0;

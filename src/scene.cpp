@@ -492,7 +492,7 @@ namespace scene
                         {
                             char texture_path[128];
                             sscanf(buffer, "texture: %s", texture_path);
-                            load_texture(texture_path, *scene.renderer, LINEAR, REPEAT, TextureFormat::RGBA, &attributes.texture_handle);
+                            load_texture(texture_path, *scene.renderer, LINEAR, REPEAT, TextureFormat::RGBA, attributes.texture_handle);
                         }
                         else if(starts_with(buffer, "gravity"))
                         {
