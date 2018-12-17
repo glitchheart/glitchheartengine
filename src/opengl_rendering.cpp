@@ -1176,7 +1176,6 @@ static void create_standard_cursors(RenderState& render_state)
 
 static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
 {
-    render_state->font_count = 0;
     render_state->perm_arena = perm_arena;
     
     glfwGetFramebufferSize(render_state->window, &render_state->framebuffer_width, &render_state->framebuffer_height);
@@ -1226,25 +1225,6 @@ static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
     setup_billboard(*render_state, render_state->perm_arena);
     setup_quad(*render_state, render_state->perm_arena);
     setup_lines(*render_state, render_state->perm_arena);
-    
-    //font
-    render_state->standard_font_shader.type = SHADER_STANDARD_FONT;
-    load_shader(shader_paths[SHADER_STANDARD_FONT], &render_state->standard_font_shader, render_state->perm_arena);
-
-    auto &shader = render_state->standard_font_shader;
-    shader.uniform_locations.projection_matrix = glGetUniformLocation(shader.program, "projectionMatrix");
-    shader.uniform_locations.diffuse_color = glGetUniformLocation(shader.program, "color");
-    shader.uniform_locations.font.alpha_color = glGetUniformLocation(shader.program, "alphaColor");
-    shader.uniform_locations.font.z = glGetUniformLocation(shader.program, "z");
-    
-    render_state->text_3d_shader.type = SHADER_3D_TEXT;
-    load_shader(shader_paths[SHADER_3D_TEXT], &render_state->text_3d_shader, render_state->perm_arena);
-    
-    auto &text_3d_shader = render_state->text_3d_shader;
-    text_3d_shader.uniform_locations.projection_matrix = glGetUniformLocation(shader.program, "projectionMatrix");
-    text_3d_shader.uniform_locations.diffuse_color = glGetUniformLocation(shader.program, "color");
-    text_3d_shader.uniform_locations.font.alpha_color = glGetUniformLocation(shader.program, "alphaColor");
-    text_3d_shader.uniform_locations.font.z = glGetUniformLocation(shader.program, "z");
 
     render_state->mesh_shader.type = SHADER_MESH;
     load_shader(shader_paths[SHADER_MESH], &render_state->mesh_shader, render_state->perm_arena);
@@ -1357,124 +1337,6 @@ static void load_extra_shaders(RenderState& render_state, Renderer& renderer)
 	render_state.gl_shader_count = renderer.render.shader_count;
 }
 
-void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, i32 size, i32 index = -1)
- {
-    GLFontBuffer *font = nullptr;
-    TrueTypeFontInfo *font_info = nullptr;
-    if(index == -1)
-    {
-        font = &render_state.gl_fonts[render_state.font_count++];
-        font_info = &renderer.tt_font_infos[renderer.tt_font_count++];
-    }
-    else
-    {
-        font = &render_state.gl_fonts[index];
-        font_info = &renderer.tt_font_infos[index];
-    }
-    
-    *font = {};
-    *font_info = {};
-    
-    font->resolution_loaded_for.width = render_state.framebuffer_width;
-    font->resolution_loaded_for.height = render_state.framebuffer_height;
-    
-    font_info->oversample_x = 1;
-    font_info->oversample_y = 1;
-    font_info->first_char = ' ';
-    font_info->char_count = '~' - ' ';
-    font_info->size = size;
-    
-    font_info->size = (i32)from_ui(renderer, render_state.framebuffer_height, (r32)font_info->size);
-    
-    i32 count_per_line = (i32)math::ceil(math::sqrt((r32)font_info->char_count));
-    font_info->atlas_width = math::multiple_of_number(font_info->size * count_per_line, 4);
-    font_info->atlas_height = math::multiple_of_number(font_info->size * count_per_line, 4);
-    
-    unsigned char *ttf_buffer = push_array(&render_state.font_arena, (1<<20), unsigned char);
-    
-    auto temp_memory = begin_temporary_memory(&render_state.font_arena);
-    
-    unsigned char *temp_bitmap = push_array(&render_state.font_arena, font_info->atlas_width * font_info->atlas_height, unsigned char);
-    
-    fread(ttf_buffer, 1, 1<<20, fopen(path, "rb"));
-    
-    stbtt_InitFont(&font_info->info, ttf_buffer, 0);
-    font_info->scale = stbtt_ScaleForPixelHeight(&font_info->info, 15);
-    stbtt_GetFontVMetrics(&font_info->info, &font_info->ascent, &font_info->descent, &font_info->line_gap);
-    font_info->baseline = (i32)(font_info->ascent * font_info->scale);
-    
-    stbtt_pack_context context;
-    if (!stbtt_PackBegin(&context, temp_bitmap, font_info->atlas_width, font_info->atlas_height, 0, 1, nullptr))
-        printf("Failed to initialize font");
-    
-    stbtt_PackSetOversampling(&context, font_info->oversample_x, font_info->oversample_y);
-    if (!stbtt_PackFontRange(&context, ttf_buffer, 0, (r32)font_info->size, font_info->first_char, font_info->char_count, font_info->char_data))
-        printf("Failed to pack font");
-    
-#if DEBUG
-    char buf[64];
-    sprintf(buf, "%d_%d_", render_state.font_count - 1, size);
-    
-    //stbi_write_bmp(concat(buf, ".bmp", &render_state.font_arena), font->atlas_width, font->atlas_height, 1,temp_bitmap);
-#endif
-    
-    stbtt_PackEnd(&context);
-    
-    if(!font->texture)
-    {
-        glGenTextures(1, &font->texture);
-    }
-    
-    glBindTexture(GL_TEXTURE_2D, font->texture);
-    
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, (GLsizei)font_info->atlas_width, (GLsizei)font_info->atlas_height, 0, GL_RED, GL_UNSIGNED_BYTE, temp_bitmap);
-    
-    /* Clamping to edges is important to prevent artifacts when scaling */
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    if(!font->vao || !font->vbo)
-    {
-        glGenVertexArrays(1, &font->vao);
-        bind_vertex_array(font->vao, render_state);
-        glGenBuffers(1, &font->vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, font->vbo);
-        vertex_attrib_pointer(0, 4, GL_FLOAT, 0, nullptr);
-        bind_vertex_array(0, render_state);
-    }
-
-    font_info->line_height = font_info->size + font_info->line_gap * font_info->scale;
-    
-    r32 largest_character = 0;
-    
-    for(i32 i = 0; i < font_info->char_count; i++)
-    {
-        char str[2];
-        str[0] = (char)(font_info->first_char + i);
-        str[1] = '\0';
-        math::Vec2 char_size = get_text_size(str, *font_info);
-        if(char_size.y > largest_character)
-        {
-            largest_character = char_size.y;
-        }
-    }
-    
-    font_info->largest_character_height = largest_character;
-    
-    end_temporary_memory(temp_memory);
-}
-
-static void load_font(RenderState& render_state, Renderer& renderer, char* path, i32 size, i32 index = -1)
-{
-    stbtt_load_font(render_state, renderer, path, size, index);
-}
-
 static const GLFWvidmode* create_open_gl_window(RenderState& render_state, WindowMode window_mode, const char* title, i32 width, i32 height)
 {
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
@@ -1545,6 +1407,12 @@ static void new_create_framebuffer(rendering::FramebufferInfo &info, RenderState
 
 static void new_load_texture(TextureData &texture_data, RenderState *render_state, Renderer *renderer, b32 free_buffer)
 {
+    i32 index = texture_data.handle;
+    
+    if(index == 0)
+    {
+        index = render_state->texture_index++;
+    }
     load_texture(texture_data, &render_state->texture_array[render_state->texture_index++], free_buffer);
 }
 
@@ -1554,7 +1422,6 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     renderer.api_functions.load_texture = &new_load_texture;
     renderer.api_functions.create_framebuffer = &new_create_framebuffer;
         
-    render_state.character_buffer = push_array(perm_arena, 4096, CharacterData);
     auto recreate_window = render_state.window != nullptr;
 	
     if(!recreate_window)
@@ -1698,8 +1565,6 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     renderer.framebuffer_width = render_state.framebuffer_width;
     renderer.framebuffer_height = render_state.framebuffer_height;
-    
-    renderer.ui_reference_resolution = {1920, 1080};
     
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     
@@ -2159,70 +2024,6 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
     }
 }
 
-static void calculate_current_x_from_line_data(r32 *x, math::Vec2 text_size, u64 alignment_flags)
-{
-    if(alignment_flags & ALIGNMENT_CENTER_X)
-    {
-        *x -= text_size.x / 2.0f;
-    }
-    else if(alignment_flags & ALIGNMENT_RIGHT)
-    {
-        *x -= text_size.x;
-    }
-}
-
-static void render_line(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
-{
-    //render_line(render_state, command.line.color, command.line.point1, command.line.point2, projection, view, command.line.line_width, command.is_ui);
-}
-
-static void render_text(const RenderCommand& command, RenderState& render_state, Renderer& renderer, math::Mat4 view_matrix, math::Mat4 projection_matrix)
-{
-    assert(command.text.font_handle < render_state.font_count);
-    GLFontBuffer font = render_state.gl_fonts[command.text.font_handle];
-    
-    if(font.resolution_loaded_for.width != render_state.framebuffer_width || font.resolution_loaded_for.height != render_state.framebuffer_height)
-    {
-        FontData data = renderer.fonts[command.text.font_handle];
-        
-        if(font.resolution_loaded_for.width == 0 && font.resolution_loaded_for.height == 0)
-        {
-            load_font(render_state, renderer, data.path, data.size, -1);
-        }
-        else
-        {
-            load_font(render_state, renderer, data.path, data.size, command.text.font_handle);
-        }
-        
-    }
-    
-    // render_text(render_state, font, renderer.tt_font_infos[command.text.font_handle], command.text.color, command.text.text, command.text.position.x, command.text.position.y, view_matrix, projection_matrix, command.text.scale, command.text.alignment_flags, true, command.text.z_layer);
-}
-
-static void render_3d_text(const RenderCommand& command, RenderState& render_state, Renderer& renderer, math::Mat4 view_matrix, math::Mat4 projection_matrix)
-{
-    assert(command.text_3d.font_handle < render_state.font_count);
-    GLFontBuffer font = render_state.gl_fonts[command.text_3d.font_handle];
-    
-    if(font.resolution_loaded_for.width != render_state.framebuffer_width || font.resolution_loaded_for.height != render_state.framebuffer_height)
-    {
-        FontData data = renderer.fonts[command.text_3d.font_handle];
-        
-        if(font.resolution_loaded_for.width == 0 && font.resolution_loaded_for.height == 0)
-        {
-            load_font(render_state, renderer, data.path, data.size, -1);
-        }
-        else
-        {
-            load_font(render_state, renderer, data.path, data.size, command.text_3d.font_handle);
-        }
-        
-    }
-    
-    // render_3d_text(render_state, font, renderer.tt_font_infos[command.text_3d.font_handle], command.text_3d.color, command.text_3d.text, command.position, command.rotation, command.scale, view_matrix, projection_matrix, command.text_3d.alignment_flags);
-}
-
-
 static void render_quad(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
 {
     if (command.is_ui)
@@ -2658,18 +2459,6 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
         set_mat4_uniform(shader.program, "depthBiasMatrix", shadow_map_matrices->depth_bias_matrix);
         set_mat4_uniform(shader.program, "depthViewMatrix", shadow_map_matrices->depth_view_matrix);
         set_mat4_uniform(shader.program, "depthProjectionMatrix", shadow_map_matrices->depth_projection_matrix);
-        
-        set_vec3_uniform(shader.program, "lightPosWorld", render_state.sun_light.position);
-        //set_vec3_uniform(shader.program, "lightPosWorld", math::Vec3(0, 200, -20));
-        
-        set_vec3_uniform(shader.program, "lightColor", math::Vec3(1.0f, 1.0f, 1.0f));
-        //set_vec3_uniform(shader.program, "lightSpecular", math::Vec3(1.0f));
-        //set_vec3_uniform(shader.program, "lightDiffuse", math::Vec3(1.0f));
-        //set_vec3_uniform(shader.program, "lightAmbient", math::Vec3(0.2f));
-        
-        set_vec3_uniform(shader.program, "lightSpecular", render_state.sun_light.specular_color.xyz);
-        set_vec3_uniform(shader.program, "lightDiffuse", render_state.sun_light.diffuse_color.xyz);
-        set_vec3_uniform(shader.program, "lightAmbient", render_state.sun_light.ambient_color.xyz);
         
         set_vec3_uniform(shader.program, "material.diffuseColor", render_command.mesh_instanced.diffuse_color.xyz);
         set_vec3_uniform(shader.program, "material.specularColor", render_command.mesh_instanced.specular_color.xyz);
@@ -3551,7 +3340,7 @@ static void render_ui_pass(RenderState& render_state, Renderer &renderer)
 
         // @Incomplete: Reload fonts
 
-        info.data.vertex_buffer_size = (i32)(6 * command.text_length * sizeof(CharacterData));
+        info.data.vertex_buffer_size = (i32)(6 * command.text_length * sizeof(rendering::CharacterData));
         info.data.vertex_count = (i32)(6 * command.text_length * 3);
         info.data.vertex_buffer = (r32*)coords;
 
@@ -3627,12 +3416,6 @@ static void render_new_commands(RenderState &render_state, Renderer &renderer)
 
 static void render_commands(RenderState &render_state, Renderer &renderer)
 {
-    // for (i32 index = render_state.font_count; index < renderer.font_count; index++)
-    // {
-    //     FontData data = renderer.fonts[index];
-    //     load_font(render_state, renderer, data.path, data.size);
-    // }
-    
     //glEnable(GL_DEPTH_TEST);
     
     for (i32 index = 0; index < renderer.command_count; index++)
@@ -3703,14 +3486,6 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
     //         case RENDER_COMMAND_CURSOR:
     //         {
     //             glfwSetCursor(render_state.window, render_state.cursors[command.cursor.type]);
-    //         }
-    //         break;
-    //         case RENDER_COMMAND_SUN_LIGHT:
-    //         {
-    //             render_state.sun_light.position = command.sun_light.position;
-    //             render_state.sun_light.specular_color = command.sun_light.specular_color;
-    //             render_state.sun_light.diffuse_color = command.sun_light.diffuse_color;
-    //             render_state.sun_light.ambient_color = command.sun_light.ambient_color;
     //         }
     //         break;
     //         default:

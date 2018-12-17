@@ -223,93 +223,6 @@ static void push_filled_quad_not_centered(Renderer& renderer, math::Vec3 positio
     push_filled_quad(renderer, position, flipped, size, rotation, color, texture_handle, is_ui, border_width, border_color, rounded, animation_controller_handle, true, math::Vec2(0.0f), clip, clip_rect, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size); 
 }
 
-// @Note Gets info about UI position for rendering things relative to each other
-// We often want to be able to render things next to each other perfectly on different scales
-// This function should help with that
-// Parameters:
-// renderer:      The renderer
-// position:      The position of the original quad
-// relative_size: The size of the original quad
-// size:          The size of the thing you want to render next to the original
-// relative:      The relative flag (top, bottom, left, right)
-// centered:      Whether or not the original quad was centered (need to know this for origin etc.)
-// scaling_flags: How do we scale these UI elements?
-// origin:        The origin
-static RelativeUIQuadInfo get_relative_info(Renderer& renderer, math::Vec2 position, math::Vec2 relative_size, math::Vec2 size, RelativeFlag relative, b32 centered, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO,  math::Vec2 origin = math::Vec2(0.0f))
-{
-    math::Vec2i resolution_scale = get_scale(renderer);
-    
-    math::Vec3 pos;
-    pos.x = (position.x / UI_COORD_DIMENSION) * resolution_scale.x;
-    pos.y = (position.y / UI_COORD_DIMENSION) * resolution_scale.y;
-    pos.z = 0.0f;
-    
-    pos.x -= origin.x;
-    pos.y -= origin.y;
-    
-    math::Vec3 scaled_size = math::Vec3(rendering::get_relative_size(renderer, relative_size, scaling_flags), 0.0f);
-    
-    math::Vec3 relative_pos = math::Vec3(pos.x, pos.y, 0.0f);
-    
-    math::Vec3 new_size = math::Vec3(rendering::get_relative_size(renderer, size, scaling_flags), 0.0f);
-    
-    r32 factor_x = scaled_size.x / origin.x;
-    r32 factor_y = scaled_size.y / origin.y;
-    
-    if(origin.y == 0.0f)
-    {
-        factor_y = 1.0f;
-    }
-    if(origin.x == 0.0f)
-    {
-        factor_x = 1.0f;
-    }
-    
-    switch(relative)
-    {
-    case RELATIVE_TOP:
-    {
-        relative_pos.y += (i32)scaled_size.y / factor_y;
-    }
-    break;
-    case RELATIVE_LEFT:
-    {
-        if(origin.x == 0.0f)
-        {
-            relative_pos.x -= (i32)scaled_size.x / factor_x;
-        }
-        else
-        {
-            relative_pos.x -= (i32)scaled_size.x / factor_x + new_size.x;
-        }
-    }
-    break;
-    case RELATIVE_RIGHT:
-    {
-        if(origin.x == 0.0f)
-        {
-            relative_pos.x += (i32)scaled_size.x / factor_x;
-        }
-        else
-        {
-            relative_pos.x += (i32)scaled_size.x / factor_x + scaled_size.x;
-        }
-    }
-    break;
-    case RELATIVE_BOTTOM:
-    {
-        relative_pos.y -= (i32)scaled_size.y / factor_y - scaled_size.y + new_size.y;
-    }
-    break;
-    }
-    
-    math::Vec2 ui_position = math::Vec2(0, 0);
-    ui_position.x = ((relative_pos.x / (r32)resolution_scale.x) * UI_COORD_DIMENSION);
-    ui_position.y = ((relative_pos.y / (r32)resolution_scale.y) * UI_COORD_DIMENSION);
-    
-    return {math::Vec2(relative_pos.x, relative_pos.y), math::Vec2(new_size.x, new_size.y), ui_position};
-}
-
 static void push_buffer(Renderer& renderer, i32 buffer_handle, i32 texture_handle, math::Vec3 rotation = math::Vec3(), b32 is_ui = false, math::Vec3 position = math::Vec3(), math::Vec3 scale = math::Vec3(1.0f), math::Rgba color = math::Rgba(1, 1, 1, 1))
 {
     RenderCommand* render_command = push_next_command(renderer, is_ui);
@@ -748,16 +661,6 @@ static void create_plane(Renderer &renderer)
     register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_scale_buffer_handle);
 }
 
-static void push_sun_light(Renderer &renderer, math::Vec3 position, math::Rgba specular_color, math::Rgba diffuse_color, math::Rgba ambient_color)
-{
-    RenderCommand *render_command = push_next_command(renderer, false);
-    render_command->type = RENDER_COMMAND_SUN_LIGHT;
-    render_command->sun_light.position = position;
-    render_command->sun_light.specular_color = specular_color;
-    render_command->sun_light.diffuse_color = diffuse_color;
-    render_command->sun_light.ambient_color = ambient_color;
-}
-
 static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
 {
     RenderCommand *render_command = push_next_command(renderer, false);
@@ -784,11 +687,6 @@ static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
     render_command->color = mesh_info.material.diffuse_color;
     render_command->cast_shadows = mesh_info.cast_shadows;
     render_command->receives_shadows = mesh_info.receives_shadows;
-}
-
-static void push_mesh(Renderer& renderer, MeshHandle mesh_handle)
-{
-    
 }
 
 static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Vec3 *offsets, math::Rgba *colors, math::Vec3 *rotations, math::Vec3 *scalings, i32 offset_count)
@@ -827,48 +725,6 @@ static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Ve
     render_command->cast_shadows = mesh_info.cast_shadows;
     render_command->receives_shadows = mesh_info.receives_shadows;
 }
-
-/*
-  static void push_model(Renderer& renderer, Model& model, MemoryArena* arena)
-  {
-  RenderCommand* render_command = push_next_command(renderer, false);
-  render_command->type = RENDER_COMMAND_MODEL;
-  render_command->position = model.position;
-  render_command->scale = model.scale;
-  render_command->orientation = model.orientation;
-  render_command->model.buffer_handle = model.buffer_handle;
-
-  for(i32 index = 0; index < model.material_count; index++)
-  {
-  if(model.materials[index].diffuse_texture.has_data && model.materials[index].diffuse_texture.texture_handle == -1 && strlen(model.materials[index].diffuse_texture.texture_name) > 0)
-  {
-  model.materials[index].diffuse_texture.texture_handle = renderer.texture_map[model.materials[index].diffuse_texture.texture_name]->handle;
-  }
-  }
-
-  memcpy(&render_command->model.meshes, model.meshes, sizeof(model.meshes));
-  memcpy(&render_command->model.materials, model.materials, sizeof(model.materials));
-
-// @Incomplete: Check if the texture handle has been set for the materials
-render_command->model.type = model.type;
-render_command->model.mesh_count = model.mesh_count;
-render_command->model.material_count = model.material_count;
-render_command->model.bone_count = model.bone_count;
-
-if(model.type == MODEL_SKINNED)
-{
-render_command->model.bone_transforms = push_size(arena, sizeof(math::Mat4) * model.bone_count, math::Mat4);
-
-for(i32 index = 0; index < model.bone_count; index++)
-{
-render_command->model.bone_transforms[index] = model.current_poses[index];
-}
-}
-
-render_command->model.color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f);
-render_command->is_ui = false;
-}
-*/
 
 static b32 is_eof(ChunkFormat& format)
 {

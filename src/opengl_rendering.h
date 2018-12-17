@@ -18,8 +18,6 @@ const static struct
     SHADERPAIR(DEPTH_INSTANCED),
     SHADERPAIR(QUAD),
     SHADERPAIR(TEXTURE_QUAD),
-    SHADERPAIR(STANDARD_FONT),
-    SHADERPAIR(3D_TEXT),
     SHADERPAIR(SPRITESHEET),
     SHADERPAIR(FRAME_BUFFER),
     SHADERPAIR(SIMPLE_MODEL),
@@ -49,8 +47,6 @@ static char* shader_paths[SHADER_COUNT] =
     "../engine_assets/shaders/depthshaderinstanced",
     "../engine_assets/shaders/quadshader",
     "../engine_assets/shaders/texturequadshader",
-    "../engine_assets/shaders/standardfontshader",
-    "../engine_assets/shaders/3dtextshader",
     "../engine_assets/shaders/spritesheetanimationshader",
     "../engine_assets/shaders/framebuffershader",
     "../engine_assets/shaders/simple_model_shader",
@@ -86,16 +82,6 @@ struct Shader
 
         // Color
         GLint diffuse_color;
-        
-        union
-        {
-            struct
-            {
-                GLint alpha_color;
-                GLint z;
-            
-            } font;
-        };
     } uniform_locations;
 };
 
@@ -107,28 +93,6 @@ enum RenderMode
 struct Texture 
 {
     GLuint texture_handle;
-};
-
-// stb_truetype
-struct GLFontBuffer
-{
-    GLuint texture;
-    GLuint vao;
-    GLuint vbo;
-    
-    struct
-    {
-        i32 width;
-        i32 height;
-    } resolution_loaded_for;
-};
-
-struct CharacterData
-{
-    r32 x;
-    r32 y;
-    r32 tx;
-    r32 ty;
 };
 
 struct Buffer
@@ -178,7 +142,6 @@ struct RenderState
         GLuint shader_program;
         GLuint vao;
     } current_state;
-    CharacterData *character_buffer;
     GLFWwindow *window;
     i32 window_width;
     i32 window_height;
@@ -334,8 +297,6 @@ struct RenderState
             Shader depth_instanced_shader;
             Shader quad_shader;
             Shader texture_quad_shader;
-            Shader standard_font_shader;
-            Shader text_3d_shader;
             Shader spritesheet_shader;
             Shader frame_buffer_shader;
             Shader simple_model_shader;
@@ -351,9 +312,6 @@ struct RenderState
     Texture texture_array[150];
     i32 texture_index;
     
-    GLFontBuffer gl_fonts[64];
-    i32 font_count;
-    
     GLFWcursor* cursors[6];
     
     struct
@@ -368,7 +326,6 @@ struct RenderState
     
     MemoryArena* perm_arena; // TODO: Make this into a framebuffer arena maybe?
     MemoryArena framebuffer_arena;
-    MemoryArena font_arena;
     MemoryArena string_arena;
     //MemoryArena perm_arena;
 };
