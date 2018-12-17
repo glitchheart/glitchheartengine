@@ -1882,7 +1882,7 @@ static void update_lighting_for_material(BatchedCommand &render_command, Rendere
 
 #define STANDARD_PASS_HANDLE { 1 }
 
-    static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, math::Vec3 *positions, math::Vec3 *rotations, math::Vec3 *scalings, math::Rgba *colors)
+    static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer)
 {
     renderer.camera = scene.camera;
 
