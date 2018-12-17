@@ -377,6 +377,7 @@ namespace rendering
         info.color_attachments.count = 0;
         info.depth_attachment.enabled = false;
         info.depth_attachment.flags = 0;
+        info.size_ratio = 1;
 
         return info;
     }
