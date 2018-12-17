@@ -698,6 +698,8 @@ namespace scene
             
             fclose(file);
         }
+        else
+            assert(false);
         
         return(templ);
     }
