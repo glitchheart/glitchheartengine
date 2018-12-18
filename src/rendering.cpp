@@ -72,8 +72,6 @@ static void load_texture(const char* full_texture_path, Renderer& renderer, Text
     
     PlatformFile png_file = platform.open_file(full_texture_path, POF_READ | POF_OPEN_EXISTING | POF_IGNORE_ERROR);
 
-    b32 loaded = true;
-    
     if(png_file.handle)
     {
         platform.seek_file(png_file, 0, SO_END);
@@ -1917,8 +1915,6 @@ static void update_lighting_for_material(BatchedCommand &render_command, Rendere
             math::Vec3 rotation = transform.rotation;
             math::Vec3 scale = transform.scale;
             
-            i32 command_index = -1;
-
             if(ent.comp_flags & scene::COMP_LIGHT)
             {
                 scene::LightComponent &light_comp = scene.light_components[ent.light_handle.handle];
@@ -2001,9 +1997,6 @@ static void update_lighting_for_material(BatchedCommand &render_command, Rendere
                     
                     if(ent.comp_flags & scene::COMP_TRANSFORM)
                     {
-                        // Add transform stuff
-                        scene::TransformComponent &transform =  scene.transform_components[ent.transform_handle.handle];
-                        
                         system.transform.position += position;
                         system.transform.scale = scale;
                         system.transform.rotation = rotation;
