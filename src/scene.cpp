@@ -3,26 +3,55 @@
 namespace scene
 {
     static Scene create_scene(Renderer &renderer, EntityTemplateState &template_state, i32 initial_entity_array_size);
-    static void free_scene(Scene& scene);
-    i32 _unused_entity_handle(Scene &scene);
-    static RenderComponent& add_render_component(Scene &scene, EntityHandle entity_handle, b32 cast_shadows);
-    static TransformComponent& add_transform_component(Scene &scene, EntityHandle entity_handle);
-    static ParticleSystemComponent& add_particle_system_component(Scene &scene, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles);
-    static EntityHandle register_entity(u64 comp_flags, Scene &scene);
+    static SceneHandle create_scene(SceneManager *scene_manager, i32 initial_entity_array_size);
+    static void free_scene(SceneHandle scene);
+    static void load_scene(SceneHandle handle);
+    
+    // Scene handle
+    static RenderComponent& add_render_component(SceneHandle scene, EntityHandle entity_handle, b32 cast_shadows);
+    static TransformComponent& add_transform_component(SceneHandle scene, EntityHandle entity_handle);
+    static ParticleSystemComponent& add_particle_system_component(SceneHandle scene, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles);
+    static EntityHandle register_entity(u64 comp_flags, SceneHandle scene);
+    static void unregister_entity(EntityHandle handle, SceneHandle scene);
+    static EntityTemplate _load_template(const char *path, SceneHandle scene);
+    static EntityHandle register_entity_from_template_file(const char *path, SceneHandle scene);
+    static void set_active(EntityHandle handle, b32 active, SceneHandle scene);
+    static TransformComponent& get_transform_comp(EntityHandle handle, SceneHandle scene);
+    static RenderComponent& get_render_comp(EntityHandle handle, SceneHandle scene);
+    static ParticleSystemComponent& get_particle_system_comp(EntityHandle handle, SceneHandle scene);
+    static LightComponent &get_light_comp(EntityHandle handle, SceneHandle scene);
+    static MaterialHandle create_material(MaterialHandle material_to_copy, SceneHandle scene);
+    static Material& get_material(EntityHandle handle, SceneHandle scene);
+    static Camera & get_scene_camera(SceneHandle handle);
+
+    // @Deprecated: Scene struct 
+    static RenderComponent& _add_render_component(Scene &scene, EntityHandle entity_handle, b32 cast_shadows);
+    static TransformComponent& _add_transform_component(Scene &scene, EntityHandle entity_handle);
+    static ParticleSystemComponent& _add_particle_system_component(Scene &scene, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles);
+    static EntityHandle _register_entity(u64 comp_flags, Scene &scene);
+    static void _unregister_entity(EntityHandle handle, Scene &scene);
     static EntityTemplate _load_template(const char *path, Scene &scene);
-    static EntityHandle _register_entity_with_template(EntityTemplate &templ, Scene &scene);
-    static EntityHandle register_entity_from_template_file(const char *path, Scene &scene);
+    static EntityHandle _register_entity_from_template_file(const char *path, Scene &scene);
+    static void _set_active(EntityHandle handle, b32 active, Scene &scene);
+    static TransformComponent& _get_transform_comp(EntityHandle handle, Scene &scene);
+    static RenderComponent& _get_render_comp(EntityHandle handle, Scene &scene);
+    static ParticleSystemComponent& _get_particle_system_comp(EntityHandle handle, Scene &scene);
+    static LightComponent &_get_light_comp(EntityHandle handle, Scene &scene);
+    static MaterialHandle _create_material(MaterialHandle material_to_copy, Scene &scene);
+    static Material& _get_material(EntityHandle handle, Scene &scene);
+    
+    i32 _unused_entity_handle(Scene &scene);
     i32 _pack_transform_components(Entity &entity, Scene &scene);
     i32 _pack_render_components(Entity &entity, Scene &scene);
     i32 _pack_particle_system_components(Entity &entity, Scene &scene);
-    static void unregister_entity(EntityHandle &handle, Scene &scene);
-    static void set_active(EntityHandle handle, b32 active, Scene &scene);
-    static TransformComponent& get_transform_comp(EntityHandle handle, Scene &scene);
-    static RenderComponent& get_render_comp(EntityHandle handle, Scene &scene);
-    static ParticleSystemComponent& get_particle_system_comp(EntityHandle handle, Scene &scene);
-    static LightComponent &get_light_comp(EntityHandle handle, Scene &scene);
-    static MaterialHandle create_material(MaterialHandle material_to_copy, Scene &scene);
-    static Material& get_material(EntityHandle handle, Scene &scene);
+    static EntityHandle _register_entity_with_template(EntityTemplate &templ, Scene &scene);
+
+    static Scene &get_scene(SceneHandle handle)
+    {
+        assert(handle.handle > 0);
+        SceneManager *manager = handle.manager;
+        return manager->scenes[manager->_internal_scene_handles[handle.handle - 1]];
+    }
     
     // Creates and returns a new "Scene". The "inital_entity_array_size" specifies the max entity count of the "Scene".
     // @Incomplete: We need to make sure that we can grow in size if we need more than what we allocated at any point in time.
@@ -61,6 +90,94 @@ namespace scene
         }
         
         return(scene);
+    }
+
+    static i32 _find_handle_in_range(i32 start, i32 end, i32 *handles)
+    {
+        i32 handle = -1;
+        for(i32 i = start; i < end; i++)
+        {
+            if(handles[i] == -1)
+            {
+                handle = i;
+                break;
+            }
+        }
+
+        return handle;
+    }
+
+    static i32 _find_next_free_internal_handle(SceneManager *scene_manager)
+    {
+        i32 handle = -1;
+
+        if(scene_manager->_internal_scene_handles[scene_manager->current_internal_index] == -1)
+        {
+            handle = scene_manager->current_internal_index;
+        }
+        else
+        {
+            i32 found_handle = _find_handle_in_range(scene_manager->current_internal_index, global_max_scenes, scene_manager->_internal_scene_handles);
+            if(found_handle == -1)
+            {
+                found_handle = _find_handle_in_range(0, scene_manager->current_internal_index, scene_manager->_internal_scene_handles);
+            }
+
+        }
+
+        // Set the current index to look for a free handle
+        scene_manager->current_internal_index = handle + 1;
+        if(scene_manager->current_internal_index == global_max_scenes)
+        {
+            scene_manager->current_internal_index = 0;
+        }
+        
+        return handle;
+    }
+
+    static SceneHandle create_scene(SceneManager *scene_manager, i32 initial_entity_array_size = 1024)
+    {
+        i32 internal_handle = _find_next_free_internal_handle(scene_manager);
+        assert(internal_handle != -1);
+
+        i32 real_handle = scene_manager->scene_count++;
+        scene_manager->_internal_scene_handles[internal_handle] = real_handle;
+        Scene &scene = scene_manager->scenes[real_handle];
+        scene.valid = true;
+        scene.template_state = &scene_manager->template_state;
+        scene.renderer = scene_manager->renderer;
+        scene.max_entity_count = initial_entity_array_size;
+        scene.entity_count = 0;
+        scene.current_internal_handle = 0;
+        scene.transform_component_count = 0;
+        scene.render_component_count = 0;
+        scene.material_count = 0;
+		
+        auto &memory_arena = scene.memory_arena;
+        scene.entities = push_array(&memory_arena, initial_entity_array_size, Entity);
+        scene._internal_handles = push_array(&memory_arena, initial_entity_array_size, i32);
+        scene.active_entities = push_array(&memory_arena, initial_entity_array_size, b32);
+        scene.transform_components = push_array(&memory_arena, initial_entity_array_size, TransformComponent);
+        scene.render_components = push_array(&memory_arena, initial_entity_array_size, RenderComponent);
+        scene.light_components = push_array(&memory_arena, initial_entity_array_size, LightComponent);
+        scene.particle_system_components = push_array(&memory_arena, initial_entity_array_size, ParticleSystemComponent);
+        scene.material_instances = push_array(&memory_arena, initial_entity_array_size, Material);
+        
+        for(i32 index = 0; index < initial_entity_array_size; index++)
+        {
+            scene._internal_handles[index] = -1;
+            scene.active_entities[index] = true;
+            scene.transform_components[index].position = math::Vec3(0, 0, 0);
+            scene.transform_components[index].scale = math::Vec3(1, 1, 1);
+            scene.transform_components[index].rotation = math::Vec3(0, 0, 0);
+            scene.transform_components[index].parent_handle = EMPTY_COMP_HANDLE;
+            scene.transform_components[index].child_handle = EMPTY_COMP_HANDLE;
+        }
+
+        SceneHandle handle;
+        handle.handle = internal_handle + 1;
+        handle.manager = scene_manager;
+        return handle;
     }
 
     struct InstancePair
@@ -138,9 +255,9 @@ namespace scene
             }
         }
     }
-    
+
     // Zeroes all counts and frees all memory allocated for the "Scene"
-    static void free_scene(Scene& scene)
+    static void _free_scene(Scene& scene)
     {
         if(scene.valid)
         {
@@ -170,7 +287,28 @@ namespace scene
             scene.valid = false;
         }
     }
-    
+
+    static void free_scene(SceneHandle handle)
+    {
+        Scene &scene = handle.manager->scenes[handle.manager->_internal_scene_handles[handle.handle - 1]];
+        _free_scene(scene);
+        handle.manager->scene_loaded = true;
+    }
+
+    static void load_scene(SceneHandle handle)
+    {
+        SceneManager *scene_manager = handle.manager;
+        if(scene_manager->loaded_scene)
+        {
+            _free_scene(*scene_manager->loaded_scene);
+        }
+
+        Scene &scene = get_scene(handle);
+        allocate_instance_buffers(scene);
+        scene_manager->scene_loaded = true;
+        scene_manager->loaded_scene = &scene;
+    }
+        
     i32 _unused_entity_handle(Scene &scene)
     {
         for(i32 index = scene.current_internal_handle; index < scene.max_entity_count; index++)
@@ -200,7 +338,7 @@ namespace scene
         return -1;
     }
     
-    static RenderComponent& add_render_component(Scene &scene, EntityHandle entity_handle, b32 cast_shadows = true)
+    static RenderComponent& _add_render_component(Scene &scene, EntityHandle entity_handle, b32 cast_shadows = true)
     {
         Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
         entity.comp_flags |= COMP_RENDER;
@@ -212,6 +350,12 @@ namespace scene
         comp.casts_shadows = cast_shadows;
         
         return(comp);
+    }
+
+    static RenderComponent& add_render_component(SceneHandle handle, EntityHandle entity_handle, b32 cast_shadows = true)
+    {
+        Scene &scene = get_scene(handle);
+        return _add_render_component(scene, entity_handle, cast_shadows);
     }
 
     static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, rendering::ShaderHandle shader_handle, RenderComponent &comp)
@@ -232,28 +376,28 @@ namespace scene
         add_to_render_pass(render_pass_handle, comp.v2.shader_handles[0], comp);
     }
 
-    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, EntityHandle entity, Scene &scene)
+    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, EntityHandle entity, SceneHandle &scene)
     {
         RenderComponent &render_comp = get_render_comp(entity, scene);
         add_to_render_pass(render_pass_handle, render_comp);
     }
 
-    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, rendering::ShaderHandle shader_handle, EntityHandle entity, Scene &scene)
+    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, rendering::ShaderHandle shader_handle, EntityHandle entity, SceneHandle &scene)
     {
         RenderComponent &render_comp = get_render_comp(entity, scene);
         add_to_render_pass(render_pass_handle, shader_handle, render_comp);
     }
 
-    
-    static void add_all_to_render_pass(rendering::RenderPassHandle render_pass_handle, Scene &scene)
+    static void add_all_to_render_pass(rendering::RenderPassHandle render_pass_handle, SceneHandle &handle)
     {
+        Scene &scene = scene::get_scene(handle);
         for(i32 i = 0; i < scene.render_component_count; i++)
         {
             add_to_render_pass(render_pass_handle, scene.render_components[i]);
         }
     }
 
-    static void remove_from_render_pass(rendering::RenderPassHandle render_pass_handle, scene::EntityHandle entity, Scene& scene)
+    static void remove_from_render_pass(rendering::RenderPassHandle render_pass_handle, scene::EntityHandle entity, SceneHandle& scene)
     {
         RenderComponent &render_comp = get_render_comp(entity, scene);
         for(i32 i = 0; i < render_comp.v2.render_pass_count; i++)
@@ -268,7 +412,7 @@ namespace scene
         }
     }
     
-    static TransformComponent& add_transform_component(Scene &scene, EntityHandle entity_handle)
+    static TransformComponent& _add_transform_component(Scene &scene, EntityHandle entity_handle)
     {
         Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
         entity.comp_flags |= COMP_TRANSFORM;
@@ -277,8 +421,15 @@ namespace scene
         
         return(comp);
     }
+
+    static TransformComponent& add_transform_component(SceneHandle handle, EntityHandle entity_handle)
+    {
+        Scene &scene = get_scene(handle);
+        return _add_transform_component(scene, entity_handle);
+    }
+
     
-    static ParticleSystemComponent& add_particle_system_component(Scene &scene, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles = 0)
+    static ParticleSystemComponent& _add_particle_system_component(Scene &scene, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles = 0)
     {
         Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
         entity.comp_flags |= COMP_PARTICLES;
@@ -295,6 +446,12 @@ namespace scene
         return(comp);
     }
 
+    static ParticleSystemComponent& add_particle_system_component(SceneHandle handle, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles = 0)
+    {
+        Scene &scene = get_scene(handle);
+        return _add_particle_system_component(scene, entity_handle, attributes, max_particles);
+    }
+
     static LightComponent &add_light_component(Scene &scene, EntityHandle entity_handle)
     {
         Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
@@ -306,7 +463,7 @@ namespace scene
     }
     
     // Returns a new valid "EntityHandle". "comp_flags" Specifies the components that the entity should contain.
-    static EntityHandle register_entity(u64 comp_flags, Scene &scene)
+    static EntityHandle _register_entity(u64 comp_flags, Scene &scene)
     {
         i32 new_handle = _unused_entity_handle(scene) + 1;
         
@@ -318,17 +475,17 @@ namespace scene
         
         if(comp_flags & COMP_TRANSFORM)
         {
-            add_transform_component(scene, handle);
+            _add_transform_component(scene, handle);
         }
         
         if(comp_flags & COMP_RENDER)
         {
-            add_render_component(scene, handle, true);
+            _add_render_component(scene, handle, true);
         }
         
         if(comp_flags & COMP_PARTICLES)
         {
-            add_particle_system_component(scene, handle, get_default_particle_system_attributes(), 0);
+            _add_particle_system_component(scene, handle, get_default_particle_system_attributes(), 0);
         }
 
         if(comp_flags & COMP_LIGHT)
@@ -337,6 +494,12 @@ namespace scene
         }
         
         return(handle);
+    }
+
+    static EntityHandle register_entity(u64 comp_flags, SceneHandle scene_handle)
+    {
+        Scene &scene = get_scene(scene_handle);
+        return _register_entity(comp_flags, scene);
     }
     
     static EntityTemplate _load_template(const char *path, Scene &scene)
@@ -708,11 +871,11 @@ namespace scene
     
     static EntityHandle _register_entity_with_template(EntityTemplate &templ, Scene &scene)
     {
-        EntityHandle handle = register_entity(templ.comp_flags, scene);
+        EntityHandle handle = _register_entity(templ.comp_flags, scene);
         
         if(templ.comp_flags & COMP_TRANSFORM)
         {
-            TransformComponent &transform = get_transform_comp(handle, scene);
+            TransformComponent &transform = _get_transform_comp(handle, scene);
             transform.position = templ.transform.position;
             transform.scale = templ.transform.scale;
             transform.rotation = templ.transform.rotation;
@@ -721,7 +884,7 @@ namespace scene
         
         if(templ.comp_flags & COMP_RENDER)
         {
-            RenderComponent &render = get_render_comp(handle, scene);
+            RenderComponent &render = _get_render_comp(handle, scene);
             if(templ.render.is_new_version)
             {
                 render.is_new_version = true;
@@ -737,14 +900,14 @@ namespace scene
             else
             {
                 render.mesh_handle = templ.render.mesh_handle;
-                render.material_handle = create_material(templ.render.material_handle, scene);
+                render.material_handle = _create_material(templ.render.material_handle, scene);
                 render.casts_shadows = templ.render.casts_shadows;
             }
         }
         
         if(templ.comp_flags & COMP_PARTICLES)
         {
-            scene::ParticleSystemComponent &ps_comp = scene::add_particle_system_component(scene, handle, templ.particles.attributes, templ.particles.max_particles);
+            scene::ParticleSystemComponent &ps_comp = scene::_add_particle_system_component(scene, handle, templ.particles.attributes, templ.particles.max_particles);
 
             ParticleSystemInfo *ps = get_particle_system_info(ps_comp.handle, *scene.renderer);
             
@@ -783,7 +946,7 @@ namespace scene
         return(handle);
     }
     
-    static EntityHandle register_entity_from_template_file(const char *path, Scene &scene)
+    static EntityHandle _register_entity_from_template_file(const char *path, Scene &scene)
     {
         EntityTemplateState *template_state = scene.template_state;
         
@@ -812,6 +975,12 @@ namespace scene
         assert(templ);
         
         return(_register_entity_with_template(*templ, scene));
+    }
+
+    static EntityHandle register_entity_from_template_file(const char *path, SceneHandle scene_handle)
+    {
+        Scene &scene = get_scene(scene_handle);
+        return _register_entity_from_template_file(path, scene);
     }
     
     i32 _pack_transform_components(Entity &entity, Scene &scene)
@@ -875,7 +1044,7 @@ namespace scene
         return -1;
     }
     
-    static void unregister_entity(EntityHandle &handle, Scene &scene)
+    static void _unregister_entity(EntityHandle handle, Scene &scene)
     {
         if(handle.handle == 0 || handle.handle - 1 >= scene.entity_count || scene._internal_handles[handle.handle - 1] == -1)
             return;
@@ -950,8 +1119,14 @@ namespace scene
             }
         }
     }
+
+    static void unregister_entity(EntityHandle entity, SceneHandle handle)
+    {
+        Scene &scene = get_scene(handle);
+        _unregister_entity(entity, scene);
+    }
     
-    static void set_active(EntityHandle handle, b32 active, Scene &scene)
+    static void _set_active(EntityHandle handle, b32 active, Scene &scene)
     {
         if(handle.handle > 0)
         {
@@ -962,9 +1137,15 @@ namespace scene
             }
         }
     }
+
+    static void set_active(EntityHandle handle, b32 active, SceneHandle scene_handle)
+    {
+        Scene &scene = get_scene(scene_handle);
+        _set_active(handle, active, scene);
+    }
     
     // Returns a direct pointer to the TransformComponent of the specified entity
-    static TransformComponent& get_transform_comp(EntityHandle handle, Scene &scene)
+    static TransformComponent& _get_transform_comp(EntityHandle handle, Scene &scene)
     {
         assert(handle.handle != 0);
         i32 internal_handle = scene._internal_handles[handle.handle - 1];
@@ -977,10 +1158,16 @@ namespace scene
         TransformComponent& comp = scene.transform_components[entity.transform_handle.handle];
         return(comp);
     }
-    
+
+    static TransformComponent& get_transform_comp(EntityHandle entity, SceneHandle handle)
+    {
+        Scene &scene = get_scene(handle);
+        return _get_transform_comp(entity, scene);
+    }
+     
     // @Note(Daniel): Should we really return a pointer here? A reference might suffice, since we don't ever use the null-value for anything....
     // Returns a direct pointer to the RenderComponent of the specified entity
-    static RenderComponent& get_render_comp(EntityHandle handle, Scene &scene)
+    static RenderComponent& _get_render_comp(EntityHandle handle, Scene &scene)
     {
         assert(handle.handle != 0);
         i32 internal_handle = scene._internal_handles[handle.handle - 1];
@@ -992,8 +1179,14 @@ namespace scene
         RenderComponent& comp = scene.render_components[entity.render_handle.handle];
         return(comp);
     }
+
+    static RenderComponent& get_render_comp(EntityHandle entity, SceneHandle handle)
+    {
+        Scene &scene = get_scene(handle);
+        return _get_render_comp(entity, scene);
+    }
     
-    static ParticleSystemComponent& get_particle_system_comp(EntityHandle handle, Scene &scene)
+    static ParticleSystemComponent& _get_particle_system_comp(EntityHandle handle, Scene &scene)
     {
         assert(handle.handle != 0);
         i32 internal_handle = scene._internal_handles[handle.handle - 1];
@@ -1005,8 +1198,14 @@ namespace scene
         ParticleSystemComponent& comp = scene.particle_system_components[entity.particle_system_handle.handle];
         return(comp);
     }
+
+    static ParticleSystemComponent& get_particle_system_comp(EntityHandle handle, SceneHandle scene_handle)
+    {
+        Scene &scene = get_scene(scene_handle);
+        return _get_particle_system_comp(handle, scene);
+    }
     
-    static LightComponent &get_light_comp(EntityHandle handle, Scene &scene)
+    static LightComponent &_get_light_comp(EntityHandle handle, Scene &scene)
     {
         assert(handle.handle != 0);
         i32 internal_handle = scene._internal_handles[handle.handle - 1];
@@ -1018,14 +1217,32 @@ namespace scene
         LightComponent& comp = scene.light_components[entity.light_handle.handle];
         return(comp);
     }
+
+    static LightComponent &get_light_comp(EntityHandle handle, SceneHandle scene_handle)
+    {
+        Scene &scene = get_scene(scene_handle);
+        return _get_light_comp(handle, scene);
+    }
     
-    static MaterialHandle create_material(MaterialHandle material_to_copy, Scene &scene)
+    static MaterialHandle _create_material(MaterialHandle material_to_copy, Scene &scene)
     {
         scene.material_instances[scene.material_count] = scene.renderer->materials[material_to_copy.handle];
         return { scene.material_count++ };
     }
+
+    static MaterialHandle create_material(MaterialHandle material_to_copy, SceneHandle scene_handle)
+    {
+        Scene &scene = get_scene(scene_handle);
+        return _create_material(material_to_copy, scene);
+    }
+
+    static Camera & get_scene_camera(SceneHandle handle)
+    {
+        i32 real_handle = handle.manager->_internal_scene_handles[handle.handle - 1];
+        return handle.manager->scenes[real_handle].camera;
+    }
     
-    static Material& get_material(EntityHandle handle, Scene &scene)
+    static Material& _get_material(EntityHandle handle, Scene &scene)
     {
         i32 internal_handle = scene._internal_handles[handle.handle - 1];
         assert(internal_handle != -1);
@@ -1034,58 +1251,64 @@ namespace scene
         return scene.material_instances[entity.render_handle.handle];
     }
 
-	static void set_uniform_value(EntityHandle handle, const char* name, r32 value, Scene &scene)
+    static Material& get_material(EntityHandle handle, SceneHandle scene_handle)
+    {
+        Scene &scene = get_scene(scene_handle);
+        return _get_material(handle, scene);
+    }
+
+	static void set_uniform_value(EntityHandle handle, const char* name, r32 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(*scene.renderer, render.v2.material_handle, name, value);
+        rendering::set_uniform_value(*scene.manager->renderer, render.v2.material_handle, name, value);
 	}
 
-	static void set_uniform_value(EntityHandle handle, const char* name, math::Vec2 value, Scene &scene)
+	static void set_uniform_value(EntityHandle handle, const char* name, math::Vec2 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(*scene.renderer, render.v2.material_handle, name, value);
+        rendering::set_uniform_value(*scene.manager->renderer, render.v2.material_handle, name, value);
 	}
 
-	static void set_uniform_value(EntityHandle handle, const char* name, math::Vec3 value, Scene &scene)
+	static void set_uniform_value(EntityHandle handle, const char* name, math::Vec3 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(*scene.renderer, render.v2.material_handle, name, value);
+        rendering::set_uniform_value(*scene.manager->renderer, render.v2.material_handle, name, value);
 	}
 
-	static void set_uniform_value(EntityHandle handle, const char* name, math::Vec4 value, Scene &scene)
+	static void set_uniform_value(EntityHandle handle, const char* name, math::Vec4 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(*scene.renderer, render.v2.material_handle, name, value);
+        rendering::set_uniform_value(*scene.manager->renderer, render.v2.material_handle, name, value);
 	}
 
-	static void set_uniform_value(EntityHandle handle, const char* name, i32 value, Scene &scene)
+	static void set_uniform_value(EntityHandle handle, const char* name, i32 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(*scene.renderer, render.v2.material_handle, name, value);
+        rendering::set_uniform_value(*scene.manager->renderer, render.v2.material_handle, name, value);
 	}
 
-	static void set_uniform_value(EntityHandle handle, const char* name, math::Mat4 value, Scene &scene)
+	static void set_uniform_value(EntityHandle handle, const char* name, math::Mat4 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(*scene.renderer, render.v2.material_handle, name, value);
+        rendering::set_uniform_value(*scene.manager->renderer, render.v2.material_handle, name, value);
 	}
 
-	static void set_uniform_value(EntityHandle handle, const char* name, rendering::TextureHandle value, Scene &scene)
+	static void set_uniform_value(EntityHandle handle, const char* name, rendering::TextureHandle value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(*scene.renderer, render.v2.material_handle, name, value);
+        rendering::set_uniform_value(*scene.manager->renderer, render.v2.material_handle, name, value);
 	}
 
-    static void set_uniform_value(EntityHandle handle, const char* name, rendering::MSTextureHandle value, Scene &scene)
+    static void set_uniform_value(EntityHandle handle, const char* name, rendering::MSTextureHandle value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(*scene.renderer, render.v2.material_handle, name, value);
+        rendering::set_uniform_value(*scene.manager->renderer, render.v2.material_handle, name, value);
 	}
 
-#define SET_MAT_ARRAY_VALUE(type) static void set_uniform_array_value(EntityHandle handle, const char *array_name, i32 index, const char *variable_name, type value, Scene &scene) \
+#define SET_MAT_ARRAY_VALUE(type) static void set_uniform_array_value(EntityHandle handle, const char *array_name, i32 index, const char *variable_name, type value, SceneHandle &scene) \
     { \
        RenderComponent &render = get_render_comp(handle, scene); \
-    rendering::set_uniform_array_value(*scene.renderer, render.v2.material_handle, array_name, index, variable_name, value);\
+    rendering::set_uniform_array_value(*scene.manager->renderer, render.v2.material_handle, array_name, index, variable_name, value);\
     } \
 
 SET_MAT_ARRAY_VALUE(r32)

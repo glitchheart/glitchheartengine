@@ -56,6 +56,7 @@ static MemoryState memory_state;
 
 #include "shader_loader.cpp"
 #include "render_pipeline.cpp"
+#include "rendering.cpp"
 
 #if defined(__linux) || defined(__APPLE__)
 #include "dlfcn.h"
@@ -621,6 +622,8 @@ int main(int argc, char **args)
     Renderer *renderer_alloc = push_struct(&platform_state->perm_arena, Renderer);
     Renderer &renderer = *renderer_alloc;
     renderer = {};
+
+    scene::SceneManager scene_manager = scene::create_scene_manager(renderer);
     
     b32 do_save_config = false;
     
@@ -716,7 +719,7 @@ int main(int argc, char **args)
     core.input_controller = &input_controller;
     core.timer_controller = &timer_controller;
     core.sound_system = &sound_system;
-    core.template_state = &template_state;
+    core.scene_manager = &scene_manager;
     core.delta_time = delta_time;
     core.current_time = get_time();
     game_memory.core = core;
@@ -737,6 +740,11 @@ int main(int argc, char **args)
         //auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
 
         game.update(&game_memory);
+
+        if(scene_manager.loaded_scene != 0)
+        {
+            push_scene_for_rendering(*scene_manager.loaded_scene, renderer);
+        }
         
         update_particle_systems(renderer, delta_time);
 #if ENABLE_ANALYTICS

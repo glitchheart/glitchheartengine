@@ -128,9 +128,38 @@ namespace rendering
 
     static void free_all_instance_buffers(Renderer &renderer)
     {
+        // Tell the graphics api to delete the buffers
         renderer.api_functions.delete_all_instance_buffers(renderer.api_functions.render_state, &renderer);
+
+        // Free all allocated buffers
+        for(i32 i = 0; i < renderer.render.instancing.float_buffer_count; i++)
+        {
+            free(renderer.render.instancing.float_buffers[i]);
+        }
+
+        for(i32 i = 0; i < renderer.render.instancing.float2_buffer_count; i++)
+        {
+            free(renderer.render.instancing.float2_buffers[i]);
+        }
+
+        for(i32 i = 0; i < renderer.render.instancing.float3_buffer_count; i++)
+        {
+            free(renderer.render.instancing.float3_buffers[i]);
+        }
+
+        for(i32 i = 0; i < renderer.render.instancing.float4_buffer_count; i++)
+        {
+            free(renderer.render.instancing.float4_buffers[i]);
+        }
+
+        for(i32 i = 0; i < renderer.render.instancing.mat4_buffer_count; i++)
+        {
+            free(renderer.render.instancing.mat4_buffers[i]);
+        }
+
+        // Reset all counts and internal indices
         renderer.render.instancing = {};
-        
+
         for(i32 i = 0; i < MAX_INSTANCE_BUFFERS; i++)
         {
 			renderer.render.instancing.float_buffer_counts[i] = 0;

@@ -180,39 +180,6 @@ namespace scene
         i32 template_count;
     };
 
-    enum CameraFlags
-    {
-        C_FLAG_ORTHOGRAPHIC = (1 << 0),
-        C_FLAG_PERSPECTIVE  = (1 << 1),
-        C_FLAG_NO_LOOK_AT     = (1 << 2)
-    };
-
-    struct CameraParams
-    {
-        u32 view_flags;
-    };
-
-    static CameraParams default_camera_params()
-    {
-        CameraParams params;
-        params.view_flags = C_FLAG_ORTHOGRAPHIC | C_FLAG_NO_LOOK_AT;
-        return params;
-    }
-
-    static CameraParams orthographic_camera_params()
-    {
-        CameraParams params;
-        params.view_flags = C_FLAG_ORTHOGRAPHIC;
-        return params;
-    }
-
-    static CameraParams perspective_camera_params()
-    {
-        CameraParams params;
-        params.view_flags = C_FLAG_PERSPECTIVE;
-        return params;
-    }
-    
     struct Scene
     {
         b32 valid;
@@ -247,6 +214,47 @@ namespace scene
         EntityTemplateState *template_state;
         Renderer* renderer;
     };
+
+    struct SceneManager
+    {
+        Renderer *renderer;
+        EntityTemplateState template_state;
+        MemoryArena arena;
+
+        b32 scene_loaded;
+        Scene *loaded_scene;
+        Scene *scenes;
+        i32 scene_count;
+        i32 *_internal_scene_handles;
+        i32 current_internal_index;
+    };
+
+    struct SceneHandle
+    {
+        i32 handle;
+        SceneManager *manager;
+    };
+
+    static SceneManager create_scene_manager(Renderer &renderer)
+    {
+        SceneManager scene_manager = {};
+        scene_manager.current_internal_index = 0;
+        scene_manager.loaded_scene = nullptr;
+        scene_manager.scenes = push_array(&scene_manager.arena, global_max_scenes, scene::Scene);
+        scene_manager._internal_scene_handles = push_array(&scene_manager.arena, global_max_scenes, i32);
+
+        for(i32 i = 0; i < global_max_scenes; i++)
+        {
+            scene_manager._internal_scene_handles[i] = -1;
+        }
+        
+        scene_manager.scene_count = 0;
+        scene_manager.template_state.templates = push_array(&scene_manager.arena, global_max_entity_templates, EntityTemplate);
+        scene_manager.template_state.template_count = 0;
+       
+        scene_manager.renderer = &renderer;
+        return scene_manager;
+    }
 }
 
 

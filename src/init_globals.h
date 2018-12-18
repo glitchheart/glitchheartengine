@@ -23,3 +23,4 @@ static constexpr i32 global_max_shaders = 32;
 static constexpr i32 global_max_entity_templates = 64;
 static constexpr i32 global_max_directional_lights = 4;
 static constexpr i32 global_max_point_lights = 32;
+static constexpr i32 global_max_scenes = 16;

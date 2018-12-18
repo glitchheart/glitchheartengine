@@ -295,7 +295,7 @@ struct RenderState;
 
 namespace scene
 {
-    struct EntityTemplateState;
+    struct SceneManager;
 }
 
 struct TimerController;
@@ -306,7 +306,7 @@ struct Core
     InputController* input_controller;
     TimerController* timer_controller;
     SoundSystem* sound_system;
-    scene::EntityTemplateState* template_state;
+    scene::SceneManager *scene_manager;
     r64 delta_time;
     r64 current_time;
 };
