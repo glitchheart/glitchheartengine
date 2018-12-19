@@ -58,6 +58,7 @@ static MemoryState memory_state;
 #include "render_pipeline.cpp"
 #include "rendering.cpp"
 
+
 #if defined(__linux) || defined(__APPLE__)
 #include "dlfcn.h"
 #endif
@@ -404,9 +405,9 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     //renderer.render.material_instances = push_array(&renderer.mesh_arena, global_max_materials, rendering::Material);
 
     // Set all material instance values to their defaults
-    for(i32 = 0; i < MAX_MATERIAL_INSTANCE_ARRAYS; i++)
+    for(i32 i = 0; i < MAX_MATERIAL_INSTANCE_ARRAYS; i++)
     {
-        renderer.render._internal_material_instance_handles[i] = -1;
+        renderer.render._internal_material_instance_array_handles[i] = -1;
         renderer.render.material_instance_array_counts[i] = 0;
         renderer.render.material_instance_arrays[i] = nullptr;
     }
@@ -750,9 +751,9 @@ int main(int argc, char **args)
 
         game.update(&game_memory);
 
-        if(scene_manager.loaded_scene != 0)
+        if(scene_manager.scene_loaded)
         {
-            push_scene_for_rendering(*scene_manager.loaded_scene, renderer);
+            push_scene_for_rendering(scene::get_scene(scene_manager.loaded_scene), renderer);
         }
         
         update_particle_systems(renderer, delta_time);

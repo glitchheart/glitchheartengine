@@ -20,8 +20,6 @@ namespace scene
     static RenderComponent& get_render_comp(EntityHandle handle, SceneHandle scene);
     static ParticleSystemComponent& get_particle_system_comp(EntityHandle handle, SceneHandle scene);
     static LightComponent &get_light_comp(EntityHandle handle, SceneHandle scene);
-    static MaterialHandle create_material(MaterialHandle material_to_copy, SceneHandle scene);
-    static Material& get_material(EntityHandle handle, SceneHandle scene);
     static Camera & get_scene_camera(SceneHandle handle);
 
     // @Deprecated: Scene struct 
@@ -37,61 +35,13 @@ namespace scene
     static RenderComponent& _get_render_comp(EntityHandle handle, Scene &scene);
     static ParticleSystemComponent& _get_particle_system_comp(EntityHandle handle, Scene &scene);
     static LightComponent &_get_light_comp(EntityHandle handle, Scene &scene);
-    static MaterialHandle _create_material(MaterialHandle material_to_copy, Scene &scene);
-    static Material& _get_material(EntityHandle handle, Scene &scene);
     
     i32 _unused_entity_handle(Scene &scene);
     i32 _pack_transform_components(Entity &entity, Scene &scene);
     i32 _pack_render_components(Entity &entity, Scene &scene);
     i32 _pack_particle_system_components(Entity &entity, Scene &scene);
     static EntityHandle _register_entity_with_template(EntityTemplate &templ, Scene &scene);
-
-    static Scene &get_scene(SceneHandle handle)
-    {
-        assert(handle.handle > 0);
-        SceneManager *manager = handle.manager;
-        return manager->scenes[manager->_internal_scene_handles[handle.handle - 1]];
-    }
     
-    // Creates and returns a new "Scene". The "inital_entity_array_size" specifies the max entity count of the "Scene".
-    // @Incomplete: We need to make sure that we can grow in size if we need more than what we allocated at any point in time.
-    static Scene create_scene(Renderer &renderer, EntityTemplateState &template_state, i32 initial_entity_array_size = 1024)
-    {
-        Scene scene = {};
-        scene.valid = true;
-        scene.template_state = &template_state;
-        scene.renderer = &renderer;
-        scene.max_entity_count = initial_entity_array_size;
-        scene.entity_count = 0;
-        scene.current_internal_handle = 0;
-        scene.transform_component_count = 0;
-        scene.render_component_count = 0;
-        scene.material_count = 0;
-		
-        auto &memory_arena = scene.memory_arena;
-        scene.entities = push_array(&memory_arena, initial_entity_array_size, Entity);
-        scene._internal_handles = push_array(&memory_arena, initial_entity_array_size, i32);
-        scene.active_entities = push_array(&memory_arena, initial_entity_array_size, b32);
-        scene.transform_components = push_array(&memory_arena, initial_entity_array_size, TransformComponent);
-        scene.render_components = push_array(&memory_arena, initial_entity_array_size, RenderComponent);
-        scene.light_components = push_array(&memory_arena, initial_entity_array_size, LightComponent);
-        scene.particle_system_components = push_array(&memory_arena, initial_entity_array_size, ParticleSystemComponent);
-        scene.material_instances = push_array(&memory_arena, initial_entity_array_size, Material);
-        
-        for(i32 index = 0; index < initial_entity_array_size; index++)
-        {
-            scene._internal_handles[index] = -1;
-            scene.active_entities[index] = true;
-            scene.transform_components[index].position = math::Vec3(0, 0, 0);
-            scene.transform_components[index].scale = math::Vec3(1, 1, 1);
-            scene.transform_components[index].rotation = math::Vec3(0, 0, 0);
-            scene.transform_components[index].parent_handle = EMPTY_COMP_HANDLE;
-            scene.transform_components[index].child_handle = EMPTY_COMP_HANDLE;
-        }
-        
-        return(scene);
-    }
-
     static i32 _find_handle_in_range(i32 start, i32 end, i32 *handles)
     {
         i32 handle = -1;
@@ -105,7 +55,7 @@ namespace scene
         }
 
         return handle;
-    }
+    } 
 
     static i32 _find_next_free_internal_handle(SceneManager *scene_manager)
     {
@@ -143,6 +93,7 @@ namespace scene
         i32 real_handle = scene_manager->scene_count++;
         scene_manager->_internal_scene_handles[internal_handle] = real_handle;
         Scene &scene = scene_manager->scenes[real_handle];
+        scene.scene_manager = scene_manager;
         scene.valid = true;
         scene.template_state = &scene_manager->template_state;
         scene.renderer = scene_manager->renderer;
@@ -151,7 +102,6 @@ namespace scene
         scene.current_internal_handle = 0;
         scene.transform_component_count = 0;
         scene.render_component_count = 0;
-        scene.material_count = 0;
 		
         auto &memory_arena = scene.memory_arena;
         scene.entities = push_array(&memory_arena, initial_entity_array_size, Entity);
@@ -161,7 +111,8 @@ namespace scene
         scene.render_components = push_array(&memory_arena, initial_entity_array_size, RenderComponent);
         scene.light_components = push_array(&memory_arena, initial_entity_array_size, LightComponent);
         scene.particle_system_components = push_array(&memory_arena, initial_entity_array_size, ParticleSystemComponent);
-        scene.material_instances = push_array(&memory_arena, initial_entity_array_size, Material);
+
+        scene.material_array_handle = rendering::allocate_material_instance_array(*scene_manager->renderer, initial_entity_array_size);
         
         for(i32 index = 0; index < initial_entity_array_size; index++)
         {
@@ -202,7 +153,7 @@ namespace scene
         for(i32 i = 0; i < scene.render_component_count; i++)
         {
             RenderComponent &comp = scene.render_components[i];
-            rendering::Material &material_instance = renderer->render.material_instances[comp.v2.material_handle.handle];
+            rendering::Material &material_instance = rendering::get_material_instance(comp.v2.material_handle, *renderer);
 
             if(material_instance.instanced_vertex_attribute_count > 0)
             {
@@ -249,21 +200,23 @@ namespace scene
                 // Update all materials with the correct buffer handle
                 for(i32 k = 0; k < pair.count; k++)
                 {
-                    rendering::Material &material = renderer->render.material_instances[pair.material_instances[k].handle];
+                    rendering::Material &material = get_material_instance(pair.material_instances[k], *renderer);
                     material.instanced_vertex_attributes[j].instance_buffer_handle = instance_buffer_handle;
                 }
             }
         }
     }
 
-    // Zeroes all counts and frees all memory allocated for the "Scene"
-    static void _free_scene(Scene& scene)
+    static void free_scene(SceneHandle handle)
     {
+        SceneManager *scene_manager = handle.manager;
+        i32 internal_handle = scene_manager->_internal_scene_handles[handle.handle - 1];
+        Scene &scene = scene_manager->scenes[internal_handle];
         if(scene.valid)
         {
-            scene.renderer->render.material_instance_count = 0;
-        
-            if (scene.entity_count > 0)
+			scene.valid = false;
+
+			if (scene.entity_count > 0)
             {
                 scene.entity_count = 0;
                 scene.transform_component_count = 0;
@@ -276,29 +229,38 @@ namespace scene
                 }
 
                 rendering::free_all_instance_buffers(*scene.renderer);
-            
+                rendering::free_material_instance_array(scene.material_array_handle, *scene.scene_manager->renderer);
                 scene.particle_system_component_count = 0;
-                scene.material_count = 0;
                 scene.light_component_count = 0;
                 scene.current_internal_handle = 0;
                 clear(&scene.memory_arena);
             }
-            
-            scene.valid = false;
-        }
-    }
 
-    static void free_scene(SceneHandle handle)
-    {
-        Scene &scene = handle.manager->scenes[handle.manager->_internal_scene_handles[handle.handle - 1]];
-        _free_scene(scene);
-        handle.manager->scene_loaded = true;
+            
+            scene_manager->_internal_scene_handles[handle.handle - 1] = -1;
+            
+            if(internal_handle < scene_manager->scene_count - 1)
+            {
+                scene_manager->scenes[internal_handle] = scene_manager->scenes[scene_manager->scene_count - 1];
+                for(i32 i = 0; i < global_max_scenes; i++)
+                {
+                    if(scene_manager->_internal_scene_handles[i] == scene_manager->scene_count - 1)
+                    {
+                        scene_manager->_internal_scene_handles[i] = internal_handle;
+                        break;
+                    }
+                }
+            }
+        
+            scene_manager->scene_count--;
+            scene_manager->scene_loaded = false;
+        }
     }
 
     static void load_scene(SceneHandle handle, u64 load_flags = SceneLoadFlags::FREE_CURRENT_INSTANCE_BUFFERS)
     {
         SceneManager *scene_manager = handle.manager;
-        if(scene_manager->loaded_scene)
+        if(scene_manager->scene_loaded)
         {
             if(load_flags & SceneLoadFlags::FREE_CURRENT_INSTANCE_BUFFERS)
             {
@@ -307,16 +269,17 @@ namespace scene
 
             if(load_flags & SceneLoadFlags::FREE_CURRENT_SCENE)
             {
-                _free_scene(*scene_manager->loaded_scene);
+                free_scene(scene_manager->loaded_scene);
+                scene_manager->loaded_scene = { -1 };
             }
         }
-
+        
         Scene &scene = get_scene(handle);
         assert(scene.valid);
         
         allocate_instance_buffers(scene);
         scene_manager->scene_loaded = true;
-        scene_manager->loaded_scene = &scene;
+        scene_manager->loaded_scene = handle;
     }
         
     i32 _unused_entity_handle(Scene &scene)
@@ -899,7 +862,7 @@ namespace scene
             {
                 render.is_new_version = true;
                 render.v2.buffer_handle = templ.render.v2.buffer_handle;
-                render.v2.material_handle = rendering::create_material_instance(*scene.renderer, templ.render.v2.material_handle);
+                render.v2.material_handle = rendering::create_material_instance(*scene.renderer, templ.render.v2.material_handle, scene.material_array_handle);
                 render.casts_shadows = templ.render.casts_shadows;
                 
                 for(i32 i = 0; i < templ.render.v2.render_pass_count; i++)
@@ -909,9 +872,7 @@ namespace scene
             }
             else
             {
-                render.mesh_handle = templ.render.mesh_handle;
-                render.material_handle = _create_material(templ.render.material_handle, scene);
-                render.casts_shadows = templ.render.casts_shadows;
+                assert(false);
             }
         }
         
@@ -1014,11 +975,8 @@ namespace scene
             for(i32 index = entity.render_handle.handle; index < scene.render_component_count - 1; index++)
             {
                 scene.render_components[index] = scene.render_components[index + 1];
-                scene.material_instances[index] = scene.material_instances[index + 1];
-                scene.render_components[index].material_handle.handle--;
             }
             scene.render_component_count--;
-            scene.material_count--;
             return entity.render_handle.handle;
         }
         return -1;
@@ -1234,39 +1192,12 @@ namespace scene
         return _get_light_comp(handle, scene);
     }
     
-    static MaterialHandle _create_material(MaterialHandle material_to_copy, Scene &scene)
-    {
-        scene.material_instances[scene.material_count] = scene.renderer->materials[material_to_copy.handle];
-        return { scene.material_count++ };
-    }
-
-    static MaterialHandle create_material(MaterialHandle material_to_copy, SceneHandle scene_handle)
-    {
-        Scene &scene = get_scene(scene_handle);
-        return _create_material(material_to_copy, scene);
-    }
-
     static Camera & get_scene_camera(SceneHandle handle)
     {
         i32 real_handle = handle.manager->_internal_scene_handles[handle.handle - 1];
         return handle.manager->scenes[real_handle].camera;
     }
     
-    static Material& _get_material(EntityHandle handle, Scene &scene)
-    {
-        i32 internal_handle = scene._internal_handles[handle.handle - 1];
-        assert(internal_handle != -1);
-        
-        Entity &entity = scene.entities[internal_handle];
-        return scene.material_instances[entity.render_handle.handle];
-    }
-
-    static Material& get_material(EntityHandle handle, SceneHandle scene_handle)
-    {
-        Scene &scene = get_scene(scene_handle);
-        return _get_material(handle, scene);
-    }
-
 	static void set_uniform_value(EntityHandle handle, const char* name, r32 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);

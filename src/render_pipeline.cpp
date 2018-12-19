@@ -18,7 +18,57 @@ namespace rendering
         assert(false);
         return -1;
     }
-    
+
+
+    static MaterialInstanceArrayHandle allocate_material_instance_array(Renderer &renderer, i32 size = 2056)
+    {
+        i32 internal_handle = _find_next_internal_handle(renderer.render.current_material_instance_array_index, MAX_MATERIAL_INSTANCE_ARRAYS, renderer.render._internal_material_instance_array_handles);
+        if(internal_handle == -1)
+        {
+            internal_handle = _find_next_internal_handle(0, renderer.render.current_material_instance_array_index, renderer.render._internal_material_instance_array_handles);
+        }
+
+        assert(internal_handle != -1);
+
+        // Set the currently used index for less overhead later when looking for the next free index
+        renderer.render.current_material_instance_array_index = internal_handle + 1;
+        if(renderer.render.current_material_instance_array_index == MAX_MATERIAL_INSTANCE_ARRAYS)
+            renderer.render.current_material_instance_array_index = 0;
+        
+        i32 real_handle = renderer.render.material_instance_array_count++;
+        renderer.render._internal_material_instance_array_handles[internal_handle] = real_handle;
+        renderer.render.material_instance_arrays[real_handle] = (Material*)malloc(size * sizeof(Material));
+        
+        MaterialInstanceArrayHandle handle;
+        handle.handle = internal_handle + 1;
+        return handle;
+    }
+
+    static void free_material_instance_array(rendering::MaterialInstanceArrayHandle handle, Renderer &renderer)
+    {
+        i32 real_handle = renderer.render._internal_material_instance_array_handles[handle.handle - 1];
+
+        free(renderer.render.material_instance_arrays[real_handle]);
+        renderer.render.material_instance_arrays[real_handle] = nullptr;
+        
+        renderer.render._internal_material_instance_array_handles[handle.handle - 1] = -1;
+        
+        if(real_handle < renderer.render.material_instance_array_count - 1)
+        {
+            renderer.render.material_instance_arrays[real_handle] = renderer.render.material_instance_arrays[renderer.render.material_instance_array_count - 1];
+            
+            for(i32 i = 0; i < MAX_MATERIAL_INSTANCE_ARRAYS; i++)
+            {
+                if(renderer.render._internal_material_instance_array_handles[i] == renderer.render.material_instance_array_count - 1)
+                {
+                    renderer.render._internal_material_instance_array_handles[i] = real_handle;
+                }
+            }
+        }
+        
+        renderer.render.material_instance_array_count--;
+    }
+
     static InstanceBufferHandle allocate_instance_buffer(ValueType type, i32 instance_max, Renderer &renderer)
     {
         InstanceBufferHandle handle;
