@@ -6,7 +6,7 @@
 #define MAX_INSTANCING_PAIRS 128
 
 #define UI_COORD_DIMENSION 1000.0f
-
+#define MAX_MATERIAL_INSTANCE_ARRAYS 8
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #ifdef _WIN32
@@ -547,6 +547,7 @@ struct ShaderInfo
 struct MaterialHandle
 {
 	i32 handle;
+    rendering::MaterialInstanceArrayHandle array_handle;
 };
 
 struct TextureHandle
@@ -1108,8 +1109,10 @@ struct Renderer
 		rendering::Material *materials;
 		i32 material_count;
 
-		rendering::Material *material_instances;
-		i32 material_instance_count;
+		rendering::Material *material_instance_arrays[MAX_MATERIAL_INSTANCE_ARRAYS];
+		i32 material_instance_array_counts[MAX_MATERIAL_INSTANCE_ARRAYS];
+        i32 _internal_material_instance_array_handles[MAX_MATERIAL_INSTANCE_ARRAYS];
+        i32 material_instance_array_count;
 		
 		rendering::RegisterBufferInfo *buffers;
 		i32 buffer_count;

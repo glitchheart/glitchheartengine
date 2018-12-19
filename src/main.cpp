@@ -401,7 +401,16 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     renderer.render.point_lights = push_array(&renderer.mesh_arena, global_max_point_lights, PointLight);
     
     renderer.render.materials = push_array(&renderer.mesh_arena, global_max_materials, rendering::Material);
-    renderer.render.material_instances = push_array(&renderer.mesh_arena, global_max_materials, rendering::Material);
+    //renderer.render.material_instances = push_array(&renderer.mesh_arena, global_max_materials, rendering::Material);
+
+    // Set all material instance values to their defaults
+    for(i32 = 0; i < MAX_MATERIAL_INSTANCE_ARRAYS; i++)
+    {
+        renderer.render._internal_material_instance_handles[i] = -1;
+        renderer.render.material_instance_array_counts[i] = 0;
+        renderer.render.material_instance_arrays[i] = nullptr;
+    }
+    
     renderer.render.shaders = push_array(&renderer.mesh_arena, global_max_shaders, rendering::Shader);
     renderer.render._internal_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
     renderer.render._current_internal_buffer_handle = 0;
