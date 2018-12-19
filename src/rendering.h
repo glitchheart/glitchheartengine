@@ -1113,6 +1113,7 @@ struct Renderer
 		i32 material_instance_array_counts[MAX_MATERIAL_INSTANCE_ARRAYS];
         i32 _internal_material_instance_array_handles[MAX_MATERIAL_INSTANCE_ARRAYS];
         i32 material_instance_array_count;
+        i32 current_material_instance_array_index;
 		
 		rendering::RegisterBufferInfo *buffers;
 		i32 buffer_count;

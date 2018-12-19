@@ -1102,22 +1102,25 @@
 				}
 			}
 
-			for(i32 i = 0; i < renderer.render.material_instance_count; i++)
-			{
-				Material &material = renderer.render.material_instances[i];
-				if (material.shader.handle == shader.index)
-				{
-					Material new_material = {};
-                    new_material.shader = material.shader;
-					get_updated_material(&new_material, material, shader, renderer);
-					memcpy(new_material.instanced_vertex_attributes, material.instanced_vertex_attributes, material.instanced_vertex_attribute_count * sizeof(VertexAttributeInstanced));
-					new_material.instanced_vertex_attribute_count = material.instanced_vertex_attribute_count;
-					renderer.render.material_instances[i] = new_material;
-				}
-			}
+            for(i32 i = 0; i < renderer.render.material_instance_array_count; i++)
+            {
+                for(i32 j = 0; j < renderer.render.material_instance_array_counts[i]; j++)
+                {
+                    Material &material = renderer.render.material_instance_arrays[i][j];
+                    if (material.shader.handle == shader.index)
+                    {
+                        Material new_material = {};
+                        new_material.shader = material.shader;
+                        get_updated_material(&new_material, material, shader, renderer);
+                        memcpy(new_material.instanced_vertex_attributes, material.instanced_vertex_attributes, material.instanced_vertex_attribute_count * sizeof(VertexAttributeInstanced));
+                        new_material.instanced_vertex_attribute_count = material.instanced_vertex_attribute_count;
+                        renderer.render.material_instance_arrays[i][j] = new_material;
+                    }
+                }
+            }
 		}
     
-		static MaterialHandle create_material(Renderer& renderer, ShaderHandle shader_handle, MaterialInstanceArrayHandle array_handle)
+		static MaterialHandle create_material(Renderer& renderer, ShaderHandle shader_handle)
 		{
 			Material& material = renderer.render.materials[renderer.render.material_count];
 			material.shader = shader_handle;
@@ -1126,12 +1129,7 @@
         
 			set_shader_values(material, shader, renderer);
 		
-			return { renderer.render.material_count++, array_handle };
-		}
-
-		static Material *get_material(MaterialInstanceHandle instance_handle, Renderer &renderer)
-		{
-			return &renderer.render.material_instances[instance_handle.handle];
+			return { renderer.render.material_count++ };
 		}
 
 		static void load_texture(const char* full_texture_path, Renderer& renderer, TextureFiltering filtering, i32* handle = 0)
@@ -1794,18 +1792,21 @@
 			}
 		}
     
-		static MaterialInstanceHandle create_material_instance(Renderer& renderer, MaterialHandle material_handle)
+		static MaterialInstanceHandle create_material_instance(Renderer& renderer, MaterialHandle material_handle, MaterialInstanceArrayHandle array_handle)
 		{
 			Material& material = renderer.render.materials[material_handle.handle];
-			renderer.render.material_instances[renderer.render.material_instance_count] = material;
-			renderer.render.material_instances[renderer.render.material_instance_count].source_material = material_handle;
+            i32 internal_index = renderer.render._internal_material_instance_array_handles[array_handle.handle -1];
+            i32 handle = renderer.render.material_instance_array_counts[internal_index]++;
+            
+			renderer.render.material_instance_arrays[internal_index][handle] = material;
+		    renderer.render.material_instance_arrays[internal_index][handle].source_material = material_handle;
         
-			return { renderer.render.material_instance_count++ };
+			return { handle, array_handle };
 		}
 
 		static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, r32 value)
 		{
-			Material& material = renderer.render.material_instances[handle.handle];
+			Material& material = get_material_instance(handle, renderer);
 
 			for(i32 i = 0; i < material.instanced_vertex_attribute_count; i++)
 			{
@@ -1832,7 +1833,7 @@
 
 		static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, math::Vec2 value)
 		{
-			Material& material = renderer.render.material_instances[handle.handle];
+			Material& material = get_material_instance(handle, renderer);
 
 			for(i32 i = 0; i < material.instanced_vertex_attribute_count; i++)
 			{
@@ -1859,7 +1860,7 @@
 
 		static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, math::Vec3 value)
 		{
-			Material& material = renderer.render.material_instances[handle.handle];
+			Material& material = get_material_instance(handle, renderer);
 
 			for(i32 i = 0; i < material.uniform_value_count; i++)
 			{
@@ -1875,7 +1876,7 @@
 
 		static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, math::Vec4 value)
 		{
-			Material& material = renderer.render.material_instances[handle.handle];
+			Material& material = get_material_instance(handle, renderer);
 
 			for(i32 i = 0; i < material.instanced_vertex_attribute_count; i++)
 			{
@@ -1902,7 +1903,7 @@
 
 		static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, i32 value)
 		{
-			Material& material = renderer.render.material_instances[handle.handle];
+			Material& material = get_material_instance(handle, renderer);
 
 			for(i32 i = 0; i < material.instanced_vertex_attribute_count; i++)
 			{
@@ -1945,7 +1946,7 @@
 
 		static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, math::Mat4 value)
 		{
-			Material& material = renderer.render.material_instances[handle.handle];
+			Material& material = get_material_instance(handle, renderer);
 
 			for(i32 i = 0; i < material.instanced_vertex_attribute_count; i++)
 			{
@@ -1975,7 +1976,7 @@
 
 		static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, TextureHandle value)
 		{
-			Material& material = renderer.render.material_instances[handle.handle];
+			Material& material = get_material_instance(handle, renderer);
 
 			for(i32 i = 0; i < material.uniform_value_count; i++)
 			{
@@ -1991,7 +1992,7 @@
 
 		static void set_uniform_value(Renderer& renderer, MaterialInstanceHandle handle, const char* name, MSTextureHandle value)
 		{
-			Material& material = renderer.render.material_instances[handle.handle];
+			Material& material = get_material_instance(handle, renderer);
 
 			for(i32 i = 0; i < material.uniform_value_count; i++)
 			{
@@ -2009,7 +2010,7 @@
     
 		static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, r32 value)
 		{
-			Material &material = renderer.render.material_instances[handle.handle];
+			Material &material = get_material_instance(handle, renderer);
 
 			for(i32 i = 0; i < material.array_count; i++)
 			{
@@ -2037,7 +2038,7 @@
 
 		static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec2 value)
 		{
-			Material &material = renderer.render.material_instances[handle.handle];
+			Material &material = get_material_instance(handle, renderer);
 
 			for(i32 i = 0; i < material.array_count; i++)
 			{
@@ -2064,7 +2065,7 @@
     
 		static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec3 value)
 		{
-			Material &material = renderer.render.material_instances[handle.handle];
+			Material &material = get_material_instance(handle, renderer);
 
 			for(i32 i = 0; i < material.array_count; i++)
 			{
@@ -2090,7 +2091,7 @@
 
 		static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec4 value)
 		{
-			Material &material = renderer.render.material_instances[handle.handle];
+			Material &material = get_material_instance(handle, renderer);
 
 			for(i32 i = 0; i < material.array_count; i++)
 			{
@@ -2117,7 +2118,7 @@
     
 		static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, i32 value)
 		{
-			Material &material = renderer.render.material_instances[handle.handle];
+			Material &material = get_material_instance(handle, renderer);
 
 			for(i32 i = 0; i < material.array_count; i++)
 			{
@@ -2150,7 +2151,7 @@
 
 		static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Mat4 value)
 		{
-			Material &material = renderer.render.material_instances[handle.handle];
+			Material &material = get_material_instance(handle, renderer);
 
 			for(i32 i = 0; i < material.array_count; i++)
 			{
@@ -2177,7 +2178,7 @@
 		// @Incomplete: Add MSTexture support for arrays
 		static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, rendering::TextureHandle value)
 		{
-			Material &material = renderer.render.material_instances[handle.handle];
+			Material &material = get_material_instance(handle, renderer);
 
 			for(i32 i = 0; i < material.array_count; i++)
 			{

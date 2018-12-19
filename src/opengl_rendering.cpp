@@ -3205,7 +3205,7 @@ static void render_buffer(rendering::RenderCommand& command, const rendering::Re
 	bind_vertex_array(buffer.vao, render_state);
 
     ShaderGL gl_shader;
-    rendering::Material& material = renderer.render.material_instances[command.material.handle];
+    rendering::Material& material = get_material_instance(command.material, renderer);
     rendering::Shader &shader_info = renderer.render.shaders[material.shader.handle];
     
     // If we specified a custom shader, use it

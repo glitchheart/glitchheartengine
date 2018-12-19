@@ -62,8 +62,6 @@ static void load_shader(MemoryArena* arena, const char* full_shader_path, Render
     end_temporary_memory(temp_mem);
 }
 
-
-
 static void load_texture(const char* full_texture_path, Renderer& renderer, TextureFiltering filtering, i32* handle = 0)
 {
     TextureData* texture_data = &renderer.texture_data[renderer.texture_count];
@@ -1939,7 +1937,7 @@ static void update_lighting_for_material(BatchedCommand &render_command, Rendere
                 if(render.is_new_version)
                 {
                     QueuedRenderCommand *command = nullptr;
-                    rendering::Material &instance = renderer.render.material_instances[render.v2.material_handle.handle];
+                    rendering::Material &instance = get_material_instance(render.v2.material_handle, renderer);
                     
                     for(i32 i = 0; i < normal_count; i++)
                     {
@@ -2016,16 +2014,16 @@ static void update_lighting_for_material(BatchedCommand &render_command, Rendere
         QueuedRenderCommand &queued_command = queued_commands[index];
         
         BatchedCommand &first_command = queued_command.commands[0];
-        rendering::Material *material = rendering::get_material(first_command.material_handle, renderer);
+        rendering::Material &material = get_material_instance(first_command.material_handle, renderer);
 
-        if(material->lighting.receives_light)
+        if(material.lighting.receives_light)
             update_lighting_for_material(first_command, renderer);
 
         for(i32 batch_index = 0; batch_index < queued_command.count; batch_index++)
         {
             BatchedCommand &render_command = queued_command.commands[batch_index];
 
-            rendering::Material &mat_instance = renderer.render.material_instances[render_command.material_handle.handle];
+            rendering::Material &mat_instance = get_material_instance(render_command.material_handle, renderer);
 
             if (mat_instance.instanced_vertex_attribute_count == 0)
             {
@@ -2110,7 +2108,7 @@ static void update_lighting_for_material(BatchedCommand &render_command, Rendere
         // Push the command to the shadow buffer if it casts shadows
         if(first_command.casts_shadows)
         {
-            rendering::push_instanced_buffer_to_shadow_pass(renderer, queued_command.count, queued_command.buffer_handle, material->instanced_vertex_attributes, material->instanced_vertex_attribute_count);
+            rendering::push_instanced_buffer_to_shadow_pass(renderer, queued_command.count, queued_command.buffer_handle, material.instanced_vertex_attributes, material.instanced_vertex_attribute_count);
         }
         
         // Push the command to the correct render passes

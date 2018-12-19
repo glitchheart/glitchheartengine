@@ -217,7 +217,14 @@ namespace scene
         i32 max_entity_count;
         
         EntityTemplateState *template_state;
+        SceneManager *scene_manager;
         Renderer* renderer;
+    };
+
+    struct SceneHandle
+    {
+        i32 handle;
+        SceneManager *manager;
     };
 
     struct SceneManager
@@ -227,24 +234,18 @@ namespace scene
         MemoryArena arena;
 
         b32 scene_loaded;
-        Scene *loaded_scene;
+        SceneHandle loaded_scene;
         Scene *scenes;
         i32 scene_count;
         i32 *_internal_scene_handles;
         i32 current_internal_index;
     };
 
-    struct SceneHandle
-    {
-        i32 handle;
-        SceneManager *manager;
-    };
-
     static SceneManager create_scene_manager(Renderer &renderer)
     {
         SceneManager scene_manager = {};
         scene_manager.current_internal_index = 0;
-        scene_manager.loaded_scene = nullptr;
+        scene_manager.loaded_scene = { -1 };
         scene_manager.scenes = push_array(&scene_manager.arena, global_max_scenes, scene::Scene);
         scene_manager._internal_scene_handles = push_array(&scene_manager.arena, global_max_scenes, i32);
 
@@ -259,6 +260,13 @@ namespace scene
        
         scene_manager.renderer = &renderer;
         return scene_manager;
+    }
+
+    static Scene &get_scene(SceneHandle handle)
+    {
+        assert(handle.handle > 0);
+        SceneManager *manager = handle.manager;
+        return manager->scenes[manager->_internal_scene_handles[handle.handle - 1]];
     }
 }
 
