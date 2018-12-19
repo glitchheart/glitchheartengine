@@ -11,9 +11,15 @@ namespace rendering
 		i32 handle;
     };
 
+    struct MaterialInstanceArrayHandle
+    {
+        i32 handle;
+    };
+
     struct MaterialInstanceHandle
     {
 		i32 handle;
+        MaterialInstanceArrayHandle array_handle;
     };
 
     struct MaterialHandle
@@ -289,7 +295,7 @@ namespace rendering
         
 		Material () {}
     };
-
+    
 	HANDLE(Buffer);
     HANDLE(InternalBuffer);
 	

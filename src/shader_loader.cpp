@@ -830,10 +830,15 @@
 			renderer.render.light_space_matrix = projection_matrix * view_matrix;
 		}
 
+        static inline Material & get_material_instance(MaterialInstanceHandle handle, Renderer &renderer)
+        {
+            i32 array_index = renderer.render._internal_material_instance_array_handles[handle.array_handle.handle - 1];
+            return renderer.render.material_instance_arrays[array_index][handle.handle];
+        }
     
 		static UniformValue *get_array_variable_mapping(MaterialInstanceHandle handle, const char *array_name, UniformMappingType type, Renderer &renderer)
 		{
-			Material &material = renderer.render.material_instances[handle.handle];
+			Material &material = get_material_instance(handle, renderer);;
 
 			for(i32 i = 0; i < material.array_count; i++)
 			{
@@ -870,7 +875,7 @@
 
 		static UniformValue *get_mapping(MaterialInstanceHandle handle, UniformMappingType type, Renderer &renderer)
 		{
-			Material &material = renderer.render.material_instances[handle.handle];
+			Material &material = get_material_instance(handle, renderer);
 			return mapping(material, type);
 		}
 
@@ -1112,7 +1117,7 @@
 			}
 		}
     
-		static MaterialHandle create_material(Renderer& renderer, ShaderHandle shader_handle)
+		static MaterialHandle create_material(Renderer& renderer, ShaderHandle shader_handle, MaterialInstanceArrayHandle array_handle)
 		{
 			Material& material = renderer.render.materials[renderer.render.material_count];
 			material.shader = shader_handle;
@@ -1121,7 +1126,7 @@
         
 			set_shader_values(material, shader, renderer);
 		
-			return { renderer.render.material_count++ };
+			return { renderer.render.material_count++, array_handle };
 		}
 
 		static Material *get_material(MaterialInstanceHandle instance_handle, Renderer &renderer)

@@ -5,7 +5,7 @@ namespace scene
     static Scene create_scene(Renderer &renderer, EntityTemplateState &template_state, i32 initial_entity_array_size);
     static SceneHandle create_scene(SceneManager *scene_manager, i32 initial_entity_array_size);
     static void free_scene(SceneHandle scene);
-    static void load_scene(SceneHandle handle);
+    static void load_scene(SceneHandle handle, u64 scene_load_flags);
     
     // Scene handle
     static RenderComponent& add_render_component(SceneHandle scene, EntityHandle entity_handle, b32 cast_shadows);
@@ -295,15 +295,25 @@ namespace scene
         handle.manager->scene_loaded = true;
     }
 
-    static void load_scene(SceneHandle handle)
+    static void load_scene(SceneHandle handle, u64 load_flags = SceneLoadFlags::FREE_CURRENT_INSTANCE_BUFFERS)
     {
         SceneManager *scene_manager = handle.manager;
         if(scene_manager->loaded_scene)
         {
-            _free_scene(*scene_manager->loaded_scene);
+            if(load_flags & SceneLoadFlags::FREE_CURRENT_INSTANCE_BUFFERS)
+            {
+                rendering::free_all_instance_buffers(*scene_manager->renderer);
+            }
+
+            if(load_flags & SceneLoadFlags::FREE_CURRENT_SCENE)
+            {
+                _free_scene(*scene_manager->loaded_scene);
+            }
         }
 
         Scene &scene = get_scene(handle);
+        assert(scene.valid);
+        
         allocate_instance_buffers(scene);
         scene_manager->scene_loaded = true;
         scene_manager->loaded_scene = &scene;

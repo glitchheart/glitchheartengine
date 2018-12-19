@@ -180,6 +180,12 @@ namespace scene
         i32 template_count;
     };
 
+    enum SceneLoadFlags
+    {
+        FREE_CURRENT_INSTANCE_BUFFERS = 1 << 0,
+        FREE_CURRENT_SCENE = 1 << 1
+    };
+    
     struct Scene
     {
         b32 valid;
@@ -205,9 +211,8 @@ namespace scene
         
         LightComponent *light_components;
         i32 light_component_count;
-        
-        Material *material_instances;
-        i32 material_count;
+
+        rendering::MaterialInstanceArrayHandle material_array_handle;
         
         i32 max_entity_count;
         
