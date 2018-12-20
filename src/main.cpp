@@ -612,15 +612,6 @@ int main(int argc, char **args)
     char *temp_game_library_path = "libgame_temp.so";
 #endif
 
-#if DEBUG
-    MemoryArena debug_arena = {};
-
-    game_memory.debug_state = push_struct(&debug_arena, DebugState);
-
-    game_memory.debug_state->debug_memory_info.debug_rect.rect_origin = math::Vec2(50, 780);
-    game_memory.debug_state->debug_memory_info.debug_rect.rect_size = math::Vec2(300, 0);
-#endif
-
     ConfigData config_data;
     load_config("../.config", &config_data, &platform_state->perm_arena);
 
