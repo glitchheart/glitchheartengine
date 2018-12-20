@@ -102,6 +102,11 @@ inline umm get_effective_size_for(MemoryArena* arena, umm size_init, PushParams 
 #define push_size(arena, size, type, ...) (type *)push_size_(arena, (umm)size, ## __VA_ARGS__)
 void* push_size_(MemoryArena* arena, umm size_init, PushParams params = default_push_params())
 {
+    debug("size: %zd\n", size_init);
+    if(size_init == 257)
+    {
+        debug("HEY\n");
+    }
     void* result = nullptr;
     
     umm size = 0;
@@ -204,6 +209,52 @@ static void clear(MemoryArena *arena)
     {
         free_last_block(arena);
     }
+}
+
+static void move_arena(MemoryArena* src, MemoryArena* dst)
+{
+    assert(src->temp_count == 0);
+    
+    PlatformMemoryBlock* cur_src_block = src->current_block;
+    
+    i32 blocks = 0;
+    
+    while(cur_src_block)
+    {
+        blocks++;
+        if(!cur_src_block->prev)
+        {
+            break;
+        }
+        
+        cur_src_block = cur_src_block->prev;
+    }
+    
+    PlatformMemoryBlock* last_dst_block = nullptr;
+    
+    for(i32 i = 0; i < blocks; i++)
+    {
+        dst->current_block = cur_src_block;
+        dst->current_block->flags = cur_src_block->flags;
+        dst->current_block->size = cur_src_block->size;
+        dst->current_block->used = cur_src_block->used;
+        dst->current_block->prev = last_dst_block;
+        dst->current_block->base = cur_src_block->base;
+        
+        if(last_dst_block)
+        {
+            last_dst_block->next = dst->current_block;
+        }
+        last_dst_block = dst->current_block;
+        cur_src_block = cur_src_block->next;
+        cur_src_block->prev = 0;
+    }
+
+    src->current_block = nullptr;
+    
+    dst->allocation_flags = src->allocation_flags;
+    dst->minimum_block_size = src->minimum_block_size;
+    dst->temp_count = src->temp_count;
 }
 
 static void copy_arena(MemoryArena* src, MemoryArena* dst)
