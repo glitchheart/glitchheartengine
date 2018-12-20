@@ -38,13 +38,15 @@ struct TrueTypeFontInfo
 	r32 largest_character_height;
 	stbtt_fontinfo info;
 	stbtt_packedchar char_data['~' - ' '];
-};
 
-struct FontData
-{
-	char* path;
-	i32 size;
-	char* name;
+    struct
+    {
+        i32 width;
+        i32 height;
+    } resolution_loaded_for;
+
+    char path[256];
+    rendering::TextureHandle texture;
 };
 
 struct DirectionalLight
@@ -75,8 +77,6 @@ enum ShaderType
     SHADER_DEPTH_INSTANCED,
     SHADER_QUAD,
     SHADER_TEXTURE_QUAD,
-    SHADER_STANDARD_FONT,
-    SHADER_3D_TEXT,
     SHADER_SPRITESHEET,
     SHADER_FRAME_BUFFER,
     SHADER_SIMPLE_MODEL,
@@ -90,8 +90,6 @@ enum ShaderType
 enum RenderCommandType
 {
     RENDER_COMMAND_LINE,
-    RENDER_COMMAND_TEXT,
-    RENDER_COMMAND_3D_TEXT,
     RENDER_COMMAND_QUAD,
     
     RENDER_COMMAND_SPOTLIGHT,
@@ -107,7 +105,6 @@ enum RenderCommandType
     RENDER_COMMAND_DEPTH_TEST,
     RENDER_COMMAND_PARTICLES,
     RENDER_COMMAND_CURSOR,
-    RENDER_COMMAND_SUN_LIGHT,
     
     RENDER_COMMAND_COUNT
 };
@@ -636,17 +633,6 @@ struct QuadInfo
 	math::Rect clip_rect;
 };
 
-struct TextInfo
-{
-	math::Vec3 position;
-	RenderInfo render_info;
-    
-	i32 font_handle;
-	u64 alignment_flags;
-	char* text;
-	r32 scale;
-};
-
 enum CommandBlendMode
 {
     CBM_ONE,
@@ -696,23 +682,6 @@ struct RenderCommand
 			r32 line_width;
 			math::Rgba color; // @Cleanup: REMOVE!
 		} line;
-		struct
-		{
-			char text[512];
-			math::Vec3 position;
-			i32 font_handle;
-			math::Rgba color; // @Cleanup: REMOVE!
-			u64 alignment_flags;
-			r32 scale;
-			i32 z_layer;
-		} text;
-		struct
-		{
-			char text[512];
-			i32 font_handle;
-			u64 alignment_flags;
-			math::Rgba color; // @Cleanup: REMOVE!
-		} text_3d;
 		struct
 		{
 			math::Rgba color;
@@ -848,13 +817,6 @@ struct RenderCommand
             
 			CommandBlendMode blend_mode;
 		} particles;
-		struct
-		{
-			math::Rgba specular_color;
-			math::Rgba diffuse_color;
-			math::Rgba ambient_color;
-			math::Vec3 position;
-		} sun_light;
 	};
 };
 
@@ -880,9 +842,26 @@ enum TextureFiltering
     NEAREST
 };
 
+enum TextureWrap
+{
+    REPEAT,
+    CLAMP_TO_EDGE,
+    CLAMP_TO_BORDER,
+};
+
+enum TextureFormat
+{
+    RGBA,
+    RGB,
+    RED
+};
+
 struct TextureData
 {
 	TextureFiltering filtering;
+    TextureWrap wrap;
+    TextureFormat format;
+    
 	i32 handle;
 	char* name;
 	i32 width;
@@ -946,7 +925,7 @@ struct ParticleSystemInfo;
 
 struct RenderState;
 
-typedef void (*LoadTexture)(TextureData &texture_data, RenderState *render_state, Renderer *renderer);
+typedef void (*LoadTexture)(TextureData &texture_data, RenderState *render_state, Renderer *renderer, b32 free_buffer);
 typedef void (*CreateFramebuffer)(rendering::FramebufferInfo &framebuffer_info, RenderState *render_state, Renderer *renderer);
 typedef rendering::InternalBufferHandle (*CreateInstanceBuffer)(size_t buffer_size, rendering::BufferUsage usage, RenderState *render_state, Renderer *renderer);
 typedef void (*DeleteInstanceBuffer)(rendering::InternalBufferHandle handle, RenderState *render_state, Renderer *renderer);
@@ -981,9 +960,6 @@ struct Renderer
 	RenderCommand *commands;
 	i32 command_count;
     
-	RenderCommand *ui_commands;
-	i32 ui_command_count;
-    
 	MemoryArena command_arena;
     
 	BufferData *buffers;
@@ -1015,7 +991,7 @@ struct Renderer
 		ParticleSystemInfo *particle_systems;
 		i32 particle_system_count;
         
-		RandomSeries entropy;
+		RandomSeries* entropy;
 	} particles;
     
 	TextureData *texture_data;
@@ -1063,8 +1039,6 @@ struct Renderer
 	i32 available_resolutions_count;
 	i32 current_resolution_index;
     
-	Resolution ui_reference_resolution;
-    
 	r32 scale_x;
 	r32 scale_y;
     
@@ -1072,9 +1046,6 @@ struct Renderer
 	r32 line_width;
     
 	b32 show_mouse_cursor;
-    
-	FontData *fonts;
-	i32 font_count;
     
 	TrueTypeFontInfo *tt_font_infos;
 	i32 tt_font_count;
@@ -1102,6 +1073,9 @@ struct Renderer
         rendering::ShaderHandle bloom_shader;
         rendering::ShaderHandle blur_shader;
         rendering::ShaderHandle hdr_shader;
+        rendering::ShaderHandle ui_quad_shader;
+        rendering::ShaderHandle textured_ui_quad_shader;
+        rendering::ShaderHandle font_shader;
         
 		i32 shaders_to_reload[8];
 		i32 shaders_to_reload_count;
@@ -1175,6 +1149,34 @@ struct Renderer
         rendering::FramebufferInfo framebuffers[32];
         i32 framebuffer_count;
 
+        struct
+        {
+            rendering::BufferHandle top_left_quad_buffer;
+            rendering::BufferHandle top_left_textured_quad_buffer;
+            rendering::BufferHandle top_right_quad_buffer;
+            rendering::BufferHandle top_right_textured_quad_buffer;
+            rendering::BufferHandle bottom_left_quad_buffer;
+            rendering::BufferHandle bottom_left_textured_quad_buffer;
+            rendering::BufferHandle bottom_right_quad_buffer;
+            rendering::BufferHandle bottom_right_textured_quad_buffer;
+            rendering::BufferHandle top_x_centered_quad_buffer;
+            rendering::BufferHandle top_x_centered_textured_quad_buffer;
+            rendering::BufferHandle bottom_x_centered_quad_buffer;
+            rendering::BufferHandle bottom_x_centered_textured_quad_buffer;
+            rendering::BufferHandle left_y_centered_quad_buffer;
+            rendering::BufferHandle left_y_centered_textured_quad_buffer;
+            rendering::BufferHandle right_y_centered_quad_buffer;
+            rendering::BufferHandle right_y_centered_textured_quad_buffer;
+            rendering::BufferHandle centered_quad_buffer;
+            rendering::BufferHandle centered_textured_quad_buffer;
+            rendering::RenderPass pass;
+            rendering::MaterialHandle material;
+            rendering::MaterialHandle textured_material;
+
+            rendering::MaterialHandle font_material;
+            rendering::BufferHandle font_buffer;
+        } ui;
+        
         MemoryArena render_pass_arena;
         
 		rendering::RenderCommand *render_commands;
@@ -1259,48 +1261,6 @@ struct LineData
 	r32 line_spacing;
 };
 
-static LineData get_line_size_data(const char *text, TrueTypeFontInfo font)
-{
-	math::Vec2 size;
-	r32 placeholder_y = 0.0;
-    
-	LineData line_data = {};
-	line_data.total_height = 0.0f;
-	line_data.line_count = 1;
-    
-	line_data.line_spacing = (r32)font.size + font.line_gap * font.scale;
-    
-	for(u32 i = 0; i < strlen(text); i++)
-    {
-        if(text[i] != '\n' && text[i] != '\r')
-        {
-            stbtt_aligned_quad quad;
-            stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
-                                text[i] - font.first_char, &line_data.line_sizes[line_data.line_count - 1].x, &placeholder_y, &quad, 1);
-        
-            if(quad.y1 - quad.y0 > size.y)
-            {
-                line_data.line_sizes[line_data.line_count - 1].y = quad.y1 - quad.y0;
-            }
-        
-            i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
-            line_data.line_sizes[line_data.line_count - 1].x += (r32)kerning * font.scale;
-        }
-        else
-        {
-            line_data.line_count++;
-        }
-    }
-
-	if(line_data.line_count == 1)
-    {
-        line_data.total_height = line_data.line_sizes[0].y;
-    }
-	else
-		line_data.total_height = (line_data.line_count - 1) * line_data.line_spacing;
-    
-	return line_data;
-}
 
 #define get_texture_size(handle) texture_size(handle, renderer)
 static math::Vec2i texture_size(i32 texture_handle, Renderer& renderer)
@@ -1311,6 +1271,11 @@ static math::Vec2i texture_size(i32 texture_handle, Renderer& renderer)
         return math::Vec2i(data.width, data.height);
     }
 	return math::Vec2i();
+}
+
+static math::Vec2i texture_size(rendering::TextureHandle texture_handle, Renderer& renderer)
+{
+    return get_texture_size(texture_handle.handle);
 }
 
 static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo font)
@@ -1356,6 +1321,50 @@ static TrueTypeFontInfo get_tt_font_info(Renderer& renderer, i32 handle)
 	assert(handle >= 0 && handle < renderer.tt_font_count);
 	return renderer.tt_font_infos[handle];
 }
+
+static LineData get_line_size_data(const char *text, TrueTypeFontInfo font)
+{
+    math::Vec2 size;
+    r32 placeholder_y = 0.0;
+    
+    LineData line_data = {};
+    line_data.total_height = 0.0f;
+    line_data.line_count = 1;
+    
+    line_data.line_spacing = (r32)font.size + font.line_gap * font.scale;
+    
+    for(u32 i = 0; i < strlen(text); i++)
+    {
+        if(text[i] != '\n' && text[i] != '\r')
+        {
+            stbtt_aligned_quad quad;
+            stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
+                                text[i] - font.first_char, &line_data.line_sizes[line_data.line_count - 1].x, &placeholder_y, &quad, 1);
+        
+            if(quad.y1 - quad.y0 > size.y)
+            {
+                line_data.line_sizes[line_data.line_count - 1].y = quad.y1 - quad.y0;
+            }
+        
+            i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
+            line_data.line_sizes[line_data.line_count - 1].x += (r32)kerning * font.scale;
+        }
+        else
+        {
+            line_data.line_count++;
+        }
+    }
+
+    if(line_data.line_count == 1)
+    {
+        line_data.total_height = line_data.line_sizes[0].y;
+    }
+    else
+        line_data.total_height = (line_data.line_count - 1) * line_data.line_spacing;
+    
+    return line_data;
+}
+
 
 static math::Vec2 get_text_size_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo font, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
 {

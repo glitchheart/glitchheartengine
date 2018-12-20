@@ -354,7 +354,11 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     renderer.particles._internal_handles = push_array(&renderer.particle_arena, global_max_particle_systems, i32);
     renderer.particles._tagged_removed = push_array(&renderer.particle_arena, global_max_particle_systems, i32);
     renderer.particles._tagged_removed_count = 0;
-    renderer.particles.entropy = random_seed(1234);
+
+    PushParams params = default_push_params();
+    params.alignment = math::multiple_of_number_uint(member_size(RandomSeries, state), 16);
+    renderer.particles.entropy = push_size(&renderer.particle_arena, sizeof(RandomSeries), RandomSeries, params);
+    random_seed(*renderer.particles.entropy, 1234);
 
     for (i32 index = 0; index < global_max_particle_systems; index++)
     {
@@ -365,7 +369,6 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     renderer.animation_controllers = push_array(&renderer.animation_arena, 64, AnimationController);
     renderer.spritesheet_animations = push_array(&renderer.animation_arena, global_max_spritesheet_animations, SpritesheetAnimation);
     renderer.commands = push_array(&renderer.command_arena, global_max_render_commands, RenderCommand);
-    renderer.ui_commands = push_array(&renderer.command_arena, global_max_ui_commands, RenderCommand);
     renderer.buffers = push_array(&renderer.buffer_arena, global_max_custom_buffers, BufferData);
     renderer.updated_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
     renderer.texture_data = push_array(&renderer.texture_arena, global_max_textures, TextureData);
@@ -375,7 +378,6 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     renderer.materials = push_array(&renderer.mesh_arena, global_max_materials, Material);
     renderer.meshes = push_array(&renderer.mesh_arena, global_max_meshes, Mesh);
     renderer.shader_data = push_array(&renderer.shader_arena, global_max_shaders, ShaderData);
-    renderer.fonts = push_array(&renderer.font_arena, global_max_fonts, FontData);
     renderer.tt_font_infos = push_array(&renderer.font_arena, global_max_fonts, TrueTypeFontInfo);
     renderer._internal_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
     renderer._current_internal_buffer_handle = 0;
@@ -450,6 +452,42 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     rendering::FramebufferHandle final_framebuffer = rendering::create_framebuffer(final_info, renderer);
     rendering::set_final_framebuffer(renderer, final_framebuffer);
 
+    renderer.render.ui.top_left_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::LEFT);
+    renderer.render.ui.top_left_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::LEFT, true);
+    renderer.render.ui.top_right_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::RIGHT);
+    renderer.render.ui.top_right_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::RIGHT, true);
+    renderer.render.ui.bottom_left_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM | rendering::UIAlignment::LEFT);
+    renderer.render.ui.bottom_left_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM | rendering::UIAlignment::LEFT, true);
+    renderer.render.ui.bottom_right_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM | rendering::UIAlignment::RIGHT);
+    renderer.render.ui.bottom_right_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM | rendering::UIAlignment::RIGHT, true);
+    renderer.render.ui.top_x_centered_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP);
+    renderer.render.ui.top_x_centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP, true);
+    renderer.render.ui.bottom_x_centered_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM);
+    renderer.render.ui.bottom_x_centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM, true);
+    renderer.render.ui.left_y_centered_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::LEFT);
+    renderer.render.ui.left_y_centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::LEFT, true);
+    renderer.render.ui.right_y_centered_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::RIGHT);
+    renderer.render.ui.right_y_centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::RIGHT, true);
+    renderer.render.ui.centered_quad_buffer = rendering::create_quad_buffer(renderer, 0);
+    renderer.render.ui.centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, 0, true);
+
+    rendering::create_ui_render_pass(renderer);
+    renderer.render.ui_quad_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/ui_quad.shd");
+    renderer.render.textured_ui_quad_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/ui_texture_quad.shd");
+    renderer.render.ui.material = rendering::create_material(renderer, renderer.render.ui_quad_shader);
+    renderer.render.ui.textured_material = rendering::create_material(renderer, renderer.render.textured_ui_quad_shader);
+
+    // Initialize font material
+    renderer.render.font_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/font.shd");
+    renderer.render.ui.font_material = rendering::create_material(renderer, renderer.render.font_shader);
+
+    rendering::RegisterBufferInfo font_info = rendering::create_register_buffer_info();
+
+    add_vertex_attrib(rendering::ValueType::FLOAT4, font_info);
+    font_info.usage = rendering::BufferUsage::DYNAMIC;
+
+    renderer.render.ui.font_buffer = rendering::register_buffer(renderer, font_info);
+
     // Add a hdr framebuffer as the standard pass framebuffer
     rendering::FramebufferInfo info = rendering::generate_framebuffer_info();
     info.width = renderer.framebuffer_width;
@@ -502,7 +540,7 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     // rendering::set_uniform_value(renderer, blur_2, "horizontal", false);
 
     //END BLOOM
-
+    
     // Add tonemapping pass?
 
     for(i32 i = 0; i < MAX_INSTANCE_BUFFERS; i++)
@@ -598,15 +636,6 @@ int main(int argc, char **args)
     char *temp_game_library_path = "libgame_temp.so";
 #endif
 
-#if DEBUG
-    MemoryArena debug_arena = {};
-
-    game_memory.debug_state = push_struct(&debug_arena, DebugState);
-
-    game_memory.debug_state->debug_memory_info.debug_rect.rect_origin = math::Vec2(50, 780);
-    game_memory.debug_state->debug_memory_info.debug_rect.rect_size = math::Vec2(300, 0);
-#endif
-
     ConfigData config_data;
     load_config("../.config", &config_data, &platform_state->perm_arena);
 
@@ -624,7 +653,6 @@ int main(int argc, char **args)
     render_state.texture_index = 0;
     render_state.frame_delta = 0.0;
 
-    render_state.font_arena = {};
     render_state.string_arena = {};
     render_state.gl_shader_count = 0;
     render_state.gl_buffer_count = 0;
@@ -783,7 +811,7 @@ int main(int argc, char **args)
             controller_keys(GLFW_JOYSTICK_1);
         }
 
-        update_log();
+//        update_log();
         
         swap_buffers(render_state);
 

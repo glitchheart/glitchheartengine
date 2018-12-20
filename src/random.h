@@ -6,14 +6,12 @@ struct RandomSeries
     r32_4x state;
 };
 
-inline RandomSeries random_seed(u32 e0 = 78953890,
+inline void random_seed(RandomSeries& series, u32 e0 = 78953890,
                                 u32 e1 = 235498,
                                 u32 e2 = 893456,
                                 u32 e3 = 93453080)
 {
-    RandomSeries series;
     series.state = r32_4x(e0, e1, e2, e3);
-    return(series);
 }
 
 inline r32_4x random_next_u32_4x(RandomSeries& series)

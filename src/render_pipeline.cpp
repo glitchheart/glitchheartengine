@@ -286,6 +286,38 @@ namespace rendering
         return { (renderer.render.pass_count++) + 1};
     }
 
+    static void create_ui_render_pass(Renderer& renderer)
+    {
+        RenderPass& pass = renderer.render.ui.pass;
+        pass = {};
+        pass.framebuffer = renderer.render.final_framebuffer;
+        pass.use_scene_camera = false;
+
+        Camera camera = {};
+        camera.zoom = 1.0f;
+        camera.position = math::Vec3(0.0f);
+        camera.orientation = math::Quat();
+        camera.target = math::Vec3();
+        camera.view_matrix = math::Mat4();
+
+        camera.projection_matrix = math::ortho(0.0f, (r32)renderer.framebuffer_width, 0.0f,
+                                               (r32)renderer.framebuffer_height, -500.0f, 500.0f);
+
+        pass.camera = camera;
+        strncpy(pass.name, "UI Pass", strlen("UI Pass") + 1);
+        pass.ui.render_commands = push_array(&renderer.render.render_pass_arena, global_max_ui_commands, UIRenderCommand);
+        pass.ui.render_command_count = 0;
+        pass.ui.coords = push_array(&renderer.render.render_pass_arena, global_max_ui_commands, CharacterData*);
+
+        for(i32 i = 0; i < global_max_ui_commands; i++)
+        {
+            pass.ui.coords[i] = push_array(&renderer.render.render_pass_arena, 4096, CharacterData);
+        }
+        
+        pass.ui.text_commands = push_array(&renderer.render.render_pass_arena, global_max_ui_commands, TextRenderCommand);
+        pass.ui.text_command_count = 0;
+    }
+
     static void set_uniforms_from_shader(Renderer& renderer, RenderPass& pass, ShaderHandle shader_handle)
     {
         Shader& shader = renderer.render.shaders[shader_handle.handle];
@@ -433,6 +465,7 @@ namespace rendering
     static PostProcessingRenderPassHandle create_post_processing_render_pass(const char *name, FramebufferHandle framebuffer, Renderer &renderer, ShaderHandle shader)
     {
         RenderPass &pass = renderer.render.post_processing_passes[renderer.render.post_processing_pass_count];
+        
 
         pass.framebuffer = framebuffer;
         pass.use_scene_camera = false;
