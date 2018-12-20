@@ -7,6 +7,7 @@
 #define IS_ENTITY_HANDLE_VALID(ent_handle) ent_handle.handle != 0
 #define IS_COMP_HANDLE_VALID(comp_handle) comp_handle.handle != -1
 #define IS_TEMPLATE_HANDLE_VALID(comp_handle) comp_handle.handle != -1
+#define IS_SCENE_HANDLE_VALID(scene_handle) (scene_handle.handle > 0)
 
 namespace scene
 {

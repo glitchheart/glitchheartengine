@@ -227,7 +227,7 @@ namespace scene
                     ParticleSystemComponent& ps_comp = scene.particle_system_components[index];
                     remove_particle_system(*scene.renderer, ps_comp.handle);
                 }
-
+                
                 rendering::free_all_instance_buffers(*scene.renderer);
                 rendering::free_material_instance_array(scene.material_array_handle, *scene.scene_manager->renderer);
                 scene.particle_system_component_count = 0;
@@ -257,11 +257,32 @@ namespace scene
         }
     }
 
+    static void deactivate_particle_systems(SceneHandle handle)
+    {
+        Scene &scene = get_scene(handle);                
+        for(i32 i = 0; i < scene.particle_system_component_count; i++)
+        {
+            stop_particle_system(scene.particle_system_components[i].handle, *scene.renderer);
+        }
+    }
+
+    
+    static void activate_particle_systems(SceneHandle handle)
+    {
+        Scene &scene = get_scene(handle);                
+        for(i32 i = 0; i < scene.particle_system_component_count; i++)
+        {
+            start_particle_system(scene.particle_system_components[i].handle, *scene.renderer);
+        }
+    }
+
     static void load_scene(SceneHandle handle, u64 load_flags = SceneLoadFlags::FREE_CURRENT_INSTANCE_BUFFERS)
     {
         SceneManager *scene_manager = handle.manager;
         if(scene_manager->scene_loaded)
         {
+            scene::deactivate_particle_systems(handle);
+            
             if(load_flags & SceneLoadFlags::FREE_CURRENT_INSTANCE_BUFFERS)
             {
                 rendering::free_all_instance_buffers(*scene_manager->renderer);
@@ -278,6 +299,8 @@ namespace scene
         assert(scene.valid);
         
         allocate_instance_buffers(scene);
+        activate_particle_systems(handle);
+        
         scene_manager->scene_loaded = true;
         scene_manager->loaded_scene = handle;
     }

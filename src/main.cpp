@@ -757,7 +757,7 @@ int main(int argc, char **args)
             push_scene_for_rendering(scene::get_scene(scene_manager->loaded_scene), renderer);
         }
         
-        //update_particle_systems(renderer, delta_time);
+        update_particle_systems(renderer, delta_time);
 #if ENABLE_ANALYTICS
         process_analytics_events(analytics_state, &analytics_queue);
 #endif
