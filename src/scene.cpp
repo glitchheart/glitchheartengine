@@ -251,7 +251,7 @@ namespace scene
                     }
                 }
             }
-        
+            
             scene_manager->scene_count--;
             scene_manager->scene_loaded = false;
         }
