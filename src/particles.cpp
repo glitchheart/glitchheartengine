@@ -565,9 +565,9 @@ void emit_particle(Renderer& renderer, ParticleSystemInfo &particle_system, i32*
 
 	math::Vec2 tex_size(1);
 
-	if (particle_system.attributes.texture_handle != 0)
+	if (particle_system.attributes.texture_handle.handle != 0)
 	{
-		math::Vec2i i_size = get_texture_size(particle_system.attributes.texture_handle);
+		math::Vec2i i_size = get_texture_size(particle_system.attributes.texture_handle.handle);
 		r32 max = MAX((r32)i_size.x, (r32)i_size.y);
 		tex_size = math::Vec2((r32)i_size.x / max, (r32)i_size.y / max);
 	}
@@ -822,18 +822,18 @@ void update_particle_system(ParticleSystemInfo& particle_system, Renderer &rende
 			new_particles -= 4;
 			if (new_particles < 0)
 			{
-				emit_particle(renderer, particle_system, emitted_alive_buf, emitted_alive_count, renderer.particles.entropy, 4 + new_particles);
+				emit_particle(renderer, particle_system, emitted_alive_buf, emitted_alive_count, *renderer.particles.entropy, 4 + new_particles);
 			}
 			else
 			{
-				emit_particle(renderer, particle_system, emitted_alive_buf, emitted_alive_count, renderer.particles.entropy, 4);
+				emit_particle(renderer, particle_system, emitted_alive_buf, emitted_alive_count, *renderer.particles.entropy, 4);
 			}
 		}
 
 		// @Note(Niels): Same goes for burst		
 		for (i32 i = 0; i < simd_burst_particles / 4; i++)
 		{
-			emit_particle(renderer, particle_system, emitted_alive_buf, emitted_alive_count, renderer.particles.entropy, 4);
+			emit_particle(renderer, particle_system, emitted_alive_buf, emitted_alive_count, *renderer.particles.entropy, 4);
 		}
 	}
 

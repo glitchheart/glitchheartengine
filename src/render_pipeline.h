@@ -339,6 +339,12 @@ namespace rendering
 		RegisterBufferInfo() {}
 	};
 
+    struct UpdateBufferInfo
+    {
+        BufferHandle buffer;
+        BufferData update_data;
+    };
+    
     struct Transform
     {
 		math::Vec3 position;
@@ -359,6 +365,106 @@ namespace rendering
             rendering::RenderPassHandle pass_handle;
             rendering::ShaderHandle shader_handle;
         } pass;
+    };
+
+    enum UIScalingFlag
+    {
+        KEEP_ASPECT_RATIO = (1 << 0),
+        NO_SCALING = (1 << 1),
+        SCALE_WITH_WIDTH = (1 << 2),
+        SCALE_WITH_HEIGHT = (1 << 3),
+    };
+
+    // @Note: 0 is centered
+    enum UIAlignment
+    {
+        LEFT = (1 << 0),
+        RIGHT = (1 << 1),
+        TOP = (1 << 2),
+        BOTTOM = (1 << 3),
+    };
+
+    struct FontHandle
+    {
+        i32 handle;
+    };
+
+    #define MAX_TEXT_LENGTH 256
+    struct CreateTextCommandInfo
+    {
+        math::Vec2 position;
+        math::Vec3 rotation;
+
+        i32 z_layer;
+
+        math::Vec2 scale;
+
+        math::Rgba color;
+
+        FontHandle font;
+        
+        math::Rect clip_rect;
+        b32 clip;
+
+        u64 alignment_flags;
+    };
+
+    struct CharacterData
+    {
+        r32 x;
+        r32 y;
+        r32 tx;
+        r32 ty;
+    };
+
+    struct CharacterBufferHandle
+    {
+        i32 handle;
+    };
+
+    struct TextRenderCommand
+    {
+        Material material;
+
+        math::Rect clip_rect;
+        b32 clip;
+
+        FontHandle font;
+
+        ShaderHandle shader_handle;
+        size_t text_length;
+        
+        CharacterBufferHandle buffer;
+    };
+
+    struct CreateUICommandInfo
+    {
+        math::Vec2 position;
+        math::Vec3 rotation;
+        i32 z_layer;
+        math::Vec2 scale;
+        
+        math::Rgba color;
+
+        TextureHandle texture_handle;
+
+        math::Rect clip_rect;
+        b32  clip;
+        
+        u64 scaling_flag;
+        u64 anchor_flag;
+    };
+
+    struct UIRenderCommand
+    {
+        Material material;
+        Transform transform;
+
+        math::Rect clip_rect;
+        b32 clip;
+        
+        BufferHandle buffer;
+        rendering::ShaderHandle shader_handle;
     };
 
     struct ShadowCommand
@@ -491,6 +597,16 @@ namespace rendering
                 rendering::RenderCommand *render_commands;
                 i32 render_command_count;
             } commands;
+            struct
+            {
+                rendering::UIRenderCommand *render_commands;
+                i32 render_command_count;
+
+                //@Cleanup: An extra 8 + 8 + 8 bytes?
+                rendering::CharacterData **coords;
+                rendering::TextRenderCommand *text_commands;
+                i32 text_command_count;
+            } ui;
         };
 
         RenderPass() {}
