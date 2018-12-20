@@ -1008,6 +1008,9 @@
 			memcpy(material.uniform_values, uniform_vals, size * sizeof(UniformValue));
 			material.array_count = (i32)array_size;
 			memcpy(material.arrays, arrays, array_size * sizeof(UniformValue));
+
+            buf_free(arrays);
+            buf_free(uniform_vals);
 		}
 
 		static void set_old_material_values(Material &new_material, Material &old_material)
