@@ -269,7 +269,8 @@ static void remove_particle_system(Renderer& renderer, ParticleSystemHandle &han
         
         renderer.particles.particle_systems[real_handle] = renderer.particles.particle_systems[renderer.particles.particle_system_count - 1];
         
-        copy_arena(&renderer.particles.particle_systems[renderer.particles.particle_system_count - 1].arena, &renderer.particles.particle_systems[real_handle].arena);
+//        copy_arena(&renderer.particles.particle_systems[renderer.particles.particle_system_count - 1].arena, &renderer.particles.particle_systems[real_handle].arena);
+        move_arena(&renderer.particles.particle_systems[renderer.particles.particle_system_count - 1].arena, &renderer.particles.particle_systems[real_handle].arena);
         
         clear(&renderer.particles.particle_systems[renderer.particles.particle_system_count - 1].arena);
 
