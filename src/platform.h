@@ -287,7 +287,6 @@ struct PlatformApi
 extern PlatformApi platform;
 
 struct MemoryArena;
-struct DebugState;
 struct InputController;
 struct SoundSystem;
 struct Renderer;
@@ -325,10 +324,6 @@ struct GameMemory
     struct AnalyticsEventState *analytics_state;
 #endif
     struct GameState* game_state;
-    
-#if DEBUG
-    DebugState* debug_state;
-#endif
 };
 
 #define UPDATE(name) void name(GameMemory* game_memory)
