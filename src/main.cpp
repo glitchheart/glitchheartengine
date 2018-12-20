@@ -613,7 +613,9 @@ int main(int argc, char **args)
     game_memory.config_data = config_data;
 
     init_keys();
-    RenderState render_state = {};
+    RenderState *render_state_ptr = push_struct(&platform_state->perm_arena, RenderState);
+    RenderState &render_state = *render_state_ptr;
+    render_state = {};
     render_state.current_framebuffer = 0;
     render_state.should_close = false;
     render_state.buffer_count = 0;
@@ -627,13 +629,12 @@ int main(int argc, char **args)
     render_state.gl_shader_count = 0;
     render_state.gl_buffer_count = 0;
     render_state.gl_shaders = push_array(&platform_state->perm_arena, 64, ShaderGL);
-
     
     Renderer *renderer_alloc = push_struct(&platform_state->perm_arena, Renderer);
     Renderer &renderer = *renderer_alloc;
     renderer = {};
 
-    scene::SceneManager scene_manager = scene::create_scene_manager(renderer);
+    scene::SceneManager *scene_manager = scene::create_scene_manager(&platform_state->perm_arena, renderer);
     
     b32 do_save_config = false;
     
@@ -659,7 +660,8 @@ int main(int argc, char **args)
     game.is_valid = false;
 
     load_game_code(game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
-    TimerController timer_controller;
+    TimerController *timer_controller_ptr = (TimerController*)malloc(sizeof(TimerController));
+    TimerController &timer_controller = *timer_controller_ptr;
     timer_controller.timer_count = 0;
 
     SoundDevice sound_device = {};
@@ -729,11 +731,10 @@ int main(int argc, char **args)
     core.input_controller = &input_controller;
     core.timer_controller = &timer_controller;
     core.sound_system = &sound_system;
-    core.scene_manager = &scene_manager;
+    core.scene_manager = scene_manager;
     core.delta_time = delta_time;
     core.current_time = get_time();
     game_memory.core = core;
-
 
     while (!should_close_window(render_state) && !renderer.should_close)
     {
@@ -751,12 +752,12 @@ int main(int argc, char **args)
 
         game.update(&game_memory);
 
-        if(scene_manager.scene_loaded)
+        if(scene_manager->scene_loaded)
         {
-            push_scene_for_rendering(scene::get_scene(scene_manager.loaded_scene), renderer);
+            push_scene_for_rendering(scene::get_scene(scene_manager->loaded_scene), renderer);
         }
         
-        update_particle_systems(renderer, delta_time);
+        //update_particle_systems(renderer, delta_time);
 #if ENABLE_ANALYTICS
         process_analytics_events(analytics_state, &analytics_queue);
 #endif

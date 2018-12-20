@@ -241,24 +241,24 @@ namespace scene
         i32 current_internal_index;
     };
 
-    static SceneManager create_scene_manager(Renderer &renderer)
+    static SceneManager* create_scene_manager(MemoryArena *arena, Renderer &renderer)
     {
-        SceneManager scene_manager = {};
-        scene_manager.current_internal_index = 0;
-        scene_manager.loaded_scene = { -1 };
-        scene_manager.scenes = push_array(&scene_manager.arena, global_max_scenes, scene::Scene);
-        scene_manager._internal_scene_handles = push_array(&scene_manager.arena, global_max_scenes, i32);
+        SceneManager *scene_manager = push_struct(arena, SceneManager);
+        scene_manager->current_internal_index = 0;
+        scene_manager->loaded_scene = { -1 };
+        scene_manager->scenes = push_array(arena, global_max_scenes, scene::Scene);
+        scene_manager->_internal_scene_handles = push_array(arena, global_max_scenes, i32);
 
         for(i32 i = 0; i < global_max_scenes; i++)
         {
-            scene_manager._internal_scene_handles[i] = -1;
+            scene_manager->_internal_scene_handles[i] = -1;
         }
         
-        scene_manager.scene_count = 0;
-        scene_manager.template_state.templates = push_array(&scene_manager.arena, global_max_entity_templates, EntityTemplate);
-        scene_manager.template_state.template_count = 0;
+        scene_manager->scene_count = 0;
+        scene_manager->template_state.templates = push_array(&scene_manager->arena, global_max_entity_templates, EntityTemplate);
+        scene_manager->template_state.template_count = 0;
        
-        scene_manager.renderer = &renderer;
+        scene_manager->renderer = &renderer;
         return scene_manager;
     }
 
