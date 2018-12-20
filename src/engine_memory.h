@@ -102,11 +102,6 @@ inline umm get_effective_size_for(MemoryArena* arena, umm size_init, PushParams 
 #define push_size(arena, size, type, ...) (type *)push_size_(arena, (umm)size, ## __VA_ARGS__)
 void* push_size_(MemoryArena* arena, umm size_init, PushParams params = default_push_params())
 {
-    debug("size: %zd\n", size_init);
-    if(size_init == 257)
-    {
-        debug("HEY\n");
-    }
     void* result = nullptr;
     
     umm size = 0;
@@ -246,8 +241,12 @@ static void move_arena(MemoryArena* src, MemoryArena* dst)
             last_dst_block->next = dst->current_block;
         }
         last_dst_block = dst->current_block;
+
+        if(cur_src_block->next)
+        {
+            cur_src_block->next->prev = nullptr;
+        }
         cur_src_block = cur_src_block->next;
-        cur_src_block->prev = 0;
     }
 
     src->current_block = nullptr;
