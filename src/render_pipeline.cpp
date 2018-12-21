@@ -169,10 +169,22 @@ namespace rendering
         return renderer.render.instancing.float_buffers[buffer_handle.handle - 1];
     }
 
+    static i32* get_float_buffer_count_pointer(InstanceBufferHandle buffer_handle, Renderer& renderer)
+    {
+        assert(buffer_handle.type == ValueType::FLOAT);
+        return &renderer.render.instancing.float_buffer_counts[buffer_handle.handle - 1];
+    }
+
     static math::Vec2* get_float2_buffer_pointer(InstanceBufferHandle buffer_handle, Renderer& renderer)
     {
         assert(buffer_handle.type == ValueType::FLOAT2);
         return renderer.render.instancing.float2_buffers[buffer_handle.handle - 1];
+    }
+
+    static i32* get_float2_buffer_count_pointer(InstanceBufferHandle buffer_handle, Renderer& renderer)
+    {
+        assert(buffer_handle.type == ValueType::FLOAT2);
+        return &renderer.render.instancing.float2_buffer_counts[buffer_handle.handle - 1];
     }
 
     static math::Vec3* get_float3_buffer_pointer(InstanceBufferHandle buffer_handle, Renderer& renderer)
@@ -181,10 +193,22 @@ namespace rendering
         return renderer.render.instancing.float3_buffers[buffer_handle.handle - 1];
     }
 
+    static i32* get_float3_buffer_count_pointer(InstanceBufferHandle buffer_handle, Renderer& renderer)
+    {
+        assert(buffer_handle.type == ValueType::FLOAT3);
+        return &renderer.render.instancing.float3_buffer_counts[buffer_handle.handle - 1];
+    }
+
     static math::Vec4* get_float4_buffer_pointer(InstanceBufferHandle buffer_handle, Renderer& renderer)
     {
         assert(buffer_handle.type == ValueType::FLOAT4);
         return renderer.render.instancing.float4_buffers[buffer_handle.handle - 1];
+    }
+
+    static i32* get_float4_buffer_count_pointer(InstanceBufferHandle buffer_handle, Renderer& renderer)
+    {
+        assert(buffer_handle.type == ValueType::FLOAT4);
+        return &renderer.render.instancing.float4_buffer_counts[buffer_handle.handle - 1];
     }
 
     static math::Mat4* get_mat4_buffer_pointer(InstanceBufferHandle buffer_handle, Renderer& renderer)
@@ -193,6 +217,12 @@ namespace rendering
         return renderer.render.instancing.mat4_buffers[buffer_handle.handle - 1];
     }
 
+    static i32* get_mat4_buffer_count_pointer(InstanceBufferHandle buffer_handle, Renderer& renderer)
+    {
+        assert(buffer_handle.type == ValueType::MAT4);
+        return &renderer.render.instancing.mat4_buffer_counts[buffer_handle.handle - 1];
+    }
+    
     static void free_instance_buffer(InstanceBufferHandle buffer_handle, Renderer& renderer)
     {
         i32 index = buffer_handle.handle - 1;

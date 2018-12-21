@@ -3,58 +3,6 @@
 
 #include <GLFW/glfw3.h>
 
-#define SHADERPAIR(name) {SHADER_ ## name, "Shader_" "" #name}
-
-const static struct
-{
-    ShaderType val;
-    char* str;
-    
-} shader_conversion [] =
-{
-    SHADERPAIR(MESH),
-    SHADERPAIR(MESH_INSTANCED),
-    SHADERPAIR(DEPTH),
-    SHADERPAIR(DEPTH_INSTANCED),
-    SHADERPAIR(QUAD),
-    SHADERPAIR(TEXTURE_QUAD),
-    SHADERPAIR(SPRITESHEET),
-    SHADERPAIR(FRAME_BUFFER),
-    SHADERPAIR(SIMPLE_MODEL),
-    SHADERPAIR(LINE),
-    SHADERPAIR(PARTICLES),
-    SHADERPAIR(ROUNDED_QUAD)
-};
-
-char* shader_enum_to_str(ShaderType shader)
-{
-    for(i32 index = 0; index < SHADER_COUNT; index++)
-    {
-        if(shader == shader_conversion[index].val)
-        {
-            return shader_conversion[index].str;
-        }
-    }
-    assert(false);
-    return nullptr;
-}
-
-static char* shader_paths[SHADER_COUNT] =
-{
-    "../engine_assets/shaders/meshshader",
-    "../engine_assets/shaders/meshshaderinstanced",
-    "../engine_assets/shaders/depthshader",
-    "../engine_assets/shaders/depthshaderinstanced",
-    "../engine_assets/shaders/quadshader",
-    "../engine_assets/shaders/texturequadshader",
-    "../engine_assets/shaders/spritesheetanimationshader",
-    "../engine_assets/shaders/framebuffershader",
-    "../engine_assets/shaders/simple_model_shader",
-    "../engine_assets/shaders/lineshader",
-    "../engine_assets/shaders/particleshader",
-    "../engine_assets/shaders/roundedquadshader",
-};
-
 struct ShaderGL
 {
 	GLuint program;
@@ -64,30 +12,6 @@ struct ShaderGL
 
     GLint uniform_locations[1024];
     i32 location_count;
-};
-
-struct Shader
-{
-    ShaderType type;
-    b32 loaded;
-    GLuint program;
-    GLuint vertex_shader;
-    GLuint fragment_shader;
-    GLuint geometry_shader; // Optional
-
-    struct
-    {
-        // Matrices
-        GLint projection_matrix;
-
-        // Color
-        GLint diffuse_color;
-    } uniform_locations;
-};
-
-enum RenderMode
-{
-    RENDER_FILL, RENDER_OUTLINE
 };
 
 struct Texture 
@@ -142,14 +66,15 @@ struct RenderState
         GLuint shader_program;
         GLuint vao;
     } current_state;
+
     GLFWwindow *window;
+
     i32 window_width;
     i32 window_height;
     i32 framebuffer_width;
     i32 framebuffer_height;
     i32 dpi_scale;
     r32 density_factor;
-    i32 pixels_per_unit;
     
     i32 refresh_rate;
     
@@ -166,25 +91,12 @@ struct RenderState
     r64 total_delta;
     
     WindowMode window_mode;
-    
-    GLfloat scale_x;
-    GLfloat scale_y;
+
     GLint viewport[4];
     r64 delta_time;
     
     b32 should_close;
     r64 fps;
-    
-    Framebuffer framebuffers[2];
-    i32 current_framebuffer;
-
-    struct
-    {
-        u32 ping_pong_fbo[3];
-        u32 ping_pong_buffer[3];
-
-        
-    } bloom;
 
     struct
     {
@@ -196,10 +108,6 @@ struct RenderState
     Framebuffer shadow_map_buffer;
     
     u32 framebuffer_quad_vertices_size = 16 * sizeof(GLfloat);
-    u32 texture_quad_vertices_size = 16 * sizeof(GLfloat);
-    u32 rounded_quad_vertices_size = 16 * sizeof(GLfloat);
-    u32 quad_vertices_size = 16 * sizeof(GLfloat);
-    u32 billboard_vertices_size = 20 * sizeof(GLfloat);
     GLuint bound_vertex_buffer;
     GLuint bound_texture;
     
@@ -211,100 +119,18 @@ struct RenderState
         -1.0f, -1.0f, 0, 0.0f
     };
 
-    GLfloat quad_vertices[16] =
-    {
-        0.0f, 0.0f, 0.0f, 1.0f,
-        1.0f, 0.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f, 0.0f,
-        0.0f, 1.0f, 0.0f, 0.0f
-    };
-
-    GLfloat billboard_vertices[20] =
-    {
-        -0.5f, 0.5f, 0.0f, 0.0f, 0.0f,
-        0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
-        0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
-        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f
-    };
-
-    
-    GLfloat texture_quad_vertices[16] =
-    {
-        0.0f, 1.0f, 0.0f, 0.0f,
-        1.0f, 1.0f, 1.0f, 0.0f,
-        1.0f, 0.0f, 1.0f, 1.0f,
-        0.0f, 0.0f, 0.0f, 1.0f
-    };
-    
-    GLfloat rounded_quad_vertices[16] =
-    {
-        0.0f, 1.0f, 0.0f, 0.0f,
-        1.0f, 1.0f, 1.0f, 0.0f,
-        1.0f, 0.0f, 1.0f, 1.0f,
-        0.0f, 0.0f, 0.0f, 1.0f
-    };
-    
     GLuint quad_indices[6] =
     {
         0, 1, 2, 0, 2, 3
     };
     
-    GLuint texture_quad_vbo;
-    GLuint texture_quad_index_buffer;
-    
-    GLuint rounded_quad_vao;
-    GLuint rounded_quad_vbo;
-    GLuint rounded_quad_index_buffer;
     GLuint quad_index_buffer;
-    
-    GLuint billboard_vao;
-    GLuint billboard_vbo;
-    GLuint billboard_ibo;
-    
-    GLuint line_vbo;
-    GLuint line_vao;
-    GLuint line_ebo;
-    
-#define LINE_INDICES 6
-    
-    GLuint line_indices[LINE_INDICES] = 
-    {
-        0, 1, 2,
-        1, 2, 3
-    };
-    
-    Buffer *buffers;
-    i32 buffer_count;
 
 	Buffer *gl_buffers;
 	i32 gl_buffer_count;
     
-    GLuint quad_vao;
-    GLuint texture_quad_vao;
-    GLuint quad_vbo;
-
     GLuint framebuffer_quad_vao;
     GLuint framebuffer_quad_vbo;
-    
-    union 
-    {
-        Shader shaders[SHADER_COUNT];
-        struct
-        {
-            Shader mesh_shader;
-            Shader mesh_instanced_shader;
-            Shader depth_shader;
-            Shader depth_instanced_shader;
-            Shader quad_shader;
-            Shader texture_quad_shader;
-            Shader spritesheet_shader;
-            Shader frame_buffer_shader;
-            Shader simple_model_shader;
-            Shader line_shader;
-            Shader particle_shader;
-            Shader rounded_quad_shader;
-        };
-    };
     
 	ShaderGL *gl_shaders;
 	i32 gl_shader_count;
@@ -314,20 +140,11 @@ struct RenderState
     
     GLFWcursor* cursors[6];
     
-    struct
-    {
-        math::Rgba specular_color;
-        math::Rgba diffuse_color;
-        math::Rgba ambient_color;
-        math::Vec3 position;
-    } sun_light;
-    
     RenderState() {}
     
     MemoryArena* perm_arena; // TODO: Make this into a framebuffer arena maybe?
     MemoryArena framebuffer_arena;
     MemoryArena string_arena;
-    //MemoryArena perm_arena;
 };
 
 struct RenderingState

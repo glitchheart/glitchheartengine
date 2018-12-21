@@ -1167,20 +1167,17 @@ namespace rendering
 
     static void load_texture(Renderer &renderer, TextureFiltering filtering, TextureWrap wrap, unsigned char *data, i32 width, i32 height, TextureFormat format, TextureHandle &handle)
     {
-        i32 index = 0;
-        if (handle.handle == 0)
+        i32 index = handle.handle - 1;
+        if (index == -1)
         {
             index = renderer.texture_count;
-        }
-        else
-        {
-            index = handle.handle - 1;
+            renderer.texture_count++;
         }
 
         TextureData &texture_data = renderer.texture_data[index];
         texture_data.filtering = filtering;
         texture_data.wrap = wrap;
-        texture_data.handle = renderer.texture_count++;
+        texture_data.handle = index;
 
         texture_data.image_data = data;
         texture_data.width = width;
@@ -1195,20 +1192,17 @@ namespace rendering
 
     static void load_texture(const char *full_texture_path, Renderer &renderer, TextureFiltering filtering, TextureWrap wrap, TextureFormat format, TextureHandle &handle)
     {
-        i32 index = 0;
-        if (handle.handle == 0)
+        i32 index = handle.handle - 1;
+        if (index == -1)
         {
             index = renderer.texture_count;
-        }
-        else
-        {
-            index = handle.handle - 1;
+            renderer.texture_count++;
         }
 
         TextureData &texture_data = renderer.texture_data[index];
         texture_data.filtering = filtering;
         texture_data.wrap = wrap;
-        texture_data.handle = renderer.texture_count++;
+        texture_data.handle = index;
         texture_data.format = format;
 
         PlatformFile png_file = platform.open_file(full_texture_path, POF_READ | POF_OPEN_EXISTING | POF_IGNORE_ERROR);
@@ -1283,21 +1277,32 @@ namespace rendering
 
     static void load_font(Renderer &renderer, const char *path, i32 size, FontHandle &handle)
     {
-        i32 index = 0;
+        i32 index = handle.handle;
 
-        if (handle.handle == 0)
+        if (index == 0)
         {
             handle.handle = renderer.tt_font_count++;
             index = handle.handle;
         }
-
+        
         TrueTypeFontInfo &font_info = renderer.tt_font_infos[index];
+        char buf[256];
+        strncpy(buf, path, strlen(path) + 1);
 
-        strncpy(font_info.path, path, strlen(path) + 1);
+        if(font_info.ttf_buffer)
+        {
+            free(font_info.ttf_buffer);
+        }
 
-        FramebufferInfo framebuffer = renderer.render.framebuffers[renderer.render.ui.pass.framebuffer.handle - 1];
-
+        TextureHandle texture = font_info.texture;
+        
         font_info = {};
+        
+        strncpy(font_info.path, buf, strlen(buf) + 1);
+
+        RenderPass& pass = renderer.render.ui.pass;
+
+        FramebufferInfo& framebuffer = renderer.render.framebuffers[pass.framebuffer.handle - 1];
 
         font_info.resolution_loaded_for.width = (i32)framebuffer.width;
         font_info.resolution_loaded_for.height = (i32)framebuffer.height;
@@ -1306,22 +1311,23 @@ namespace rendering
         font_info.oversample_y = 1;
         font_info.first_char = ' ';
         font_info.char_count = '~' - ' ';
-        font_info.size = size;
+        font_info.load_size = size;
 
-        font_info.size = (i32)from_ui(renderer, (i32)framebuffer.height, (r32)font_info.size);
+        font_info.size = (i32)from_ui(renderer, (i32)framebuffer.height, (r32)font_info.load_size);
 
         i32 count_per_line = (i32)math::ceil(math::sqrt((r32)font_info.char_count));
         font_info.atlas_width = math::multiple_of_number(font_info.size * count_per_line, 4);
         font_info.atlas_height = math::multiple_of_number(font_info.size * count_per_line, 4);
 
+        font_info.ttf_buffer = (unsigned char*)malloc(1<<20);
+        
         TemporaryMemory temp_mem = begin_temporary_memory(&renderer.font_arena);
 
-        unsigned char *ttf_buffer = push_array(&renderer.font_arena, (1 << 20), unsigned char);
         unsigned char *temp_bitmap = push_array(&renderer.font_arena, font_info.atlas_width * font_info.atlas_height, unsigned char);
 
-        fread(ttf_buffer, 1, 1 << 20, fopen(path, "rb"));
+        fread(font_info.ttf_buffer, 1, 1 << 20, fopen(font_info.path, "rb"));
 
-        stbtt_InitFont(&font_info.info, ttf_buffer, 0);
+        stbtt_InitFont(&font_info.info, font_info.ttf_buffer, 0);
         font_info.scale = stbtt_ScaleForPixelHeight(&font_info.info, 15);
         stbtt_GetFontVMetrics(&font_info.info, &font_info.ascent, &font_info.descent, &font_info.line_gap);
         font_info.baseline = (i32)(font_info.ascent * font_info.scale);
@@ -1331,12 +1337,14 @@ namespace rendering
             printf("Failed to initialize font");
 
         stbtt_PackSetOversampling(&context, font_info.oversample_x, font_info.oversample_y);
-        if (!stbtt_PackFontRange(&context, ttf_buffer, 0, (r32)font_info.size, font_info.first_char, font_info.char_count, font_info.char_data))
+        if (!stbtt_PackFontRange(&context, font_info.ttf_buffer, 0, (r32)font_info.size, font_info.first_char, font_info.char_count, font_info.char_data))
             printf("Failed to pack font");
 
         stbtt_PackEnd(&context);
 
-        load_texture(renderer, TextureFiltering::LINEAR, TextureWrap::CLAMP_TO_EDGE, temp_bitmap, font_info.atlas_width, font_info.atlas_height, TextureFormat::RED, font_info.texture);
+        load_texture(renderer, TextureFiltering::LINEAR, TextureWrap::CLAMP_TO_EDGE, temp_bitmap, font_info.atlas_width, font_info.atlas_height, TextureFormat::RED, texture);
+
+        font_info.texture = texture;
 
         font_info.line_height = font_info.size + font_info.line_gap * font_info.scale;
 
@@ -2725,7 +2733,6 @@ namespace rendering
 
     static void generate_text_coordinates(const char *text, TrueTypeFontInfo &font_info, math::Vec3 position, u64 alignment_flags, FramebufferInfo &framebuffer, CharacterData **coords)
     {
-
         // @Note: Compute the coord buffer
         i32 n = 0;
 
@@ -2799,13 +2806,15 @@ namespace rendering
 
         command.font = info.font;
 
-        FramebufferInfo &framebuffer = renderer.render.framebuffers[pass.framebuffer.handle - 1];
+        FramebufferInfo *framebuffer = &renderer.render.framebuffers[pass.framebuffer.handle - 1];
         TrueTypeFontInfo &font_info = renderer.tt_font_infos[info.font.handle];
 
-        if (font_info.resolution_loaded_for.width != (i32)framebuffer.width || font_info.resolution_loaded_for.height != (i32)framebuffer.height)
+        if (font_info.resolution_loaded_for.width != (i32)framebuffer->width || font_info.resolution_loaded_for.height != (i32)framebuffer->height)
         {
-            load_font(renderer, font_info.path, font_info.size, info.font);
+            load_font(renderer, font_info.path, font_info.load_size, info.font);
         }
+
+        framebuffer = &renderer.render.framebuffers[pass.framebuffer.handle - 1];
 
         math::Vec2i resolution_scale = get_scale(renderer);
 
@@ -2831,7 +2840,7 @@ namespace rendering
 
         CharacterData *coords = pass.ui.coords[pass.ui.text_command_count];
 
-        generate_text_coordinates(text, font_info, pos, info.alignment_flags, framebuffer, &coords);
+        generate_text_coordinates(text, font_info, pos, info.alignment_flags, *framebuffer, &coords);
 
         command.buffer = {pass.ui.text_command_count++};
     }

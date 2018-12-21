@@ -532,9 +532,16 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
 		vec4_4x_to_float4(color, c[0], c[1], c[2], c[3]);
 
         r32* angle_buffer = rendering::get_float_buffer_pointer(particle_system.angle_buffer_handle, renderer);
+        i32* angle_count = rendering::get_float_buffer_count_pointer(particle_system.angle_buffer_handle, renderer);
+        
         math::Vec3* offset_buffer = rendering::get_float3_buffer_pointer(particle_system.offset_buffer_handle, renderer);
+        i32* offset_count = rendering::get_float3_buffer_count_pointer(particle_system.offset_buffer_handle, renderer);
+        
         math::Vec2* size_buffer = rendering::get_float2_buffer_pointer(particle_system.size_buffer_handle, renderer);
+        i32* size_count = rendering::get_float2_buffer_count_pointer(particle_system.size_buffer_handle, renderer);
+        
         math::Rgba* color_buffer = rendering::get_float4_buffer_pointer(particle_system.color_buffer_handle, renderer);
+        i32* color_count = rendering::get_float4_buffer_count_pointer(particle_system.color_buffer_handle, renderer);
         
 		for (i32 i = 0; i < particle_system.emitted_for_this_index[main_index]; i++)
 		{
@@ -553,6 +560,11 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
 			angle_buffer[particle_system.particle_count] = a[i][0];
 
 			particle_system.particle_count++;
+
+            (*angle_count)++;
+            (*offset_count)++;
+            (*size_count)++;
+            (*color_count)++;        
 		}
 	}
 
