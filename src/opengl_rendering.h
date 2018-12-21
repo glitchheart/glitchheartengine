@@ -191,8 +191,6 @@ struct RenderState
 #define MAX_FRAMEBUFFERS 16
         Framebuffer framebuffers[MAX_FRAMEBUFFERS];
         i32 framebuffer_count;
-        Buffer instance_buffers[MAX_INSTANCE_BUFFERS];
-        i32 instance_buffer_count;
     } v2;
 
     Framebuffer shadow_map_buffer;

@@ -731,45 +731,25 @@ GLenum get_usage(rendering::BufferUsage buffer_usage)
     return usage;
 }
 
-static void delete_all_instance_buffers(RenderState *render_state, Renderer *renderer)
+static void delete_instance_buffer(Buffer *buffer, RenderState *render_state, Renderer *renderer)
 {
-    for (i32 i = 0; i < render_state->v2.instance_buffer_count; i++)
-    {
-        Buffer &buffer = render_state->v2.instance_buffers[i];
-        glDeleteBuffers(1, &buffer.vbo);
-    }
-    render_state->v2.instance_buffer_count = 0;
+    glDeleteBuffers(1, &buffer->vbo);
 }
 
-static void delete_instance_buffer(rendering::InternalBufferHandle handle, RenderState *render_state, Renderer *renderer)
+static void new_create_instance_buffer(Buffer *buffer, size_t buffer_size, rendering::BufferUsage buffer_usage, RenderState *render_state, Renderer *renderer)
 {
-    Buffer &buffer = render_state->v2.instance_buffers[handle.handle];
-    glDeleteBuffers(1, &buffer.vbo);
-    if (handle.handle < render_state->v2.instance_buffer_count - 1)
+    *buffer = {};
+
+    if (buffer->vbo == 0)
     {
-        render_state->v2.instance_buffers[handle.handle] = render_state->v2.instance_buffers[render_state->v2.instance_buffer_count - 1];
-    }
-
-    render_state->v2.instance_buffer_count--;
-}
-
-static rendering::InternalBufferHandle new_create_instance_buffer(size_t buffer_size, rendering::BufferUsage buffer_usage, RenderState *render_state, Renderer *renderer)
-{
-    Buffer &buffer = render_state->v2.instance_buffers[render_state->v2.instance_buffer_count];
-    buffer = {};
-
-    if (buffer.vbo == 0)
-    {
-        glGenBuffers(1, &buffer.vbo);
+        glGenBuffers(1, &buffer->vbo);
     }
 
     GLenum usage = get_usage(buffer_usage);
 
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
     glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)buffer_size, nullptr, usage);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    return {render_state->v2.instance_buffer_count++};
 }
 
 static void register_vertex_buffer(RenderState &render_state, GLfloat *buffer_data, i32 size, ShaderType shader_type, MemoryArena *perm_arena, i32 buffer_handle = -1)
@@ -1514,7 +1494,6 @@ static void initialize_opengl(RenderState &render_state, Renderer &renderer, r32
     renderer.api_functions.create_framebuffer = &new_create_framebuffer;
     renderer.api_functions.create_instance_buffer = &new_create_instance_buffer;
     renderer.api_functions.delete_instance_buffer = &delete_instance_buffer;
-    renderer.api_functions.delete_all_instance_buffers = &delete_all_instance_buffers;
 
     auto recreate_window = render_state.window != nullptr;
 
@@ -2369,7 +2348,6 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
         rendering::VertexAttributeInstanced &vertex_attribute = instanced_vertex_attributes[i];
 
         i32 array_num = shader_info.vertex_attribute_count + i;
-        rendering::InternalBufferHandle buffer_handle = {-1};
         size_t size = 0;
         i32 count = 0;
         void *buf_ptr = nullptr;
@@ -2382,16 +2360,14 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
         case rendering::ValueType::FLOAT:
         {
             num_values = 1;
-            buffer_handle = renderer.render.instancing.float_buffer_handles[handle];
             buf_ptr = renderer.render.instancing.float_buffers[handle];
             size = sizeof(r32);
             count = renderer.render.instancing.float_buffer_counts[handle];
 
-            assert(buffer_handle.handle >= 0);
-            Buffer &buffer = render_state.v2.instance_buffers[buffer_handle.handle];
+            Buffer *buffer = renderer.render.instancing.internal_float_buffers[handle];
             
             glEnableVertexAttribArray(array_num);
-            glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+            glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
             glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
 
             glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
@@ -2401,16 +2377,14 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
         case rendering::ValueType::FLOAT2:
         {
             num_values = 2;
-            buffer_handle = renderer.render.instancing.float2_buffer_handles[handle];
             buf_ptr = renderer.render.instancing.float2_buffers[handle];
             size = sizeof(r32) * num_values;
             count = renderer.render.instancing.float2_buffer_counts[handle];
 
-            assert(buffer_handle.handle >= 0);
-            Buffer &buffer = render_state.v2.instance_buffers[buffer_handle.handle];
+            Buffer *buffer = renderer.render.instancing.internal_float2_buffers[handle];
 
             glEnableVertexAttribArray(array_num);
-            glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+            glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
             glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
 
             glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
@@ -2420,16 +2394,14 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
         case rendering::ValueType::FLOAT3:
         {
             num_values = 3;
-            buffer_handle = renderer.render.instancing.float3_buffer_handles[handle];
             buf_ptr = renderer.render.instancing.float3_buffers[handle];
             size = sizeof(r32) * num_values;
             count = renderer.render.instancing.float3_buffer_counts[handle];
 
-            assert(buffer_handle.handle >= 0);
-            Buffer &new_buffer = render_state.v2.instance_buffers[buffer_handle.handle];
+            Buffer *buffer = renderer.render.instancing.internal_float3_buffers[handle];
 
             glEnableVertexAttribArray(array_num);
-            glBindBuffer(GL_ARRAY_BUFFER, new_buffer.vbo);
+            glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
             glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
 
             glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
@@ -2439,16 +2411,14 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
         case rendering::ValueType::FLOAT4:
         {
             num_values = 4;
-            buffer_handle = renderer.render.instancing.float4_buffer_handles[handle];
             buf_ptr = renderer.render.instancing.float4_buffers[handle];
             size = sizeof(r32) * num_values;
             count = renderer.render.instancing.float4_buffer_counts[handle];
 
-            assert(buffer_handle.handle >= 0);
-            Buffer &buffer = render_state.v2.instance_buffers[buffer_handle.handle];
+            Buffer *buffer = renderer.render.instancing.internal_float4_buffers[handle];
             
             glEnableVertexAttribArray(array_num);
-            glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+            glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
             glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
          
             glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
@@ -2458,14 +2428,11 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
         case rendering::ValueType::MAT4:
         {
             num_values = 16;
-            buffer_handle = renderer.render.instancing.mat4_buffer_handles[handle];
             buf_ptr = renderer.render.instancing.mat4_buffers[handle];
             size = sizeof(math::Mat4);
             count = renderer.render.instancing.mat4_buffer_counts[handle];
 
-            assert(buffer_handle.handle >= 0);
-            Buffer &new_buffer = render_state.v2.instance_buffers[buffer_handle.handle];
-
+            Buffer *buffer = renderer.render.instancing.internal_mat4_buffers[handle];
             GLsizei vec4_size = sizeof(math::Vec4);
 
             glEnableVertexAttribArray(array_num);
@@ -2473,7 +2440,7 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             glEnableVertexAttribArray(array_num + 2);
             glEnableVertexAttribArray(array_num + 3);
 
-            glBindBuffer(GL_ARRAY_BUFFER, new_buffer.vbo);
+            glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
             glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
 
             glVertexAttribPointer(array_num, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)0);
@@ -2827,13 +2794,12 @@ static void render_all_passes(RenderState &render_state, Renderer &renderer)
     //glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glActiveTexture(GL_TEXTURE0);
 
-    for (i32 i = 0; i < renderer.render.instancing.float3_buffer_count; i++)
+    for (i32 i = 0; i < MAX_INSTANCE_BUFFERS; i++)
     {
+        renderer.render.instancing.float_buffer_counts[i] = 0;
+        renderer.render.instancing.float2_buffer_counts[i] = 0;
         renderer.render.instancing.float3_buffer_counts[i] = 0;
-    }
-
-    for (i32 i = 0; i < renderer.render.instancing.mat4_buffer_count; i++)
-    {
+        renderer.render.instancing.float4_buffer_counts[i] = 0;
         renderer.render.instancing.mat4_buffer_counts[i] = 0;
     }
 }
