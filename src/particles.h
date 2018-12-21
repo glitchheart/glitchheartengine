@@ -185,7 +185,8 @@ struct ParticleSystemInfo
     r64 time_spent;
 
     ParticleSystemAttributes attributes;
-    
+    rendering::MaterialInstanceHandle material_handle;
+
     r32 particles_cumulative;
 
     struct
@@ -216,13 +217,11 @@ struct ParticleSystemInfo
         i32 value_count;
     } speed_over_lifetime;
     
-    i32 offset_buffer_handle;
-    i32 color_buffer_handle;
-    i32 size_buffer_handle;
-    i32 angle_buffer_handle;
-    TransformInfo transform;
-    
-    Material material;
+    rendering::InstanceBufferHandle offset_buffer_handle;
+    rendering::InstanceBufferHandle color_buffer_handle;
+    rendering::InstanceBufferHandle size_buffer_handle;
+    rendering::InstanceBufferHandle angle_buffer_handle;
+    rendering::Transform transform;
     
     Particles particles;
     i32* emitted_for_this_index;
@@ -243,11 +242,6 @@ struct ParticleSystemInfo
     i32 total_emitted;
     i32 last_used_particle;
     i32 max_particles;
-    
-    math::Vec3 *offsets;
-    math::Vec4 *colors;
-    math::Vec2 *sizes;
-    r32 *angles;
     
     r64 current_emission_time;
     

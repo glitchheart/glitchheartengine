@@ -531,21 +531,26 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
 		vec3_4x_to_float4(final_pos, p[0], p[1], p[2], p[3]);
 		vec4_4x_to_float4(color, c[0], c[1], c[2], c[3]);
 
+        r32* angle_buffer = rendering::get_float_buffer_pointer(particle_system.angle_buffer_handle, renderer);
+        math::Vec3* offset_buffer = rendering::get_float3_buffer_pointer(particle_system.offset_buffer_handle, renderer);
+        math::Vec2* size_buffer = rendering::get_float2_buffer_pointer(particle_system.size_buffer_handle, renderer);
+        math::Rgba* color_buffer = rendering::get_float4_buffer_pointer(particle_system.color_buffer_handle, renderer);
+        
 		for (i32 i = 0; i < particle_system.emitted_for_this_index[main_index]; i++)
 		{
-			particle_system.offsets[particle_system.particle_count].x = p[i][0];
-			particle_system.offsets[particle_system.particle_count].y = p[i][1];
-			particle_system.offsets[particle_system.particle_count].z = p[i][2];
+			offset_buffer[particle_system.particle_count].x = p[i][0];
+			offset_buffer[particle_system.particle_count].y = p[i][1];
+			offset_buffer[particle_system.particle_count].z = p[i][2];
 
-			particle_system.colors[particle_system.particle_count].r = c[i][0];
-			particle_system.colors[particle_system.particle_count].g = c[i][1];
-			particle_system.colors[particle_system.particle_count].b = c[i][2];
-			particle_system.colors[particle_system.particle_count].a = c[i][3];
+			color_buffer[particle_system.particle_count].r = c[i][0];
+			color_buffer[particle_system.particle_count].g = c[i][1];
+			color_buffer[particle_system.particle_count].b = c[i][2];
+			color_buffer[particle_system.particle_count].a = c[i][3];
 
-			particle_system.sizes[particle_system.particle_count].x = s[i][0];
-			particle_system.sizes[particle_system.particle_count].y = s[i][1];
+			size_buffer[particle_system.particle_count].x = s[i][0];
+			size_buffer[particle_system.particle_count].y = s[i][1];
 
-			particle_system.angles[particle_system.particle_count] = a[i][0];
+			angle_buffer[particle_system.particle_count] = a[i][0];
 
 			particle_system.particle_count++;
 		}

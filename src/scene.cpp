@@ -10,7 +10,7 @@ namespace scene
     // Scene handle
     static RenderComponent& add_render_component(SceneHandle scene, EntityHandle entity_handle, b32 cast_shadows);
     static TransformComponent& add_transform_component(SceneHandle scene, EntityHandle entity_handle);
-    static ParticleSystemComponent& add_particle_system_component(SceneHandle scene, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles);
+    static ParticleSystemComponent& add_particle_system_component(SceneHandle handle, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles, rendering::MaterialHandle material, rendering::MaterialInstanceArrayHandle array_handle);
     static EntityHandle register_entity(u64 comp_flags, SceneHandle scene);
     static void unregister_entity(EntityHandle handle, SceneHandle scene);
     static EntityTemplate _load_template(const char *path, SceneHandle scene);
@@ -25,7 +25,7 @@ namespace scene
     // @Deprecated: Scene struct 
     static RenderComponent& _add_render_component(Scene &scene, EntityHandle entity_handle, b32 cast_shadows);
     static TransformComponent& _add_transform_component(Scene &scene, EntityHandle entity_handle);
-    static ParticleSystemComponent& _add_particle_system_component(Scene &scene, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles);
+    static ParticleSystemComponent& _add_particle_system_component(Scene &scene, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles, rendering::MaterialHandle material, rendering::MaterialInstanceArrayHandle array_handle);
     static EntityHandle _register_entity(u64 comp_flags, Scene &scene);
     static void _unregister_entity(EntityHandle handle, Scene &scene);
     static EntityTemplate _load_template(const char *path, Scene &scene);
@@ -203,7 +203,17 @@ namespace scene
                     rendering::Material &material = get_material_instance(pair.material_instances[k], *renderer);
                     material.instanced_vertex_attributes[j].instance_buffer_handle = instance_buffer_handle;
                 }
+
+                scene.instance_buffer_handles[scene.instance_buffer_count++] = instance_buffer_handle;
             }
+        }
+    }
+
+    static void free_instance_buffers(Scene &scene)
+    {
+        for(i32 i = 0; i < scene.instance_buffer_count; i++)
+        {
+            rendering::free_instance_buffer(scene.instance_buffer_handles[i], *scene.renderer);
         }
     }
 
@@ -228,7 +238,6 @@ namespace scene
                     remove_particle_system(*scene.renderer, ps_comp.handle);
                 }
                 
-                rendering::free_all_instance_buffers(*scene.renderer);
                 rendering::free_material_instance_array(scene.material_array_handle, *scene.scene_manager->renderer);
                 scene.particle_system_component_count = 0;
                 scene.light_component_count = 0;
@@ -236,6 +245,7 @@ namespace scene
                 clear(&scene.memory_arena);
             }
 
+            free_instance_buffers(scene);
             
             scene_manager->_internal_scene_handles[handle.handle - 1] = -1;
             
@@ -283,10 +293,7 @@ namespace scene
         {
             scene::deactivate_particle_systems(handle);
             
-            if(load_flags & SceneLoadFlags::FREE_CURRENT_INSTANCE_BUFFERS)
-            {
-                rendering::free_all_instance_buffers(*scene_manager->renderer);
-            }
+            free_instance_buffers(get_scene(scene_manager->loaded_scene));
 
             if(load_flags & SceneLoadFlags::FREE_CURRENT_SCENE)
             {
@@ -342,7 +349,6 @@ namespace scene
         entity.render_handle = { scene.render_component_count++ };
         scene::RenderComponent &comp = scene.render_components[entity.render_handle.handle];
         comp.material_handle = { entity.render_handle.handle };
-        comp.mesh_handle = { -1 };
         comp.casts_shadows = cast_shadows;
         
         return(comp);
@@ -425,7 +431,7 @@ namespace scene
     }
 
     
-    static ParticleSystemComponent& _add_particle_system_component(Scene &scene, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles = 0)
+    static ParticleSystemComponent& _add_particle_system_component(Scene &scene, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles, rendering::MaterialHandle material, rendering::MaterialInstanceArrayHandle array_handle)
     {
         Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
         entity.comp_flags |= COMP_PARTICLES;
@@ -433,7 +439,7 @@ namespace scene
         entity.particle_system_handle = {scene.particle_system_component_count++};
         scene::ParticleSystemComponent &comp = scene.particle_system_components[entity.particle_system_handle.handle];
         
-        comp.handle = create_particle_system(*scene.renderer, max_particles);
+        comp.handle = create_particle_system(*scene.renderer, max_particles, material, array_handle);
         ParticleSystemInfo* info = get_particle_system_info(comp.handle, *scene.renderer);
         assert(info);
         
@@ -442,10 +448,10 @@ namespace scene
         return(comp);
     }
 
-    static ParticleSystemComponent& add_particle_system_component(SceneHandle handle, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles = 0)
+    static ParticleSystemComponent& add_particle_system_component(SceneHandle handle, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles, rendering::MaterialHandle material, rendering::MaterialInstanceArrayHandle array_handle)
     {
         Scene &scene = get_scene(handle);
-        return _add_particle_system_component(scene, entity_handle, attributes, max_particles);
+        return _add_particle_system_component(scene, entity_handle, attributes, max_particles, material, array_handle);
     }
 
     static LightComponent &add_light_component(Scene &scene, EntityHandle entity_handle)
@@ -479,10 +485,10 @@ namespace scene
             _add_render_component(scene, handle, true);
         }
         
-        if(comp_flags & COMP_PARTICLES)
-        {
-            _add_particle_system_component(scene, handle, get_default_particle_system_attributes(), 0);
-        }
+        // if(comp_flags & COMP_PARTICLES)
+        // {
+        //     _add_particle_system_component(scene, handle, get_default_particle_system_attributes(), 0, {}, {});
+        // }
 
         if(comp_flags & COMP_LIGHT)
         {
@@ -609,11 +615,6 @@ namespace scene
                                     templ.render.is_new_version = true;
                                     templ.render.v2.buffer_handle = rendering::create_plane(*scene.renderer);
                                 }
-                                else
-                                {
-                                    create_cube(*scene.renderer, &templ.render.mesh_handle);
-                                }
-                                
                             }
                             else if(starts_with(prim_type, "plane"))
                             {
@@ -621,10 +622,6 @@ namespace scene
                                 {
                                     templ.render.is_new_version = true;
                                     templ.render.v2.buffer_handle = rendering::create_plane(*scene.renderer);
-                                }
-                                else
-                                {
-                                    create_plane(*scene.renderer, &templ.render.mesh_handle.handle);
                                 }
                             }
                         }
@@ -657,6 +654,8 @@ namespace scene
                     templ.particles.color_over_lifetime.value_count = 0;
                     templ.particles.size_over_lifetime.value_count = 0;
                     templ.particles.speed_over_lifetime.value_count = 0;
+                    templ.particles.material_handle = {};
+                    templ.particles.shader_handle = {};
 		    
                     ParticleSystemAttributes attributes = get_default_particle_system_attributes();
 		    
@@ -666,40 +665,51 @@ namespace scene
                         {
                             sscanf(buffer, "max_particles: %d", &templ.particles.max_particles);
                         }
+                        else if(starts_with(buffer, "shd"))
+                        {
+                            char shader_file[256];
+                            sscanf(buffer, "shd: %s", shader_file);
+                            rendering::ShaderHandle shader_handle = rendering::load_shader(*scene.renderer, shader_file);
+                            templ.particles.material_handle = rendering::create_material(*scene.renderer, shader_handle);
+
+                            // @Incomplete: Multiple passes?
+                            // Add the pass information
+                            templ.particles.shader_handle = shader_handle;
+                        }
                         else if(starts_with(buffer, "started"))
                         {
                             sscanf(buffer, "started: %d", &templ.particles.started);
                         }
                         else if(starts_with(buffer, "start_size"))
                         {
-			    if(attributes.start_size_type != StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
-			    {
-				sscanf(buffer, "start_size: %f", &attributes.size.constant.start_size);
-				attributes.start_size_type = StartParameterType::CONSTANT;
-			    }
+                            if(attributes.start_size_type != StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
+                            {
+                                sscanf(buffer, "start_size: %f", &attributes.size.constant.start_size);
+                                attributes.start_size_type = StartParameterType::CONSTANT;
+                            }
                         }
-			else if(starts_with(buffer, "random_start_size"))
-			{
-			    sscanf(buffer, "random_start_size: %f %f", &attributes.size.random_between_two_constants.s0, &attributes.size.random_between_two_constants.s1);
-			    attributes.start_size_type = StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS;
-			}
+                        else if(starts_with(buffer, "random_start_size"))
+                        {
+                            sscanf(buffer, "random_start_size: %f %f", &attributes.size.random_between_two_constants.s0, &attributes.size.random_between_two_constants.s1);
+                            attributes.start_size_type = StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS;
+                        }
                         else if(starts_with(buffer, "start_color"))
                         {
                             sscanf(buffer, "start_color: %f %f %f %f", &attributes.start_color.r, &attributes.start_color.g, &attributes.start_color.b, &attributes.start_color.a);
                         }
                         else if(starts_with(buffer, "start_speed"))
                         {
-			    if(attributes.start_speed_type != StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
-			    {
-				sscanf(buffer, "start_speed: %f", &attributes.speed.constant.start_speed);
-				attributes.start_speed_type = StartParameterType::CONSTANT;
-			    }
+                            if(attributes.start_speed_type != StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
+                            {
+                                sscanf(buffer, "start_speed: %f", &attributes.speed.constant.start_speed);
+                                attributes.start_speed_type = StartParameterType::CONSTANT;
+                            }
                         }
-			else if(starts_with(buffer, "random_start_speed"))
-			{
-			    sscanf(buffer, "random_start_speed: %f %f", &attributes.speed.random_between_two_constants.s0, &attributes.speed.random_between_two_constants.s1);
-			    attributes.start_speed_type = StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS;
-			}
+                        else if(starts_with(buffer, "random_start_speed"))
+                        {
+                            sscanf(buffer, "random_start_speed: %f %f", &attributes.speed.random_between_two_constants.s0, &attributes.speed.random_between_two_constants.s1);
+                            attributes.start_speed_type = StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS;
+                        }
                         else if(starts_with(buffer, "life_time"))
                         {
                             if(attributes.start_life_time_type != StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
@@ -901,7 +911,7 @@ namespace scene
         
         if(templ.comp_flags & COMP_PARTICLES)
         {
-            scene::ParticleSystemComponent &ps_comp = scene::_add_particle_system_component(scene, handle, templ.particles.attributes, templ.particles.max_particles);
+            scene::ParticleSystemComponent &ps_comp = scene::_add_particle_system_component(scene, handle, templ.particles.attributes, templ.particles.max_particles, templ.particles.material_handle, scene.material_array_handle);
 
             ParticleSystemInfo *ps = get_particle_system_info(ps_comp.handle, *scene.renderer);
             
@@ -932,7 +942,9 @@ namespace scene
                 ps->transform.scale = templ.transform.position;
                 ps->transform.rotation = templ.transform.rotation;
             }
-	    
+
+            ps_comp.render_pass = rendering::get_render_pass_handle_for_name(STANDARD_PASS, *scene.renderer);
+            
             if(templ.particles.started)
                 start_particle_system(ps_comp.handle, *scene.renderer);
         }

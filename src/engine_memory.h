@@ -63,7 +63,7 @@ inline PushParams default_with_alignment(u32 alignment)
     return params;
 }
 
-#define zero_struct(instance) zero_size(sizeof(instance), &(instance)
+#define zero_struct(instance) zero_size(sizeof(instance), &(instance))
 #define zero_array(count, pointer) zero_size(count * sizeof(pointer[0]), pointer)
 inline void zero_size(umm size, void *ptr)
 {

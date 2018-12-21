@@ -6,7 +6,7 @@ namespace rendering
     
 #define MAX_INSTANCE_BUFFERS 64
     
-     struct ShaderHandle
+    struct ShaderHandle
     {
 		i32 handle;
     };
@@ -102,7 +102,11 @@ namespace rendering
         POSITION,
         SCALE,
         ROTATION,
-        MODEL
+        MODEL,
+        PARTICLE_POSITION,
+        PARTICLE_COLOR,
+        PARTICLE_SIZE,
+        PARTICLE_ANGLE,
     };
 
     struct VertexAttributeInstanced
@@ -155,6 +159,10 @@ namespace rendering
         POINT_LIGHT_SPECULAR,
 
         CLIPPING_PLANE,
+
+        CAMERA_UP,
+        CAMERA_RIGHT,
+        CAMERA_FORWARD,
         
 		MAX
     };

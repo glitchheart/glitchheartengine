@@ -37,7 +37,7 @@ static MemoryState memory_state;
 #endif
 
 #include "scene.h"
-#include "particles.cpp"
+
 #include "opengl_rendering.h"
 #include "animation.cpp"
 #include "keycontroller.cpp"
@@ -57,7 +57,7 @@ static MemoryState memory_state;
 #include "shader_loader.cpp"
 #include "render_pipeline.cpp"
 #include "rendering.cpp"
-
+#include "particles.cpp"
 
 #if defined(__linux) || defined(__APPLE__)
 #include "dlfcn.h"
@@ -368,14 +368,11 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     renderer.particles.particle_system_count = 0;
     renderer.animation_controllers = push_array(&renderer.animation_arena, 64, AnimationController);
     renderer.spritesheet_animations = push_array(&renderer.animation_arena, global_max_spritesheet_animations, SpritesheetAnimation);
-    renderer.commands = push_array(&renderer.command_arena, global_max_render_commands, RenderCommand);
     renderer.buffers = push_array(&renderer.buffer_arena, global_max_custom_buffers, BufferData);
     renderer.updated_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
     renderer.texture_data = push_array(&renderer.texture_arena, global_max_textures, TextureData);
     renderer.spritesheet_animation_count = 0;
     renderer.animation_controller_count = 0;
-    renderer.material_count = 0;
-    renderer.materials = push_array(&renderer.mesh_arena, global_max_materials, Material);
     renderer.meshes = push_array(&renderer.mesh_arena, global_max_meshes, Mesh);
     renderer.shader_data = push_array(&renderer.shader_arena, global_max_shaders, ShaderData);
     renderer.tt_font_infos = push_array(&renderer.font_arena, global_max_fonts, TrueTypeFontInfo);
@@ -551,6 +548,45 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
         renderer.render.instancing._internal_float4_handles[i] = -1;
         renderer.render.instancing._internal_mat4_handles[i] = -1;
     }
+
+    rendering::RegisterBufferInfo particle_buffer = rendering::create_register_buffer_info();
+    particle_buffer.usage = rendering::BufferUsage::STATIC;
+
+    r32 quad_vertices[20] =
+    {
+        -0.5f, 0.5f, 0.0f, 0.0f, 0.0f,
+        0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
+        0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
+        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f
+    };
+
+    i32 vertex_size = 5;
+    particle_buffer.data.vertex_count = 4;
+    particle_buffer.data.vertex_buffer_size = particle_buffer.data.vertex_count * vertex_size * (i32)sizeof(r32);
+    particle_buffer.data.vertex_buffer = push_size(&renderer.buffer_arena, particle_buffer.data.vertex_buffer_size, r32);
+
+    for (i32 i = 0; i < particle_buffer.data.vertex_count * vertex_size; i++)
+    {
+        particle_buffer.data.vertex_buffer[i] = quad_vertices[i];
+    }
+
+    i32 index_count = 6;
+    particle_buffer.data.index_buffer_size = index_count * (i32)sizeof(u16);
+    particle_buffer.data.index_buffer_count = index_count;
+
+    particle_buffer.data.index_buffer = push_size(&renderer.buffer_arena, particle_buffer.data.index_buffer_size, u16);
+
+    u16 quad_indices[6] =
+        {
+            0, 1, 2,
+            0, 2, 3};
+    
+    for (i32 i = 0; i < index_count; i++)
+    {
+        particle_buffer.data.index_buffer[i] = quad_indices[i];
+    }
+
+    renderer.particles.quad_buffer = rendering::register_buffer(renderer, particle_buffer);
 }
 
 #if ENABLE_ANALYTICS

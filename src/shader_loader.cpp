@@ -151,6 +151,22 @@ namespace rendering
         {
             type = VertexAttributeMappingType::MODEL;
         }
+        else if (starts_with(mapped_buffer, "PARTICLE_POSITION"))
+        {
+            type = VertexAttributeMappingType::PARTICLE_POSITION;
+        }
+        else if (starts_with(mapped_buffer, "PARTICLE_COLOR"))
+        {
+            type = VertexAttributeMappingType::PARTICLE_COLOR;
+        }
+        else if (starts_with(mapped_buffer, "PARTICLE_SIZE"))
+        {
+            type = VertexAttributeMappingType::PARTICLE_SIZE;
+        }
+        else if (starts_with(mapped_buffer, "PARTICLE_ANGLE"))
+        {
+            type = VertexAttributeMappingType::PARTICLE_ANGLE;
+        }
         return type;
     }
 
@@ -277,6 +293,18 @@ namespace rendering
         else if (starts_with(mapped_buffer, "CLIPPING_PLANE"))
         {
             type = UniformMappingType::CLIPPING_PLANE;
+        }
+        else if (starts_with(mapped_buffer, "CAMERA_UP"))
+        {
+            type = UniformMappingType::CAMERA_UP;
+        }
+        else if (starts_with(mapped_buffer, "CAMERA_RIGHT"))
+        {
+            type = UniformMappingType::CAMERA_RIGHT;
+        }
+        else if (starts_with(mapped_buffer, "CAMERA_FORWARD"))
+        {
+            type = UniformMappingType::CAMERA_FORWARD;
         }
 
         return type;
