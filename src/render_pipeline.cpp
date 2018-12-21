@@ -262,13 +262,15 @@ namespace rendering
     }
 
     static void free_instance_buffer(InstanceBufferHandle buffer_handle, Renderer& renderer)
-    {
+    {       
         switch(buffer_handle.type)
         {
         case ValueType::FLOAT:
         {
             i32 handle = renderer.render.instancing._internal_float_handles[buffer_handle.handle - 1];
 
+            renderer.api_functions.delete_instance_buffer(handle, renderer.api_functions.render_state, &renderer);
+            
             free(renderer.render.instancing.float_buffers[handle]);
 
             renderer.render.instancing.float_buffers[handle] = renderer.render.instancing.float_buffers[renderer.render.instancing.float_buffer_count - 1];
@@ -291,7 +293,9 @@ namespace rendering
         case ValueType::FLOAT2:
         {
             i32 handle = renderer.render.instancing._internal_float2_handles[buffer_handle.handle - 1];
-
+            
+            renderer.api_functions.delete_instance_buffer(handle, renderer.api_functions.render_state, &renderer);
+            
             free(renderer.render.instancing.float2_buffers[handle]);
 
             renderer.render.instancing.float2_buffers[handle] = renderer.render.instancing.float2_buffers[renderer.render.instancing.float2_buffer_count - 1];
@@ -315,6 +319,8 @@ namespace rendering
         {
             i32 handle = renderer.render.instancing._internal_float3_handles[buffer_handle.handle - 1];
 
+            renderer.api_functions.delete_instance_buffer(handle, renderer.api_functions.render_state, &renderer);
+            
             free(renderer.render.instancing.float3_buffers[handle]);
 
             renderer.render.instancing.float3_buffers[handle] = renderer.render.instancing.float3_buffers[renderer.render.instancing.float3_buffer_count - 1];
@@ -338,6 +344,8 @@ namespace rendering
         {
             i32 handle = renderer.render.instancing._internal_float4_handles[buffer_handle.handle - 1];
 
+            renderer.api_functions.delete_instance_buffer(handle, renderer.api_functions.render_state, &renderer);
+            
             free(renderer.render.instancing.float4_buffers[handle]);
 
             renderer.render.instancing.float4_buffers[handle] = renderer.render.instancing.float4_buffers[renderer.render.instancing.float4_buffer_count - 1];
@@ -361,6 +369,8 @@ namespace rendering
         {
             i32 handle = renderer.render.instancing._internal_mat4_handles[buffer_handle.handle - 1];
 
+            renderer.api_functions.delete_instance_buffer(handle, renderer.api_functions.render_state, &renderer);
+            
             free(renderer.render.instancing.mat4_buffers[handle]);
 
             renderer.render.instancing.mat4_buffers[handle] = renderer.render.instancing.mat4_buffers[renderer.render.instancing.mat4_buffer_count - 1];
