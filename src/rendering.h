@@ -1,10 +1,6 @@
 #ifndef RENDERING_H
 #define RENDERING_H
 
-#define MAX_BONES 50
-#define MAX_CHILDREN 30
-#define MAX_INSTANCING_PAIRS 128
-
 #define UI_COORD_DIMENSION 1000.0f
 #define MAX_MATERIAL_INSTANCE_ARRAYS 8
 
@@ -87,54 +83,12 @@ enum ShaderType
 };
 
 // @Incomplete: Remove the prefix from the values 
-enum RenderCommandType
-{
-    RENDER_COMMAND_LINE,
-    RENDER_COMMAND_QUAD,
-    
-    RENDER_COMMAND_SPOTLIGHT,
-    RENDER_COMMAND_DIRECTIONAL_LIGHT,
-    RENDER_COMMAND_POINT_LIGHT,
-    
-    RENDER_COMMAND_BUFFER,
-    RENDER_COMMAND_MODEL,
-    RENDER_COMMAND_MESH,
-    RENDER_COMMAND_MESH_INSTANCED,
-    RENDER_COMMAND_SHADER_START,
-    RENDER_COMMAND_SHADER_END,
-    RENDER_COMMAND_DEPTH_TEST,
-    RENDER_COMMAND_PARTICLES,
-    RENDER_COMMAND_CURSOR,
-    
-    RENDER_COMMAND_COUNT
-};
-
-// @Incomplete: Remove the prefix from the values 
 enum RelativeFlag
 {
     RELATIVE_TOP,
     RELATIVE_LEFT,
     RELATIVE_RIGHT,
     RELATIVE_BOTTOM
-};
-
-// @Incomplete: Remove the prefix from the values 
-enum Alignment
-{
-    ALIGNMENT_LEFT = (1 << 0),
-    ALIGNMENT_RIGHT = (1 << 1),
-    ALIGNMENT_CENTER_X = (1 << 2),
-    ALIGNMENT_CENTER_Y = (1 << 3),
-    ALIGNMENT_TOP = (1 << 4),
-    ALIGNMENT_BOTTOM = (1 << 5)
-};
-
-struct VertexInfo
-{
-	math::Vec3 position;
-	math::Vec2 uv;
-	math::Vec3 normal;
-	math::Rgba color;
 };
 
 struct RelativeUIQuadInfo
@@ -431,208 +385,6 @@ struct QueuedRenderCommand
     i32 count;
 };
 
-struct TextureInfo
-{
-	b32 has_data;
-	char texture_name[50];
-	i32 texture_handle;
-};
-
-struct Vec3Keys
-{
-	i32 num_keys;
-	r32* time_stamps;
-	math::Vec3* values;
-};
-
-struct QuatKeys
-{
-	i32 num_keys;
-	r32* time_stamps;
-	math::Quat* values;
-};
-
-struct BoneChannel
-{
-	i32 bone_index;
-	Vec3Keys position_keys;
-	QuatKeys rotation_keys;
-	Vec3Keys scaling_keys;
-};
-
-struct SkeletalAnimation
-{
-	char* name;
-	r32 duration;
-	i32 num_bone_channels;
-	BoneChannel* bone_channels;
-};
-
-struct SkeletalAnimationState
-{
-	b32 playing;
-	b32 loop;
-	r32 current_time;
-};
-
-struct Bone
-{
-	char name[30];
-	i32 parent_id;
-	u32 children[MAX_CHILDREN];
-	i32 child_count;
-    
-	math::Mat4 transformation;
-	math::Mat4 bone_offset;
-};
-
-struct MeshData
-{
-	i32 base_vertex;
-	i32 base_index;
-	i32 material_index;
-	i32 num_indices;
-};
-
-enum ModelType
-{
-    MODEL_STATIC,
-    MODEL_SKINNED
-};
-
-struct TransformInfo
-{ 
-	math::Vec3 position;
-	math::Vec3 scale;
-	math::Vec3 rotation;
-};
-
-enum ShaderAttributeType
-{
-    ATTRIBUTE_FLOAT,
-    ATTRIBUTE_FLOAT2,
-    ATTRIBUTE_FLOAT3,
-    ATTRIBUTE_FLOAT4,
-    ATTRIBUTE_INTEGER,
-    ATTRIBUTE_BOOLEAN,
-    ATTRIBUTE_MATRIX4
-};
-
-struct ShaderAttribute
-{
-	ShaderAttributeType type;
-	char name[32];
-	union
-	{
-		r32 float_var;
-		math::Vec2 float2_var;
-		math::Vec3 float3_var;
-		math::Vec4 float4_var;
-		i32 integer_var;
-		b32 boolean_var;
-		math::Mat4 matrix4_var;
-	};
-};
-
-struct ShaderInfo
-{
-	i32 shader_handle;
-	ShaderAttribute* shader_attributes;
-	i32 shader_attribute_count;
-};
-
-struct MaterialHandle
-{
-	i32 handle;
-    rendering::MaterialInstanceArrayHandle array_handle;
-};
-
-struct TextureHandle
-{
-	i32 handle;
-};
-
-struct MeshHandle
-{
-	i32 handle;
-};
-
-struct Material
-{
-	RenderMaterialType type;
-    
-	MaterialHandle source_handle;
-	ShaderInfo shader;
-
-	math::Rgba ambient_color;
-	math::Rgba diffuse_color;
-	math::Rgba specular_color;
-	r32 dissolve;
-	r32 specular_exponent;
-    
-	TextureHandle ambient_texture;
-	TextureHandle diffuse_texture;
-	TextureHandle specular_texture;
-	TextureHandle specular_intensity_texture;
-};
-
-enum WireframeType
-{
-    WT_NONE,
-    WT_WITH_MESH,
-    WT_WITHOUT_MESH
-};
-
-struct MeshInfo
-{
-	i32 mesh_handle;
-	i32 instance_offset_buffer_handle;
-	i32 instance_color_buffer_handle;
-	i32 instance_rotation_buffer_handle;
-	i32 instance_scale_buffer_handle;
-    
-	TransformInfo transform;
-	Material material;
-    
-	WireframeType wireframe_type;
-	math::Rgba wireframe_color;
-    
-	b32 cast_shadows;
-	b32 receives_shadows;
-};
-
-struct RenderInfo
-{
-	b32 is_ui;
-    
-	b32 with_origin;
-	math::Vec2 origin;
-	math::Rgba color;
-};
-
-struct QuadTextureInfo
-{
-	i32 texture_handle;
-	math::Vec2i frame_size;
-	math::Vec2 texture_offset;
-};
-
-struct QuadInfo
-{
-	TransformInfo transform_info;
-	ShaderInfo shader_info;
-	RenderInfo render_info;
-	QuadTextureInfo texture_info;
-    
-	r32 border_width;
-	math::Rgba border_color;
-	b32 rounded;
-	b32 flipped;
-	i32 animation_controller_handle;
-	b32 clip;
-	math::Rect clip_rect;
-};
-
 enum CommandBlendMode
 {
     CBM_ONE,
@@ -647,177 +399,6 @@ enum CursorType
     CURSOR_HRESIZE,
     CURSOR_IBEAM,
     CURSOR_VRESIZE
-};
-
-struct RenderCommand
-{
-	RenderCommandType type;
-	ShaderType shader_type;
-	b32 is_ui;
-    
-	math::Vec3 position;
-	math::Vec3 scale;
-	math::Vec3 rotation;
-	math::Quat orientation;
-	b32 with_origin;
-	math::Vec2 origin;
-	math::Rgba color;
-    
-	i32 shader_handle;
-	ShaderAttribute* shader_attributes;
-	i32 shader_attribute_count;
-    
-	b32 cast_shadows;
-	b32 receives_shadows;
-    
-	b32 clip;
-	math::Rect clip_rect;
-    
-	union
-	{
-		struct
-		{
-			math::Vec3 point1;
-			math::Vec3 point2;
-			r32 line_width;
-			math::Rgba color; // @Cleanup: REMOVE!
-		} line;
-		struct
-		{
-			math::Rgba color;
-		} sprite;
-		struct
-		{
-			i32 texture_handle;
-			b32 flipped;
-			b32 rounded;
-			math::Rgba color; // @Cleanup: REMOVE!
-			b32 outlined;
-			r32 line_width;
-			b32 for_animation;
-			math::Vec2 texture_size;
-			math::Vec2i frame_size;
-			math::Vec2 texture_offset;
-			r32 border_width;
-			math::Rgba border_color;
-		} quad;
-		struct
-		{
-			math::Vec3 direction;
-			r32 cut_off;
-			r32 outer_cut_off;
-			math::Vec3 ambient;
-			math::Vec3 diffuse;
-			math::Vec3 specular;
-            
-			r32 constant;
-			r32 linear;
-			r32 quadratic;
-		} spotlight;
-		struct 
-		{
-			math::Vec3 direction;
-			math::Vec3 ambient;
-			math::Vec3 diffuse;
-			math::Vec3 specular;
-		} directional_light;
-		struct
-		{
-			math::Vec3 ambient;
-			math::Vec3 diffuse;
-			math::Vec3 specular;
-            
-			r32 constant;
-			r32 linear;
-			r32 quadratic;
-		} point_light;
-		struct
-		{
-			i32 buffer_handle;
-			i32 texture_handle;
-		} buffer;
-		struct
-		{
-			ModelType type;
-			i32 buffer_handle;
-			MeshData *meshes;
-			i32 mesh_count;
-			Material materials[10];
-			i32 material_count;
-			math::Rgba color;
-			math::Mat4* bone_transforms;
-			i32 bone_count;
-		} model;
-		struct
-		{
-			i32 buffer_handle;
-			RenderMaterialType material_type;
-			i32 diffuse_texture;
-			i32 specular_texture;
-			i32 ambient_texture;
-			i32 specular_intensity_texture;
-			math::Rgba diffuse_color;
-			math::Rgba specular_color;
-			math::Rgba ambient_color;
-			r32 specular_exponent;
-			WireframeType wireframe_type;
-			math::Rgba wireframe_color;
-		} mesh;
-		struct
-		{
-			i32 buffer_handle;
-			i32 instance_offset_buffer_handle;
-			i32 instance_color_buffer_handle;
-			i32 instance_rotation_buffer_handle;
-			i32 instance_scale_buffer_handle;
-            
-			RenderMaterialType material_type;
-			i32 diffuse_texture;
-			i32 specular_texture;
-			i32 ambient_texture;
-			i32 specular_intensity_texture;
-			math::Rgba diffuse_color;
-			math::Rgba specular_color;
-			math::Rgba ambient_color;
-			r32 dissolve;
-			r32 specular_exponent;
-			WireframeType wireframe_type;
-			math::Rgba wireframe_color;
-			math::Vec3 *offsets;
-			math::Rgba *colors;
-			math::Vec3 *rotations;
-			math::Vec3 *scalings;
-			i32 offset_count;
-		} mesh_instanced;
-		struct
-		{
-			b32 on;
-		} depth_test;
-		struct
-		{
-			CursorType type;
-		} cursor;
-		struct
-		{
-			i32 handle;
-			i32 buffer_handle;
-			i32 offset_buffer_handle;
-			i32 color_buffer_handle;
-			i32 size_buffer_handle;
-			i32 angle_buffer_handle;
-			RenderMaterialType material_type;
-			i32 diffuse_texture;
-            
-			i32 particle_count;
-			math::Vec3 *offsets;
-			math::Vec4 *colors;
-			math::Vec2 *sizes;
-			r32* angles;
-			i32 texture_handle;
-            
-			CommandBlendMode blend_mode;
-		} particles;
-	};
 };
 
 enum FadingMode
@@ -957,9 +538,6 @@ struct Renderer
 
     Camera camera;
 	
-	RenderCommand *commands;
-	i32 command_count;
-    
 	MemoryArena command_arena;
     
 	BufferData *buffers;
@@ -973,9 +551,6 @@ struct Renderer
     
 	i32 *removed_buffer_handles;
 	i32 removed_buffer_handle_count;
-    
-	Material *materials;
-	i32 material_count;
     
 	Mesh *meshes;
 	i32 mesh_count;
@@ -992,6 +567,7 @@ struct Renderer
 		i32 particle_system_count;
         
 		RandomSeries* entropy;
+        rendering::BufferHandle quad_buffer;
 	} particles;
     
 	TextureData *texture_data;
@@ -1176,7 +752,7 @@ struct Renderer
             rendering::MaterialHandle font_material;
             rendering::BufferHandle font_buffer;
         } ui;
-        
+
         MemoryArena render_pass_arena;
         
 		rendering::RenderCommand *render_commands;

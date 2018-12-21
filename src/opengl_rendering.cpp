@@ -1599,7 +1599,7 @@ static void initialize_opengl(RenderState &render_state, Renderer &renderer, r32
 
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
-    glfwSwapInterval(0);
+    glfwSwapInterval(1);
 
     glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
     glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
@@ -1890,573 +1890,6 @@ static void set_ms_texture_uniform(GLuint shader_handle, GLuint texture, i32 ind
 
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
-static void prepare_shader(const Shader shader, ShaderAttribute *attributes, i32 shader_attribute_count)
-{
-    use_shader(shader);
-
-    for (i32 index = 0; index < shader_attribute_count; index++)
-    {
-        ShaderAttribute &attribute = attributes[index];
-        switch (attribute.type)
-        {
-        case ATTRIBUTE_FLOAT:
-        {
-            set_float_uniform(shader.program, attribute.name, attribute.float_var);
-        }
-        break;
-        case ATTRIBUTE_FLOAT2:
-        {
-            set_vec2_uniform(shader.program, attribute.name, attribute.float2_var);
-        }
-        break;
-        case ATTRIBUTE_FLOAT3:
-        {
-            set_vec3_uniform(shader.program, attribute.name, attribute.float3_var);
-        }
-        break;
-        case ATTRIBUTE_FLOAT4:
-        {
-            set_vec4_uniform(shader.program, attribute.name, attribute.float4_var);
-        }
-        break;
-        case ATTRIBUTE_INTEGER:
-        {
-            set_int_uniform(shader.program, attribute.name, attribute.integer_var);
-        }
-        break;
-        case ATTRIBUTE_BOOLEAN:
-        {
-            set_int_uniform(shader.program, attribute.name, attribute.boolean_var);
-        }
-        break;
-        case ATTRIBUTE_MATRIX4:
-        {
-            set_mat4_uniform(shader.program, attribute.name, attribute.matrix4_var);
-        }
-        break;
-        }
-    }
-}
-
-static void render_mesh(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix, b32 for_shadow_map, ShadowMapMatrices *shadow_map_matrices = nullptr)
-{
-    i32 _internal_buffer_handle = renderer._internal_buffer_handles[render_command.mesh.buffer_handle - 1];
-
-    Buffer buffer = render_state.buffers[_internal_buffer_handle];
-    bind_vertex_array(buffer.vao, render_state);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
-    Shader shader = render_state.mesh_shader;
-
-    if (for_shadow_map)
-    {
-        shader = render_state.depth_shader;
-        use_shader(shader);
-    }
-    else
-    {
-        use_shader(shader);
-    }
-
-    vertex_attrib_pointer(0, 3, GL_FLOAT, (8 * sizeof(GLfloat)), nullptr);
-    vertex_attrib_pointer(1, 3, GL_FLOAT, (8 * sizeof(GLfloat)), (void *)(3 * sizeof(GLfloat)));
-    vertex_attrib_pointer(2, 2, GL_FLOAT, (8 * sizeof(GLfloat)), (void *)(6 * sizeof(GLfloat)));
-
-    math::Mat4 model_matrix(1.0f);
-    model_matrix = math::scale(model_matrix, render_command.scale);
-
-    math::Vec3 rotation = render_command.rotation;
-
-    auto orientation = math::Quat();
-    orientation = math::rotate(orientation, rotation.x, math::Vec3(1.0f, 0.0f, 0.0f));
-    orientation = math::rotate(orientation, rotation.y, math::Vec3(0.0f, 1.0f, 0.0f));
-    orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, 1.0f));
-
-    model_matrix = to_matrix(orientation) * model_matrix;
-
-    model_matrix = math::translate(model_matrix, render_command.position);
-
-    set_mat4_uniform(shader.program, "projectionMatrix", projection_matrix);
-    set_mat4_uniform(shader.program, "viewMatrix", view_matrix);
-    set_mat4_uniform(shader.program, "modelMatrix", model_matrix);
-
-    if (!for_shadow_map)
-    {
-        glUniform1i(glGetUniformLocation(shader.program, "diffuseTexture"), 0);
-        glUniform1i(glGetUniformLocation(shader.program, "specularTexture"), 1);
-        glUniform1i(glGetUniformLocation(shader.program, "ambientTexture"), 2);
-        glUniform1i(glGetUniformLocation(shader.program, "specularIntensityTexture"), 3);
-        glUniform1i(glGetUniformLocation(shader.program, "shadowMap"), 4);
-
-        if (render_command.mesh.diffuse_texture != 0)
-        {
-            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh.diffuse_texture - 1].handle];
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
-
-            set_bool_uniform(shader.program, "hasTexture", true);
-        }
-        else
-            set_bool_uniform(shader.program, "hasTexture", false);
-
-        if (render_command.mesh.specular_texture != 0)
-        {
-            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh.specular_texture - 1].handle];
-
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
-
-            set_bool_uniform(shader.program, "hasSpecular", true);
-        }
-        else
-        {
-            set_bool_uniform(shader.program, "hasSpecular", false);
-        }
-
-        if (render_command.mesh.ambient_texture != 0)
-        {
-            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh.ambient_texture - 1].handle];
-
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
-
-            set_bool_uniform(shader.program, "hasAmbient", true);
-        }
-        else
-        {
-            set_bool_uniform(shader.program, "hasAmbient", false);
-        }
-
-        glActiveTexture(GL_TEXTURE3);
-        if (render_command.mesh.specular_intensity_texture != 0)
-        {
-            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh.specular_intensity_texture - 1].handle];
-
-            glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
-
-            set_bool_uniform(shader.program, "hasSpecularIntensity", true);
-        }
-        else
-        {
-            set_bool_uniform(shader.program, "hasSpecularIntensity", false);
-        }
-
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
-
-        set_bool_uniform(shader.program, "receivesShadows", render_command.receives_shadows);
-        set_mat4_uniform(shader.program, "depthModelMatrix", shadow_map_matrices->depth_model_matrix);
-        set_mat4_uniform(shader.program, "depthBiasMatrix", shadow_map_matrices->depth_bias_matrix);
-        set_mat4_uniform(shader.program, "depthViewMatrix", shadow_map_matrices->depth_view_matrix);
-        set_mat4_uniform(shader.program, "depthProjectionMatrix", shadow_map_matrices->depth_projection_matrix);
-
-        set_vec3_uniform(shader.program, "lightPosWorld", math::Vec3(0, 20, -10));
-
-        set_vec3_uniform(shader.program, "lightSpecular", math::Vec3(1.0f));
-        set_vec3_uniform(shader.program, "lightColor", math::Vec3(1.0f));
-        set_vec3_uniform(shader.program, "lightAmbient", math::Vec3(0.2f));
-        set_vec3_uniform(shader.program, "diffuseColor", render_command.mesh.diffuse_color.xyz);
-        set_vec3_uniform(shader.program, "specularColor", render_command.mesh.specular_color.xyz);
-        set_float_uniform(shader.program, "specularExponent", render_command.mesh.specular_exponent);
-
-        set_vec3_uniform(shader.program, "ambientColor", render_command.mesh.ambient_color.xyz);
-
-        switch (render_command.mesh.wireframe_type)
-        {
-        case WT_NONE:
-        {
-            set_bool_uniform(shader.program, "drawWireframe", false);
-            set_bool_uniform(shader.program, "drawMesh", true);
-        }
-        break;
-        case WT_WITH_MESH:
-        {
-            set_vec4_uniform(shader.program, "wireframeColor", render_command.mesh.wireframe_color);
-            set_bool_uniform(shader.program, "drawWireframe", true);
-            set_bool_uniform(shader.program, "drawMesh", true);
-        }
-        break;
-        case WT_WITHOUT_MESH:
-        {
-            set_vec4_uniform(shader.program, "wireframeColor", render_command.mesh.wireframe_color);
-            set_bool_uniform(shader.program, "drawWireframe", true);
-            set_bool_uniform(shader.program, "drawMesh", false);
-        }
-        break;
-        }
-
-        set_float_uniform(shader.program, "lightPower", 1.0f);
-    }
-
-    // @Incomplete: We want this to be without anything but the vertex positions.
-    // The depth shader shouldn't assume a buffer with anything else in it, so we
-    // have to find a way to do this efficiently.
-    if (buffer.index_buffer_count == 0)
-    {
-        glDrawArrays(
-            GL_TRIANGLES, 0, buffer.vertex_count);
-    }
-    else
-    {
-        glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void *)nullptr);
-    }
-
-    glActiveTexture(GL_TEXTURE0);
-}
-
-static void render_mesh_instanced(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix, b32 for_shadow_map, ShadowMapMatrices *shadow_map_matrices = nullptr)
-{
-    i32 _internal_buffer_handle = renderer._internal_buffer_handles[render_command.mesh_instanced.buffer_handle - 1];
-
-    i32 _internal_offset_buffer_handle = renderer._internal_buffer_handles[render_command.mesh_instanced.instance_offset_buffer_handle - 1];
-    i32 _internal_color_buffer_handle = renderer._internal_buffer_handles[render_command.mesh_instanced.instance_color_buffer_handle - 1];
-    i32 _internal_rotation_buffer_handle = renderer._internal_buffer_handles[render_command.mesh_instanced.instance_rotation_buffer_handle - 1];
-    i32 _internal_scale_buffer_handle = renderer._internal_buffer_handles[render_command.mesh_instanced.instance_scale_buffer_handle - 1];
-
-    Buffer buffer = render_state.buffers[_internal_buffer_handle];
-    Buffer offset_instance_buffer = render_state.buffers[_internal_offset_buffer_handle];
-    Buffer color_instance_buffer = render_state.buffers[_internal_color_buffer_handle];
-    Buffer rotation_instance_buffer = render_state.buffers[_internal_rotation_buffer_handle];
-    Buffer scale_instance_buffer = render_state.buffers[_internal_scale_buffer_handle];
-
-    bind_vertex_array(buffer.vao, render_state);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
-
-    Shader shader = render_state.mesh_instanced_shader;
-
-    if (for_shadow_map)
-    {
-        shader = render_state.depth_instanced_shader;
-        use_shader(shader);
-    }
-    else
-    {
-        use_shader(shader);
-    }
-
-    glEnableVertexAttribArray(0);
-    vertex_attrib_pointer(0, 3, GL_FLOAT, (8 * sizeof(GLfloat)), nullptr);
-
-    glEnableVertexAttribArray(1);
-    vertex_attrib_pointer(1, 3, GL_FLOAT, (8 * sizeof(GLfloat)), (void *)(3 * sizeof(GLfloat)));
-
-    glEnableVertexAttribArray(2);
-    vertex_attrib_pointer(2, 2, GL_FLOAT, (8 * sizeof(GLfloat)), (void *)(6 * sizeof(GLfloat)));
-
-    // offset
-    glEnableVertexAttribArray(3);
-    glBindBuffer(GL_ARRAY_BUFFER, offset_instance_buffer.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.offsets);
-
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void *)nullptr);
-    glVertexAttribDivisor(3, 1);
-
-    // color
-    glEnableVertexAttribArray(4);
-    glBindBuffer(GL_ARRAY_BUFFER, color_instance_buffer.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Rgba) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.colors);
-
-    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 0, (void *)nullptr);
-    glVertexAttribDivisor(4, 1);
-
-    // rotation
-    glEnableVertexAttribArray(5);
-    glBindBuffer(GL_ARRAY_BUFFER, rotation_instance_buffer.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.rotations);
-
-    glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, 0, (void *)nullptr);
-    glVertexAttribDivisor(5, 1);
-
-    // scale
-    glEnableVertexAttribArray(6);
-    glBindBuffer(GL_ARRAY_BUFFER, scale_instance_buffer.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.scalings);
-
-    glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, 0, (void *)nullptr);
-    glVertexAttribDivisor(6, 1);
-
-    math::Mat4 model_matrix(1.0f);
-    model_matrix = math::scale(model_matrix, render_command.scale);
-
-    math::Vec3 rotation = render_command.rotation;
-    auto x_axis = rotation.x > 0.0f ? 1.0f : 0.0f;
-    auto y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
-    auto z_axis = rotation.z > 0.0f ? 1.0f : 0.0f;
-
-    math::Quat orientation = math::Quat();
-    orientation = math::rotate(orientation, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
-    orientation = math::rotate(orientation, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
-    orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
-
-    model_matrix = to_matrix(orientation) * model_matrix;
-
-    model_matrix = math::translate(model_matrix, render_command.position);
-
-    set_mat4_uniform(shader.program, "projectionMatrix", projection_matrix);
-    set_mat4_uniform(shader.program, "viewMatrix", view_matrix);
-    set_mat4_uniform(shader.program, "modelMatrix", model_matrix);
-
-    if (!for_shadow_map)
-    {
-        glUniform1i(glGetUniformLocation(shader.program, "material.diffuseTexture"), 0);
-        glUniform1i(glGetUniformLocation(shader.program, "material.specularTexture"), 1);
-        glUniform1i(glGetUniformLocation(shader.program, "material.ambientTexture"), 2);
-        glUniform1i(glGetUniformLocation(shader.program, "material.specularIntensityTexture"), 3);
-        glUniform1i(glGetUniformLocation(shader.program, "shadowMap"), 4);
-
-        if (render_command.mesh_instanced.diffuse_texture != 0)
-        {
-            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.diffuse_texture - 1].handle];
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
-
-            set_bool_uniform(shader.program, "material.hasTexture", true);
-        }
-        else
-            set_bool_uniform(shader.program, "material.hasTexture", false);
-
-        if (render_command.mesh_instanced.specular_texture != 0)
-        {
-            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.specular_texture - 1].handle];
-
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
-
-            set_bool_uniform(shader.program, "material.hasSpecular", true);
-        }
-        else
-        {
-            set_bool_uniform(shader.program, "material.hasSpecular", false);
-        }
-
-        if (render_command.mesh_instanced.ambient_texture != 0)
-        {
-            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.ambient_texture - 1].handle];
-
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
-
-            set_bool_uniform(shader.program, "material.hasAmbient", true);
-        }
-        else
-        {
-            set_bool_uniform(shader.program, "material.hasAmbient", false);
-        }
-
-        if (render_command.mesh_instanced.specular_intensity_texture != 0)
-        {
-            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.specular_intensity_texture - 1].handle];
-
-            glActiveTexture(GL_TEXTURE3);
-            glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
-
-            set_bool_uniform(shader.program, "material.hasSpecularIntensity", true);
-        }
-        else
-        {
-            set_bool_uniform(shader.program, "material.hasSpecularIntensity", false);
-        }
-
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
-
-        set_bool_uniform(shader.program, "receivesShadows", render_command.receives_shadows);
-        set_mat4_uniform(shader.program, "depthModelMatrix", shadow_map_matrices->depth_model_matrix);
-        set_mat4_uniform(shader.program, "depthBiasMatrix", shadow_map_matrices->depth_bias_matrix);
-        set_mat4_uniform(shader.program, "depthViewMatrix", shadow_map_matrices->depth_view_matrix);
-        set_mat4_uniform(shader.program, "depthProjectionMatrix", shadow_map_matrices->depth_projection_matrix);
-
-        set_vec3_uniform(shader.program, "material.diffuseColor", render_command.mesh_instanced.diffuse_color.xyz);
-        set_vec3_uniform(shader.program, "material.specularColor", render_command.mesh_instanced.specular_color.xyz);
-        set_float_uniform(shader.program, "material.specularExponent", render_command.mesh_instanced.specular_exponent);
-
-        set_vec3_uniform(shader.program, "material.ambientColor", render_command.mesh_instanced.ambient_color.xyz);
-
-        set_bool_uniform(shader.program, "material.translucency.hasTranslucency", false);
-        set_float_uniform(shader.program, "material.translucency.distortion", 0.059f);
-        set_float_uniform(shader.program, "material.translucency.power", 9.8f);
-        set_float_uniform(shader.program, "material.translucency.scale", 0.5f);
-        set_vec3_uniform(shader.program, "material.translucency.subColor", math::Vec3(1.0f));
-        set_float_uniform(shader.program, "material.dissolve", render_command.mesh_instanced.dissolve);
-
-        switch (render_command.mesh_instanced.wireframe_type)
-        {
-        case WT_NONE:
-        {
-            set_bool_uniform(shader.program, "drawWireframe", false);
-            set_bool_uniform(shader.program, "drawMesh", true);
-        }
-        break;
-        case WT_WITH_MESH:
-        {
-            set_vec4_uniform(shader.program, "wireframeColor", render_command.mesh_instanced.wireframe_color);
-            set_bool_uniform(shader.program, "drawWireframe", true);
-            set_bool_uniform(shader.program, "drawMesh", true);
-        }
-        break;
-        case WT_WITHOUT_MESH:
-        {
-            set_vec4_uniform(shader.program, "wireframeColor", render_command.mesh_instanced.wireframe_color);
-            set_bool_uniform(shader.program, "drawWireframe", true);
-            set_bool_uniform(shader.program, "drawMesh", false);
-        }
-        break;
-        }
-    }
-
-    glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void *)nullptr, render_command.mesh_instanced.offset_count);
-
-    glActiveTexture(GL_TEXTURE0);
-}
-
-static void render_particles(RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix)
-{
-    for (i32 i = 0; i < renderer.particles._tagged_removed_count; i++)
-    {
-        if (renderer.particles._tagged_removed[i] == render_command.particles.handle)
-        {
-            return;
-        }
-    }
-
-    if (render_command.particles.blend_mode == CBM_ONE)
-    {
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-    }
-
-    glDepthMask(GL_FALSE);
-
-    i32 _internal_offset_handle = renderer._internal_buffer_handles[render_command.particles.offset_buffer_handle - 1];
-    i32 _internal_color_handle = renderer._internal_buffer_handles[render_command.particles.color_buffer_handle - 1];
-    i32 _internal_size_handle = renderer._internal_buffer_handles[render_command.particles.size_buffer_handle - 1];
-    i32 _internal_angle_handle = renderer._internal_buffer_handles[render_command.particles.angle_buffer_handle - 1];
-
-    if (_internal_offset_handle == -1 || _internal_color_handle == -1 || _internal_size_handle == -1 || _internal_angle_handle == -1)
-    {
-        return;
-    }
-
-    Buffer offset_buffer = render_state.buffers[_internal_offset_handle];
-    Buffer color_buffer = render_state.buffers[_internal_color_handle];
-    Buffer size_buffer = render_state.buffers[_internal_size_handle];
-    Buffer angle_buffer = render_state.buffers[_internal_angle_handle];
-
-    bind_vertex_array(render_state.billboard_vao, render_state);
-    glBindBuffer(GL_ARRAY_BUFFER, render_state.billboard_vbo);
-    Shader shader = render_state.particle_shader;
-
-    use_shader(shader);
-
-    vertex_attrib_pointer(0, 3, GL_FLOAT, (5 * sizeof(GLfloat)), nullptr);
-
-    vertex_attrib_pointer(1, 2, GL_FLOAT, (5 * sizeof(GLfloat)), (void *)(3 * sizeof(GLfloat)));
-
-    glBindBuffer(GL_ARRAY_BUFFER, offset_buffer.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizei)sizeof(math::Vec3) * render_command.particles.particle_count, render_command.particles.offsets);
-    vertex_attrib_pointer(2, 3, GL_FLOAT, (3 * sizeof(GLfloat)), (void *)(0 * sizeof(GLfloat)));
-
-    glBindBuffer(GL_ARRAY_BUFFER, color_buffer.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizei)sizeof(math::Vec4) * render_command.particles.particle_count, render_command.particles.colors);
-    vertex_attrib_pointer(3, 4, GL_FLOAT, (4 * sizeof(GLfloat)), (void *)(0 * sizeof(GLfloat)));
-
-    glBindBuffer(GL_ARRAY_BUFFER, size_buffer.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizei)sizeof(math::Vec2) * render_command.particles.particle_count, render_command.particles.sizes);
-    vertex_attrib_pointer(4, 2, GL_FLOAT, 2 * sizeof(GLfloat), (void *)(0 * sizeof(GLfloat)));
-
-    glBindBuffer(GL_ARRAY_BUFFER, angle_buffer.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizei)sizeof(r32) * render_command.particles.particle_count, render_command.particles.angles);
-    vertex_attrib_pointer(5, 1, GL_FLOAT, sizeof(GLfloat), (void *)(0 * sizeof(GLfloat)));
-
-    glVertexAttribDivisor(0, 0);
-    glVertexAttribDivisor(1, 0);
-    glVertexAttribDivisor(2, 1);
-    glVertexAttribDivisor(3, 1);
-    glVertexAttribDivisor(4, 1);
-    glVertexAttribDivisor(5, 1);
-
-    static GLint pLoc = glGetUniformLocation(shader.program, "projectionMatrix");
-    static GLint vLoc = glGetUniformLocation(shader.program, "viewMatrix");
-    static GLint crLoc = glGetUniformLocation(shader.program, "cameraRight");
-    static GLint cuLoc = glGetUniformLocation(shader.program, "cameraUp");
-
-    set_mat4_uniform(shader.program, pLoc, projection_matrix);
-    set_mat4_uniform(shader.program, vLoc, view_matrix);
-
-    set_vec3_uniform(shader.program, crLoc, math::Vec3(view_matrix[0][0], view_matrix[1][0], view_matrix[2][0]));
-    set_vec3_uniform(shader.program, cuLoc, math::Vec3(view_matrix[0][1], view_matrix[1][1], view_matrix[2][1]));
-
-    static GLint wLoc = glGetUniformLocation(shader.program, "withTexture");
-
-    // Check for texture
-    if (render_command.particles.diffuse_texture != 0)
-    {
-        auto texture = render_state.texture_array[renderer.texture_data[render_command.particles.diffuse_texture - 1].handle];
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
-
-        set_bool_uniform(shader.program, wLoc, true);
-    }
-    else
-        set_bool_uniform(shader.program, wLoc, false);
-
-    glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void *)nullptr, render_command.particles.particle_count);
-    glDepthMask(GL_TRUE);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-}
-
-static void render_buffer(const RenderCommand &command, RenderState &render_state, Renderer &renderer, math::Mat4 projection, math::Mat4 view)
-{
-    i32 _internal_handle = renderer._internal_buffer_handles[command.buffer.buffer_handle - 1];
-    Buffer buffer = render_state.buffers[_internal_handle];
-
-    bind_vertex_array(buffer.vao, render_state);
-    u32 texture_handle = command.buffer.texture_handle != -1 ? render_state.texture_array[command.buffer.texture_handle].texture_handle : 0;
-
-    if (texture_handle != 0 && render_state.bound_texture != texture_handle)
-    {
-        glBindTexture(GL_TEXTURE_2D, texture_handle);
-        render_state.bound_texture = texture_handle;
-    }
-
-    math::Vec3 position = command.position;
-    math::Vec3 size = command.scale;
-
-    if (command.is_ui)
-    {
-        position.x *= render_state.scale_x;
-        position.x -= 1;
-        position.y *= render_state.scale_y;
-        position.y -= 1;
-
-        size.x *= render_state.scale_x;
-        size.y *= render_state.scale_y;
-    }
-
-    auto shader = render_state.texture_quad_shader;
-    use_shader(shader);
-
-    math::Mat4 model(1.0f);
-    model = math::scale(model, size);
-    model = math::translate(model, position);
-
-    //Model = math::YRotate(Command.Rotation.y) * Model;
-    //Model = math::XRotate(Command.Rotation.x) * Model;
-    //Model = math::ZRotate(Command.Rotation.z) * Model;
-
-    set_float_uniform(shader.program, "isUI", (r32)command.is_ui);
-    set_mat4_uniform(shader.program, "Projection", projection);
-    set_mat4_uniform(shader.program, "View", view);
-    set_mat4_uniform(shader.program, "Model", model);
-    set_vec4_uniform(shader.program, "Color", command.color);
-
-    glDrawArrays(
-        GL_TRIANGLES, 0, buffer.vertex_buffer_size / 3);
-    bind_vertex_array(0, render_state);
-}
 
 static void unregister_buffers(RenderState &render_state, Renderer &renderer)
 {
@@ -2851,6 +2284,21 @@ static void set_uniform(rendering::Transform transform, const rendering::RenderP
             set_uniform(render_state, renderer, gl_shader.program, uniform_value, location, texture_count);
         }
         break;
+        case rendering::UniformMappingType::CAMERA_UP:
+        {
+            set_vec3_uniform(gl_shader.program, location, math::up(camera.view_matrix));
+        }
+        break;
+        case rendering::UniformMappingType::CAMERA_RIGHT:
+        {
+            set_vec3_uniform(gl_shader.program, location, math::right(camera.view_matrix));
+        }
+        break;
+        case rendering::UniformMappingType::CAMERA_FORWARD:
+        {
+            set_vec3_uniform(gl_shader.program, location, math::forward(camera.view_matrix));
+        }
+        break;
         case rendering::UniformMappingType::CLIPPING_PLANE:
         {
             set_vec4_uniform(gl_shader.program, location, render_pass.clipping_planes.plane);
@@ -2941,9 +2389,11 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
 
             assert(buffer_handle.handle >= 0);
             Buffer &buffer = render_state.v2.instance_buffers[buffer_handle.handle];
+            
+            glEnableVertexAttribArray(array_num);
             glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
             glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
-            glEnableVertexAttribArray(array_num);
+
             glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
             glVertexAttribDivisor(array_num, 1);
         }
@@ -2958,9 +2408,11 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
 
             assert(buffer_handle.handle >= 0);
             Buffer &buffer = render_state.v2.instance_buffers[buffer_handle.handle];
+
+            glEnableVertexAttribArray(array_num);
             glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
             glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
-            glEnableVertexAttribArray(array_num);
+
             glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
             glVertexAttribDivisor(array_num, 1);
         }
@@ -2994,9 +2446,11 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
 
             assert(buffer_handle.handle >= 0);
             Buffer &buffer = render_state.v2.instance_buffers[buffer_handle.handle];
+            
+            glEnableVertexAttribArray(array_num);
             glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
             glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
-            glEnableVertexAttribArray(array_num);
+         
             glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
             glVertexAttribDivisor(array_num, 1);
         }
@@ -3399,93 +2853,6 @@ static void render_new_commands(RenderState &render_state, Renderer &renderer)
     renderer.render.render_command_count = 0;
 }
 
-static void render_commands(RenderState &render_state, Renderer &renderer)
-{
-    //glEnable(GL_DEPTH_TEST);
-
-    for (i32 index = 0; index < renderer.command_count; index++)
-    {
-        RenderCommand &command = renderer.commands[index];
-
-        switch (command.type)
-        {
-            //         case RENDER_COMMAND_LINE:
-            //         {
-            //             render_line(command, render_state, renderer.camera.projection_matrix, renderer.camera.view_matrix);
-            //         }
-            //         break;
-            //         case RENDER_COMMAND_TEXT:
-            //         {
-            //             render_text(command, render_state, renderer, renderer.camera.view_matrix, renderer.camera.projection_matrix);
-            //         }
-            //         break;
-            //         case RENDER_COMMAND_3D_TEXT:
-            //         {
-            //             render_3d_text(command, render_state, renderer, renderer.camera.view_matrix, renderer.camera.projection_matrix);
-            //         }
-            //         break;
-            //         case RENDER_COMMAND_QUAD:
-            //         {
-            //             render_quad(command, render_state, renderer.camera.projection_matrix, renderer.camera.view_matrix);
-            //         }
-            //         break;
-            //         case RENDER_COMMAND_MODEL:
-            //         {
-            //             //render_model(command, render_state, renderer.camera.projection_matrix, renderer.camera.view_matrix);
-
-            //         }
-            //         break;
-            //         case RENDER_COMMAND_MESH:
-            //         {
-            //             render_mesh(command, renderer, render_state, renderer.camera.projection_matrix, renderer.camera.view_matrix, false, &renderer.shadow_map_matrices);
-
-            //         }
-            //         break;
-        case RENDER_COMMAND_PARTICLES:
-        {
-            render_particles(command, renderer, render_state, renderer.camera.projection_matrix, renderer.camera.view_matrix);
-        }
-        break;
-            //         case RENDER_COMMAND_MESH_INSTANCED:
-            //         {
-            //             render_mesh_instanced(command, renderer, render_state, renderer.camera.projection_matrix, renderer.camera.view_matrix, false, &renderer.shadow_map_matrices);
-            //         }
-            //         break;
-            //         case RENDER_COMMAND_BUFFER:
-            //         {
-            //             render_buffer(command, render_state, renderer, renderer.camera.projection_matrix, renderer.camera.view_matrix);
-            //         }
-            //         break;
-            //         case RENDER_COMMAND_DEPTH_TEST:
-            //         {
-            //             if (command.depth_test.on)
-            //             {
-            //                 glEnable(GL_DEPTH_TEST);
-            //             }
-            //             else
-            //             {
-            //                 glDisable(GL_DEPTH_TEST);
-            //             }
-            //         }
-            //         break;
-            //         case RENDER_COMMAND_CURSOR:
-            //         {
-            //             glfwSetCursor(render_state.window, render_state.cursors[command.cursor.type]);
-            //         }
-            //         break;
-            //         default:
-            //         break;
-        }
-    }
-
-    renderer.command_count = 0;
-    //clear(&renderer.commands);
-
-    //glDisable(GL_DEPTH_TEST);
-
-    //clear(&renderer.ui_commands);
-}
-
 static void swap_buffers(RenderState &render_state)
 {
     glfwSwapBuffers(render_state.window);
@@ -3671,10 +3038,9 @@ static void render_post_processing_passes(RenderState &render_state, Renderer &r
 
 static void render(RenderState &render_state, Renderer &renderer, r64 delta_time, b32 *save_config)
 {
+    // @Incomplete: Paused rendering for alt-tab?
     if (render_state.paused)
     {
-        renderer.command_count = 0;
-        return;
     }
 
     check_window_mode_and_size(render_state, renderer, save_config);
@@ -3705,7 +3071,6 @@ static void render(RenderState &render_state, Renderer &renderer, r64 delta_time
         // Render through all passes
         render_shadows(render_state, renderer, render_state.shadow_map_buffer);
         render_all_passes(render_state, renderer);
-        render_commands(render_state, renderer);
         render_post_processing_passes(render_state, renderer);
         render_ui_pass(render_state, renderer);
 
@@ -3741,9 +3106,7 @@ static void render(RenderState &render_state, Renderer &renderer, r64 delta_time
         {
             render_state.total_delta = delta_time;
         }
-
-        renderer.command_count = 0;
-
+        
         render_state.frame_delta -= delta_time;
         render_state.total_delta += delta_time;
 

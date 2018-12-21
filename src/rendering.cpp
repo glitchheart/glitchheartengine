@@ -62,49 +62,6 @@ static void load_shader(MemoryArena* arena, const char* full_shader_path, Render
     end_temporary_memory(temp_mem);
 }
 
-static void load_texture(const char* full_texture_path, Renderer& renderer, TextureFiltering filtering, TextureHandle* handle = nullptr)
-{
-    TextureData* texture_data = &renderer.texture_data[renderer.texture_count];
-    texture_data->filtering = filtering;
-    texture_data->handle = renderer.texture_count++;
-    
-    PlatformFile png_file = platform.open_file(full_texture_path, POF_READ | POF_OPEN_EXISTING | POF_IGNORE_ERROR);
-
-    if(png_file.handle)
-    {
-        platform.seek_file(png_file, 0, SO_END);
-        auto size = platform.tell_file(png_file);
-        platform.seek_file(png_file, 0, SO_SET);
-        
-        auto temp_mem = begin_temporary_memory(&renderer.texture_arena);
-        auto tex_data = push_size(&renderer.texture_arena, size + 1, stbi_uc);
-        platform.read_file(tex_data, size, 1, png_file);
-        
-        texture_data->image_data = stbi_load_from_memory(tex_data, size, &texture_data->width, &texture_data->height, 0, STBI_rgb_alpha);
-        platform.close_file(png_file);
-        end_temporary_memory(temp_mem);
-
-        assert(renderer.api_functions.load_texture);
-        renderer.api_functions.load_texture(*texture_data, renderer.api_functions.render_state, &renderer, true);
-    }
-    else
-    {
-        printf("Texture could not be loaded: %s\n", full_texture_path);
-        assert(false);
-    }
-    
-    if(handle)
-        handle->handle = texture_data->handle + 1; // We add one to the handle, since we want 0 to be an invalid handle
-}
-
-static RenderCommand* push_next_command(Renderer& renderer, b32 is_ui)
-{
-    assert(renderer.command_count + 1 < global_max_render_commands);
-    RenderCommand* command = &renderer.commands[renderer.command_count++];
-    command->shader_handle = -1;
-    return command;
-}
-
 static void set_new_resolution(Renderer &renderer, i32 new_width, i32 new_height)
 {
     renderer.window_width = new_width;
@@ -126,69 +83,6 @@ static void set_new_resolution(Renderer &renderer, i32 resolution_index)
 static void set_new_window_mode(Renderer &renderer, WindowMode new_window_mode)
 {
     renderer.window_mode = new_window_mode;
-}
-
-static void enable_depth_test(Renderer& renderer)
-{
-    RenderCommand* render_command = push_next_command(renderer, false);
-    render_command->type = RENDER_COMMAND_DEPTH_TEST;
-    render_command->depth_test.on = true;
-}
-
-static void disable_depth_test(Renderer& renderer)
-{
-    RenderCommand* render_command = push_next_command(renderer, false);
-    render_command->type = RENDER_COMMAND_DEPTH_TEST;
-    render_command->depth_test.on = false;
-}
-
-static void set_cursor(Renderer& renderer, CursorType type)
-{
-    RenderCommand* render_command = push_next_command(renderer, false);
-    render_command->type = RENDER_COMMAND_CURSOR;
-    render_command->cursor.type = type;
-}
-
-static void generate_vertex_buffer(r32* vertex_buffer, Vertex* vertices, i32 vertex_count, i32 vertex_size, b32 has_normals, b32 has_uvs)
-{
-    i32 vertex_data_count = vertex_size;
-    
-    for(i32 i = 0; i < vertex_count; i++)
-    {
-        i32 increment_by = 1;
-        i32 base_index = i * vertex_data_count;
-        Vertex vertex = vertices[i];
-        vertex_buffer[base_index] = vertex.position.x;
-        vertex_buffer[base_index + increment_by++] = vertex.position.y;
-        vertex_buffer[base_index + increment_by++] = vertex.position.z;
-        
-        if(has_normals)
-        {
-            vertex_buffer[base_index + increment_by++] = vertex.normal.x;
-            vertex_buffer[base_index + increment_by++] = vertex.normal.y;
-            vertex_buffer[base_index + increment_by++] = vertex.normal.z;
-        }
-        
-        if(has_uvs)
-        {
-            vertex_buffer[base_index + increment_by++] = vertex.uv.x;
-            vertex_buffer[base_index + increment_by++] = vertex.uv.y;
-        }
-    }
-}
-
-static void generate_index_buffer(u16* index_buffer, Face* faces, i32 face_count)
-{
-    i32 face_data_count = 3;
-    
-    for(i32 i = 0; i < face_count; i++)
-    {
-        i32 base_index = i * face_data_count;
-        Face face = faces[i];
-        index_buffer[base_index] = face.indices[0];
-        index_buffer[base_index + 1] = face.indices[1];
-        index_buffer[base_index + 2] = face.indices[2];
-    }
 }
 
 static i32 _find_unused_handle(Renderer& renderer)
@@ -214,49 +108,6 @@ static i32 _find_unused_handle(Renderer& renderer)
     assert(false);
     
     return -1;
-}
-
-// @Note:(Niels): If you register buffers without the functions below, make sure to handle the internal
-// handles right. If you would rather not, just call these functions and at least the bugs will be pretty
-// contained...
-static BufferData& register_buffer(Renderer& renderer, i32* buffer_handle, b32 dynamic = false)
-{
-    assert(renderer.buffer_count + 1 < global_max_custom_buffers);
-    assert(renderer._internal_buffer_handles);
-    
-    i32 unused_handle = _find_unused_handle(renderer) + 1;
-    
-    renderer._internal_buffer_handles[unused_handle - 1] = renderer.buffer_count++;
-    
-    BufferData& data = renderer.buffers[renderer._internal_buffer_handles[unused_handle - 1]];
-    
-    data = {};
-    data.has_normals = false;
-    data.has_uvs = false;
-    data.index_buffer_count = 0;
-    data.index_buffer = nullptr;
-    data.vertex_buffer = nullptr;
-    
-    *buffer_handle = unused_handle;
-    
-    return data;
-}
-
-static BufferData& update_buffer(Renderer& renderer, r32* buffer, i32 buffer_size, u16* index_buffer, i32 index_buffer_size, i32 index_buffer_count, i32 buffer_handle)
-{
-    BufferData& data = renderer.buffers[renderer._internal_buffer_handles[buffer_handle - 1]];
-    
-    data = {};
-    data.vertex_buffer = buffer;
-    data.vertex_buffer_size = buffer_size;
-    data.index_buffer = index_buffer;
-    data.index_buffer_size = index_buffer_size;
-    data.index_buffer_count = index_buffer_count;
-    data.existing_handle = buffer_handle;
-    
-    renderer.updated_buffer_handles[renderer.updated_buffer_handle_count++] = buffer_handle;
-    
-    return data;
 }
 
 static BufferData& update_instanced_buffer(Renderer& renderer, size_t buffer_size, i32 buffer_handle)
@@ -302,40 +153,6 @@ static void unregister_buffer(Renderer& renderer, i32 buffer_handle)
     renderer.removed_buffer_handles[renderer.removed_buffer_handle_count++] = buffer_handle;
 }
 
-static void create_buffers_from_mesh(Renderer &renderer, Mesh &mesh, u64 vertex_data_flags, b32 has_normals, b32 has_uvs)
-{
-    assert(renderer.buffer_count + 1 < global_max_custom_buffers);
-    i32 vertex_size = 3;
-    
-    BufferData& data = register_buffer(renderer, &mesh.buffer_handle);
-    
-    if(has_normals)
-    {
-        data.has_normals = true;
-        vertex_size += 3;
-    }
-    
-    if(has_uvs)
-    {
-        data.has_uvs = true;
-        vertex_size += 2;
-    }
-    
-    data.vertex_buffer_size = mesh.vertex_count * vertex_size * (i32)sizeof(r32);
-    data.vertex_buffer = push_size(&renderer.mesh_arena, data.vertex_buffer_size, r32);
-    generate_vertex_buffer(data.vertex_buffer, mesh.vertices, mesh.vertex_count, vertex_size, has_normals, has_uvs);
-    
-    i32 index_count = mesh.face_count * 3;
-    data.index_buffer_size = index_count * (i32)sizeof(u16);
-    data.index_buffer_count = index_count;
-    
-    // @Robustness:(Niels): How do we make sure that this is cleared if the mesh is removed?
-    // Or will that never happen? Maybe use malloc/free instead? Or maybe at some point 
-    // we really __should__ create a more general purpose allocator ourselves...
-    data.index_buffer = push_size(&renderer.mesh_arena, data.index_buffer_size, u16);
-    generate_index_buffer(data.index_buffer, mesh.faces, mesh.face_count);
-}
-
 static math::Vec3 compute_face_normal(Face f, Vertex *vertices)
 {
     // Newell's Method
@@ -345,293 +162,6 @@ static math::Vec3 compute_face_normal(Face f, Vertex *vertices)
     math::Vec3 v = (vertices[f.indices[2]].position - vertices[f.indices[0]].position);
     
     return math::cross(u, v);
-}
-
-static void create_tetrahedron(Renderer &renderer, i32 *mesh_handle)
-{
-    assert(renderer.mesh_count + 1 < global_max_meshes);
-    Mesh &mesh = renderer.meshes[renderer.mesh_count++];
-    mesh = {};
-    mesh.vertices = push_array(&renderer.mesh_arena, sizeof(tetrahedron_vertices) / sizeof(r32) / 3, Vertex);
-    mesh.faces = push_array(&renderer.mesh_arena, sizeof(tetrahedron_indices) / sizeof(u16) / 3, Face);
-    
-    mesh.vertex_count = sizeof(tetrahedron_vertices) / sizeof(r32) / 3;
-    
-    
-    for(i32 i = 0; i < mesh.vertex_count; i++)
-    {
-        Vertex &vertex = mesh.vertices[i];
-        vertex.position = math::Vec3(tetrahedron_vertices[i * 3], tetrahedron_vertices[i * 3 + 1], tetrahedron_vertices[i * 3 + 2]);
-        vertex.normal = math::Vec3(tetrahedron_normals[i * 3], tetrahedron_normals[i * 3 + 1], tetrahedron_normals[i * 3 + 2]);
-    }
-    
-    mesh.face_count = sizeof(tetrahedron_indices) / sizeof(u16) / 3;
-    
-    for(i32 i = 0; i < mesh.face_count; i++)
-    {
-        Face &face = mesh.faces[i];
-        
-        auto normal = compute_face_normal(face, mesh.vertices);
-        
-        face.indices[0] = tetrahedron_indices[i * 3];
-        face.indices[1] = tetrahedron_indices[i * 3 + 1];
-        face.indices[2] = tetrahedron_indices[i * 3 + 2];
-    }
-    
-    *mesh_handle = renderer.mesh_count - 1;
-    
-    create_buffers_from_mesh(renderer, mesh, 0, true, false);
-}
-
-static void create_cube(Renderer &renderer, MeshInfo &mesh_info, b32 with_instancing = false)
-{
-    assert(renderer.mesh_count + 1 < global_max_meshes);
-    Mesh &mesh = renderer.meshes[renderer.mesh_count++];
-    mesh = {};
-    mesh.vertices = push_array(&renderer.mesh_arena, sizeof(cube_vertices) / sizeof(r32) / 3, Vertex);
-    mesh.faces = push_array(&renderer.mesh_arena, sizeof(cube_indices) / sizeof(u16) / 3, Face);
-    
-    mesh.vertex_count = sizeof(cube_vertices) / sizeof(r32) / 3;
-    
-    for(i32 i = 0; i < mesh.vertex_count; i++)
-    {
-        Vertex &vertex = mesh.vertices[i];
-        vertex.position = math::Vec3(cube_vertices[i * 3], cube_vertices[i * 3 + 1], cube_vertices[i * 3 + 2]);
-        vertex.normal = math::Vec3(cube_normals[i * 3], cube_normals[i * 3 + 1], cube_normals[i * 3 + 2]);
-        vertex.uv = math::Vec2(cube_uvs[i * 2], cube_uvs[i * 2 + 1]);
-    }
-    
-    mesh.face_count = sizeof(cube_indices) / sizeof(u16) / 3;
-    
-    for(i32 i = 0; i < mesh.face_count; i++)
-    {
-        Face &face = mesh.faces[i];
-        
-        face.indices[0] = cube_indices[i * 3];
-        face.indices[1] = cube_indices[i * 3 + 1];
-        face.indices[2] = cube_indices[i * 3 + 2];
-    }
-    
-    mesh_info.mesh_handle = renderer.mesh_count - 1;
-    
-    create_buffers_from_mesh(renderer, mesh, 0, true, true);
-    
-    if(with_instancing)
-    {
-        assert(renderer.buffer_count + 2 < global_max_custom_buffers);
-        register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh_info.instance_offset_buffer_handle);
-        
-        register_instance_buffer(renderer, sizeof(math::Rgba) * 1024, &mesh_info.instance_color_buffer_handle);
-        
-        register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh_info.instance_rotation_buffer_handle);
-        
-        register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh_info.instance_scale_buffer_handle);
-    }
-}
-
-static void create_cube(Renderer &renderer, MeshHandle *mesh_handle = nullptr)
-{
-    assert(renderer.mesh_count + 1 < global_max_meshes);
-    
-    Mesh &mesh = renderer.meshes[renderer.mesh_count];
-    mesh = {};
-    
-    // Set the handle
-    if(mesh_handle)
-        *mesh_handle = { renderer.mesh_count };
-    
-    renderer.mesh_count++;
-    
-    mesh.vertices = push_array(&renderer.mesh_arena, sizeof(cube_vertices) / sizeof(r32) / 3, Vertex);
-    mesh.faces = push_array(&renderer.mesh_arena, sizeof(cube_indices) / sizeof(u16) / 3, Face);
-    
-    mesh.vertex_count = sizeof(cube_vertices) / sizeof(r32) / 3;
-    
-    for(i32 i = 0; i < mesh.vertex_count; i++)
-    {
-        Vertex &vertex = mesh.vertices[i];
-        vertex.position = math::Vec3(cube_vertices[i * 3], cube_vertices[i * 3 + 1], cube_vertices[i * 3 + 2]);
-        vertex.normal = math::Vec3(cube_normals[i * 3], cube_normals[i * 3 + 1], cube_normals[i * 3 + 2]);
-        vertex.uv = math::Vec2(cube_uvs[i * 2], cube_uvs[i * 2 + 1]);
-    }
-    
-    mesh.face_count = sizeof(cube_indices) / sizeof(u16) / 3;
-    
-    for(i32 i = 0; i < mesh.face_count; i++)
-    {
-        Face &face = mesh.faces[i];
-        
-        face.indices[0] = cube_indices[i * 3];
-        face.indices[1] = cube_indices[i * 3 + 1];
-        face.indices[2] = cube_indices[i * 3 + 2];
-    }
-    
-    create_buffers_from_mesh(renderer, mesh, 0, true, true);
-    
-    assert(renderer.buffer_count + 2 < global_max_custom_buffers);
-    register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_offset_buffer_handle);
-    
-    register_instance_buffer(renderer, sizeof(math::Rgba) * 1024, &mesh.instance_color_buffer_handle);
-    
-    register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_rotation_buffer_handle);
-    
-    register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_scale_buffer_handle);
-    
-}
-
-static void create_plane(Renderer &renderer, i32 *mesh_handle)
-{
-    assert(renderer.mesh_count + 1 < global_max_meshes);
-    Mesh &mesh = renderer.meshes[renderer.mesh_count++];
-    mesh = {};
-    mesh.vertices = push_array(&renderer.mesh_arena, sizeof(plane_vertices) / sizeof(r32) / 3, Vertex);
-    mesh.faces = push_array(&renderer.mesh_arena, sizeof(plane_indices) / sizeof(u16) / 3, Face);
-    
-    mesh.vertex_count = sizeof(plane_vertices) / sizeof(r32) / 3;
-    
-    for(i32 i = 0; i < mesh.vertex_count; i++)
-    {
-        Vertex &vertex = mesh.vertices[i];
-        vertex.position = math::Vec3(plane_vertices[i * 3], plane_vertices[i * 3 + 1], plane_vertices[i * 3 + 2]);
-        vertex.normal = math::Vec3(plane_normals[i * 3], plane_normals[i * 3 + 1], plane_normals[i * 3 + 2]);
-        vertex.uv = math::Vec2(plane_uvs[i * 2], plane_uvs[i * 2 + 1]);
-    }
-    
-    mesh.face_count = sizeof(plane_indices) / sizeof(u16) / 3;
-    
-    for(i32 i = 0; i < mesh.face_count; i++)
-    {
-        Face &face = mesh.faces[i];
-        
-        face.indices[0] = plane_indices[i * 3];
-        face.indices[1] = plane_indices[i * 3 + 1];
-        face.indices[2] = plane_indices[i * 3 + 2];
-    }
-    
-    *mesh_handle = renderer.mesh_count - 1;
-    
-    create_buffers_from_mesh(renderer, mesh, 0, true, true);
-    
-    
-    create_buffers_from_mesh(renderer, mesh, 0, true, true);
-    
-    assert(renderer.buffer_count + 2 < global_max_custom_buffers);
-    register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_offset_buffer_handle);
-    
-    register_instance_buffer(renderer, sizeof(math::Rgba) * 1024, &mesh.instance_color_buffer_handle);
-    
-    register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_rotation_buffer_handle);
-    
-    register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_scale_buffer_handle);
-}
-
-static void create_plane(Renderer &renderer)
-{
-    assert(renderer.mesh_count + 1 < global_max_meshes);
-    Mesh &mesh = renderer.meshes[renderer.mesh_count++];
-    mesh = {};
-    mesh.vertices = push_array(&renderer.mesh_arena, sizeof(plane_vertices) / sizeof(r32) / 3, Vertex);
-    mesh.faces = push_array(&renderer.mesh_arena, sizeof(plane_indices) / sizeof(u16) / 3, Face);
-    
-    mesh.vertex_count = sizeof(plane_vertices) / sizeof(r32) / 3;
-    
-    for(i32 i = 0; i < mesh.vertex_count; i++)
-    {
-        Vertex &vertex = mesh.vertices[i];
-        vertex.position = math::Vec3(plane_vertices[i * 3], plane_vertices[i * 3 + 1], plane_vertices[i * 3 + 2]);
-        vertex.normal = math::Vec3(plane_normals[i * 3], plane_normals[i * 3 + 1], plane_normals[i * 3 + 2]);
-        vertex.uv = math::Vec2(plane_uvs[i * 2], plane_uvs[i * 2 + 1]);
-    }
-    
-    mesh.face_count = sizeof(plane_indices) / sizeof(u16) / 3;
-    
-    for(i32 i = 0; i < mesh.face_count; i++)
-    {
-        Face &face = mesh.faces[i];
-        
-        face.indices[0] = plane_indices[i * 3];
-        face.indices[1] = plane_indices[i * 3 + 1];
-        face.indices[2] = plane_indices[i * 3 + 2];
-    }
-    
-    create_buffers_from_mesh(renderer, mesh, 0, true, true);
-    
-    
-    create_buffers_from_mesh(renderer, mesh, 0, true, true);
-    
-    assert(renderer.buffer_count + 2 < global_max_custom_buffers);
-    register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_offset_buffer_handle);
-    
-    register_instance_buffer(renderer, sizeof(math::Rgba) * 1024, &mesh.instance_color_buffer_handle);
-    
-    register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_rotation_buffer_handle);
-    
-    register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_scale_buffer_handle);
-}
-
-static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
-{
-    RenderCommand *render_command = push_next_command(renderer, false);
-    render_command->type = RENDER_COMMAND_MESH;
-    render_command->position = mesh_info.transform.position;
-    render_command->scale = mesh_info.transform.scale;
-    render_command->rotation = mesh_info.transform.rotation;
-    render_command->mesh.wireframe_type = mesh_info.wireframe_type;
-    render_command->mesh.wireframe_color = mesh_info.wireframe_color;
-    Mesh &mesh = renderer.meshes[mesh_info.mesh_handle];
-    render_command->mesh.buffer_handle = mesh.buffer_handle;
-    render_command->mesh.material_type = mesh_info.material.type;
-    render_command->mesh.diffuse_color = mesh_info.material.diffuse_color;
-    render_command->mesh.specular_color = mesh_info.material.specular_color;
-    render_command->mesh.ambient_color = mesh_info.material.ambient_color;
-    render_command->mesh.diffuse_texture = mesh_info.material.diffuse_texture.handle;
-    render_command->mesh.specular_texture = mesh_info.material.specular_texture.handle;
-    render_command->mesh.ambient_texture = mesh_info.material.ambient_texture.handle;
-    render_command->mesh.specular_intensity_texture = mesh_info.material.specular_intensity_texture.handle;
-    render_command->mesh.specular_exponent = mesh_info.material.specular_exponent;
-    render_command->mesh.diffuse_color = mesh_info.material.diffuse_color;
-    render_command->mesh.specular_color = mesh_info.material.specular_color;
-    render_command->mesh.ambient_color = mesh_info.material.ambient_color;
-    render_command->color = mesh_info.material.diffuse_color;
-    render_command->cast_shadows = mesh_info.cast_shadows;
-    render_command->receives_shadows = mesh_info.receives_shadows;
-}
-
-static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Vec3 *offsets, math::Rgba *colors, math::Vec3 *rotations, math::Vec3 *scalings, i32 offset_count)
-{
-    RenderCommand *render_command = push_next_command(renderer, false);
-    render_command->type = RENDER_COMMAND_MESH_INSTANCED;
-    render_command->position = mesh_info.transform.position;
-    render_command->scale = mesh_info.transform.scale;
-    render_command->rotation = mesh_info.transform.rotation;
-    render_command->mesh_instanced.wireframe_type = mesh_info.wireframe_type;
-    render_command->mesh_instanced.wireframe_color = mesh_info.wireframe_color;
-    Mesh &mesh = renderer.meshes[mesh_info.mesh_handle];
-    render_command->mesh_instanced.buffer_handle = mesh.buffer_handle;
-    render_command->mesh_instanced.material_type = mesh_info.material.type;
-    render_command->mesh_instanced.diffuse_texture = mesh_info.material.diffuse_texture.handle;
-    render_command->mesh_instanced.specular_texture = mesh_info.material.specular_texture.handle;
-    render_command->mesh_instanced.ambient_texture = mesh_info.material.ambient_texture.handle;
-    render_command->mesh_instanced.specular_intensity_texture = mesh_info.material.specular_intensity_texture.handle;
-    render_command->color = mesh_info.material.diffuse_color;
-    render_command->mesh_instanced.diffuse_color = mesh_info.material.diffuse_color;
-    render_command->mesh_instanced.specular_color = mesh_info.material.specular_color;
-    render_command->mesh_instanced.ambient_color = mesh_info.material.ambient_color;
-    render_command->mesh_instanced.specular_exponent = mesh_info.material.specular_exponent;
-    render_command->mesh_instanced.instance_offset_buffer_handle = mesh_info.instance_offset_buffer_handle;
-    render_command->mesh_instanced.instance_color_buffer_handle = mesh_info.instance_color_buffer_handle;
-    render_command->mesh_instanced.instance_rotation_buffer_handle = mesh_info.instance_rotation_buffer_handle;
-    render_command->mesh_instanced.instance_scale_buffer_handle = mesh_info.instance_scale_buffer_handle;
-    render_command->mesh_instanced.dissolve = mesh_info.material.dissolve;
-    
-    render_command->mesh_instanced.offsets = offsets;
-    render_command->mesh_instanced.colors = colors;
-    render_command->mesh_instanced.rotations = rotations;
-    render_command->mesh_instanced.scalings = scalings;
-    
-    render_command->mesh_instanced.offset_count = offset_count; // @Incomplete: Rename this to instance_count?
-    render_command->cast_shadows = mesh_info.cast_shadows;
-    render_command->receives_shadows = mesh_info.receives_shadows;
 }
 
 static b32 is_eof(ChunkFormat& format)
@@ -666,236 +196,53 @@ static i32 check_for_identical_vertex(Vertex &vertex, math::Vec2 uv, math::Vec3 
     return (i32)current_size;
 }
 
-static void load_obj(Renderer &renderer, char *file_path, MeshInfo &mesh_info, b32 with_instancing = false)
-{
-    FILE *file = fopen(file_path, "r");
+// static void push_particle_system(Renderer &renderer, ParticleSystemInfo &particle_info, i32 handle,  CommandBlendMode blend_mode = CBM_ONE_MINUS_SRC_ALPHA)
+// {
+//     // RenderCommand* render_command = push_next_command(renderer, false);
+//     // render_command->shader_handle = -1;
+//     // render_command->particles.handle = handle;
     
-    b32 with_uvs = false;
-    b32 with_normals = false;
+//     // render_command->type = RENDER_COMMAND_PARTICLES;
+//     // render_command->position = particle_info.transform.position;
     
-    Vertex *vertices = nullptr;
-    math::Vec3 *normals = nullptr;
-    math::Vec2 *uvs = nullptr;
+//     // // @Incomplete
+//     // //render_command->particles.buffer_handle = particle_info.buffer_handle;
+//     // render_command->particles.offset_buffer_handle = particle_info.offset_buffer_handle;
+//     // render_command->particles.color_buffer_handle = particle_info.color_buffer_handle;
+//     // render_command->particles.size_buffer_handle = particle_info.size_buffer_handle;
+//     // render_command->particles.angle_buffer_handle = particle_info.angle_buffer_handle;
+//     // render_command->particles.particle_count = particle_info.particle_count;
     
-    Vertex *final_vertices = nullptr;
+//     // render_command->particles.offsets = particle_info.offsets;
+//     // render_command->particles.colors = particle_info.colors;
+//     // render_command->particles.sizes = particle_info.sizes;
+//     // render_command->particles.angles = particle_info.angles;
     
-    Face *faces = nullptr;
-    
-    i32 vert_index = 0;
-    i32 normal_index = 0;
-    i32 uv_index = 0;
-    
-    if(file)
-    {
-        char buffer[256];
-        
-        while((fgets(buffer, sizeof(buffer), file) != NULL))
-        {
-            if(starts_with(buffer, "g")) // we're starting with new geometry
-            {
-            }
-            else if(starts_with(buffer, "v ")) // vertex
-            {
-                Vertex vertex = {};
-                sscanf(buffer, "v %f %f %f", &vertex.position.x, &vertex.position.y, &vertex.position.z);
-                buf_push(vertices, vertex);
-                vert_index++;
-            }
-            else if(starts_with(buffer, "vn")) // vertex normal
-            {
-                with_normals = true;
-                math::Vec3 normal(0.0f);
-                sscanf(buffer, "vn %f %f %f", &normal.x, &normal.y, &normal.z);
-                buf_push(normals, normal);
-                normal_index++;
-            }
-            else if(starts_with(buffer, "vt")) // vertex uv
-            {
-                with_uvs = true;
-                math::Vec2 uv(0.0f);
-                sscanf(buffer, "vt %f %f", &uv.x, &uv.y);
-                buf_push(uvs, uv);
-                uv_index++;
-            }
-            else if(starts_with(buffer, "f")) // face
-            {
-                Face face = {};
-                math::Vec3i normal_indices = {};
-                math::Vec3i uv_indices = {};
-                
-                if(with_uvs && with_normals)
-                {
-                    sscanf(buffer, "f %hd/%d/%d %hd/%d/%d %hd/%d/%d", &face.indices[0], &uv_indices.x, &normal_indices.x, &face.indices[1], &uv_indices.y, &normal_indices.y, &face.indices[2], &uv_indices.z, &normal_indices.z);
-                }
-                else if(with_uvs)
-                {
-                    sscanf(buffer, "f %hd/%d %hd/%d %hd/%d", &face.indices[0], &uv_indices.x, &face.indices[1], &uv_indices.y, &face.indices[2], &uv_indices.z);
-                }
-                
-                else if(with_normals)
-                {
-                    sscanf(buffer, "f %hd//%d %hd//%d %hd//%d", &face.indices[0], &normal_indices.x, &face.indices[1], &normal_indices.y, &face.indices[2], &normal_indices.z);
-                }
-                
-                // The obj-format was made by geniuses and therefore the indices are not 0-indexed. Such wow.
-                face.indices[0] -= 1;
-                face.indices[1] -= 1;
-                face.indices[2] -= 1;
-                
-                b32 should_add = false;
-                Vertex v1 = vertices[face.indices[0]];
-                math::Vec2 uv1(0.0f);
-                math::Vec3 n1(0.0f);
-                
-                if(with_uvs)
-                {
-                    uv1 = uvs[uv_indices.x - 1];
-                }
-                
-                if(with_normals)
-                {
-                    n1 = normals[normal_indices.x - 1];
-                }
-                
-                face.indices[0] = (u16)check_for_identical_vertex(v1, uv1, n1, final_vertices, &should_add);
-                
-                if(should_add)
-                {
-                    buf_push(final_vertices, v1);
-                }
-                
-                should_add = false;
-                Vertex &v2 = vertices[face.indices[1]];
-                math::Vec2 uv2(0.0f);
-                math::Vec3 n2(0.0f);
-                
-                if(with_uvs)
-                {
-                    uv2 = uvs[uv_indices.y - 1];
-                }
-                
-                if(with_normals)
-                {
-                    n2 = normals[normal_indices.y - 1];
-                }
-                
-                face.indices[1] = (u16)check_for_identical_vertex(v2, uv2, n2, final_vertices, &should_add);
-                
-                if(should_add)
-                {
-                    buf_push(final_vertices, v2);
-                }
-                
-                should_add = false;
-                Vertex &v3 = vertices[face.indices[2]];
-                
-                math::Vec2 uv3(0.0f);
-                math::Vec3 n3(0.0f);
-                
-                if(with_uvs)
-                {
-                    uv3 = uvs[uv_indices.z - 1];
-                }
-                
-                if(with_normals)
-                {
-                    n3 = normals[normal_indices.z - 1];
-                }
-                
-                face.indices[2] = (u16)check_for_identical_vertex(v3, uv3, n3, final_vertices,  &should_add);
-                
-                if(should_add)
-                {
-                    buf_push(final_vertices, v3);
-                }
-                
-                buf_push(faces, face);
-            }
-        }
-        fclose(file);
-    }
-    
-    assert(renderer.mesh_count + 1 < global_max_meshes);
-    Mesh &mesh = renderer.meshes[renderer.mesh_count++];
-    mesh = {};
-    
-    mesh.vertices = push_array(&renderer.mesh_arena, buf_len(final_vertices), Vertex);
-    mesh.faces = push_array(&renderer.mesh_arena, buf_len(faces), Face);
-    mesh.vertex_count = (i32)buf_len(final_vertices);
-    mesh.face_count = (i32)buf_len(faces);
-    
-    memcpy(mesh.vertices, final_vertices, mesh.vertex_count * sizeof(Vertex));
-    memcpy(mesh.faces, faces, mesh.face_count * sizeof(Face));
-    
-    buf_free(final_vertices);
-    buf_free(vertices);
-    buf_free(normals);
-    buf_free(uvs);
-    buf_free(faces);
-    
-    mesh_info.mesh_handle = renderer.mesh_count - 1;
-    create_buffers_from_mesh(renderer, mesh, 0, true, true);
-    
-    if(with_instancing)
-    {
-        assert(renderer.buffer_count + 2 < global_max_custom_buffers);
-        register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_offset_buffer_handle);
-        
-        register_instance_buffer(renderer, sizeof(math::Rgba) * 1024, &mesh.instance_color_buffer_handle);
-        
-        register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_rotation_buffer_handle);
-        
-        register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_scale_buffer_handle);
-    }
-}
+//     // render_command->particles.diffuse_texture = particle_info.attributes.texture_handle.handle;
+//     // render_command->particles.blend_mode = blend_mode;
+// }
 
-static void push_particle_system(Renderer &renderer, ParticleSystemInfo &particle_info, i32 handle,  CommandBlendMode blend_mode = CBM_ONE_MINUS_SRC_ALPHA)
-{
-    RenderCommand* render_command = push_next_command(renderer, false);
-    render_command->shader_handle = -1;
-    render_command->particles.handle = handle;
+// static void push_particle_system(Renderer &renderer, ParticleSystemHandle handle)
+// {
+//     i32 _internal_handle = renderer.particles._internal_handles[handle.handle];
     
-    render_command->type = RENDER_COMMAND_PARTICLES;
-    render_command->position = particle_info.transform.position;
-    
-    // @Incomplete
-    //render_command->particles.buffer_handle = particle_info.buffer_handle;
-    render_command->particles.offset_buffer_handle = particle_info.offset_buffer_handle;
-    render_command->particles.color_buffer_handle = particle_info.color_buffer_handle;
-    render_command->particles.size_buffer_handle = particle_info.size_buffer_handle;
-    render_command->particles.angle_buffer_handle = particle_info.angle_buffer_handle;
-    render_command->particles.particle_count = particle_info.particle_count;
-    
-    render_command->particles.offsets = particle_info.offsets;
-    render_command->particles.colors = particle_info.colors;
-    render_command->particles.sizes = particle_info.sizes;
-    render_command->particles.angles = particle_info.angles;
-    
-    render_command->particles.diffuse_texture = particle_info.attributes.texture_handle.handle;
-    render_command->particles.blend_mode = blend_mode;
-}
+//     if(_internal_handle != -1)
+//     {
+//         ParticleSystemInfo &particle_info = renderer.particles.particle_systems[_internal_handle];
+//         push_particle_system(renderer, particle_info, handle.handle);
+//     }
+// }
 
-static void push_particle_system(Renderer &renderer, ParticleSystemHandle handle)
-{
-    i32 _internal_handle = renderer.particles._internal_handles[handle.handle];
+// static void push_particle_system(Renderer &renderer, i32 particle_system_handle)
+// {
+//     i32 _internal_handle = renderer.particles._internal_handles[particle_system_handle];
     
-    if(_internal_handle != -1)
-    {
-        ParticleSystemInfo &particle_info = renderer.particles.particle_systems[_internal_handle];
-        push_particle_system(renderer, particle_info, handle.handle);
-    }
-}
-
-static void push_particle_system(Renderer &renderer, i32 particle_system_handle)
-{
-    i32 _internal_handle = renderer.particles._internal_handles[particle_system_handle];
-    
-    if(_internal_handle != -1)
-    {
-        ParticleSystemInfo &particle_info = renderer.particles.particle_systems[_internal_handle];
-        push_particle_system(renderer, particle_info, particle_system_handle);
-    }
-}
+//     if(_internal_handle != -1)
+//     {
+//         ParticleSystemInfo &particle_info = renderer.particles.particle_systems[_internal_handle];
+//         push_particle_system(renderer, particle_info, particle_system_handle);
+//     }
+// }
 
 static void update_lighting_for_material(BatchedCommand &render_command, Renderer &renderer)
 {
@@ -967,7 +314,7 @@ static void update_lighting_for_material(BatchedCommand &render_command, Rendere
 
 #define STANDARD_PASS_HANDLE { 1 }
 
-    static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer)
+static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer)
 {
     renderer.camera = scene.camera;
 
@@ -1209,8 +556,10 @@ static void update_lighting_for_material(BatchedCommand &render_command, Rendere
     
     for(i32 i = 0; i < particles_count; i++)
     {
-    	i32 _internal_handle = renderer.particles._internal_handles[particles_to_push[i] - 1];
-    	ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
-    	push_particle_system(renderer, system, particles_to_push[i]);
+        i32 _internal_handle = renderer.particles._internal_handles[particles_to_push[i] - 1];
+        ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
+        rendering::Material& particle_material = get_material_instance(system.material_handle, renderer);
+            
+        rendering::push_instanced_buffer_to_render_pass(renderer, system.particle_count, renderer.particles.quad_buffer, system.material_handle, particle_material.shader, rendering::get_render_pass_handle_for_name(STANDARD_PASS, renderer));
     }
 }

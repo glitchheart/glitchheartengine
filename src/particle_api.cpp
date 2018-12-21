@@ -80,7 +80,7 @@ static ParticleSystemAttributes get_default_particle_system_attributes()
     attributes.emission_module.burst_over_lifetime.current_index = 0;
     attributes.emission_module.burst_over_lifetime.values = nullptr;
     attributes.emission_module.emitter_func_type = EmissionFuncType::CIRCLE;
-    
+
     return attributes;
 }
 
@@ -127,14 +127,6 @@ static void _allocate_particle_system(Renderer& renderer, ParticleSystemInfo& sy
     system_info.particles.life = push_array_simd(memory_arena, max_over_four, r64_4x);
     system_info.particles.texture_handle = push_array(memory_arena, system_info.max_particles, rendering::TextureHandle);
     
-    system_info.offsets = push_array(memory_arena, system_info.max_particles, math::Vec3);
-    
-    system_info.colors = push_array(memory_arena, system_info.max_particles, math::Vec4);
-    
-    system_info.sizes = push_array(memory_arena, system_info.max_particles, math::Vec2);
-
-    system_info.angles = push_array(memory_arena, system_info.max_particles, r32);
-    
     system_info.color_over_lifetime.value_count = 0;
     system_info.size_over_lifetime.value_count = 0;
     system_info.speed_over_lifetime.value_count = 0;
@@ -147,41 +139,43 @@ static void _allocate_particle_system(Renderer& renderer, ParticleSystemInfo& sy
     system_info.size_over_lifetime.keys = nullptr;
     system_info.speed_over_lifetime.keys = nullptr;
     system_info.angle_over_lifetime.keys = nullptr;
-    
-    if(system_info.offset_buffer_handle == 0)
-    {
-        register_instance_buffer(renderer, sizeof(math::Vec3) * system_info.max_particles, &system_info.offset_buffer_handle);
-    }
-    else
-    {
-        update_instanced_buffer(renderer, sizeof(math::Vec3) * system_info.max_particles, system_info.offset_buffer_handle);
-    }
-    
-    if(system_info.color_buffer_handle == 0)
-    {
-        register_instance_buffer(renderer, sizeof(math::Vec4) * system_info.max_particles, &system_info.color_buffer_handle);
-    }
-    else
-    {
-        update_instanced_buffer(renderer, sizeof(math::Vec4) * system_info.max_particles, system_info.color_buffer_handle);
-    }
-    
-    if(system_info.size_buffer_handle == 0)
-    {
-        register_instance_buffer(renderer, sizeof(math::Vec2) * system_info.max_particles, &system_info.size_buffer_handle);
-    }
-    else
-    {
-        update_instanced_buffer(renderer, sizeof(math::Vec2) * system_info.max_particles, system_info.size_buffer_handle);
-    }
 
-    if(system_info.angle_buffer_handle == 0)
+    system_info.color_buffer_handle = rendering::allocate_instance_buffer(rendering::ValueType::FLOAT4, max_particles, renderer);
+    system_info.size_buffer_handle = rendering::allocate_instance_buffer(rendering::ValueType::FLOAT2, max_particles, renderer);
+    system_info.offset_buffer_handle = rendering::allocate_instance_buffer(rendering::ValueType::FLOAT3, max_particles, renderer);
+    system_info.angle_buffer_handle = rendering::allocate_instance_buffer(rendering::ValueType::FLOAT, max_particles, renderer);
+
+    rendering::Material& material = rendering::get_material_instance(system_info.material_handle, renderer);
+    
+    for(i32 i = 0; i < material.instanced_vertex_attribute_count; i++)
     {
-        register_instance_buffer(renderer, sizeof(r32) * system_info.max_particles, &system_info.angle_buffer_handle);
-    }
-    else
-    {
-        update_instanced_buffer(renderer, sizeof(r32) * system_info.max_particles, system_info.angle_buffer_handle);
+        rendering::VertexAttributeInstanced& attrib = material.instanced_vertex_attributes[i];
+        switch(attrib.mapping_type)
+        {
+        case rendering::VertexAttributeMappingType::PARTICLE_ANGLE:
+        {
+            attrib.instance_buffer_handle = system_info.angle_buffer_handle;
+        }
+        break;
+        case rendering::VertexAttributeMappingType::PARTICLE_POSITION:
+        {
+            attrib.instance_buffer_handle = system_info.offset_buffer_handle;
+        }
+        break;
+        case rendering::VertexAttributeMappingType::PARTICLE_COLOR:
+        {
+            attrib.instance_buffer_handle = system_info.color_buffer_handle;
+        }
+        break;
+        case rendering::VertexAttributeMappingType::PARTICLE_SIZE:
+        {
+            attrib.instance_buffer_handle = system_info.size_buffer_handle;
+        }
+        break;
+        default:
+        break;
+        }
+    
     }
 }
 
@@ -210,8 +204,10 @@ i32 _find_unused_particle_system(Renderer& renderer)
     return -1;
 }
 
-static ParticleSystemHandle create_particle_system(Renderer &renderer, i32 max_particles)
+static ParticleSystemHandle create_particle_system(Renderer &renderer, i32 max_particles, rendering::MaterialHandle material, rendering::MaterialInstanceArrayHandle array_handle)
 {
+    assert(material.handle != 0 && array_handle.handle != 0);
+    
     i32 unused_handle = _find_unused_particle_system(renderer) + 1;
     
     ParticleSystemHandle handle = { unused_handle };
@@ -226,6 +222,8 @@ static ParticleSystemHandle create_particle_system(Renderer &renderer, i32 max_p
     
     system_info.particle_count = 0;
     system_info.last_used_particle = 0;
+
+    system_info.material_handle = rendering::create_material_instance(renderer, material, array_handle);
     
     _allocate_particle_system(renderer, system_info, max_particles);
     
@@ -243,10 +241,10 @@ static void remove_particle_system(Renderer& renderer, ParticleSystemHandle &han
     
     if(renderer.particles.particle_system_count == 1)
     {
-        unregister_buffer(renderer, renderer.particles.particle_systems[0].offset_buffer_handle);
-        unregister_buffer(renderer, renderer.particles.particle_systems[0].size_buffer_handle);
-        unregister_buffer(renderer, renderer.particles.particle_systems[0].color_buffer_handle);
-        unregister_buffer(renderer, renderer.particles.particle_systems[0].angle_buffer_handle);
+        rendering::free_instance_buffer(renderer.particles.particle_systems[0].offset_buffer_handle, renderer);
+        rendering::free_instance_buffer(renderer.particles.particle_systems[0].size_buffer_handle, renderer);
+        rendering::free_instance_buffer(renderer.particles.particle_systems[0].color_buffer_handle, renderer);
+        rendering::free_instance_buffer(renderer.particles.particle_systems[0].angle_buffer_handle, renderer);
         
         renderer.particles.particle_system_count = 0;
         renderer.particles._current_internal_handle = 0;
@@ -259,11 +257,11 @@ static void remove_particle_system(Renderer& renderer, ParticleSystemHandle &han
     {
         i32 real_handle = renderer.particles._internal_handles[removed_handle - 1];
         ParticleSystemInfo& info = renderer.particles.particle_systems[real_handle];
-        
-        unregister_buffer(renderer, info.offset_buffer_handle);
-        unregister_buffer(renderer, info.size_buffer_handle);
-        unregister_buffer(renderer, info.color_buffer_handle);
-        unregister_buffer(renderer, info.angle_buffer_handle);
+
+        rendering::free_instance_buffer(info.offset_buffer_handle, renderer);
+        rendering::free_instance_buffer(info.size_buffer_handle, renderer);
+        rendering::free_instance_buffer(info.color_buffer_handle, renderer);
+        rendering::free_instance_buffer(info.angle_buffer_handle, renderer);
         
         // Swap system infos
 	    clear(&renderer.particles.particle_systems[real_handle].arena);

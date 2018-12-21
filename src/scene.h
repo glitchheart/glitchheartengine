@@ -74,9 +74,8 @@ namespace scene
     
     struct RenderComponent
     {
-        MeshHandle mesh_handle;
-        MaterialHandle material_handle;
-        MaterialHandle original_material_handle;
+        rendering::MaterialHandle material_handle;
+        rendering::MaterialHandle original_material_handle;
         
         b32 casts_shadows;
 
@@ -96,6 +95,8 @@ namespace scene
     struct ParticleSystemComponent
     {
         ParticleSystemHandle handle;
+
+        rendering::RenderPassHandle render_pass;
     };
 
     struct LightComponent
@@ -128,8 +129,7 @@ namespace scene
         } transform;
         struct
         {
-            MeshHandle mesh_handle;
-            MaterialHandle material_handle;
+            rendering::MaterialHandle material_handle;
             
             b32 casts_shadows;
             
@@ -147,6 +147,9 @@ namespace scene
         struct
         {
             ParticleSystemAttributes attributes;
+            rendering::MaterialHandle material_handle;
+            rendering::ShaderHandle shader_handle;
+
             i32 max_particles;
             b32 started;
             
@@ -194,6 +197,9 @@ namespace scene
         MemoryArena memory_arena;
 
         Camera camera;
+
+        rendering::InstanceBufferHandle instance_buffer_handles[128];
+        i32 instance_buffer_count;
 
         Entity *entities;
         i32 *_internal_handles;

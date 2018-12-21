@@ -226,9 +226,158 @@ namespace rendering
         }
     }
 
-    static void free_instance_buffer(InstanceBufferHandle buffer_handle)
+    static r32* get_float_buffer_pointer(InstanceBufferHandle buffer_handle, Renderer& renderer)
     {
-        // @Incomplete
+        assert(buffer_handle.type == ValueType::FLOAT);
+        i32 handle = renderer.render.instancing._internal_float_handles[buffer_handle.handle - 1];
+        return renderer.render.instancing.float_buffers[handle];
+    }
+
+    static math::Vec2* get_float2_buffer_pointer(InstanceBufferHandle buffer_handle, Renderer& renderer)
+    {
+        assert(buffer_handle.type == ValueType::FLOAT2);
+        i32 handle = renderer.render.instancing._internal_float2_handles[buffer_handle.handle - 1];
+        return renderer.render.instancing.float2_buffers[handle];
+    }
+
+    static math::Vec3* get_float3_buffer_pointer(InstanceBufferHandle buffer_handle, Renderer& renderer)
+    {
+        assert(buffer_handle.type == ValueType::FLOAT3);
+        i32 handle = renderer.render.instancing._internal_float3_handles[buffer_handle.handle - 1];
+        return renderer.render.instancing.float3_buffers[handle];
+    }
+
+    static math::Vec4* get_float4_buffer_pointer(InstanceBufferHandle buffer_handle, Renderer& renderer)
+    {
+        assert(buffer_handle.type == ValueType::FLOAT4);
+        i32 handle = renderer.render.instancing._internal_float4_handles[buffer_handle.handle - 1];
+        return renderer.render.instancing.float4_buffers[handle];
+    }
+
+    static math::Mat4* get_mat4_buffer_pointer(InstanceBufferHandle buffer_handle, Renderer& renderer)
+    {
+        assert(buffer_handle.type == ValueType::MAT4);
+        i32 handle = renderer.render.instancing._internal_mat4_handles[buffer_handle.handle - 1];
+        return renderer.render.instancing.mat4_buffers[handle];
+    }
+
+    static void free_instance_buffer(InstanceBufferHandle buffer_handle, Renderer& renderer)
+    {
+        switch(buffer_handle.type)
+        {
+        case ValueType::FLOAT:
+        {
+            i32 handle = renderer.render.instancing._internal_float_handles[buffer_handle.handle - 1];
+
+            free(renderer.render.instancing.float_buffers[handle]);
+
+            renderer.render.instancing.float_buffers[handle] = renderer.render.instancing.float_buffers[renderer.render.instancing.float_buffer_count - 1];
+
+            renderer.render.instancing._internal_float_handles[buffer_handle.handle - 1] = -1;
+
+            for(i32 i = 0; i < renderer.render.instancing.float_buffer_count; i++)
+            {
+                if(renderer.render.instancing._internal_float_handles[i] == renderer.render.instancing.float_buffer_count - 1)
+                {
+                    renderer.render.instancing._internal_float_handles[i] = handle;
+                    renderer.render.instancing.float_buffer_count--;
+                    renderer.render.instancing.float_buffer_counts[handle] = 0;
+                    break;
+                }
+            }
+        }
+        break;
+        case ValueType::FLOAT2:
+        {
+            i32 handle = renderer.render.instancing._internal_float2_handles[buffer_handle.handle - 1];
+
+            free(renderer.render.instancing.float2_buffers[handle]);
+
+            renderer.render.instancing.float2_buffers[handle] = renderer.render.instancing.float2_buffers[renderer.render.instancing.float2_buffer_count - 1];
+
+            renderer.render.instancing._internal_float2_handles[buffer_handle.handle - 1] = -1;
+
+            for(i32 i = 0; i < renderer.render.instancing.float2_buffer_count; i++)
+            {
+                if(renderer.render.instancing._internal_float2_handles[i] == renderer.render.instancing.float2_buffer_count - 1)
+                {
+                    renderer.render.instancing._internal_float2_handles[i] = handle;
+                    renderer.render.instancing.float2_buffer_count--;
+                    renderer.render.instancing.float2_buffer_counts[handle] = 0;
+                    break;
+                }
+            }
+        }
+        break;
+        case ValueType::FLOAT3:
+        {
+            i32 handle = renderer.render.instancing._internal_float3_handles[buffer_handle.handle - 1];
+
+            free(renderer.render.instancing.float3_buffers[handle]);
+
+            renderer.render.instancing.float3_buffers[handle] = renderer.render.instancing.float3_buffers[renderer.render.instancing.float3_buffer_count - 1];
+
+            renderer.render.instancing._internal_float3_handles[buffer_handle.handle - 1] = -1;
+
+            for(i32 i = 0; i < renderer.render.instancing.float3_buffer_count; i++)
+            {
+                if(renderer.render.instancing._internal_float3_handles[i] == renderer.render.instancing.float3_buffer_count - 1)
+                {
+                    renderer.render.instancing._internal_float3_handles[i] = handle;
+                    renderer.render.instancing.float3_buffer_count--;
+                    renderer.render.instancing.float3_buffer_counts[handle] = 0;
+                    break;
+                }
+            }
+        }
+        break;
+        case ValueType::FLOAT4:
+        {
+            i32 handle = renderer.render.instancing._internal_float4_handles[buffer_handle.handle - 1];
+
+            free(renderer.render.instancing.float4_buffers[handle]);
+
+            renderer.render.instancing.float4_buffers[handle] = renderer.render.instancing.float4_buffers[renderer.render.instancing.float4_buffer_count - 1];
+
+            renderer.render.instancing._internal_float4_handles[buffer_handle.handle - 1] = -1;
+
+            for(i32 i = 0; i < renderer.render.instancing.float4_buffer_count; i++)
+            {
+                if(renderer.render.instancing._internal_float4_handles[i] == renderer.render.instancing.float4_buffer_count - 1)
+                {
+                    renderer.render.instancing._internal_float4_handles[i] = handle;
+                    renderer.render.instancing.float4_buffer_count--;
+                    renderer.render.instancing.float4_buffer_counts[handle] = 0;
+                    break;
+                }
+            }
+        }
+        break;
+        case ValueType::MAT4:
+        {
+            i32 handle = renderer.render.instancing._internal_mat4_handles[buffer_handle.handle - 1];
+
+            free(renderer.render.instancing.mat4_buffers[handle]);
+
+            renderer.render.instancing.mat4_buffers[handle] = renderer.render.instancing.mat4_buffers[renderer.render.instancing.mat4_buffer_count - 1];
+
+            renderer.render.instancing._internal_mat4_handles[buffer_handle.handle - 1] = -1;
+
+            for(i32 i = 0; i < renderer.render.instancing.mat4_buffer_count; i++)
+            {
+                if(renderer.render.instancing._internal_mat4_handles[i] == renderer.render.instancing.mat4_buffer_count - 1)
+                {
+                    renderer.render.instancing._internal_mat4_handles[i] = handle;
+                    renderer.render.instancing.mat4_buffer_count--;
+                    renderer.render.instancing.mat4_buffer_counts[handle] = 0;
+                    break;
+                }
+            }
+        }
+        break;
+        default:
+        break;
+        }
     }
 
     static void add_instance_buffer_value(InstanceBufferHandle buffer_handle, r32 value, Renderer &renderer)
