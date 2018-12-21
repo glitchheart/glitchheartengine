@@ -540,18 +540,32 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     
     // Add tonemapping pass?
 
+    renderer.render.instancing.internal_float_buffers = push_array(&renderer.buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
+    renderer.render.instancing.internal_float2_buffers = push_array(&renderer.buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
+    renderer.render.instancing.internal_float3_buffers = push_array(&renderer.buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
+    renderer.render.instancing.internal_float4_buffers = push_array(&renderer.buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
+    renderer.render.instancing.internal_mat4_buffers = push_array(&renderer.buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
+
     for(i32 i = 0; i < MAX_INSTANCE_BUFFERS; i++)
     {
-        renderer.render.instancing._internal_float_handles[i] = -1;
-        renderer.render.instancing._internal_float2_handles[i] = -1;
-        renderer.render.instancing._internal_float3_handles[i] = -1;
-        renderer.render.instancing._internal_float4_handles[i] = -1;
-        renderer.render.instancing._internal_mat4_handles[i] = -1;
-    }
+        renderer.render.instancing.free_float_buffers[i] = true;
+        renderer.render.instancing.free_float2_buffers[i] = true;
+        renderer.render.instancing.free_float3_buffers[i] = true;
+        renderer.render.instancing.free_float4_buffers[i] = true;
+        renderer.render.instancing.free_mat4_buffers[i] = true;
 
+        renderer.render.instancing.internal_float_buffers[i] = push_struct(&renderer.buffer_arena, Buffer);
+        renderer.render.instancing.internal_float2_buffers[i] = push_struct(&renderer.buffer_arena, Buffer);
+        renderer.render.instancing.internal_float3_buffers[i] = push_struct(&renderer.buffer_arena, Buffer);
+        renderer.render.instancing.internal_float4_buffers[i] = push_struct(&renderer.buffer_arena, Buffer);
+        renderer.render.instancing.internal_mat4_buffers[i] = push_struct(&renderer.buffer_arena, Buffer);
+    }
+    
     rendering::RegisterBufferInfo particle_buffer = rendering::create_register_buffer_info();
     particle_buffer.usage = rendering::BufferUsage::STATIC;
-
+    add_vertex_attrib(rendering::ValueType::FLOAT3, particle_buffer);
+    add_vertex_attrib(rendering::ValueType::FLOAT2, particle_buffer);
+    
     r32 quad_vertices[20] =
     {
         -0.5f, 0.5f, 0.0f, 0.0f, 0.0f,
