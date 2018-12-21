@@ -274,6 +274,8 @@ namespace rendering
             renderer.render.instancing.float_buffers[handle] = renderer.render.instancing.float_buffers[renderer.render.instancing.float_buffer_count - 1];
 
             renderer.render.instancing._internal_float_handles[buffer_handle.handle - 1] = -1;
+            renderer.render.instancing.float_buffer_counts[handle] = renderer.render.instancing.float_buffer_counts[renderer.render.instancing.float_buffer_count - 1];
+            renderer.render.instancing.float_buffer_counts[renderer.render.instancing.float_buffer_count - 1] = 0;
 
             for(i32 i = 0; i < renderer.render.instancing.float_buffer_count; i++)
             {
@@ -281,7 +283,6 @@ namespace rendering
                 {
                     renderer.render.instancing._internal_float_handles[i] = handle;
                     renderer.render.instancing.float_buffer_count--;
-                    renderer.render.instancing.float_buffer_counts[handle] = 0;
                     break;
                 }
             }
@@ -296,6 +297,8 @@ namespace rendering
             renderer.render.instancing.float2_buffers[handle] = renderer.render.instancing.float2_buffers[renderer.render.instancing.float2_buffer_count - 1];
 
             renderer.render.instancing._internal_float2_handles[buffer_handle.handle - 1] = -1;
+            renderer.render.instancing.float2_buffer_counts[handle] = renderer.render.instancing.float2_buffer_counts[renderer.render.instancing.float2_buffer_count - 1];
+            renderer.render.instancing.float2_buffer_counts[renderer.render.instancing.float2_buffer_count - 1] = 0;
 
             for(i32 i = 0; i < renderer.render.instancing.float2_buffer_count; i++)
             {
@@ -303,7 +306,6 @@ namespace rendering
                 {
                     renderer.render.instancing._internal_float2_handles[i] = handle;
                     renderer.render.instancing.float2_buffer_count--;
-                    renderer.render.instancing.float2_buffer_counts[handle] = 0;
                     break;
                 }
             }
@@ -318,6 +320,8 @@ namespace rendering
             renderer.render.instancing.float3_buffers[handle] = renderer.render.instancing.float3_buffers[renderer.render.instancing.float3_buffer_count - 1];
 
             renderer.render.instancing._internal_float3_handles[buffer_handle.handle - 1] = -1;
+            renderer.render.instancing.float3_buffer_counts[handle] = renderer.render.instancing.float3_buffer_counts[renderer.render.instancing.float3_buffer_count - 1];
+            renderer.render.instancing.float3_buffer_counts[renderer.render.instancing.float3_buffer_count - 1] = 0;
 
             for(i32 i = 0; i < renderer.render.instancing.float3_buffer_count; i++)
             {
@@ -325,7 +329,6 @@ namespace rendering
                 {
                     renderer.render.instancing._internal_float3_handles[i] = handle;
                     renderer.render.instancing.float3_buffer_count--;
-                    renderer.render.instancing.float3_buffer_counts[handle] = 0;
                     break;
                 }
             }
@@ -340,6 +343,8 @@ namespace rendering
             renderer.render.instancing.float4_buffers[handle] = renderer.render.instancing.float4_buffers[renderer.render.instancing.float4_buffer_count - 1];
 
             renderer.render.instancing._internal_float4_handles[buffer_handle.handle - 1] = -1;
+            renderer.render.instancing.float4_buffer_counts[handle] = renderer.render.instancing.float4_buffer_counts[renderer.render.instancing.float4_buffer_count - 1];
+            renderer.render.instancing.float4_buffer_counts[renderer.render.instancing.float4_buffer_count - 1] = 0;
 
             for(i32 i = 0; i < renderer.render.instancing.float4_buffer_count; i++)
             {
@@ -347,7 +352,6 @@ namespace rendering
                 {
                     renderer.render.instancing._internal_float4_handles[i] = handle;
                     renderer.render.instancing.float4_buffer_count--;
-                    renderer.render.instancing.float4_buffer_counts[handle] = 0;
                     break;
                 }
             }
@@ -362,6 +366,8 @@ namespace rendering
             renderer.render.instancing.mat4_buffers[handle] = renderer.render.instancing.mat4_buffers[renderer.render.instancing.mat4_buffer_count - 1];
 
             renderer.render.instancing._internal_mat4_handles[buffer_handle.handle - 1] = -1;
+            renderer.render.instancing.mat4_buffer_counts[handle] = renderer.render.instancing.mat4_buffer_counts[renderer.render.instancing.mat4_buffer_count - 1];
+            renderer.render.instancing.mat4_buffer_counts[renderer.render.instancing.mat4_buffer_count - 1] = 0;
 
             for(i32 i = 0; i < renderer.render.instancing.mat4_buffer_count; i++)
             {
@@ -369,7 +375,6 @@ namespace rendering
                 {
                     renderer.render.instancing._internal_mat4_handles[i] = handle;
                     renderer.render.instancing.mat4_buffer_count--;
-                    renderer.render.instancing.mat4_buffer_counts[handle] = 0;
                     break;
                 }
             }
