@@ -95,6 +95,7 @@ namespace scene
         Scene &scene = scene_manager->scenes[real_handle];
         scene.scene_manager = scene_manager;
         scene.valid = true;
+        scene.loaded = false;
         scene.template_state = &scene_manager->template_state;
         scene.renderer = scene_manager->renderer;
         scene.max_entity_count = initial_entity_array_size;
@@ -204,6 +205,7 @@ namespace scene
                     material.instanced_vertex_attributes[j].instance_buffer_handle = instance_buffer_handle;
                 }
 
+                assert(scene.instance_buffer_count < MAX_INSTANCE_BUFFER_HANDLES);
                 scene.instance_buffer_handles[scene.instance_buffer_count++] = instance_buffer_handle;
             }
         }
@@ -215,6 +217,7 @@ namespace scene
         {
             rendering::free_instance_buffer(scene.instance_buffer_handles[i], *scene.renderer);
         }
+        scene.instance_buffer_count = 0;
     }
 
     static void free_scene(SceneHandle handle)
@@ -225,6 +228,7 @@ namespace scene
         if(scene.valid)
         {
 			scene.valid = false;
+            scene.loaded = false;
 
 			if (scene.entity_count > 0)
             {
@@ -245,7 +249,7 @@ namespace scene
                 clear(&scene.memory_arena);
             }
 
-//            free_instance_buffers(scene);
+            free_instance_buffers(scene);
             
             scene_manager->_internal_scene_handles[handle.handle - 1] = -1;
             
@@ -286,17 +290,18 @@ namespace scene
         }
     }
 
-    static void load_scene(SceneHandle handle, u64 load_flags = SceneLoadFlags::FREE_CURRENT_INSTANCE_BUFFERS)
+    static void load_scene(SceneHandle handle, u64 load_flags = 0)
     {
         SceneManager *scene_manager = handle.manager;
         if(scene_manager->scene_loaded)
         {
             scene::deactivate_particle_systems(handle);
             
-            free_instance_buffers(get_scene(scene_manager->loaded_scene));
-
             if(load_flags & SceneLoadFlags::FREE_CURRENT_SCENE)
             {
+                debug("Freeing\n");
+                free_instance_buffers(get_scene(scene_manager->loaded_scene));
+                get_scene(scene_manager->loaded_scene).loaded = false;
                 free_scene(scene_manager->loaded_scene);
                 scene_manager->loaded_scene = { -1 };
             }
@@ -304,8 +309,13 @@ namespace scene
         
         Scene &scene = get_scene(handle);
         assert(scene.valid);
-        
-        allocate_instance_buffers(scene);
+
+        if(!scene.loaded)
+        {
+            allocate_instance_buffers(scene);
+            scene.loaded = true;
+        }
+
         activate_particle_systems(handle);
         
         scene_manager->scene_loaded = true;

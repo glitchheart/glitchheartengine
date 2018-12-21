@@ -237,7 +237,6 @@ static void remove_particle_system(Renderer& renderer, ParticleSystemHandle &han
     
     i32 removed_handle = handle.handle;
     
-    renderer.particles._tagged_removed[renderer.particles._tagged_removed_count++] = removed_handle;
     
     if(renderer.particles.particle_system_count == 1)
     {

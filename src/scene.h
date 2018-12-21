@@ -189,16 +189,18 @@ namespace scene
         FREE_CURRENT_INSTANCE_BUFFERS = 1 << 0,
         FREE_CURRENT_SCENE = 1 << 1
     };
-    
+
+    #define MAX_INSTANCE_BUFFER_HANDLES 128
     struct Scene
     {
         b32 valid;
+        b32 loaded;
         
         MemoryArena memory_arena;
 
         Camera camera;
 
-        rendering::InstanceBufferHandle instance_buffer_handles[128];
+        rendering::InstanceBufferHandle instance_buffer_handles[MAX_INSTANCE_BUFFER_HANDLES];
         i32 instance_buffer_count;
 
         Entity *entities;

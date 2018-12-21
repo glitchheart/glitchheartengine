@@ -352,8 +352,6 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
 
     renderer.particles.particle_systems = push_array(&renderer.particle_arena, global_max_particle_systems, ParticleSystemInfo);
     renderer.particles._internal_handles = push_array(&renderer.particle_arena, global_max_particle_systems, i32);
-    renderer.particles._tagged_removed = push_array(&renderer.particle_arena, global_max_particle_systems, i32);
-    renderer.particles._tagged_removed_count = 0;
 
     PushParams params = default_push_params();
     params.alignment = math::multiple_of_number_uint(member_size(RandomSeries, state), 16);
@@ -374,7 +372,6 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     renderer.spritesheet_animation_count = 0;
     renderer.animation_controller_count = 0;
     renderer.meshes = push_array(&renderer.mesh_arena, global_max_meshes, Mesh);
-    renderer.shader_data = push_array(&renderer.shader_arena, global_max_shaders, ShaderData);
     renderer.tt_font_infos = push_array(&renderer.font_arena, global_max_fonts, TrueTypeFontInfo);
     renderer._internal_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
     renderer._current_internal_buffer_handle = 0;
@@ -695,9 +692,7 @@ int main(int argc, char **args)
     RenderState *render_state_ptr = push_struct(&platform_state->perm_arena, RenderState);
     RenderState &render_state = *render_state_ptr;
     render_state = {};
-    render_state.current_framebuffer = 0;
     render_state.should_close = false;
-    render_state.buffer_count = 0;
     render_state.dpi_scale = 0;
     render_state.window = nullptr;
     render_state.texture_index = 0;

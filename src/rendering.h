@@ -27,6 +27,7 @@ struct TrueTypeFontInfo
 	i32 first_char;
 	i32 char_count;
 	i32 size;
+    i32 load_size;
 	i32 atlas_width;
 	i32 atlas_height;
 	u32 oversample_x;
@@ -43,6 +44,8 @@ struct TrueTypeFontInfo
 
     char path[256];
     rendering::TextureHandle texture;
+
+    unsigned char *ttf_buffer;
 };
 
 struct DirectionalLight
@@ -62,24 +65,6 @@ struct PointLight
     math::Vec3 ambient;
     math::Vec3 diffuse;
     math::Vec3 specular;
-};
-
-// @Incomplete: Remove the prefix from the values 
-enum ShaderType
-{
-    SHADER_MESH,
-    SHADER_MESH_INSTANCED,
-    SHADER_DEPTH,
-    SHADER_DEPTH_INSTANCED,
-    SHADER_QUAD,
-    SHADER_TEXTURE_QUAD,
-    SHADER_SPRITESHEET,
-    SHADER_FRAME_BUFFER,
-    SHADER_SIMPLE_MODEL,
-    SHADER_LINE,
-    SHADER_PARTICLES,
-    SHADER_ROUNDED_QUAD,
-    SHADER_COUNT
 };
 
 // @Incomplete: Remove the prefix from the values 
@@ -450,26 +435,6 @@ struct TextureData
 	unsigned char* image_data;
 };
 
-struct ShaderData
-{
-	i32 handle;
-	char name[512];
-	char* vertex_shader_content;
-	char* fragment_shader_content;
-};
-
-struct UIRenderInfo
-{
-	b32 rendered = true;
-    
-	i32 texture_handle;
-	math::Vec2 texture_offset;
-	math::Vec2 frame_size;
-	u32 shader_index;
-	math::Vec2 size = math::Vec2(1, 1);
-	math::Vec4 color = math::Vec4(1, 1, 1, 1);
-};
-
 struct BufferData
 {
 	r32* vertex_buffer;
@@ -481,7 +446,6 @@ struct BufferData
 	b32 has_uvs;
 	b32 skinned;
     
-	ShaderType shader_type;
 	i32 existing_handle = -1;
     
 	b32 for_instancing;
@@ -559,8 +523,6 @@ struct Renderer
 	struct
 	{
 		i32 *_internal_handles;
-		i32 *_tagged_removed;
-		i32 _tagged_removed_count;
 		i32 _current_internal_handle;
 		i32 _max_particle_system_count;
         
@@ -574,13 +536,9 @@ struct Renderer
 	TextureData *texture_data;
 	i32 texture_count;
     
-	ShaderData* shader_data;
-	i32 shader_count;
-    
 	// Shadow map
 	ShadowMapMatrices shadow_map_matrices;
     
-	math::Mat4 ui_projection_matrix;
 	i32 current_camera_handle;
     
 	AnimationController* animation_controllers;
@@ -616,11 +574,7 @@ struct Renderer
 	i32 available_resolutions_count;
 	i32 current_resolution_index;
     
-	r32 scale_x;
-	r32 scale_y;
-    
 	math::Rgba clear_color;
-	r32 line_width;
     
 	b32 show_mouse_cursor;
     
