@@ -245,7 +245,7 @@ namespace scene
                 clear(&scene.memory_arena);
             }
 
-            free_instance_buffers(scene);
+//            free_instance_buffers(scene);
             
             scene_manager->_internal_scene_handles[handle.handle - 1] = -1;
             
