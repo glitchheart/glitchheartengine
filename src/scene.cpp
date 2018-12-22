@@ -299,7 +299,6 @@ namespace scene
             
             if(load_flags & SceneLoadFlags::FREE_CURRENT_SCENE)
             {
-                debug("Freeing\n");
                 free_instance_buffers(get_scene(scene_manager->loaded_scene));
                 get_scene(scene_manager->loaded_scene).loaded = false;
                 free_scene(scene_manager->loaded_scene);
@@ -1282,12 +1281,14 @@ namespace scene
 	static void set_uniform_value(EntityHandle handle, const char* name, rendering::TextureHandle value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
+        assert(value.handle != 0);
         rendering::set_uniform_value(*scene.manager->renderer, render.v2.material_handle, name, value);
 	}
 
     static void set_uniform_value(EntityHandle handle, const char* name, rendering::MSTextureHandle value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
+        assert(value.handle != 0);
         rendering::set_uniform_value(*scene.manager->renderer, render.v2.material_handle, name, value);
 	}
 

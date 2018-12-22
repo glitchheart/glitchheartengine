@@ -1167,71 +1167,57 @@ namespace rendering
 
     static void load_texture(Renderer &renderer, TextureFiltering filtering, TextureWrap wrap, unsigned char *data, i32 width, i32 height, TextureFormat format, TextureHandle &handle)
     {
-        i32 index = handle.handle - 1;
-        if (index == -1)
+        if (handle.handle == 0)
         {
-            index = renderer.texture_count;
-            renderer.texture_count++;
+            handle.handle = renderer.render.texture_count++ + 1;
+            assert(handle.handle != 0);
         }
 
-        TextureData &texture_data = renderer.texture_data[index];
-        texture_data.filtering = filtering;
-        texture_data.wrap = wrap;
-        texture_data.handle = index;
+        Texture* texture = renderer.render.textures[handle.handle - 1];
 
-        texture_data.image_data = data;
-        texture_data.width = width;
-        texture_data.height = height;
-        texture_data.format = format;
-
-        renderer.api_functions.load_texture(texture_data, renderer.api_functions.render_state, &renderer, false);
-
-        if (handle.handle == 0)
-            handle.handle = texture_data.handle + 1;
+        renderer.api_functions.load_texture(texture, filtering, wrap, format, width, height, data, renderer.api_functions.render_state, &renderer);
     }
 
     static void load_texture(const char *full_texture_path, Renderer &renderer, TextureFiltering filtering, TextureWrap wrap, TextureFormat format, TextureHandle &handle)
     {
-        i32 index = handle.handle - 1;
-        if (index == -1)
+        if(handle.handle == 0)
         {
-            index = renderer.texture_count;
-            renderer.texture_count++;
+            handle.handle = renderer.render.texture_count++ + 1;
+            assert(handle.handle != 0);
         }
-
-        TextureData &texture_data = renderer.texture_data[index];
-        texture_data.filtering = filtering;
-        texture_data.wrap = wrap;
-        texture_data.handle = index;
-        texture_data.format = format;
 
         PlatformFile png_file = platform.open_file(full_texture_path, POF_READ | POF_OPEN_EXISTING | POF_IGNORE_ERROR);
 
         if (png_file.handle)
         {
             platform.seek_file(png_file, 0, SO_END);
-            auto size = platform.tell_file(png_file);
+            i32 size = platform.tell_file(png_file);
             platform.seek_file(png_file, 0, SO_SET);
 
-            auto temp_mem = begin_temporary_memory(&renderer.texture_arena);
-            auto tex_data = push_size(&renderer.texture_arena, size + 1, stbi_uc);
+            TemporaryMemory temp_mem = begin_temporary_memory(&renderer.texture_arena);
+            stbi_uc* tex_data = push_size(&renderer.texture_arena, size + 1, stbi_uc);
             platform.read_file(tex_data, size, 1, png_file);
 
-            texture_data.image_data = stbi_load_from_memory(tex_data, size, &texture_data.width, &texture_data.height, 0, STBI_rgb_alpha);
+            i32 width;
+            i32 height;
+            
+            unsigned char* image_data = stbi_load_from_memory(tex_data, size, &width, &height, 0, STBI_rgb_alpha);
             platform.close_file(png_file);
             end_temporary_memory(temp_mem);
 
             assert(renderer.api_functions.load_texture);
-            renderer.api_functions.load_texture(texture_data, renderer.api_functions.render_state, &renderer, true);
+
+            Texture* texture = renderer.render.textures[handle.handle - 1];
+            
+            renderer.api_functions.load_texture(texture, filtering, wrap, format, width, height, image_data, renderer.api_functions.render_state, &renderer);
+
+            stbi_image_free(image_data);
         }
         else
         {
             printf("Texture could not be loaded: %s\n", full_texture_path);
             assert(false);
         }
-
-        if (handle.handle == 0)
-            handle.handle = texture_data.handle + 1; // We add one to the handle, since we want 0 to be an invalid handle
     }
 
     static void update_buffer(Renderer &renderer, UpdateBufferInfo update_info)
@@ -1274,6 +1260,181 @@ namespace rendering
 		return sizeof(r32) * 16;
         }
     }
+
+    static math::Vec2i get_scale(Renderer& renderer)
+    {
+        return {renderer.framebuffer_width, renderer.framebuffer_height};
+    }
+    
+
+    static math::Vec3 to_ui(Renderer& renderer, math::Vec2 coord)
+    {
+        math::Vec2i scale = get_scale(renderer);
+        math::Vec3 res;
+        res.x = ((r32)coord.x / (r32)scale.x) * UI_COORD_DIMENSION;
+        res.y = ((r32)coord.y / (r32)scale.y) * UI_COORD_DIMENSION;
+        res.z = 0.0f;
+        return res;
+    }
+
+    math::Vec2 from_ui(Renderer& renderer, math::Vec3 coord)
+    {
+        math::Vec2i scale = get_scale(renderer);
+        math::Vec2 res(0.0f);
+        res.x = (((r32)coord.x / (r32)UI_COORD_DIMENSION) * scale.x);
+        res.y = (((r32)coord.y / (r32)UI_COORD_DIMENSION) * scale.y);
+        return res;
+    }
+
+    r32 from_ui(Renderer& renderer, i32 scale, r32 coord)
+    {
+        return ((r32)coord / (r32)UI_COORD_DIMENSION) * (r32)scale;
+    }
+
+    r32 to_ui(Renderer& renderer, i32 scale, r32 coord)
+    {
+        return (coord / (r32)scale) * (r32)UI_COORD_DIMENSION;
+    }
+
+        static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo font)
+    {
+        math::Vec2 size;
+        r32 placeholder_y = 0.0;
+
+        i32 lines = 1;
+
+        r32 current_width = 0.0f;
+    
+        for(u32 i = 0; i < strlen(text); i++)
+        {
+            if(text[i] != '\n' && text[i] != '\r')
+            {
+                stbtt_aligned_quad quad;
+                stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
+                                    text[i] - font.first_char, &size.x, &placeholder_y, &quad, 1);
+        
+                if(quad.y1 - quad.y0 > size.y)
+                {
+                    size.y = quad.y1 - quad.y0;
+                }
+        
+                i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
+                current_width += (r32)kerning * font.scale;
+            }
+            else
+            {
+                if(size.x > current_width)
+                    current_width = size.x;
+
+                size.x = 0.0f;
+                lines++;
+            }
+        }
+
+        return math::Vec2(current_width, size.y * lines * (lines - 1));
+    }
+
+    static TrueTypeFontInfo get_tt_font_info(Renderer& renderer, i32 handle)
+    {
+        assert(handle >= 0 && handle < renderer.tt_font_count);
+        return renderer.tt_font_infos[handle];
+    }
+
+    static LineData get_line_size_data(const char *text, TrueTypeFontInfo font)
+    {
+        math::Vec2 size;
+        r32 placeholder_y = 0.0;
+    
+        LineData line_data = {};
+        line_data.total_height = 0.0f;
+        line_data.line_count = 1;
+    
+        line_data.line_spacing = (r32)font.size + font.line_gap * font.scale;
+    
+        for(u32 i = 0; i < strlen(text); i++)
+        {
+            if(text[i] != '\n' && text[i] != '\r')
+            {
+                stbtt_aligned_quad quad;
+                stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
+                                    text[i] - font.first_char, &line_data.line_sizes[line_data.line_count - 1].x, &placeholder_y, &quad, 1);
+        
+                if(quad.y1 - quad.y0 > size.y)
+                {
+                    line_data.line_sizes[line_data.line_count - 1].y = quad.y1 - quad.y0;
+                }
+        
+                i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
+                line_data.line_sizes[line_data.line_count - 1].x += (r32)kerning * font.scale;
+            }
+            else
+            {
+                line_data.line_count++;
+            }
+        }
+
+        if(line_data.line_count == 1)
+        {
+            line_data.total_height = line_data.line_sizes[0].y;
+        }
+        else
+            line_data.total_height = (line_data.line_count - 1) * line_data.line_spacing;
+    
+        return line_data;
+    }
+
+
+    static math::Vec2 get_text_size_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo font, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
+    {
+        LineData line_data = get_line_size_data(text, font);
+        math::Vec2 font_size = line_data.line_sizes[0];
+        math::Vec2 result(0.0f);
+    
+        math::Vec2i scale = get_scale(renderer);
+    
+        result.x = (font_size.x / (r32)scale.x) * UI_COORD_DIMENSION;
+    
+        if(scaling_flags & UIScalingFlag::KEEP_ASPECT_RATIO)
+        {
+            r32 ratio = font_size.y / font_size.x;
+            result.y = font_size.x * ratio;
+        }
+        else
+        {
+            result.y = (font_size.y / (r32)scale.y) * UI_COORD_DIMENSION;
+        }
+    
+        return result;
+    }
+    
+// Gets an array of text widths for each character
+// Remember to free
+    static TextLengthInfo get_char_widths_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo &font, MemoryArena* arena)
+    {
+        TextLengthInfo info = {};
+    
+        info.length = strlen(text);
+        info.widths = push_array(arena, info.length, r32);//(r32*)calloc(info.length, sizeof(r32));
+    
+        r32 placeholder_y = 0.0f;
+    
+        math::Vec2i scale = get_scale(renderer);
+    
+        for(size_t i = 0; i < info.length; i++)
+        {
+            stbtt_aligned_quad quad;
+            stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
+                                text[i] - font.first_char, &info.widths[i], &placeholder_y, &quad, 1);
+        
+            i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
+        
+            info.widths[i] += (r32)kerning * font.scale;
+            info.widths[i] = ((r32)info.widths[i] / (r32)scale.x) * UI_COORD_DIMENSION;
+        }
+    
+        return info;
+    }
+
 
     static void load_font(Renderer &renderer, const char *path, i32 size, FontHandle &handle)
     {
@@ -2270,6 +2431,7 @@ namespace rendering
             if (strncmp(u_v.uniform.name, name, strlen(name)) == 0)
             {
                 assert(u_v.uniform.type == ValueType::TEXTURE);
+                assert(value.handle != 0);
                 u_v.texture = value;
                 break;
             }
@@ -2297,12 +2459,6 @@ namespace rendering
     }
 
     static void set_uniform_value(Renderer &renderer, MaterialInstanceHandle handle, const char *name, MSTextureHandle value)
-    {
-        Material &material = get_material_instance(handle, renderer);
-        set_uniform_value(renderer, material, name, value);
-    }
-
-    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *name, MSTextureHandle value)
     {
         Material &material = get_material_instance(handle, renderer);
         set_uniform_value(renderer, material, name, value);

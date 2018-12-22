@@ -447,19 +447,27 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
         }
         else
         {
+            Texture* texture = nullptr;
+            i32 handle = 0;
+            
             if (framebuffer.tex_color_buffer_handles[i] != 0)
             {
-                glDeleteTextures(1, &framebuffer.tex_color_buffer_handles[i]);
+                texture = renderer.render.textures[framebuffer.tex_color_buffer_handles[i] - 1];
+                glDeleteTextures(1, &texture->handle);
+                handle = framebuffer.tex_color_buffer_handles[i];
             }
+            else
+            {
+                texture = renderer.render.textures[renderer.render.texture_count++];
+                handle = renderer.render.texture_count;
+            }
+            assert(handle != 0);
 
-            Texture texture;
-            glGenTextures(1, &texture.texture_handle);
-
-            i32 handle = render_state.texture_index + 1;
+            glGenTextures(1, &texture->handle);
 
             if (attachment.flags & rendering::ColorAttachmentFlags::MULTISAMPLED)
             {
-                glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture.texture_handle);
+                glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture->handle);
 
                 if (attachment.flags & rendering::ColorAttachmentFlags::HDR)
                 {
@@ -472,12 +480,12 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
                     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
                 }
 
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D_MULTISAMPLE, texture.texture_handle, NULL);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D_MULTISAMPLE, texture->handle, NULL);
                 attachment.ms_texture = {handle};
             }
             else
             {
-                glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
+                glBindTexture(GL_TEXTURE_2D, texture->handle);
 
                 if (attachment.flags & rendering::ColorAttachmentFlags::HDR)
                 {
@@ -488,7 +496,7 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
                     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
                 }
 
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, texture.texture_handle, NULL);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, texture->handle, NULL);
 
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -496,11 +504,9 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
                 attachment.texture = {handle};
             }
 
-            framebuffer.tex_color_buffer_handles[i] = texture.texture_handle;
-            render_state.texture_array[render_state.texture_index] = texture;
-            renderer.texture_data[renderer.texture_count].handle = handle - 1;
-            renderer.texture_count++;
-            render_state.texture_index++;
+            texture->width = width;
+            texture->height = height;
+            framebuffer.tex_color_buffer_handles[i] = handle;
         }
     }
 }
@@ -713,74 +719,6 @@ static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
     render_state->gl_buffers = push_array(render_state->perm_arena, global_max_custom_buffers, Buffer);
 }
 
-static GLuint _load_texture(TextureData &data, Texture *texture, b32 free_buffer = true)
-{
-    if (texture->texture_handle == 0)
-    {
-        glGenTextures(1, &texture->texture_handle);
-    }
-
-    glBindTexture(GL_TEXTURE_2D, texture->texture_handle);
-
-    if (data.wrap == REPEAT)
-    {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    }
-    else
-    {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    }
-
-    if (data.filtering == LINEAR)
-    {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    }
-    else if (data.filtering == NEAREST)
-    {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    }
-
-    //enable alpha for textures
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    GLenum format = GL_RGBA;
-
-    switch (data.format)
-    {
-    case TextureFormat::RGBA:
-    {
-        format = GL_RGBA;
-    }
-    break;
-    case TextureFormat::RGB:
-    {
-        format = GL_RGB;
-    }
-    break;
-    case TextureFormat::RED:
-    {
-        format = GL_RED;
-    }
-    break;
-    }
-
-    glTexImage2D(GL_TEXTURE_2D, 0, format, data.width, data.height, 0, format,
-                 GL_UNSIGNED_BYTE, (GLvoid *)data.image_data);
-
-    if (free_buffer)
-    {
-        stbi_image_free(data.image_data);
-        data.image_data = nullptr;
-    }
-
-    return GL_TRUE;
-}
-
 static void load_new_shaders(RenderState &render_state, Renderer &renderer)
 {
     // @Note: Load the "new" shader system shaders
@@ -866,20 +804,81 @@ static void create_framebuffer(rendering::FramebufferInfo &info, RenderState *re
     create_new_framebuffer(info, framebuffer, *render_state, *renderer);
 }
 
-static void load_texture(TextureData &texture_data, RenderState *render_state, Renderer *renderer, b32 free_buffer)
+static void load_texture(Texture* texture, TextureFiltering filtering, TextureWrap wrap, TextureFormat format, i32 width, i32 height, unsigned char* image_data, RenderState* render_state, Renderer* renderer)
 {
-    i32 index = texture_data.handle;
-
-    if (index == 0)
+    if (texture->handle == 0)
     {
-        index = render_state->texture_index++;
+        glGenTextures(1, &texture->handle);
     }
-    _load_texture(texture_data, &render_state->texture_array[render_state->texture_index++], free_buffer);
+
+    glBindTexture(GL_TEXTURE_2D, texture->handle);
+
+    if (wrap == REPEAT)
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    }
+    else
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    }
+
+    if (filtering == LINEAR)
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+    else if (filtering == NEAREST)
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    }
+
+    //enable alpha for textures
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    GLenum gl_format = GL_RGBA;
+
+    switch (format)
+    {
+    case TextureFormat::RGBA:
+    {
+        gl_format = GL_RGBA;
+    }
+    break;
+    case TextureFormat::RGB:
+    {
+        gl_format = GL_RGB;
+    }
+    break;
+    case TextureFormat::RED:
+    {
+        gl_format = GL_RED;
+    }
+    break;
+    }
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+
+    texture->width = width;
+    texture->height = height;
+    
+    glTexImage2D(GL_TEXTURE_2D, 0, gl_format, width, height, 0, gl_format,
+                 GL_UNSIGNED_BYTE, (GLvoid *)image_data);
+}
+
+static math::Vec2i get_texture_size(Texture* texture)
+{
+    return math::Vec2i(texture->width, texture->height);
 }
 
 static void initialize_opengl(RenderState &render_state, Renderer &renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char *title, MemoryArena *perm_arena, b32 *do_save_config)
 {
     renderer.api_functions.render_state = &render_state;
+    renderer.api_functions.get_texture_size = &get_texture_size;
     renderer.api_functions.load_texture = &load_texture;
     renderer.api_functions.create_framebuffer = &create_framebuffer;
     renderer.api_functions.create_instance_buffer = &create_instance_buffer;
@@ -1420,17 +1419,23 @@ static void set_uniform(RenderState &render_state, Renderer &renderer, GLuint pr
     break;
     case rendering::ValueType::TEXTURE:
     {
-        Texture texture = render_state.texture_array[renderer.texture_data[uniform_value.texture.handle - 1].handle];
+        if(uniform_value.texture.handle == 0)
+            return;
+        
+        Texture *texture = renderer.render.textures[uniform_value.texture.handle - 1];
         set_int_uniform(program, location, *texture_count);
-        set_texture_uniform(program, texture.texture_handle, *texture_count);
+        set_texture_uniform(program, texture->handle, *texture_count);
         (*texture_count)++;
     }
     break;
     case rendering::ValueType::MS_TEXTURE:
     {
-        Texture texture = render_state.texture_array[renderer.texture_data[uniform_value.ms_texture.handle - 1].handle];
+        if(uniform_value.texture.handle == 0)
+            return;
+        
+        Texture *texture = renderer.render.textures[uniform_value.ms_texture.handle - 1];
         set_int_uniform(program, location, *texture_count);
-        set_ms_texture_uniform(program, texture.texture_handle, *texture_count);
+        set_ms_texture_uniform(program, texture->handle, *texture_count);
         (*texture_count)++;
     }
     break;

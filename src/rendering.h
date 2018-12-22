@@ -422,36 +422,6 @@ enum TextureFormat
     RED
 };
 
-struct TextureData
-{
-	TextureFiltering filtering;
-    TextureWrap wrap;
-    TextureFormat format;
-    
-	i32 handle;
-	char* name;
-	i32 width;
-	i32 height;
-	unsigned char* image_data;
-};
-
-struct BufferData
-{
-	r32* vertex_buffer;
-	i32 vertex_buffer_size;
-	u16* index_buffer;
-	i32 index_buffer_count;
-	i32 index_buffer_size;
-	b32 has_normals;
-	b32 has_uvs;
-	b32 skinned;
-    
-	i32 existing_handle = -1;
-    
-	b32 for_instancing;
-	size_t instance_buffer_size;
-};
-
 struct ShadowMapMatrices
 {
 	math::Mat4 depth_projection_matrix;
@@ -470,8 +440,10 @@ struct ParticleSystemInfo;
 
 struct RenderState;
 struct Buffer;
+struct Texture;
 
-typedef void (*LoadTexture)(TextureData &texture_data, RenderState *render_state, Renderer *renderer, b32 free_buffer);
+typedef math::Vec2i (*GetTextureSize)(Texture* texture);
+typedef void (*LoadTexture)(Texture* texture, TextureFiltering filtering, TextureWrap wrap, TextureFormat format, i32 width, i32 height, unsigned char* image_data, RenderState* render_state, Renderer* renderer);
 typedef void (*CreateFramebuffer)(rendering::FramebufferInfo &framebuffer_info, RenderState *render_state, Renderer *renderer);
 typedef void (*CreateInstanceBuffer)(Buffer *buffer, size_t buffer_size, rendering::BufferUsage usage, RenderState *render_state, Renderer *renderer);
 typedef void (*DeleteInstanceBuffer)(Buffer *buffer, RenderState *render_state, Renderer *renderer);
@@ -479,6 +451,7 @@ typedef void (*DeleteAllInstanceBuffers)(RenderState *render_state, Renderer *re
 
 struct GraphicsAPI
 {
+    GetTextureSize get_texture_size;
     LoadTexture load_texture;
     CreateFramebuffer create_framebuffer;
     CreateInstanceBuffer create_instance_buffer;
@@ -505,9 +478,6 @@ struct Renderer
 	
 	MemoryArena command_arena;
     
-	BufferData *buffers;
-	i32 buffer_count;
-    
 	i32 *_internal_buffer_handles;
 	i32 _current_internal_buffer_handle;
     
@@ -532,9 +502,6 @@ struct Renderer
 		RandomSeries* entropy;
         rendering::BufferHandle quad_buffer;
 	} particles;
-    
-	TextureData *texture_data;
-	i32 texture_count;
     
 	// Shadow map
 	ShadowMapMatrices shadow_map_matrices;
@@ -665,6 +632,9 @@ struct Renderer
             i32 current_internal_mat4_handle;
         } instancing;
 
+        Texture **textures;
+        i32 texture_count;
+
         rendering::RenderPass passes[32];
         i32 pass_count;
 
@@ -741,41 +711,6 @@ struct Renderer
 	} render;
 };
 
-
-static math::Vec2i get_scale(Renderer& renderer)
-{
-	return {renderer.framebuffer_width, renderer.framebuffer_height};
-}
-
-static math::Vec3 to_ui(Renderer& renderer, math::Vec2 coord)
-{
-	math::Vec2i scale = get_scale(renderer);
-	math::Vec3 res;
-	res.x = ((r32)coord.x / (r32)scale.x) * UI_COORD_DIMENSION;
-	res.y = ((r32)coord.y / (r32)scale.y) * UI_COORD_DIMENSION;
-	res.z = 0.0f;
-	return res;
-}
-
-math::Vec2 from_ui(Renderer& renderer, math::Vec3 coord)
-{
-	math::Vec2i scale = get_scale(renderer);
-	math::Vec2 res(0.0f);
-	res.x = (((r32)coord.x / (r32)UI_COORD_DIMENSION) * scale.x);
-	res.y = (((r32)coord.y / (r32)UI_COORD_DIMENSION) * scale.y);
-	return res;
-}
-
-r32 from_ui(Renderer& renderer, i32 scale, r32 coord)
-{
-	return ((r32)coord / (r32)UI_COORD_DIMENSION) * (r32)scale;
-}
-
-r32 to_ui(Renderer& renderer, i32 scale, r32 coord)
-{
-	return (coord / (r32)scale) * (r32)UI_COORD_DIMENSION;
-}
-
 #define MAX_LINES 16
 
 struct LineData
@@ -786,167 +721,11 @@ struct LineData
 	r32 line_spacing;
 };
 
-
-#define get_texture_size(handle) texture_size(handle, renderer)
-static math::Vec2i texture_size(i32 texture_handle, Renderer& renderer)
-{
-	if(texture_handle <= renderer.texture_count)
-    {
-        TextureData data = renderer.texture_data[texture_handle - 1];
-        return math::Vec2i(data.width, data.height);
-    }
-	return math::Vec2i();
-}
-
-static math::Vec2i texture_size(rendering::TextureHandle texture_handle, Renderer& renderer)
-{
-    return get_texture_size(texture_handle.handle);
-}
-
-static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo font)
-{
-	math::Vec2 size;
-	r32 placeholder_y = 0.0;
-
-	i32 lines = 1;
-
-	r32 current_width = 0.0f;
-    
-	for(u32 i = 0; i < strlen(text); i++)
-    {
-        if(text[i] != '\n' && text[i] != '\r')
-        {
-            stbtt_aligned_quad quad;
-            stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
-                                text[i] - font.first_char, &size.x, &placeholder_y, &quad, 1);
-        
-            if(quad.y1 - quad.y0 > size.y)
-            {
-                size.y = quad.y1 - quad.y0;
-            }
-        
-            i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
-            current_width += (r32)kerning * font.scale;
-        }
-        else
-        {
-            if(size.x > current_width)
-                current_width = size.x;
-
-            size.x = 0.0f;
-            lines++;
-        }
-    }
-
-	return math::Vec2(current_width, size.y * lines * (lines - 1));
-}
-
-static TrueTypeFontInfo get_tt_font_info(Renderer& renderer, i32 handle)
-{
-	assert(handle >= 0 && handle < renderer.tt_font_count);
-	return renderer.tt_font_infos[handle];
-}
-
-static LineData get_line_size_data(const char *text, TrueTypeFontInfo font)
-{
-    math::Vec2 size;
-    r32 placeholder_y = 0.0;
-    
-    LineData line_data = {};
-    line_data.total_height = 0.0f;
-    line_data.line_count = 1;
-    
-    line_data.line_spacing = (r32)font.size + font.line_gap * font.scale;
-    
-    for(u32 i = 0; i < strlen(text); i++)
-    {
-        if(text[i] != '\n' && text[i] != '\r')
-        {
-            stbtt_aligned_quad quad;
-            stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
-                                text[i] - font.first_char, &line_data.line_sizes[line_data.line_count - 1].x, &placeholder_y, &quad, 1);
-        
-            if(quad.y1 - quad.y0 > size.y)
-            {
-                line_data.line_sizes[line_data.line_count - 1].y = quad.y1 - quad.y0;
-            }
-        
-            i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
-            line_data.line_sizes[line_data.line_count - 1].x += (r32)kerning * font.scale;
-        }
-        else
-        {
-            line_data.line_count++;
-        }
-    }
-
-    if(line_data.line_count == 1)
-    {
-        line_data.total_height = line_data.line_sizes[0].y;
-    }
-    else
-        line_data.total_height = (line_data.line_count - 1) * line_data.line_spacing;
-    
-    return line_data;
-}
-
-
-static math::Vec2 get_text_size_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo font, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
-{
-	LineData line_data = get_line_size_data(text, font);
-	math::Vec2 font_size = line_data.line_sizes[0];
-	math::Vec2 result(0.0f);
-    
-	math::Vec2i scale = get_scale(renderer);
-    
-	result.x = (font_size.x / (r32)scale.x) * UI_COORD_DIMENSION;
-    
-	if(scaling_flags & UIScalingFlag::KEEP_ASPECT_RATIO)
-    {
-        r32 ratio = font_size.y / font_size.x;
-        result.y = font_size.x * ratio;
-    }
-	else
-    {
-        result.y = (font_size.y / (r32)scale.y) * UI_COORD_DIMENSION;
-    }
-    
-	return result;
-}
-
 struct TextLengthInfo
 {
 	size_t length;
     
 	r32* widths;
 };
-
-// Gets an array of text widths for each character
-// Remember to free
-static TextLengthInfo get_char_widths_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo &font, MemoryArena* arena)
-{
-	TextLengthInfo info = {};
-    
-	info.length = strlen(text);
-	info.widths = push_array(arena, info.length, r32);//(r32*)calloc(info.length, sizeof(r32));
-    
-	r32 placeholder_y = 0.0f;
-    
-	math::Vec2i scale = get_scale(renderer);
-    
-	for(size_t i = 0; i < info.length; i++)
-    {
-        stbtt_aligned_quad quad;
-        stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
-                            text[i] - font.first_char, &info.widths[i], &placeholder_y, &quad, 1);
-        
-        i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
-        
-        info.widths[i] += (r32)kerning * font.scale;
-        info.widths[i] = ((r32)info.widths[i] / (r32)scale.x) * UI_COORD_DIMENSION;
-    }
-    
-	return info;
-}
 
 #endif
