@@ -551,6 +551,7 @@ namespace rendering
 
                 char total_buffer[1024];
                 Structure &structure = shader.structures[shader.structure_count++];
+                structure.uniform_count = 0;
                 parse_structure_variables(&source, total_buffer, structure, shader, file_path);
 
                 strncpy(&temp_result[i], total_buffer, strlen(total_buffer));
@@ -755,6 +756,7 @@ namespace rendering
             Uniform *uniforms = (Uniform *)malloc(sizeof(Uniform) * 512);
             i32 uniform_count = 0;
 
+			shader.instanced_vertex_attribute_count = 0;
             shader.vertex_attribute_count = 0;
             shader.uniform_count = 0;
             shader.structure_count = 0;
@@ -1188,7 +1190,7 @@ namespace rendering
 
         PlatformFile png_file = platform.open_file(full_texture_path, POF_READ | POF_OPEN_EXISTING | POF_IGNORE_ERROR);
 
-        if (png_file.handle)
+        if(png_file.handle)
         {
             platform.seek_file(png_file, 0, SO_END);
             i32 size = platform.tell_file(png_file);
