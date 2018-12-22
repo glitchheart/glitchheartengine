@@ -441,6 +441,7 @@ namespace rendering
             if(strncmp(u_v.uniform.name, name, strlen(name)) == 0)
             {
                 assert(u_v.uniform.type == ValueType::TEXTURE);
+                assert(value.handle != 0);
                 u_v.texture = value;
                 break;
             }
@@ -568,6 +569,7 @@ namespace rendering
         if(texture_index < info.color_attachments.count)
         {
             assert((info.color_attachments.attachments[texture_index].flags & ColorAttachmentFlags::MULTISAMPLED) == 0);
+            assert(info.color_attachments.attachments[texture_index].texture.handle != 0);
             return info.color_attachments.attachments[texture_index].texture;
         }
         
@@ -581,6 +583,7 @@ namespace rendering
         if(texture_index < info.color_attachments.count)
         {
             assert(info.color_attachments.attachments[texture_index].flags & ColorAttachmentFlags::MULTISAMPLED);
+            assert(info.color_attachments.attachments[texture_index].ms_texture.handle != 0);
             return info.color_attachments.attachments[texture_index].ms_texture;
         }
         
@@ -621,5 +624,11 @@ namespace rendering
     {
         renderer.render.passes[render_pass_handle.handle - 1].camera = camera;
         renderer.render.passes[render_pass_handle.handle - 1].use_scene_camera = false;
+    }
+
+    static math::Vec2i get_texture_size(rendering::TextureHandle handle, Renderer& renderer)
+    {
+        Texture* texture = renderer.render.textures[handle.handle - 1];
+        return renderer.api_functions.get_texture_size(texture);
     }
 }

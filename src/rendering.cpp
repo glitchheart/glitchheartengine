@@ -373,5 +373,5 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer)
         rendering::Material& particle_material = get_material_instance(system.material_handle, renderer);
             
         rendering::push_instanced_buffer_to_render_pass(renderer, system.particle_count, renderer.particles.quad_buffer, system.material_handle, particle_material.shader, rendering::get_render_pass_handle_for_name(STANDARD_PASS, renderer));
-    }
+    }    
 }

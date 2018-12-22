@@ -16,7 +16,10 @@ struct ShaderGL
 
 struct Texture 
 {
-    GLuint texture_handle;
+    GLuint handle;
+
+    i32 width;
+    i32 height;
 };
 
 struct Buffer
@@ -134,9 +137,6 @@ struct RenderState
     
 	ShaderGL *gl_shaders;
 	i32 gl_shader_count;
-    
-    Texture texture_array[150];
-    i32 texture_index;
     
     GLFWcursor* cursors[6];
     
