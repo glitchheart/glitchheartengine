@@ -856,7 +856,7 @@ int main(int argc, char **args)
             controller_keys(GLFW_JOYSTICK_1);
         }
 
-//        update_log();
+        update_log();
         
         swap_buffers(render_state);
 
