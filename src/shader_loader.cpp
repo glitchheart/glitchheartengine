@@ -2781,7 +2781,7 @@ namespace rendering
 // centered:      Whether or not the original quad was centered (need to know this for origin etc.)
 // scaling_flags: How do we scale these UI elements?
 // origin:        The origin
-    static RelativeUIQuadInfo get_relative_info(Renderer &renderer, math::Vec2 position, math::Vec2 relative_size, math::Vec2 size, RelativeFlag relative, b32 centered, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO, math::Vec2 origin = math::Vec2(0.0f))
+    static RelativeUIQuadInfo get_relative_info(Renderer &renderer, math::Vec2 position, math::Vec2 relative_size, math::Vec2 size, RelativeFlag relative, b32 centered, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
     {
         math::Vec2i resolution_scale = get_scale(renderer);
 
@@ -2790,61 +2790,32 @@ namespace rendering
         pos.y = (position.y / UI_COORD_DIMENSION) * resolution_scale.y;
         pos.z = 0.0f;
 
-        pos.x -= origin.x;
-        pos.y -= origin.y;
-
         math::Vec3 scaled_size = math::Vec3(get_relative_size(renderer, relative_size, scaling_flags), 0.0f);
 
         math::Vec3 relative_pos = math::Vec3(pos.x, pos.y, 0.0f);
 
         math::Vec3 new_size = math::Vec3(get_relative_size(renderer, size, scaling_flags), 0.0f);
 
-        r32 factor_x = scaled_size.x / origin.x;
-        r32 factor_y = scaled_size.y / origin.y;
-
-        if (origin.y == 0.0f)
-        {
-            factor_y = 1.0f;
-        }
-        if (origin.x == 0.0f)
-        {
-            factor_x = 1.0f;
-        }
-
         switch (relative)
         {
         case RELATIVE_TOP:
         {
-            relative_pos.y += (i32)scaled_size.y / factor_y;
+            relative_pos.y += (i32)scaled_size.y;
         }
         break;
         case RELATIVE_LEFT:
         {
-            if (origin.x == 0.0f)
-            {
-                relative_pos.x -= (i32)scaled_size.x / factor_x;
-            }
-            else
-            {
-                relative_pos.x -= (i32)scaled_size.x / factor_x + new_size.x;
-            }
+            relative_pos.x -= (i32)scaled_size.x + new_size.x;
         }
         break;
         case RELATIVE_RIGHT:
         {
-            if (origin.x == 0.0f)
-            {
-                relative_pos.x += (i32)scaled_size.x / factor_x;
-            }
-            else
-            {
-                relative_pos.x += (i32)scaled_size.x / factor_x + scaled_size.x;
-            }
+            relative_pos.x += (i32)scaled_size.x + scaled_size.x;
         }
         break;
         case RELATIVE_BOTTOM:
         {
-            relative_pos.y -= (i32)scaled_size.y / factor_y - scaled_size.y + new_size.y;
+            relative_pos.y -= (i32)scaled_size.y  - scaled_size.y + new_size.y;
         }
         break;
         }
