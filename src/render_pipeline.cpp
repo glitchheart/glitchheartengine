@@ -337,7 +337,6 @@ namespace rendering
         Camera camera = {};
         camera.zoom = 1.0f;
         camera.position = math::Vec3(0.0f);
-        camera.orientation = math::Quat();
         camera.target = math::Vec3();
         camera.view_matrix = math::Mat4();
 

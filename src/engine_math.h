@@ -1311,6 +1311,7 @@ namespace math
     Vec3 ceil(Vec3 v);
     r32 ceilf(r32 v);
     r32 sin(r32 v);
+    r32 asin(r32 v);
     r32 cos(r32 v);
     r32 acos(r32 v);
     r32 absolute(r32 v);
@@ -1954,6 +1955,11 @@ namespace math
     inline r32 sin(r32 v)
     {
         return (r32)::sin(v);
+    }
+
+    inline r32 asin(r32 v)
+    {
+        return (r32)::asin(v);
     }
     
     inline r32 cos(r32 v)
