@@ -1298,7 +1298,7 @@ namespace rendering
         return (coord / (r32)scale) * (r32)UI_COORD_DIMENSION;
     }
 
-        static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo font)
+    static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo font)
     {
         math::Vec2 size;
         r32 placeholder_y = 0.0;
@@ -1333,7 +1333,7 @@ namespace rendering
             }
         }
 
-        return math::Vec2(current_width, size.y * lines * (lines - 1));
+        return math::Vec2(current_width, size.y * lines * (lines));
     }
 
     static TrueTypeFontInfo get_tt_font_info(Renderer& renderer, i32 handle)
@@ -1389,7 +1389,7 @@ namespace rendering
     static math::Vec2 get_text_size_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo font, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
     {
         LineData line_data = get_line_size_data(text, font);
-        math::Vec2 font_size = line_data.line_sizes[0];
+        math::Vec2 font_size = math::Vec2(line_data.line_sizes[0].x, line_data.total_height);
         math::Vec2 result(0.0f);
     
         math::Vec2i scale = get_scale(renderer);
@@ -1526,6 +1526,8 @@ namespace rendering
         }
 
         font_info.largest_character_height = largest_character;
+
+        debug("largest: %f\n", font_info.largest_character_height);
 
         end_temporary_memory(temp_mem);
     }
@@ -2903,7 +2905,7 @@ namespace rendering
 
         if (alignment_flags & UIAlignment::TOP)
         {
-            //y = line_data.total_height;
+            y -= line_data.total_height;
         }
         else if (alignment_flags & UIAlignment::BOTTOM)
         {

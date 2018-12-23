@@ -1923,12 +1923,12 @@ static void render_ui_pass(RenderState &render_state, Renderer &renderer)
     {
         rendering::TextRenderCommand &command = pass.ui.text_commands[i];
 
-        if (command.clip)
-        {
-            glEnable(GL_SCISSOR_TEST);
-            math::Rect clip_rect = command.clip_rect;
-            glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
-        }
+        // if (command.clip)
+        // {
+        //     glEnable(GL_SCISSOR_TEST);
+        //     math::Rect clip_rect = command.clip_rect;
+        //     glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
+        // }
 
         rendering::CharacterBufferHandle char_buf_handle = command.buffer;
         rendering::CharacterData *coords = pass.ui.coords[char_buf_handle.handle];
