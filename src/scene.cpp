@@ -958,6 +958,11 @@ namespace scene
                 ps->transform.rotation = templ.transform.rotation;
             }
 
+            if(templ.particles.attributes.texture_handle.handle != 0)
+            {
+                rendering::set_uniform_value(*scene.renderer, ps->material_handle, "tex0", templ.particles.attributes.texture_handle);
+            }
+
             ps_comp.render_pass = rendering::get_render_pass_handle_for_name(STANDARD_PASS, *scene.renderer);
             
             if(templ.particles.started)

@@ -556,7 +556,7 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     rendering::set_uniform_value(renderer, bloom, "exposure", renderer.render.bloom.exposure);
 
     //END BLOOM
-    
+
     // Add tonemapping pass?
 
     renderer.render.instancing.internal_float_buffers = push_array(&renderer.buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
