@@ -99,7 +99,7 @@ namespace rendering
     {
         for (i32 i = 0; i < shader.structure_count; i++)
         {
-            if (strncmp(type_name, shader.structures[i].name, strlen(type_name)) == 0)
+            if (strcmp(type_name, shader.structures[i].name) == 0)
             {
                 return i;
             }
@@ -111,7 +111,7 @@ namespace rendering
     {
         for (i32 i = 0; i < shader.structure_count; i++)
         {
-            if (strncmp(type_name, shader.structures[i].name, strlen(type_name)) == 0)
+            if (strcmp(type_name, shader.structures[i].name) == 0)
             {
                 return &shader.structures[i];
             }
@@ -2236,7 +2236,7 @@ namespace rendering
         for (i32 i = 0; i < material.instanced_vertex_attribute_count; i++)
         {
             VertexAttribute &va = material.instanced_vertex_attributes[i].attribute;
-            if (strncmp(va.name, name, strlen(name)) == 0)
+            if (strcmp(va.name, name) == 0)
             {
                 assert(va.type == ValueType::FLOAT);
                 va.float_val = value;
@@ -2247,7 +2247,7 @@ namespace rendering
         for (i32 i = 0; i < material.uniform_value_count; i++)
         {
             UniformValue &u_v = material.uniform_values[i];
-            if (strncmp(u_v.uniform.name, name, strlen(name)) == 0)
+            if (strcmp(u_v.uniform.name, name) == 0)
             {
                 assert(u_v.uniform.type == ValueType::FLOAT);
                 u_v.float_val = value;
@@ -2267,7 +2267,7 @@ namespace rendering
         for (i32 i = 0; i < material.instanced_vertex_attribute_count; i++)
         {
             VertexAttribute &va = material.instanced_vertex_attributes[i].attribute;
-            if (strncmp(va.name, name, strlen(name)) == 0)
+            if (strcmp(va.name, name) == 0)
             {
                 assert(va.type == ValueType::FLOAT2);
                 va.float2_val = value;
@@ -2278,7 +2278,7 @@ namespace rendering
         for (i32 i = 0; i < material.uniform_value_count; i++)
         {
             UniformValue &u_v = material.uniform_values[i];
-            if (strncmp(u_v.uniform.name, name, strlen(name)) == 0)
+            if (strcmp(u_v.uniform.name, name) == 0)
             {
                 assert(u_v.uniform.type == ValueType::FLOAT2);
                 u_v.float2_val = value;
@@ -2298,7 +2298,7 @@ namespace rendering
         for (i32 i = 0; i < material.uniform_value_count; i++)
         {
             UniformValue &u_v = material.uniform_values[i];
-            if (strncmp(u_v.uniform.name, name, strlen(name)) == 0)
+            if (strcmp(u_v.uniform.name, name) == 0)
             {
                 assert(u_v.uniform.type == ValueType::FLOAT3);
                 u_v.float3_val = value;
@@ -2318,7 +2318,7 @@ namespace rendering
         for (i32 i = 0; i < material.instanced_vertex_attribute_count; i++)
         {
             VertexAttribute &va = material.instanced_vertex_attributes[i].attribute;
-            if (strncmp(va.name, name, strlen(name)) == 0)
+            if (strcmp(va.name, name) == 0)
             {
                 assert(va.type == ValueType::FLOAT4);
                 va.float4_val = value;
@@ -2329,7 +2329,7 @@ namespace rendering
         for (i32 i = 0; i < material.uniform_value_count; i++)
         {
             UniformValue &u_v = material.uniform_values[i];
-            if (strncmp(u_v.uniform.name, name, strlen(name)) == 0)
+            if (strcmp(u_v.uniform.name, name) == 0)
             {
                 assert(u_v.uniform.type == ValueType::FLOAT4);
                 u_v.float4_val = value;
@@ -2349,7 +2349,7 @@ namespace rendering
         for (i32 i = 0; i < material.instanced_vertex_attribute_count; i++)
         {
             VertexAttribute &va = material.instanced_vertex_attributes[i].attribute;
-            if (strncmp(va.name, name, strlen(name)) == 0)
+            if (strcmp(va.name, name) == 0)
             {
                 assert(va.type == ValueType::INTEGER || va.type == ValueType::BOOL);
                 if (va.type == ValueType::BOOL)
@@ -2368,7 +2368,7 @@ namespace rendering
         for (i32 i = 0; i < material.uniform_value_count; i++)
         {
             UniformValue &u_v = material.uniform_values[i];
-            if (strncmp(u_v.uniform.name, name, strlen(name)) == 0)
+            if (strcmp(u_v.uniform.name, name) == 0)
             {
                 assert(u_v.uniform.type == ValueType::INTEGER || u_v.uniform.type == ValueType::BOOL);
                 if (u_v.uniform.type == ValueType::BOOL)
@@ -2396,7 +2396,7 @@ namespace rendering
         for (i32 i = 0; i < material.instanced_vertex_attribute_count; i++)
         {
             VertexAttribute &va = material.instanced_vertex_attributes[i].attribute;
-            if (strncmp(va.name, name, strlen(name)) == 0)
+            if (strcmp(va.name, name) == 0)
             {
                 assert(va.type == ValueType::MAT4);
                 if (va.type == ValueType::MAT4)
@@ -2410,7 +2410,7 @@ namespace rendering
         for (i32 i = 0; i < material.uniform_value_count; i++)
         {
             UniformValue &u_v = material.uniform_values[i];
-            if (strncmp(u_v.uniform.name, name, strlen(name)) == 0)
+            if (strcmp(u_v.uniform.name, name) == 0)
             {
                 assert(u_v.uniform.type == ValueType::MAT4);
                 u_v.mat4_val = value;
@@ -2430,7 +2430,7 @@ namespace rendering
         for (i32 i = 0; i < material.uniform_value_count; i++)
         {
             UniformValue &u_v = material.uniform_values[i];
-            if (strncmp(u_v.uniform.name, name, strlen(name)) == 0)
+            if (strcmp(u_v.uniform.name, name) == 0)
             {
                 assert(u_v.uniform.type == ValueType::TEXTURE);
                 assert(value.handle != 0);
@@ -2451,7 +2451,7 @@ namespace rendering
         for (i32 i = 0; i < material.uniform_value_count; i++)
         {
             UniformValue &u_v = material.uniform_values[i];
-            if (strncmp(u_v.uniform.name, name, strlen(name)) == 0)
+            if (strcmp(u_v.uniform.name, name) == 0)
             {
                 assert(u_v.uniform.type == ValueType::MS_TEXTURE);
                 u_v.ms_texture = value;
