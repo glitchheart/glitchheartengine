@@ -448,6 +448,7 @@ typedef void (*CreateFramebuffer)(rendering::FramebufferInfo &framebuffer_info, 
 typedef void (*CreateInstanceBuffer)(Buffer *buffer, size_t buffer_size, rendering::BufferUsage usage, RenderState *render_state, Renderer *renderer);
 typedef void (*DeleteInstanceBuffer)(Buffer *buffer, RenderState *render_state, Renderer *renderer);
 typedef void (*DeleteAllInstanceBuffers)(RenderState *render_state, Renderer *renderer);
+typedef void (*SetMouseLock)(b32 locked, RenderState *render_state);
 
 struct GraphicsAPI
 {
@@ -457,6 +458,9 @@ struct GraphicsAPI
     CreateInstanceBuffer create_instance_buffer;
     DeleteInstanceBuffer delete_instance_buffer;
     DeleteAllInstanceBuffers delete_all_instance_buffers;
+
+    SetMouseLock set_mouse_lock;
+    
     RenderState *render_state;
 };
 
