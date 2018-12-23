@@ -501,6 +501,12 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
+                if(attachment.flags & rendering::ColorAttachmentFlags::CLAMP_TO_EDGE)
+                {
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                }
+                
                 attachment.texture = {handle};
             }
 
@@ -1463,6 +1469,7 @@ static void set_uniform(rendering::Transform transform, const rendering::RenderP
         case rendering::UniformMappingType::AMBIENT_COLOR:
         case rendering::UniformMappingType::AMBIENT_TEX:
         case rendering::UniformMappingType::DIRECTIONAL_LIGHT_COUNT:
+        case rendering::UniformMappingType::POINT_LIGHT_COUNT:
         case rendering::UniformMappingType::POINT_LIGHT_POSITION:
         case rendering::UniformMappingType::DIRECTIONAL_LIGHT_DIRECTION:
         case rendering::UniformMappingType::DIRECTIONAL_LIGHT_AMBIENT:

@@ -500,7 +500,8 @@ namespace rendering
         RGBA_16 = 1 << 1,
         RGBA_32 = 1 << 2,
         HDR = 1 << 3,
-        MULTISAMPLED = 1 << 4
+        MULTISAMPLED = 1 << 4,
+        CLAMP_TO_EDGE = 1 << 5
     };
 
     enum DepthAttachmentFlags
