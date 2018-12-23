@@ -164,13 +164,14 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer)
             if(ent.comp_flags & scene::COMP_LIGHT)
             {
                 scene::LightComponent &light_comp = scene.light_components[ent.light_handle.handle];
-
+                
                 switch(light_comp.type)
                 {
                 case scene::LightType::DIRECTIONAL:
                 renderer.render.directional_lights[renderer.render.dir_light_count++] = light_comp.dir_light;
                 break;
                 case scene::LightType::POINT:
+                light_comp.point_light.position = position;
                 renderer.render.point_lights[renderer.render.point_light_count++] = light_comp.point_light;
                 break;
                 default:
