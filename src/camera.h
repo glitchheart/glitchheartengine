@@ -91,7 +91,7 @@ static void update_arcball_rotation(Camera &camera, r32 pitch_amount, r32 yaw_am
     orientation = math::rotate(orientation, pitch, camera.right);
     orientation = math::rotate(orientation, yaw, math::Vec3(0.0f, 1.0f, 0.0f));
     camera.position = to_matrix(orientation) * camera_focus_vector + camera.target;
-    
+
     camera.forward = math::normalize(camera.target - camera.position);
     camera.right = math::normalize(math::cross(math::Vec3(0, 1, 0), camera.forward));
     camera.up = math::cross(camera.forward, camera.right);
