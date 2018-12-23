@@ -15,14 +15,14 @@ static void error_callback(int error, const char *description)
 
 static void show_mouse_cursor(RenderState &render_state, b32 show)
 {
-    if (show)
-    {
-        glfwSetInputMode(render_state.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    }
-    else
-    {
-        glfwSetInputMode(render_state.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-    }
+    // if (show)
+    // {
+    //     glfwSetInputMode(render_state.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    // }
+    // else
+    // {
+    //     glfwSetInputMode(render_state.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    // }
 }
 
 #define error_gl() _error_gl(__LINE__, __FILE__)
@@ -881,6 +881,14 @@ static math::Vec2i get_texture_size(Texture* texture)
     return math::Vec2i(texture->width, texture->height);
 }
 
+static void set_mouse_lock(b32 locked, RenderState *render_state)
+{
+    if(locked)
+        glfwSetInputMode(render_state->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    else
+        glfwSetInputMode(render_state->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+}
+
 static void initialize_opengl(RenderState &render_state, Renderer &renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char *title, MemoryArena *perm_arena, b32 *do_save_config)
 {
     renderer.api_functions.render_state = &render_state;
@@ -889,6 +897,8 @@ static void initialize_opengl(RenderState &render_state, Renderer &renderer, r32
     renderer.api_functions.create_framebuffer = &create_framebuffer;
     renderer.api_functions.create_instance_buffer = &create_instance_buffer;
     renderer.api_functions.delete_instance_buffer = &delete_instance_buffer;
+    renderer.api_functions.set_mouse_lock = &set_mouse_lock;
+        
 
     auto recreate_window = render_state.window != nullptr;
 
@@ -964,7 +974,7 @@ static void initialize_opengl(RenderState &render_state, Renderer &renderer, r32
         }
     }
 
-    glfwSetInputMode(render_state.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    //glfwSetInputMode(render_state.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
     glfwSetFramebufferSizeCallback(render_state.window, frame_buffer_size_callback);
     glfwSetWindowIconifyCallback(render_state.window, window_iconify_callback);
@@ -973,7 +983,7 @@ static void initialize_opengl(RenderState &render_state, Renderer &renderer, r32
 
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
 
     glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
     glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
@@ -986,6 +996,7 @@ static void initialize_opengl(RenderState &render_state, Renderer &renderer, r32
     glDisable(GL_DITHER);
 
     glDisable(GL_CULL_FACE);
+    
     glEnable(GL_DEPTH_TEST);
 
     glDepthFunc(GL_LESS);
@@ -1876,6 +1887,7 @@ static void render_instanced_shadow_buffer(rendering::ShadowCommand &shadow_comm
 
 static void render_shadows(RenderState &render_state, Renderer &renderer, Framebuffer &framebuffer)
 {
+    glEnable(GL_CULL_FACE);
     glCullFace(GL_FRONT); // KILL PETER PAN!
     glViewport(0, 0, framebuffer.shadow_map.width, framebuffer.shadow_map.height);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
@@ -1894,7 +1906,7 @@ static void render_shadows(RenderState &render_state, Renderer &renderer, Frameb
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glCullFace(GL_BACK);
-
+    glDisable(GL_CULL_FACE);
     renderer.render.shadow_command_count = 0;
 }
 

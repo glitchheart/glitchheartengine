@@ -31,6 +31,11 @@ static void set_new_window_mode(Renderer &renderer, WindowMode new_window_mode)
     renderer.window_mode = new_window_mode;
 }
 
+static void set_mouse_lock(b32 locked, Renderer &renderer)
+{
+    renderer.api_functions.set_mouse_lock(locked, renderer.api_functions.render_state);
+}
+
 static i32 _find_unused_handle(Renderer& renderer)
 {
     for(i32 index = renderer._current_internal_buffer_handle; index < global_max_custom_buffers; index++)
