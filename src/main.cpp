@@ -489,7 +489,7 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     rendering::FramebufferInfo info = rendering::generate_framebuffer_info();
     info.width = renderer.framebuffer_width;
     info.height = renderer.framebuffer_height;
-    rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR, info, 0);
+    rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, info, 0);
     rendering::add_depth_attachment(rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, info, 0);
     
     rendering::FramebufferHandle framebuffer = rendering::create_framebuffer(info, renderer);
@@ -500,8 +500,8 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     hdr_info.width = renderer.framebuffer_width;
     hdr_info.height = renderer.framebuffer_height;
 
-    rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR, hdr_info, 0);
-    rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR, hdr_info, 0);
+    rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, hdr_info, 0);
+    rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, hdr_info, 0);
 
     rendering::FramebufferHandle hdr_fbo = rendering::create_framebuffer(hdr_info, renderer);
 
@@ -521,7 +521,7 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     bloom_info.width = renderer.framebuffer_width;
     bloom_info.height = renderer.framebuffer_height;
 
-    rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR, bloom_info, 0)
+    rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, bloom_info, 0)
 ;
     rendering::ShaderHandle blur_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/blur.shd");
     rendering::ShaderHandle bloom_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/bloom.shd");

@@ -463,7 +463,7 @@ namespace scene
         return _add_particle_system_component(scene, entity_handle, attributes, max_particles, material, array_handle);
     }
 
-    static LightComponent &add_light_component(Scene &scene, EntityHandle entity_handle)
+    static LightComponent &_add_light_component(Scene &scene, EntityHandle entity_handle)
     {
         Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
         entity.comp_flags |= COMP_LIGHT;
@@ -471,6 +471,12 @@ namespace scene
         scene::LightComponent &comp = scene.light_components[entity.light_handle.handle];
         
         return(comp); 
+    }
+    
+    static LightComponent &add_light_component(SceneHandle &handle, EntityHandle entity_handle)
+    {
+        Scene &scene = get_scene(handle);
+        return _add_light_component(scene, entity_handle);
     }
     
     // Returns a new valid "EntityHandle". "comp_flags" Specifies the components that the entity should contain.
@@ -501,7 +507,7 @@ namespace scene
 
         if(comp_flags & COMP_LIGHT)
         {
-            add_light_component(scene, handle);
+            _add_light_component(scene, handle);
         }
         
         return(handle);
