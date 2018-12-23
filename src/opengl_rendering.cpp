@@ -2112,7 +2112,8 @@ static void render_post_processing_passes(RenderState &render_state, Renderer &r
         {
             set_uniform({}, pass, pass.post_processing.uniform_values[i], shader, {}, &texture_count, render_state, renderer);
         }
-
+        
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_state.quad_index_buffer);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void *)nullptr);
     }
 
