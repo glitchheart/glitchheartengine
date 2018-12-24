@@ -2781,7 +2781,7 @@ namespace rendering
 // centered:      Whether or not the original quad was centered (need to know this for origin etc.)
 // scaling_flags: How do we scale these UI elements?
 // origin:        The origin
-    static RelativeUIQuadInfo get_relative_info(Renderer &renderer, math::Vec2 position, math::Vec2 relative_size, math::Vec2 size, RelativeFlag relative, b32 centered, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
+    static RelativeUIQuadInfo get_relative_info(Renderer &renderer, math::Vec2 position, math::Vec2 relative_size, math::Vec2 size, RelativeFlag relative, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
     {
         math::Vec2i resolution_scale = get_scale(renderer);
 
@@ -2815,7 +2815,7 @@ namespace rendering
         break;
         case RELATIVE_BOTTOM:
         {
-            relative_pos.y -= (i32)scaled_size.y  - scaled_size.y + new_size.y;
+            relative_pos.y -= (i32)scaled_size.y;
         }
         break;
         }
