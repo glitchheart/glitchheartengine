@@ -48,20 +48,26 @@ static Camera create_camera(math::Vec3 position, math::Vec3 target, math::Mat4 p
 
 static void translate_forward(Camera &camera, r32 amount)
 {
+    r32 dist = math::distance(camera.target, camera.position);
     camera.position += camera.forward * amount;
 	camera.view_matrix = math::look_at(camera.forward, camera.position);
+    camera.target = camera.position + camera.forward * dist;   
 }
 
 static void translate_up(Camera &camera, r32 amount)
 {
+    r32 dist = math::distance(camera.target, camera.position);
     camera.position += camera.up * amount;
 	camera.view_matrix = math::look_at(camera.forward, camera.position);
+    camera.target = camera.position + camera.forward * dist;   
 }
 
 static void translate_right(Camera &camera, r32 amount)
 {
+    r32 dist = math::distance(camera.target, camera.position);
     camera.position += camera.right * amount;
 	camera.view_matrix = math::look_at(camera.forward, camera.position);
+    camera.target = camera.position + camera.forward * dist;   
 }
 
 static void update_rotation(Camera &camera)
@@ -69,8 +75,8 @@ static void update_rotation(Camera &camera)
     r32 pitch = camera.pitch * DEGREE_IN_RADIANS;
     r32 yaw = camera.yaw * DEGREE_IN_RADIANS;
 
-    r32 dist = math::distance(camera.position, camera.target);
-    
+    r32 dist = math::distance(camera.target, camera.position);
+
     camera.forward.x = math::cos(pitch) * math::sin(yaw);
     camera.forward.y = math::sin(pitch);
     camera.forward.z = math::cos(pitch) * math::cos(yaw);
