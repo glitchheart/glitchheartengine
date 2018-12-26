@@ -1527,8 +1527,6 @@ namespace rendering
 
         font_info.largest_character_height = largest_character;
 
-        debug("largest: %f\n", font_info.largest_character_height);
-
         end_temporary_memory(temp_mem);
     }
 
@@ -2703,14 +2701,15 @@ namespace rendering
 
     static void push_buffer_to_render_pass(Renderer &renderer, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, Transform &transform, ShaderHandle shader_handle, RenderPassHandle render_pass_handle)
     {
-        assert(renderer.render.render_command_count < global_max_render_commands);
+        RenderPass &pass = renderer.render.passes[render_pass_handle.handle - 1];
+        assert(pass.commands.render_command_count < global_max_render_commands);
 
         RenderCommand render_command = {};
         render_command.buffer = buffer_handle;
         render_command.material = material_instance_handle;
         render_command.transform = transform;
         render_command.pass.shader_handle = shader_handle;
-        RenderPass &pass = renderer.render.passes[render_pass_handle.handle - 1];
+        
         pass.commands.render_commands[pass.commands.render_command_count++] = render_command;
     }
 
@@ -2960,12 +2959,16 @@ namespace rendering
         command.clip_rect = scaled_clip_rect;
         command.text_length = strlen(text);
 
+        assert(info.z_layer < Z_LAYERS);
+        
         // @Incomplete: Set material?
         command.material = renderer.render.materials[renderer.render.ui.font_material.handle];
 
         set_uniform_value(renderer, command.material, "color", info.color);
         set_uniform_value(renderer, command.material, "z", (r32)info.z_layer);
         set_uniform_value(renderer, command.material, "tex", font_info.texture);
+
+        pass.ui.text_z_layers[info.z_layer][pass.ui.text_z_layer_counts[info.z_layer]++] = pass.ui.text_command_count;
 
         command.shader_handle = command.material.shader;
 
@@ -2981,6 +2984,8 @@ namespace rendering
         UIRenderCommand render_command = {};
         render_command.buffer = buffer_handle;
 
+        b32 transparent = false;
+
         if (info.texture_handle.handle != 0)
         {
             render_command.material = renderer.render.materials[renderer.render.ui.textured_material.handle];
@@ -2990,6 +2995,11 @@ namespace rendering
         {
             render_command.material = renderer.render.materials[renderer.render.ui.material.handle];
             set_uniform_value(renderer, render_command.material, "color", info.color);
+
+            if(info.color.a < 1.0f)
+            {
+                transparent = true;
+            }
         }
 
         Transform transform = {};
@@ -3001,7 +3011,16 @@ namespace rendering
         render_command.shader_handle = render_command.material.shader;
         render_command.clip_rect = info.clip_rect;
         RenderPass &pass = renderer.render.ui.pass;
-        pass.ui.render_commands[pass.ui.render_command_count++] = render_command;
+
+        if(transparent)
+        {
+            pass.ui.transparent_commands[pass.ui.transparent_command_count++] = render_command;
+        }
+        else
+        {
+            pass.ui.render_commands[pass.ui.render_command_count++] = render_command;
+        }
+        
     }
 
     static UpdateBufferInfo create_update_buffer_info(Renderer &renderer, BufferHandle handle)
