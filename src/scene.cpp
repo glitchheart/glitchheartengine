@@ -2,7 +2,7 @@
 
 namespace scene
 {
-    static Scene create_scene(Renderer &renderer, EntityTemplateState &template_state, i32 initial_entity_array_size);
+    static Scene create_scene(Renderer *renderer, EntityTemplateState &template_state, i32 initial_entity_array_size);
     static SceneHandle create_scene(SceneManager *scene_manager, i32 initial_entity_array_size);
     static void free_scene(SceneHandle scene);
     static void load_scene(SceneHandle handle, u64 scene_load_flags);
@@ -113,7 +113,7 @@ namespace scene
         scene.light_components = push_array(&memory_arena, initial_entity_array_size, LightComponent);
         scene.particle_system_components = push_array(&memory_arena, initial_entity_array_size, ParticleSystemComponent);
 
-        scene.material_array_handle = rendering::allocate_material_instance_array(*scene_manager->renderer, initial_entity_array_size);
+        scene.material_array_handle = rendering::allocate_material_instance_array(scene_manager->renderer, initial_entity_array_size);
         
         for(i32 index = 0; index < initial_entity_array_size; index++)
         {
@@ -154,7 +154,7 @@ namespace scene
         for(i32 i = 0; i < scene.render_component_count; i++)
         {
             RenderComponent &comp = scene.render_components[i];
-            rendering::Material &material_instance = rendering::get_material_instance(comp.v2.material_handle, *renderer);
+            rendering::Material &material_instance = rendering::get_material_instance(comp.v2.material_handle, renderer);
 
             if(material_instance.instanced_vertex_attribute_count > 0)
             {
@@ -196,12 +196,12 @@ namespace scene
             // Allocate all buffers
             for(i32 j = 0; j < pair.type_count; j++)
             {
-                rendering::InstanceBufferHandle instance_buffer_handle = rendering::allocate_instance_buffer(pair.types[j], math::next_power_of_two(pair.count), *renderer);
+                rendering::InstanceBufferHandle instance_buffer_handle = rendering::allocate_instance_buffer(pair.types[j], math::next_power_of_two(pair.count), renderer);
 
                 // Update all materials with the correct buffer handle
                 for(i32 k = 0; k < pair.count; k++)
                 {
-                    rendering::Material &material = get_material_instance(pair.material_instances[k], *renderer);
+                    rendering::Material &material = get_material_instance(pair.material_instances[k], renderer);
                     material.instanced_vertex_attributes[j].instance_buffer_handle = instance_buffer_handle;
                 }
 
@@ -215,7 +215,7 @@ namespace scene
     {
         for(i32 i = 0; i < scene.instance_buffer_count; i++)
         {
-            rendering::free_instance_buffer(scene.instance_buffer_handles[i], *scene.renderer);
+            rendering::free_instance_buffer(scene.instance_buffer_handles[i], scene.renderer);
         }
         scene.instance_buffer_count = 0;
     }
@@ -239,10 +239,10 @@ namespace scene
                 for(i32 index = 0; index < scene.particle_system_component_count; index++)
                 {
                     ParticleSystemComponent& ps_comp = scene.particle_system_components[index];
-                    remove_particle_system(*scene.renderer, ps_comp.handle);
+                    remove_particle_system(scene.renderer, ps_comp.handle);
                 }
                 
-                rendering::free_material_instance_array(scene.material_array_handle, *scene.scene_manager->renderer);
+                rendering::free_material_instance_array(scene.material_array_handle, scene.scene_manager->renderer);
                 scene.particle_system_component_count = 0;
                 scene.light_component_count = 0;
                 scene.current_internal_handle = 0;
@@ -276,7 +276,7 @@ namespace scene
         Scene &scene = get_scene(handle);                
         for(i32 i = 0; i < scene.particle_system_component_count; i++)
         {
-            stop_particle_system(scene.particle_system_components[i].handle, *scene.renderer);
+            stop_particle_system(scene.particle_system_components[i].handle, scene.renderer);
         }
     }
 
@@ -286,7 +286,7 @@ namespace scene
         Scene &scene = get_scene(handle);                
         for(i32 i = 0; i < scene.particle_system_component_count; i++)
         {
-            start_particle_system(scene.particle_system_components[i].handle, *scene.renderer);
+            start_particle_system(scene.particle_system_components[i].handle, scene.renderer);
         }
     }
 
@@ -376,7 +376,7 @@ namespace scene
         comp.v2.render_pass_count++;
     }
 
-    static void add_to_render_pass(const char *pass_name, rendering::ShaderHandle shader_handle, RenderComponent &comp, Renderer &renderer)
+    static void add_to_render_pass(const char *pass_name, rendering::ShaderHandle shader_handle, RenderComponent &comp, Renderer *renderer)
     {
         rendering::RenderPassHandle render_pass_handle = rendering::get_render_pass_handle_for_name(pass_name, renderer);
         add_to_render_pass(render_pass_handle, shader_handle, comp);
@@ -448,8 +448,8 @@ namespace scene
         entity.particle_system_handle = {scene.particle_system_component_count++};
         scene::ParticleSystemComponent &comp = scene.particle_system_components[entity.particle_system_handle.handle];
         
-        comp.handle = create_particle_system(*scene.renderer, max_particles, material, array_handle);
-        ParticleSystemInfo* info = get_particle_system_info(comp.handle, *scene.renderer);
+        comp.handle = create_particle_system(scene.renderer, max_particles, material, array_handle);
+        ParticleSystemInfo* info = get_particle_system_info(comp.handle, scene.renderer);
         assert(info);
         
         info->attributes = attributes;
@@ -580,7 +580,7 @@ namespace scene
                                 char pass_name[128];
                                 char shader_file[256];
                                 sscanf(buffer, "shd_pass: %s - %s", pass_name, shader_file);
-                                rendering::ShaderHandle shader_handle = rendering::load_shader(*scene.renderer, shader_file);
+                                rendering::ShaderHandle shader_handle = rendering::load_shader(scene.renderer, shader_file);
 
                                 // Add the pass information
                                 strncpy(templ.render.v2.render_pass_names[templ.render.v2.render_pass_count], pass_name, strlen(pass_name) + 1);
@@ -590,8 +590,8 @@ namespace scene
                             {
                                 char shader_file[256];
                                 sscanf(buffer, "shd: %s", shader_file);
-                                rendering::ShaderHandle shader_handle = rendering::load_shader(*scene.renderer, shader_file);
-                                templ.render.v2.material_handle = rendering::create_material(*scene.renderer, shader_handle);
+                                rendering::ShaderHandle shader_handle = rendering::load_shader(scene.renderer, shader_file);
+                                templ.render.v2.material_handle = rendering::create_material(scene.renderer, shader_handle);
 
                                 // Add the pass information
                                 strncpy(templ.render.v2.render_pass_names[templ.render.v2.render_pass_count], STANDARD_PASS, strlen(STANDARD_PASS) + 1);
@@ -614,10 +614,10 @@ namespace scene
                             if(is_new_version)
                             {
                                 templ.render.is_new_version = true;
-                                templ.render.v2.buffer_handle = rendering::load_obj(*scene.renderer, obj_file, &templ.render.v2.material_handle);
+                                templ.render.v2.buffer_handle = rendering::load_obj(scene.renderer, obj_file, &templ.render.v2.material_handle);
                             }
                             // else
-                            //     load_obj(*scene.renderer, obj_file, &templ.render.mesh_handle, &templ.render.material_handle);
+                            //     load_obj(scene.renderer, obj_file, &templ.render.mesh_handle, &templ.render.material_handle);
                         }
                         else if(starts_with(buffer, "prim"))
                         {
@@ -628,7 +628,7 @@ namespace scene
                                 if(is_new_version)
                                 {
                                     templ.render.is_new_version = true;
-                                    templ.render.v2.buffer_handle = rendering::create_plane(*scene.renderer);
+                                    templ.render.v2.buffer_handle = rendering::create_plane(scene.renderer);
                                 }
                             }
                             else if(starts_with(prim_type, "plane"))
@@ -636,7 +636,7 @@ namespace scene
                                 if(is_new_version)
                                 {
                                     templ.render.is_new_version = true;
-                                    templ.render.v2.buffer_handle = rendering::create_plane(*scene.renderer);
+                                    templ.render.v2.buffer_handle = rendering::create_plane(scene.renderer);
                                 }
                             }
                         }
@@ -652,11 +652,11 @@ namespace scene
 
                             if(is_new_version)
                             {
-                                rendering::load_material_from_mtl(*scene.renderer, templ.render.v2.material_handle, mtl_file);
+                                rendering::load_material_from_mtl(scene.renderer, templ.render.v2.material_handle, mtl_file);
                             }
                             else
                             {
-                                // load_material(*scene.renderer, mtl_file, &templ.render.material_handle);
+                                // load_material(scene.renderer, mtl_file, &templ.render.material_handle);
                             }
                         }
                     }
@@ -684,8 +684,8 @@ namespace scene
                         {
                             char shader_file[256];
                             sscanf(buffer, "shd: %s", shader_file);
-                            rendering::ShaderHandle shader_handle = rendering::load_shader(*scene.renderer, shader_file);
-                            templ.particles.material_handle = rendering::create_material(*scene.renderer, shader_handle);
+                            rendering::ShaderHandle shader_handle = rendering::load_shader(scene.renderer, shader_file);
+                            templ.particles.material_handle = rendering::create_material(scene.renderer, shader_handle);
 
                             // @Incomplete: Multiple passes?
                             // Add the pass information
@@ -754,7 +754,7 @@ namespace scene
                         {
                             char texture_path[128];
                             sscanf(buffer, "texture: %s", texture_path);
-                            load_texture(texture_path, *scene.renderer, LINEAR, REPEAT, TextureFormat::RGBA, attributes.texture_handle);
+                            load_texture(texture_path, scene.renderer, LINEAR, REPEAT, TextureFormat::RGBA, attributes.texture_handle);
                         }
                         else if(starts_with(buffer, "gravity"))
                         {
@@ -910,12 +910,12 @@ namespace scene
             {
                 render.is_new_version = true;
                 render.v2.buffer_handle = templ.render.v2.buffer_handle;
-                render.v2.material_handle = rendering::create_material_instance(*scene.renderer, templ.render.v2.material_handle, scene.material_array_handle);
+                render.v2.material_handle = rendering::create_material_instance(scene.renderer, templ.render.v2.material_handle, scene.material_array_handle);
                 render.casts_shadows = templ.render.casts_shadows;
                 
                 for(i32 i = 0; i < templ.render.v2.render_pass_count; i++)
                 {
-                    add_to_render_pass(templ.render.v2.render_pass_names[i], templ.render.v2.shader_handles[i], render, *scene.renderer);
+                    add_to_render_pass(templ.render.v2.render_pass_names[i], templ.render.v2.shader_handles[i], render, scene.renderer);
                 }
             }
             else
@@ -928,7 +928,7 @@ namespace scene
         {
             scene::ParticleSystemComponent &ps_comp = scene::_add_particle_system_component(scene, handle, templ.particles.attributes, templ.particles.max_particles, templ.particles.material_handle, scene.material_array_handle);
 
-            ParticleSystemInfo *ps = get_particle_system_info(ps_comp.handle, *scene.renderer);
+            ParticleSystemInfo *ps = get_particle_system_info(ps_comp.handle, scene.renderer);
             
             for(i32 i = 0; i < templ.particles.size_over_lifetime.value_count; i++)
             {
@@ -960,13 +960,13 @@ namespace scene
 
             if(templ.particles.attributes.texture_handle.handle != 0)
             {
-                rendering::set_uniform_value(*scene.renderer, ps->material_handle, "tex0", templ.particles.attributes.texture_handle);
+                rendering::set_uniform_value(scene.renderer, ps->material_handle, "tex0", templ.particles.attributes.texture_handle);
             }
 
-            ps_comp.render_pass = rendering::get_render_pass_handle_for_name(STANDARD_PASS, *scene.renderer);
+            ps_comp.render_pass = rendering::get_render_pass_handle_for_name(STANDARD_PASS, scene.renderer);
             
             if(templ.particles.started)
-                start_particle_system(ps_comp.handle, *scene.renderer);
+                start_particle_system(ps_comp.handle, scene.renderer);
         }
         
         return(handle);
@@ -1056,7 +1056,7 @@ namespace scene
         if(entity.comp_flags & COMP_PARTICLES)
         {
             ParticleSystemHandle ps_handle = scene.particle_system_components[entity.particle_system_handle.handle].handle;
-            remove_particle_system(*scene.renderer, ps_handle);
+            remove_particle_system(scene.renderer, ps_handle);
             for(i32 index = entity.particle_system_handle.handle; index < scene.particle_system_component_count - 1; index++)
             {
                 scene.particle_system_components[index] = scene.particle_system_components[index + 1];
@@ -1256,57 +1256,57 @@ namespace scene
 	static void set_uniform_value(EntityHandle handle, const char* name, r32 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(*scene.manager->renderer, render.v2.material_handle, name, value);
+        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
 	}
 
 	static void set_uniform_value(EntityHandle handle, const char* name, math::Vec2 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(*scene.manager->renderer, render.v2.material_handle, name, value);
+        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
 	}
 
 	static void set_uniform_value(EntityHandle handle, const char* name, math::Vec3 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(*scene.manager->renderer, render.v2.material_handle, name, value);
+        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
 	}
 
 	static void set_uniform_value(EntityHandle handle, const char* name, math::Vec4 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(*scene.manager->renderer, render.v2.material_handle, name, value);
+        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
 	}
 
 	static void set_uniform_value(EntityHandle handle, const char* name, i32 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(*scene.manager->renderer, render.v2.material_handle, name, value);
+        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
 	}
 
 	static void set_uniform_value(EntityHandle handle, const char* name, math::Mat4 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(*scene.manager->renderer, render.v2.material_handle, name, value);
+        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
 	}
 
 	static void set_uniform_value(EntityHandle handle, const char* name, rendering::TextureHandle value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
         assert(value.handle != 0);
-        rendering::set_uniform_value(*scene.manager->renderer, render.v2.material_handle, name, value);
+        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
 	}
 
     static void set_uniform_value(EntityHandle handle, const char* name, rendering::MSTextureHandle value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
         assert(value.handle != 0);
-        rendering::set_uniform_value(*scene.manager->renderer, render.v2.material_handle, name, value);
+        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
 	}
 
 #define SET_MAT_ARRAY_VALUE(type) static void set_uniform_array_value(EntityHandle handle, const char *array_name, i32 index, const char *variable_name, type value, SceneHandle &scene) \
     { \
        RenderComponent &render = get_render_comp(handle, scene); \
-    rendering::set_uniform_array_value(*scene.manager->renderer, render.v2.material_handle, array_name, index, variable_name, value);\
+    rendering::set_uniform_array_value(scene.manager->renderer, render.v2.material_handle, array_name, index, variable_name, value);\
     } \
 
 SET_MAT_ARRAY_VALUE(r32)

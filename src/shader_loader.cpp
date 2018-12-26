@@ -726,20 +726,20 @@ namespace rendering
         shader.last_loaded = sb1.st_mtime;
     }
 
-    static void check_for_shader_file_changes(Renderer &renderer)
+    static void check_for_shader_file_changes(Renderer *renderer)
     {
-        for (i32 i = 0; i < renderer.render.shader_count; i++)
+        for (i32 i = 0; i < renderer->render.shader_count; i++)
         {
-            if (check_dirty(renderer.render.shaders[i]))
+            if (check_dirty(renderer->render.shaders[i]))
             {
-                renderer.render.shaders_to_reload[renderer.render.shaders_to_reload_count++] = i;
+                renderer->render.shaders_to_reload[renderer->render.shaders_to_reload_count++] = i;
             }
         }
     }
 
     static int out_count = 0;
 
-    static void load_shader(Renderer &renderer, Shader &shader)
+    static void load_shader(Renderer *renderer, Shader &shader)
     {
         FILE *file = fopen(shader.path, "r");
 
@@ -748,7 +748,7 @@ namespace rendering
         if (file)
         {
             size_t size = 0;
-            char *source = read_file_into_buffer(&renderer.shader_arena, file, &size);
+            char *source = read_file_into_buffer(&renderer->shader_arena, file, &size);
 
             shader.vert_shader = nullptr;
             shader.frag_shader = nullptr;
@@ -766,11 +766,11 @@ namespace rendering
             {
                 if (starts_with(&source[i], "#vert"))
                 {
-                    shader.vert_shader = load_shader_text(&renderer.shader_arena, &source[i + strlen("#vert") + 1], true, shader, &uniforms, &uniform_count, shader.path, &i);
+                    shader.vert_shader = load_shader_text(&renderer->shader_arena, &source[i + strlen("#vert") + 1], true, shader, &uniforms, &uniform_count, shader.path, &i);
                 }
                 else if (starts_with(&source[i], "#frag"))
                 {
-                    shader.frag_shader = load_shader_text(&renderer.shader_arena, &source[i + strlen("#frag") + 1], false, shader, &uniforms, &uniform_count, shader.path, &i);
+                    shader.frag_shader = load_shader_text(&renderer->shader_arena, &source[i + strlen("#frag") + 1], false, shader, &uniforms, &uniform_count, shader.path, &i);
                 }
             }
 
@@ -814,60 +814,60 @@ namespace rendering
         }
     }
 
-    static ShaderHandle load_shader(Renderer &renderer, const char *file_path)
+    static ShaderHandle load_shader(Renderer *renderer, const char *file_path)
     {
-        assert(renderer.render.shader_count + 1 < 64);
-        Shader &shader = renderer.render.shaders[renderer.render.shader_count];
+        assert(renderer->render.shader_count + 1 < 64);
+        Shader &shader = renderer->render.shaders[renderer->render.shader_count];
         strncpy(shader.path, file_path, strlen(file_path));
-        shader.index = renderer.render.shader_count;
+        shader.index = renderer->render.shader_count;
         load_shader(renderer, shader);
-        return {renderer.render.shader_count++};
+        return {renderer->render.shader_count++};
     }
 
-    static void set_fallback_shader(Renderer &renderer, const char *path)
+    static void set_fallback_shader(Renderer *renderer, const char *path)
     {
-        renderer.render.fallback_shader = load_shader(renderer, path);
+        renderer->render.fallback_shader = load_shader(renderer, path);
     }
 
-    static void set_shadow_map_shader(Renderer &renderer, const char *path)
+    static void set_shadow_map_shader(Renderer *renderer, const char *path)
     {
-        renderer.render.shadow_map_shader = load_shader(renderer, path);
+        renderer->render.shadow_map_shader = load_shader(renderer, path);
     }
 
-    static void set_bloom_shader(Renderer &renderer, const char *path)
+    static void set_bloom_shader(Renderer *renderer, const char *path)
     {
-        renderer.render.bloom_shader = load_shader(renderer, path);
+        renderer->render.bloom_shader = load_shader(renderer, path);
     }
 
-    static void set_blur_shader(Renderer &renderer, const char *path)
+    static void set_blur_shader(Renderer *renderer, const char *path)
     {
-        renderer.render.blur_shader = load_shader(renderer, path);
+        renderer->render.blur_shader = load_shader(renderer, path);
     }
 
-    static void set_hdr_shader(Renderer &renderer, const char *path)
+    static void set_hdr_shader(Renderer *renderer, const char *path)
     {
-        renderer.render.hdr_shader = load_shader(renderer, path);
+        renderer->render.hdr_shader = load_shader(renderer, path);
     }
 
-    static void set_final_framebuffer(Renderer &renderer, FramebufferHandle framebuffer)
+    static void set_final_framebuffer(Renderer *renderer, FramebufferHandle framebuffer)
     {
-        renderer.render.final_framebuffer = framebuffer;
+        renderer->render.final_framebuffer = framebuffer;
     }
 
-    static void set_light_space_matrices(Renderer &renderer, math::Mat4 projection_matrix, math::Vec3 view_position, math::Vec3 target)
+    static void set_light_space_matrices(Renderer *renderer, math::Mat4 projection_matrix, math::Vec3 view_position, math::Vec3 target)
     {
         math::Mat4 view_matrix = math::look_at_with_target(view_position, target);
-        renderer.render.shadow_view_position = view_position;
-        renderer.render.light_space_matrix = projection_matrix * view_matrix;
+        renderer->render.shadow_view_position = view_position;
+        renderer->render.light_space_matrix = projection_matrix * view_matrix;
     }
 
-    static inline Material &get_material_instance(MaterialInstanceHandle handle, Renderer &renderer)
+    static inline Material &get_material_instance(MaterialInstanceHandle handle, Renderer *renderer)
     {
-        i32 array_index = renderer.render._internal_material_instance_array_handles[handle.array_handle.handle - 1];
-        return renderer.render.material_instance_arrays[array_index][handle.handle];
+        i32 array_index = renderer->render._internal_material_instance_array_handles[handle.array_handle.handle - 1];
+        return renderer->render.material_instance_arrays[array_index][handle.handle];
     }
 
-    static UniformValue *get_array_variable_mapping(MaterialInstanceHandle handle, const char *array_name, UniformMappingType type, Renderer &renderer)
+    static UniformValue *get_array_variable_mapping(MaterialInstanceHandle handle, const char *array_name, UniformMappingType type, Renderer *renderer)
     {
         Material &material = get_material_instance(handle, renderer);
         ;
@@ -905,7 +905,7 @@ namespace rendering
         return nullptr;
     }
 
-    static UniformValue *get_mapping(MaterialInstanceHandle handle, UniformMappingType type, Renderer &renderer)
+    static UniformValue *get_mapping(MaterialInstanceHandle handle, UniformMappingType type, Renderer *renderer)
     {
         Material &material = get_material_instance(handle, renderer);
         return mapping(material, type);
@@ -926,7 +926,7 @@ namespace rendering
         return nullptr;
     }
 
-    static void set_shader_values(Material &material, Shader &shader, Renderer &renderer)
+    static void set_shader_values(Material &material, Shader &shader, Renderer *renderer)
     {
         material.array_count = 0;
         memcpy(material.instanced_vertex_attributes, shader.instanced_vertex_attributes, sizeof(VertexAttributeInstanced) * shader.instanced_vertex_attribute_count);
@@ -962,7 +962,7 @@ namespace rendering
                     Structure &structure = shader.structures[u.structure_index];
 
                     i32 num_to_allocate = u.array_size;
-                    array.entries = push_array(&renderer.mesh_arena, num_to_allocate, UniformEntry);
+                    array.entries = push_array(&renderer->mesh_arena, num_to_allocate, UniformEntry);
 
                     if (u.mapping_type == UniformMappingType::DIRECTIONAL_LIGHTS || u.mapping_type == UniformMappingType::POINT_LIGHTS)
                     {
@@ -994,7 +994,7 @@ namespace rendering
                 else
                 {
                     i32 num_to_allocate = u.array_size;
-                    array.entries = push_array(&renderer.mesh_arena, num_to_allocate, UniformEntry);
+                    array.entries = push_array(&renderer->mesh_arena, num_to_allocate, UniformEntry);
 
                     for (i32 i = 0; i < u.array_size; i++)
                     {
@@ -1028,12 +1028,12 @@ namespace rendering
 
         if (!material.uniform_values)
         {
-            //material.uniform_values = push_array(&renderer.mesh_arena, size, UniformValue);
+            //material.uniform_values = push_array(&renderer->mesh_arena, size, UniformValue);
         }
 
         if (!material.arrays)
         {
-            //material.arrays = push_array(&renderer.mesh_arena, array_size, UniformArray);
+            //material.arrays = push_array(&renderer->mesh_arena, array_size, UniformArray);
         }
 
         material.uniform_value_count = (i32)size;
@@ -1115,17 +1115,17 @@ namespace rendering
         }
     }
 
-    static void get_updated_material(Material *new_material, Material &current_material, Shader &shader, Renderer &renderer)
+    static void get_updated_material(Material *new_material, Material &current_material, Shader &shader, Renderer *renderer)
     {
         set_shader_values(*new_material, shader, renderer);
         set_old_material_values(*new_material, current_material);
     }
 
-    static void update_materials_with_shader(Renderer &renderer, Shader &shader)
+    static void update_materials_with_shader(Renderer *renderer, Shader &shader)
     {
-        for (i32 i = 0; i < renderer.render.material_count; i++)
+        for (i32 i = 0; i < renderer->render.material_count; i++)
         {
-            Material &material = renderer.render.materials[i];
+            Material &material = renderer->render.materials[i];
             if (material.shader.handle == shader.index)
             {
                 Material new_material = {};
@@ -1133,15 +1133,15 @@ namespace rendering
                 get_updated_material(&new_material, material, shader, renderer);
                 memcpy(new_material.instanced_vertex_attributes, material.instanced_vertex_attributes, material.instanced_vertex_attribute_count * sizeof(VertexAttributeInstanced));
                 new_material.instanced_vertex_attribute_count = material.instanced_vertex_attribute_count;
-                renderer.render.materials[i] = new_material;
+                renderer->render.materials[i] = new_material;
             }
         }
 
-        for (i32 i = 0; i < renderer.render.material_instance_array_count; i++)
+        for (i32 i = 0; i < renderer->render.material_instance_array_count; i++)
         {
-            for (i32 j = 0; j < renderer.render.material_instance_array_counts[i]; j++)
+            for (i32 j = 0; j < renderer->render.material_instance_array_counts[i]; j++)
             {
-                Material &material = renderer.render.material_instance_arrays[i][j];
+                Material &material = renderer->render.material_instance_arrays[i][j];
                 if (material.shader.handle == shader.index)
                 {
                     Material new_material = {};
@@ -1149,42 +1149,42 @@ namespace rendering
                     get_updated_material(&new_material, material, shader, renderer);
                     memcpy(new_material.instanced_vertex_attributes, material.instanced_vertex_attributes, material.instanced_vertex_attribute_count * sizeof(VertexAttributeInstanced));
                     new_material.instanced_vertex_attribute_count = material.instanced_vertex_attribute_count;
-                    renderer.render.material_instance_arrays[i][j] = new_material;
+                    renderer->render.material_instance_arrays[i][j] = new_material;
                 }
             }
         }
     }
 
-    static MaterialHandle create_material(Renderer &renderer, ShaderHandle shader_handle)
+    static MaterialHandle create_material(Renderer *renderer, ShaderHandle shader_handle)
     {
-        Material &material = renderer.render.materials[renderer.render.material_count];
+        Material &material = renderer->render.materials[renderer->render.material_count];
         material.shader = shader_handle;
 
-        Shader &shader = renderer.render.shaders[shader_handle.handle];
+        Shader &shader = renderer->render.shaders[shader_handle.handle];
 
         set_shader_values(material, shader, renderer);
 
-        return {renderer.render.material_count++};
+        return {renderer->render.material_count++};
     }
 
-    static void load_texture(Renderer &renderer, TextureFiltering filtering, TextureWrap wrap, unsigned char *data, i32 width, i32 height, TextureFormat format, TextureHandle &handle)
+    static void load_texture(Renderer *renderer, TextureFiltering filtering, TextureWrap wrap, unsigned char *data, i32 width, i32 height, TextureFormat format, TextureHandle &handle)
     {
         if (handle.handle == 0)
         {
-            handle.handle = renderer.render.texture_count++ + 1;
+            handle.handle = renderer->render.texture_count++ + 1;
             assert(handle.handle != 0);
         }
 
-        Texture* texture = renderer.render.textures[handle.handle - 1];
+        Texture* texture = renderer->render.textures[handle.handle - 1];
 
-        renderer.api_functions.load_texture(texture, filtering, wrap, format, width, height, data, renderer.api_functions.render_state, &renderer);
+        renderer->api_functions.load_texture(texture, filtering, wrap, format, width, height, data, renderer->api_functions.render_state, renderer);
     }
 
-    static void load_texture(const char *full_texture_path, Renderer &renderer, TextureFiltering filtering, TextureWrap wrap, TextureFormat format, TextureHandle &handle)
+    static void load_texture(const char *full_texture_path, Renderer *renderer, TextureFiltering filtering, TextureWrap wrap, TextureFormat format, TextureHandle &handle)
     {
         if(handle.handle == 0)
         {
-            handle.handle = renderer.render.texture_count++ + 1;
+            handle.handle = renderer->render.texture_count++ + 1;
             assert(handle.handle != 0);
         }
 
@@ -1196,8 +1196,8 @@ namespace rendering
             i32 size = platform.tell_file(png_file);
             platform.seek_file(png_file, 0, SO_SET);
 
-            TemporaryMemory temp_mem = begin_temporary_memory(&renderer.texture_arena);
-            stbi_uc* tex_data = push_size(&renderer.texture_arena, size + 1, stbi_uc);
+            TemporaryMemory temp_mem = begin_temporary_memory(&renderer->texture_arena);
+            stbi_uc* tex_data = push_size(&renderer->texture_arena, size + 1, stbi_uc);
             platform.read_file(tex_data, size, 1, png_file);
 
             i32 width;
@@ -1207,11 +1207,11 @@ namespace rendering
             platform.close_file(png_file);
             end_temporary_memory(temp_mem);
 
-            assert(renderer.api_functions.load_texture);
+            assert(renderer->api_functions.load_texture);
 
-            Texture* texture = renderer.render.textures[handle.handle - 1];
+            Texture* texture = renderer->render.textures[handle.handle - 1];
             
-            renderer.api_functions.load_texture(texture, filtering, wrap, format, width, height, image_data, renderer.api_functions.render_state, &renderer);
+            renderer->api_functions.load_texture(texture, filtering, wrap, format, width, height, image_data, renderer->api_functions.render_state, renderer);
 
             stbi_image_free(image_data);
         }
@@ -1222,20 +1222,20 @@ namespace rendering
         }
     }
 
-    static void update_buffer(Renderer &renderer, UpdateBufferInfo update_info)
+    static void update_buffer(Renderer *renderer, UpdateBufferInfo update_info)
     {
-        assert(renderer.render.updated_buffer_handle_count + 1 < global_max_custom_buffers);
-        assert(renderer.render._internal_buffer_handles);
+        assert(renderer->render.updated_buffer_handle_count + 1 < global_max_custom_buffers);
+        assert(renderer->render._internal_buffer_handles);
 
         // @Incomplete: Update from data
         // Find RegisterBufferInfo from handle
         // Update data in info from new_data
 
-        i32 internal_handle = renderer.render._internal_buffer_handles[update_info.buffer.handle - 1];
+        i32 internal_handle = renderer->render._internal_buffer_handles[update_info.buffer.handle - 1];
 
-        renderer.render.buffers[internal_handle].data = update_info.update_data;
+        renderer->render.buffers[internal_handle].data = update_info.update_data;
 
-        renderer.render.updated_buffer_handles[renderer.render.updated_buffer_handle_count++] = internal_handle;
+        renderer->render.updated_buffer_handles[renderer->render.updated_buffer_handle_count++] = internal_handle;
     }
 
     static size_t size_for_type(ValueType type)
@@ -1263,13 +1263,13 @@ namespace rendering
         }
     }
 
-    static math::Vec2i get_scale(Renderer& renderer)
+    static math::Vec2i get_scale(Renderer *renderer)
     {
-        return {renderer.framebuffer_width, renderer.framebuffer_height};
+        return {renderer->framebuffer_width, renderer->framebuffer_height};
     }
     
 
-    static math::Vec3 to_ui(Renderer& renderer, math::Vec2 coord)
+    static math::Vec3 to_ui(Renderer *renderer, math::Vec2 coord)
     {
         math::Vec2i scale = get_scale(renderer);
         math::Vec3 res;
@@ -1279,7 +1279,7 @@ namespace rendering
         return res;
     }
 
-    math::Vec2 from_ui(Renderer& renderer, math::Vec3 coord)
+    math::Vec2 from_ui(Renderer *renderer, math::Vec3 coord)
     {
         math::Vec2i scale = get_scale(renderer);
         math::Vec2 res(0.0f);
@@ -1288,12 +1288,12 @@ namespace rendering
         return res;
     }
 
-    r32 from_ui(Renderer& renderer, i32 scale, r32 coord)
+    r32 from_ui(Renderer *renderer, i32 scale, r32 coord)
     {
         return ((r32)coord / (r32)UI_COORD_DIMENSION) * (r32)scale;
     }
 
-    r32 to_ui(Renderer& renderer, i32 scale, r32 coord)
+    r32 to_ui(Renderer *renderer, i32 scale, r32 coord)
     {
         return (coord / (r32)scale) * (r32)UI_COORD_DIMENSION;
     }
@@ -1336,10 +1336,10 @@ namespace rendering
         return math::Vec2(current_width, size.y * lines * (lines));
     }
 
-    static TrueTypeFontInfo get_tt_font_info(Renderer& renderer, i32 handle)
+    static TrueTypeFontInfo get_tt_font_info(Renderer *renderer, i32 handle)
     {
-        assert(handle >= 0 && handle < renderer.tt_font_count);
-        return renderer.tt_font_infos[handle];
+        assert(handle >= 0 && handle < renderer->tt_font_count);
+        return renderer->tt_font_infos[handle];
     }
 
     static LineData get_line_size_data(const char *text, TrueTypeFontInfo font)
@@ -1386,7 +1386,7 @@ namespace rendering
     }
 
 
-    static math::Vec2 get_text_size_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo font, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
+    static math::Vec2 get_text_size_scaled(Renderer *renderer, const char* text, TrueTypeFontInfo font, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
     {
         LineData line_data = get_line_size_data(text, font);
         math::Vec2 font_size = math::Vec2(line_data.line_sizes[0].x, line_data.total_height);
@@ -1411,7 +1411,7 @@ namespace rendering
     
 // Gets an array of text widths for each character
 // Remember to free
-    static TextLengthInfo get_char_widths_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo &font, MemoryArena* arena)
+    static TextLengthInfo get_char_widths_scaled(Renderer *renderer, const char* text, TrueTypeFontInfo &font, MemoryArena* arena)
     {
         TextLengthInfo info = {};
     
@@ -1438,17 +1438,17 @@ namespace rendering
     }
 
 
-    static void load_font(Renderer &renderer, const char *path, i32 size, FontHandle &handle)
+    static void load_font(Renderer *renderer, const char *path, i32 size, FontHandle &handle)
     {
         i32 index = handle.handle;
 
         if (index == 0)
         {
-            handle.handle = renderer.tt_font_count++;
+            handle.handle = renderer->tt_font_count++;
             index = handle.handle;
         }
         
-        TrueTypeFontInfo &font_info = renderer.tt_font_infos[index];
+        TrueTypeFontInfo &font_info = renderer->tt_font_infos[index];
         char buf[256];
         strncpy(buf, path, strlen(path) + 1);
 
@@ -1463,9 +1463,9 @@ namespace rendering
         
         strncpy(font_info.path, buf, strlen(buf) + 1);
 
-        RenderPass& pass = renderer.render.ui.pass;
+        RenderPass& pass = renderer->render.ui.pass;
 
-        FramebufferInfo& framebuffer = renderer.render.framebuffers[pass.framebuffer.handle - 1];
+        FramebufferInfo& framebuffer = renderer->render.framebuffers[pass.framebuffer.handle - 1];
 
         font_info.resolution_loaded_for.width = (i32)framebuffer.width;
         font_info.resolution_loaded_for.height = (i32)framebuffer.height;
@@ -1484,9 +1484,9 @@ namespace rendering
 
         font_info.ttf_buffer = (unsigned char*)malloc(1<<20);
         
-        TemporaryMemory temp_mem = begin_temporary_memory(&renderer.font_arena);
+        TemporaryMemory temp_mem = begin_temporary_memory(&renderer->font_arena);
 
-        unsigned char *temp_bitmap = push_array(&renderer.font_arena, font_info.atlas_width * font_info.atlas_height, unsigned char);
+        unsigned char *temp_bitmap = push_array(&renderer->font_arena, font_info.atlas_width * font_info.atlas_height, unsigned char);
 
         fread(font_info.ttf_buffer, 1, 1 << 20, fopen(font_info.path, "rb"));
 
@@ -1548,7 +1548,7 @@ namespace rendering
         info.stride += size_for_type(type);
     }
 
-    static void load_material_from_mtl(Renderer &renderer, MaterialHandle material_handle, const char *file_path)
+    static void load_material_from_mtl(Renderer *renderer, MaterialHandle material_handle, const char *file_path)
     {
         // @Incomplete: We need a better way to do this!
         // Find the directory of the file
@@ -1561,7 +1561,7 @@ namespace rendering
             }
         }
 
-        TemporaryMemory temp_block = begin_temporary_memory(&renderer.temp_arena);
+        TemporaryMemory temp_block = begin_temporary_memory(&renderer->temp_arena);
 
         char *dir = push_string(temp_block.arena, index);
         strncpy(dir, file_path, index);
@@ -1573,7 +1573,7 @@ namespace rendering
         {
             char buffer[256];
 
-            Material &material = renderer.render.materials[material_handle.handle];
+            Material &material = renderer->render.materials[material_handle.handle];
             if (UniformValue *u = mapping(material, UniformMappingType::DIFFUSE_COLOR))
             {
                 u->float4_val = math::Rgba(1, 1, 1, 1);
@@ -1728,22 +1728,22 @@ namespace rendering
         }
     }
 
-    static i32 _find_unused_handle(Renderer &renderer)
+    static i32 _find_unused_handle(Renderer *renderer)
     {
-        for (i32 index = renderer.render._current_internal_buffer_handle; index < global_max_custom_buffers; index++)
+        for (i32 index = renderer->render._current_internal_buffer_handle; index < global_max_custom_buffers; index++)
         {
-            if (renderer.render._internal_buffer_handles[index] == -1)
+            if (renderer->render._internal_buffer_handles[index] == -1)
             {
-                renderer.render._current_internal_buffer_handle = index;
+                renderer->render._current_internal_buffer_handle = index;
                 return index;
             }
         }
 
         for (i32 index = 0; index < global_max_custom_buffers; index++)
         {
-            if (renderer.render._internal_buffer_handles[index] == -1)
+            if (renderer->render._internal_buffer_handles[index] == -1)
             {
-                renderer.render._current_internal_buffer_handle = index;
+                renderer->render._current_internal_buffer_handle = index;
                 return index;
             }
         }
@@ -1767,23 +1767,23 @@ namespace rendering
         }
     }
 
-    static BufferHandle register_buffer(Renderer &renderer, RegisterBufferInfo info)
+    static BufferHandle register_buffer(Renderer *renderer, RegisterBufferInfo info)
     {
-        assert(renderer.render.buffer_count + 1 < global_max_custom_buffers);
-        assert(renderer.render._internal_buffer_handles);
+        assert(renderer->render.buffer_count + 1 < global_max_custom_buffers);
+        assert(renderer->render._internal_buffer_handles);
 
         i32 unused_handle = _find_unused_handle(renderer) + 1;
 
-        renderer.render._internal_buffer_handles[unused_handle - 1] = renderer.render.buffer_count++;
+        renderer->render._internal_buffer_handles[unused_handle - 1] = renderer->render.buffer_count++;
 
-        renderer.render.buffers[renderer.render._internal_buffer_handles[unused_handle - 1]] = info;
+        renderer->render.buffers[renderer->render._internal_buffer_handles[unused_handle - 1]] = info;
 
         return {unused_handle};
     }
 
-    static BufferHandle create_quad_buffer(Renderer &renderer, u64 anchor = 0, b32 uvs = false)
+    static BufferHandle create_quad_buffer(Renderer *renderer, u64 anchor = 0, b32 uvs = false)
     {
-        assert(renderer.render.buffer_count + 1 < global_max_custom_buffers);
+        assert(renderer->render.buffer_count + 1 < global_max_custom_buffers);
 
         // @Note: Untextured
         i32 vertex_size = 2;
@@ -1852,7 +1852,7 @@ namespace rendering
         info.data.vertex_count = 4;
         info.data.vertex_buffer_size = info.data.vertex_count * vertex_size * (i32)sizeof(r32);
 
-        info.data.vertex_buffer = push_size(&renderer.buffer_arena, info.data.vertex_buffer_size, r32);
+        info.data.vertex_buffer = push_size(&renderer->buffer_arena, info.data.vertex_buffer_size, r32);
 
         for (i32 i = 0; i < info.data.vertex_count * vertex_size; i++)
         {
@@ -1863,7 +1863,7 @@ namespace rendering
         info.data.index_buffer_size = index_count * (i32)sizeof(u16);
         info.data.index_buffer_count = index_count;
 
-        info.data.index_buffer = push_size(&renderer.buffer_arena, info.data.index_buffer_size, u16);
+        info.data.index_buffer = push_size(&renderer->buffer_arena, info.data.index_buffer_size, u16);
 
         for (i32 i = 0; i < index_count; i++)
         {
@@ -1873,9 +1873,9 @@ namespace rendering
         return {register_buffer(renderer, info).handle};
     }
 
-    static BufferHandle create_buffers_from_mesh(Renderer &renderer, Mesh &mesh, u64 vertex_data_flags, b32 has_normals, b32 has_uvs)
+    static BufferHandle create_buffers_from_mesh(Renderer *renderer, Mesh &mesh, u64 vertex_data_flags, b32 has_normals, b32 has_uvs)
     {
-        assert(renderer.render.buffer_count + 1 < global_max_custom_buffers);
+        assert(renderer->render.buffer_count + 1 < global_max_custom_buffers);
         i32 vertex_size = 3;
 
         RegisterBufferInfo info = create_register_buffer_info();
@@ -1897,7 +1897,7 @@ namespace rendering
         info.data.vertex_count = mesh.vertex_count;
         info.data.vertex_buffer_size = mesh.vertex_count * vertex_size * (i32)sizeof(r32);
 
-        info.data.vertex_buffer = push_size(&renderer.mesh_arena, info.data.vertex_buffer_size, r32);
+        info.data.vertex_buffer = push_size(&renderer->mesh_arena, info.data.vertex_buffer_size, r32);
         generate_vertex_buffer(info.data.vertex_buffer, mesh.vertices, mesh.vertex_count, vertex_size, has_normals, has_uvs);
 
         i32 index_count = mesh.face_count * 3;
@@ -1907,18 +1907,18 @@ namespace rendering
         // @Robustness:(Niels): How do we make sure that this is cleared if the mesh is removed?
         // Or will that never happen? Maybe use malloc/free instead? Or maybe at some point
         // we really __should__ create a more general purpose allocator ourselves...
-        info.data.index_buffer = push_size(&renderer.mesh_arena, info.data.index_buffer_size, u16);
+        info.data.index_buffer = push_size(&renderer->mesh_arena, info.data.index_buffer_size, u16);
         generate_index_buffer(info.data.index_buffer, mesh.faces, mesh.face_count);
 
         return {register_buffer(renderer, info).handle};
     }
 
-    static BufferHandle create_plane(Renderer &renderer)
+    static BufferHandle create_plane(Renderer *renderer)
     {
         Mesh mesh;
         mesh = {};
-        mesh.vertices = push_array(&renderer.mesh_arena, sizeof(plane_vertices) / sizeof(r32) / 3, Vertex);
-        mesh.faces = push_array(&renderer.mesh_arena, sizeof(plane_indices) / sizeof(u16) / 3, Face);
+        mesh.vertices = push_array(&renderer->mesh_arena, sizeof(plane_vertices) / sizeof(r32) / 3, Vertex);
+        mesh.faces = push_array(&renderer->mesh_arena, sizeof(plane_indices) / sizeof(u16) / 3, Face);
         mesh.vertex_count = sizeof(plane_vertices) / sizeof(r32) / 3;
 
         for (i32 i = 0; i < mesh.vertex_count; i++)
@@ -1943,12 +1943,12 @@ namespace rendering
         return {create_buffers_from_mesh(renderer, mesh, 0, true, true)};
     }
 
-    static BufferHandle create_cube(Renderer &renderer)
+    static BufferHandle create_cube(Renderer *renderer)
     {
         Mesh mesh;
         mesh = {};
-        mesh.vertices = push_array(&renderer.mesh_arena, sizeof(cube_vertices) / sizeof(r32) / 3, Vertex);
-        mesh.faces = push_array(&renderer.mesh_arena, sizeof(cube_indices) / sizeof(u16) / 3, Face);
+        mesh.vertices = push_array(&renderer->mesh_arena, sizeof(cube_vertices) / sizeof(r32) / 3, Vertex);
+        mesh.faces = push_array(&renderer->mesh_arena, sizeof(cube_indices) / sizeof(u16) / 3, Face);
 
         mesh.vertex_count = sizeof(cube_vertices) / sizeof(r32) / 3;
 
@@ -2000,7 +2000,7 @@ namespace rendering
         return (i32)current_size;
     }
 
-    static BufferHandle load_obj(Renderer &renderer, char *file_path, MaterialHandle *material_handle)
+    static BufferHandle load_obj(Renderer *renderer, char *file_path, MaterialHandle *material_handle)
     {
         FILE *file = fopen(file_path, "r");
 
@@ -2167,11 +2167,11 @@ namespace rendering
             }
             fclose(file);
 
-            assert(renderer.mesh_count + 1 < global_max_meshes);
+            assert(renderer->mesh_count + 1 < global_max_meshes);
 
             Mesh mesh;
-            mesh.vertices = push_array(&renderer.mesh_arena, buf_len(final_vertices), Vertex);
-            mesh.faces = push_array(&renderer.mesh_arena, buf_len(faces), Face);
+            mesh.vertices = push_array(&renderer->mesh_arena, buf_len(final_vertices), Vertex);
+            mesh.faces = push_array(&renderer->mesh_arena, buf_len(faces), Face);
             mesh.vertex_count = (i32)buf_len(final_vertices);
             mesh.face_count = (i32)buf_len(faces);
 
@@ -2197,13 +2197,13 @@ namespace rendering
                     }
                 }
 
-                auto temp_block = begin_temporary_memory(&renderer.temp_arena);
+                auto temp_block = begin_temporary_memory(&renderer->temp_arena);
 
                 char *dir = push_string(temp_block.arena, index);
                 strncpy(dir, file_path, index);
 
                 dir[index] = 0;
-                char *material_file_path = concat(dir, mtl_file_name, &renderer.temp_arena);
+                char *material_file_path = concat(dir, mtl_file_name, &renderer->temp_arena);
 
                 load_material_from_mtl(renderer, *material_handle, material_file_path);
 
@@ -2219,19 +2219,19 @@ namespace rendering
         }
     }
 
-    static MaterialInstanceHandle create_material_instance(Renderer &renderer, MaterialHandle material_handle, MaterialInstanceArrayHandle array_handle)
+    static MaterialInstanceHandle create_material_instance(Renderer *renderer, MaterialHandle material_handle, MaterialInstanceArrayHandle array_handle)
     {
-        Material &material = renderer.render.materials[material_handle.handle];
-        i32 internal_index = renderer.render._internal_material_instance_array_handles[array_handle.handle - 1];
-        i32 handle = renderer.render.material_instance_array_counts[internal_index]++;
+        Material &material = renderer->render.materials[material_handle.handle];
+        i32 internal_index = renderer->render._internal_material_instance_array_handles[array_handle.handle - 1];
+        i32 handle = renderer->render.material_instance_array_counts[internal_index]++;
 
-        renderer.render.material_instance_arrays[internal_index][handle] = material;
-        renderer.render.material_instance_arrays[internal_index][handle].source_material = material_handle;
+        renderer->render.material_instance_arrays[internal_index][handle] = material;
+        renderer->render.material_instance_arrays[internal_index][handle].source_material = material_handle;
 
         return {handle, array_handle};
     }
 
-    static void set_uniform_value(Renderer &renderer, Material &material, const char *name, r32 value)
+    static void set_uniform_value(Renderer *renderer, Material &material, const char *name, r32 value)
     {
         for (i32 i = 0; i < material.instanced_vertex_attribute_count; i++)
         {
@@ -2256,13 +2256,13 @@ namespace rendering
         }
     }
 
-    static void set_uniform_value(Renderer &renderer, MaterialInstanceHandle handle, const char *name, r32 value)
+    static void set_uniform_value(Renderer *renderer, MaterialInstanceHandle handle, const char *name, r32 value)
     {
         Material &material = get_material_instance(handle, renderer);
         set_uniform_value(renderer, material, name, value);
     }
 
-    static void set_uniform_value(Renderer &renderer, Material &material, const char *name, math::Vec2 value)
+    static void set_uniform_value(Renderer *renderer, Material &material, const char *name, math::Vec2 value)
     {
         for (i32 i = 0; i < material.instanced_vertex_attribute_count; i++)
         {
@@ -2287,13 +2287,13 @@ namespace rendering
         }
     }
 
-    static void set_uniform_value(Renderer &renderer, MaterialInstanceHandle handle, const char *name, math::Vec2 value)
+    static void set_uniform_value(Renderer *renderer, MaterialInstanceHandle handle, const char *name, math::Vec2 value)
     {
         Material &material = get_material_instance(handle, renderer);
         set_uniform_value(renderer, material, name, value);
     }
 
-    static void set_uniform_value(Renderer &renderer, Material &material, const char *name, math::Vec3 value)
+    static void set_uniform_value(Renderer *renderer, Material &material, const char *name, math::Vec3 value)
     {
         for (i32 i = 0; i < material.uniform_value_count; i++)
         {
@@ -2307,13 +2307,13 @@ namespace rendering
         }
     }
 
-    static void set_uniform_value(Renderer &renderer, MaterialInstanceHandle handle, const char *name, math::Vec3 value)
+    static void set_uniform_value(Renderer *renderer, MaterialInstanceHandle handle, const char *name, math::Vec3 value)
     {
         Material &material = get_material_instance(handle, renderer);
         set_uniform_value(renderer, material, name, value);
     }
 
-    static void set_uniform_value(Renderer &renderer, Material &material, const char *name, math::Vec4 value)
+    static void set_uniform_value(Renderer *renderer, Material &material, const char *name, math::Vec4 value)
     {
         for (i32 i = 0; i < material.instanced_vertex_attribute_count; i++)
         {
@@ -2338,13 +2338,13 @@ namespace rendering
         }
     }
 
-    static void set_uniform_value(Renderer &renderer, MaterialInstanceHandle handle, const char *name, math::Vec4 value)
+    static void set_uniform_value(Renderer *renderer, MaterialInstanceHandle handle, const char *name, math::Vec4 value)
     {
         Material &material = get_material_instance(handle, renderer);
         set_uniform_value(renderer, material, name, value);
     }
 
-    static void set_uniform_value(Renderer &renderer, Material &material, const char *name, i32 value)
+    static void set_uniform_value(Renderer *renderer, Material &material, const char *name, i32 value)
     {
         for (i32 i = 0; i < material.instanced_vertex_attribute_count; i++)
         {
@@ -2385,13 +2385,13 @@ namespace rendering
         }
     }
 
-    static void set_uniform_value(Renderer &renderer, MaterialInstanceHandle handle, const char *name, i32 value)
+    static void set_uniform_value(Renderer *renderer, MaterialInstanceHandle handle, const char *name, i32 value)
     {
         Material &material = get_material_instance(handle, renderer);
         set_uniform_value(renderer, material, name, value);
     }
 
-    static void set_uniform_value(Renderer &renderer, Material &material, const char *name, math::Mat4 value)
+    static void set_uniform_value(Renderer *renderer, Material &material, const char *name, math::Mat4 value)
     {
         for (i32 i = 0; i < material.instanced_vertex_attribute_count; i++)
         {
@@ -2419,13 +2419,13 @@ namespace rendering
         }
     }
 
-    static void set_uniform_value(Renderer &renderer, MaterialInstanceHandle handle, const char *name, math::Mat4 value)
+    static void set_uniform_value(Renderer *renderer, MaterialInstanceHandle handle, const char *name, math::Mat4 value)
     {
         Material &material = get_material_instance(handle, renderer);
         set_uniform_value(renderer, material, name, value);
     }
 
-    static void set_uniform_value(Renderer &renderer, Material &material, const char *name, TextureHandle value)
+    static void set_uniform_value(Renderer *renderer, Material &material, const char *name, TextureHandle value)
     {
         for (i32 i = 0; i < material.uniform_value_count; i++)
         {
@@ -2440,13 +2440,13 @@ namespace rendering
         }
     }
 
-    static void set_uniform_value(Renderer &renderer, MaterialInstanceHandle handle, const char *name, TextureHandle value)
+    static void set_uniform_value(Renderer *renderer, MaterialInstanceHandle handle, const char *name, TextureHandle value)
     {
         Material &material = get_material_instance(handle, renderer);
         set_uniform_value(renderer, material, name, value);
     }
 
-    static void set_uniform_value(Renderer &renderer, Material &material, const char *name, MSTextureHandle value)
+    static void set_uniform_value(Renderer *renderer, Material &material, const char *name, MSTextureHandle value)
     {
         for (i32 i = 0; i < material.uniform_value_count; i++)
         {
@@ -2460,13 +2460,13 @@ namespace rendering
         }
     }
 
-    static void set_uniform_value(Renderer &renderer, MaterialInstanceHandle handle, const char *name, MSTextureHandle value)
+    static void set_uniform_value(Renderer *renderer, MaterialInstanceHandle handle, const char *name, MSTextureHandle value)
     {
         Material &material = get_material_instance(handle, renderer);
         set_uniform_value(renderer, material, name, value);
     }
 
-    static void set_uniform_array_value(Renderer &renderer, Material &material, const char *array_name, i32 index, const char *variable_name, r32 value)
+    static void set_uniform_array_value(Renderer *renderer, Material &material, const char *array_name, i32 index, const char *variable_name, r32 value)
     {
         for (i32 i = 0; i < material.array_count; i++)
         {
@@ -2491,13 +2491,13 @@ namespace rendering
         }
     }
 
-    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, r32 value)
+    static void set_uniform_array_value(Renderer *renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, r32 value)
     {
         Material &material = get_material_instance(handle, renderer);
         set_uniform_array_value(renderer, material, array_name, index, variable_name, value);
     }
 
-    static void set_uniform_array_value(Renderer &renderer, Material &material, const char *array_name, i32 index, const char *variable_name, math::Vec2 value)
+    static void set_uniform_array_value(Renderer *renderer, Material &material, const char *array_name, i32 index, const char *variable_name, math::Vec2 value)
     {
         for (i32 i = 0; i < material.array_count; i++)
         {
@@ -2521,13 +2521,13 @@ namespace rendering
         }
     }
 
-    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec2 value)
+    static void set_uniform_array_value(Renderer *renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec2 value)
     {
         Material &material = get_material_instance(handle, renderer);
         set_uniform_array_value(renderer, material, array_name, index, variable_name, value);
     }
 
-    static void set_uniform_array_value(Renderer &renderer, Material &material, const char *array_name, i32 index, const char *variable_name, math::Vec3 value)
+    static void set_uniform_array_value(Renderer *renderer, Material &material, const char *array_name, i32 index, const char *variable_name, math::Vec3 value)
     {
         for (i32 i = 0; i < material.array_count; i++)
         {
@@ -2551,13 +2551,13 @@ namespace rendering
         }
     }
 
-    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec3 value)
+    static void set_uniform_array_value(Renderer *renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec3 value)
     {
         Material &material = get_material_instance(handle, renderer);
         set_uniform_array_value(renderer, material, array_name, index, variable_name, value);
     }
 
-    static void set_uniform_array_value(Renderer &renderer, Material& material, const char *array_name, i32 index, const char *variable_name, math::Vec4 value)
+    static void set_uniform_array_value(Renderer *renderer, Material& material, const char *array_name, i32 index, const char *variable_name, math::Vec4 value)
     {
         for (i32 i = 0; i < material.array_count; i++)
         {
@@ -2580,13 +2580,13 @@ namespace rendering
         }
     }
 
-    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec4 value)
+    static void set_uniform_array_value(Renderer *renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec4 value)
     {
         Material &material = get_material_instance(handle, renderer);
         set_uniform_array_value(renderer, material, array_name, index, variable_name, value);
     }
 
-    static void set_uniform_array_value(Renderer &renderer, Material &material, const char *array_name, i32 index, const char *variable_name, i32 value)
+    static void set_uniform_array_value(Renderer *renderer, Material &material, const char *array_name, i32 index, const char *variable_name, i32 value)
     {
         for (i32 i = 0; i < material.array_count; i++)
         {
@@ -2617,13 +2617,13 @@ namespace rendering
         }
     }
 
-    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, i32 value)
+    static void set_uniform_array_value(Renderer *renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, i32 value)
     {
         Material &material = get_material_instance(handle, renderer);
         set_uniform_array_value(renderer, material, array_name, index, variable_name, value);
     }
 
-    static void set_uniform_array_value(Renderer &renderer, Material& material, const char *array_name, i32 index, const char *variable_name, math::Mat4 value)
+    static void set_uniform_array_value(Renderer *renderer, Material& material, const char *array_name, i32 index, const char *variable_name, math::Mat4 value)
     {
         for (i32 i = 0; i < material.array_count; i++)
         {
@@ -2647,14 +2647,14 @@ namespace rendering
         }
     }
 
-    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Mat4 value)
+    static void set_uniform_array_value(Renderer *renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Mat4 value)
     {
         Material &material = get_material_instance(handle, renderer);
         set_uniform_array_value(renderer, material, array_name, index, variable_name, value);
     }
 
 // @Incomplete: Add MSTexture support for arrays
-    static void set_uniform_array_value(Renderer &renderer, Material &material, const char *array_name, i32 index, const char *variable_name, rendering::TextureHandle value)
+    static void set_uniform_array_value(Renderer *renderer, Material &material, const char *array_name, i32 index, const char *variable_name, rendering::TextureHandle value)
     {
         for (i32 i = 0; i < material.array_count; i++)
         {
@@ -2678,30 +2678,30 @@ namespace rendering
         }
     }
 
-    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, TextureHandle value)
+    static void set_uniform_array_value(Renderer *renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, TextureHandle value)
     {
         Material &material = get_material_instance(handle, renderer);
         set_uniform_array_value(renderer, material, array_name, index, variable_name, value);
     }
 
-    static void update_buffer(Renderer &renderer, BufferHandle handle, BufferData new_data)
+    static void update_buffer(Renderer *renderer, BufferHandle handle, BufferData new_data)
     {
         // @Incomplete: Update from data
         // Find RegisterBufferInfo from handle
         // Update data in info from new_data
     }
 
-    static void push_shadow_buffer(Renderer &renderer, BufferHandle buffer_handle, Transform &transform)
+    static void push_shadow_buffer(Renderer *renderer, BufferHandle buffer_handle, Transform &transform)
     {
         ShadowCommand shadow_command = {};
         shadow_command.buffer = buffer_handle;
         shadow_command.transform = transform;
-        renderer.render.shadow_commands[renderer.render.shadow_command_count++] = shadow_command;
+        renderer->render.shadow_commands[renderer->render.shadow_command_count++] = shadow_command;
     }
 
-    static void push_buffer_to_render_pass(Renderer &renderer, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, Transform &transform, ShaderHandle shader_handle, RenderPassHandle render_pass_handle)
+    static void push_buffer_to_render_pass(Renderer *renderer, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, Transform &transform, ShaderHandle shader_handle, RenderPassHandle render_pass_handle)
     {
-        RenderPass &pass = renderer.render.passes[render_pass_handle.handle - 1];
+        RenderPass &pass = renderer->render.passes[render_pass_handle.handle - 1];
         assert(pass.commands.render_command_count < global_max_render_commands);
 
         RenderCommand render_command = {};
@@ -2713,28 +2713,28 @@ namespace rendering
         pass.commands.render_commands[pass.commands.render_command_count++] = render_command;
     }
 
-    static void push_instanced_buffer_to_render_pass(Renderer &renderer, i32 count, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, ShaderHandle shader_handle, RenderPassHandle render_pass_handle)
+    static void push_instanced_buffer_to_render_pass(Renderer *renderer, i32 count, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, ShaderHandle shader_handle, RenderPassHandle render_pass_handle)
     {
         RenderCommand render_command = {};
         render_command.count = count;
         render_command.buffer = buffer_handle;
         render_command.material = material_instance_handle;
         render_command.pass.shader_handle = shader_handle;
-        RenderPass &pass = renderer.render.passes[render_pass_handle.handle - 1];
+        RenderPass &pass = renderer->render.passes[render_pass_handle.handle - 1];
         pass.commands.render_commands[pass.commands.render_command_count++] = render_command;
     }
 
-    static void push_instanced_buffer_to_shadow_pass(Renderer &renderer, i32 count, BufferHandle buffer_handle, VertexAttributeInstanced *instanced_attrs, i32 attr_count)
+    static void push_instanced_buffer_to_shadow_pass(Renderer *renderer, i32 count, BufferHandle buffer_handle, VertexAttributeInstanced *instanced_attrs, i32 attr_count)
     {
         ShadowCommand shadow_command = {};
         memcpy(shadow_command.instanced_vertex_attributes, instanced_attrs, attr_count * sizeof(VertexAttributeInstanced));
         shadow_command.instanced_vertex_attribute_count = attr_count;
         shadow_command.count = count;
         shadow_command.buffer = buffer_handle;
-        renderer.render.shadow_commands[renderer.render.shadow_command_count++] = shadow_command;
+        renderer->render.shadow_commands[renderer->render.shadow_command_count++] = shadow_command;
     }
 
-    static math::Vec2 get_relative_size(Renderer &renderer, math::Vec2 size, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
+    static math::Vec2 get_relative_size(Renderer *renderer, math::Vec2 size, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
     {
         math::Vec2i resolution_scale = get_scale(renderer);
 
@@ -2780,7 +2780,7 @@ namespace rendering
 // centered:      Whether or not the original quad was centered (need to know this for origin etc.)
 // scaling_flags: How do we scale these UI elements?
 // origin:        The origin
-    static RelativeUIQuadInfo get_relative_info(Renderer &renderer, math::Vec2 position, math::Vec2 relative_size, math::Vec2 size, RelativeFlag relative, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
+    static RelativeUIQuadInfo get_relative_info(Renderer *renderer, math::Vec2 position, math::Vec2 relative_size, math::Vec2 size, RelativeFlag relative, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
     {
         math::Vec2i resolution_scale = get_scale(renderer);
 
@@ -2838,7 +2838,7 @@ namespace rendering
         }
     }
 
-    static math::Rect scale_clip_rect(Renderer &renderer, math::Rect clip_rect, u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)
+    static math::Rect scale_clip_rect(Renderer *renderer, math::Rect clip_rect, u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)
     {
         math::Vec2i resolution_scale = get_scale(renderer);
         math::Rect scaled_clip_rect;
@@ -2856,6 +2856,26 @@ namespace rendering
         else
         {
             scaled_clip_rect.height = (clip_rect.height / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
+        }
+
+        if(isnan(scaled_clip_rect.x) || scaled_clip_rect.x < 0.0f)
+        {
+            scaled_clip_rect.x = 0.0f;
+        }
+
+        if(isnan(scaled_clip_rect.y) || scaled_clip_rect.y < 0.0f)
+        {
+            scaled_clip_rect.y = 0.0f;
+        }
+
+        if(isnan(scaled_clip_rect.width) || scaled_clip_rect.width < 0.0f)
+        {
+            scaled_clip_rect.width = 0.0f;
+        }
+
+        if(isnan(scaled_clip_rect.height) || scaled_clip_rect.height < 0.0f)
+        {
+            scaled_clip_rect.height = 0.0f;
         }
 
         return scaled_clip_rect;
@@ -2929,22 +2949,22 @@ namespace rendering
         }
     }
 
-    static void push_text(Renderer &renderer, CreateTextCommandInfo info, const char *text)
+    static void push_text(Renderer *renderer, CreateTextCommandInfo info, const char *text)
     {
-        RenderPass &pass = renderer.render.ui.pass;
+        RenderPass &pass = renderer->render.ui.pass;
         TextRenderCommand &command = pass.ui.text_commands[pass.ui.text_command_count];
 
         command.font = info.font;
 
-        FramebufferInfo *framebuffer = &renderer.render.framebuffers[pass.framebuffer.handle - 1];
-        TrueTypeFontInfo &font_info = renderer.tt_font_infos[info.font.handle];
+        FramebufferInfo *framebuffer = &renderer->render.framebuffers[pass.framebuffer.handle - 1];
+        TrueTypeFontInfo &font_info = renderer->tt_font_infos[info.font.handle];
 
         if (font_info.resolution_loaded_for.width != (i32)framebuffer->width || font_info.resolution_loaded_for.height != (i32)framebuffer->height)
         {
             load_font(renderer, font_info.path, font_info.load_size, info.font);
         }
 
-        framebuffer = &renderer.render.framebuffers[pass.framebuffer.handle - 1];
+        framebuffer = &renderer->render.framebuffers[pass.framebuffer.handle - 1];
 
         math::Vec2i resolution_scale = get_scale(renderer);
 
@@ -2955,6 +2975,14 @@ namespace rendering
 
         math::Rect scaled_clip_rect = scale_clip_rect(renderer, info.clip_rect);
 
+        if(scaled_clip_rect.width == 0.0f || scaled_clip_rect.height == 0.0f)
+        {
+            info.clip = false;
+        }
+
+        scaled_clip_rect.y = scaled_clip_rect.y - scaled_clip_rect.height;
+
+
         command.clip = info.clip;
         command.clip_rect = scaled_clip_rect;
         command.text_length = strlen(text);
@@ -2962,7 +2990,7 @@ namespace rendering
         assert(info.z_layer < Z_LAYERS);
         
         // @Incomplete: Set material?
-        command.material = renderer.render.materials[renderer.render.ui.font_material.handle];
+        command.material = renderer->render.materials[renderer->render.ui.font_material.handle];
 
         set_uniform_value(renderer, command.material, "color", info.color);
         set_uniform_value(renderer, command.material, "z", (r32)info.z_layer);
@@ -2979,7 +3007,7 @@ namespace rendering
         command.buffer = {pass.ui.text_command_count++};
     }
 
-    static void push_buffer_to_ui_pass(Renderer &renderer, BufferHandle buffer_handle, ShaderHandle shader, CreateUICommandInfo info)
+    static void push_buffer_to_ui_pass(Renderer *renderer, BufferHandle buffer_handle, ShaderHandle shader, CreateUICommandInfo info)
     {
         UIRenderCommand render_command = {};
         render_command.buffer = buffer_handle;
@@ -2988,12 +3016,12 @@ namespace rendering
 
         if (info.texture_handle.handle != 0)
         {
-            render_command.material = renderer.render.materials[renderer.render.ui.textured_material.handle];
+            render_command.material = renderer->render.materials[renderer->render.ui.textured_material.handle];
             set_uniform_value(renderer, render_command.material, "tex0", info.texture_handle);
         }
         else
         {
-            render_command.material = renderer.render.materials[renderer.render.ui.material.handle];
+            render_command.material = renderer->render.materials[renderer->render.ui.material.handle];
             set_uniform_value(renderer, render_command.material, "color", info.color);
 
             if(info.color.a < 1.0f)
@@ -3010,24 +3038,29 @@ namespace rendering
         render_command.transform = transform;
         render_command.shader_handle = render_command.material.shader;
         render_command.clip_rect = info.clip_rect;
-        RenderPass &pass = renderer.render.ui.pass;
-
+        render_command.clip = info.clip;
+        RenderPass &pass = renderer->render.ui.pass;
+        
         if(transparent)
         {
             pass.ui.transparent_commands[pass.ui.transparent_command_count++] = render_command;
         }
         else
         {
+            assert(info.z_layer < Z_LAYERS);
+            i32 *z_layer = pass.ui.ui_z_layers[info.z_layer];
+            i32 z_index = pass.ui.ui_z_layer_counts[info.z_layer]++;
+            z_layer[z_index] = pass.ui.render_command_count;
             pass.ui.render_commands[pass.ui.render_command_count++] = render_command;
         }
         
     }
 
-    static UpdateBufferInfo create_update_buffer_info(Renderer &renderer, BufferHandle handle)
+    static UpdateBufferInfo create_update_buffer_info(Renderer *renderer, BufferHandle handle)
     {
-        i32 internal_handle = renderer.render._internal_buffer_handles[handle.handle - 1];
+        i32 internal_handle = renderer->render._internal_buffer_handles[handle.handle - 1];
 
-        RegisterBufferInfo reg_info = renderer.render.buffers[internal_handle];
+        RegisterBufferInfo reg_info = renderer->render.buffers[internal_handle];
         UpdateBufferInfo info = {};
         info.buffer = handle;
         info.update_data = reg_info.data;
@@ -3070,7 +3103,7 @@ namespace rendering
         return info;
     }
 
-    static void push_ui_quad(Renderer &renderer, CreateUICommandInfo info)
+    static void push_ui_quad(Renderer *renderer, CreateUICommandInfo info)
     {
         CreateUICommandInfo scaled_info = info;
         math::Vec2i resolution_scale = get_scale(renderer);
@@ -3085,6 +3118,13 @@ namespace rendering
         scaled_info.scale = get_relative_size(renderer, info.scale, info.scaling_flag);
         scaled_info.clip_rect = scale_clip_rect(renderer, info.clip_rect, info.scaling_flag);
 
+        if(scaled_info.clip_rect.width == 0.0f || scaled_info.clip_rect.height == 0.0f)
+        {
+            info.clip = false;
+        }
+        
+        scaled_info.clip = info.clip;
+
         scaled_info.rotation = info.rotation;
         scaled_info.color = info.color;
         scaled_info.anchor_flag = info.anchor_flag;
@@ -3094,100 +3134,54 @@ namespace rendering
         BufferHandle buffer = {};
         ShaderHandle shader = {};
 
-        if (info.texture_handle.handle != 0)
+        if (anchor & UIAlignment::TOP)
         {
-            if (anchor & UIAlignment::TOP)
+            if (anchor & UIAlignment::LEFT)
             {
-                if (anchor & UIAlignment::LEFT)
-                {
-                    buffer = renderer.render.ui.top_left_textured_quad_buffer;
-                }
-                else if (anchor & UIAlignment::RIGHT)
-                {
-                    buffer = renderer.render.ui.top_right_textured_quad_buffer;
-                }
-                else
-                {
-                    buffer = renderer.render.ui.top_x_centered_textured_quad_buffer;
-                }
+                buffer = renderer->render.ui.top_left_textured_quad_buffer;
             }
-            else if (anchor & UIAlignment::BOTTOM)
+            else if (anchor & UIAlignment::RIGHT)
             {
-                if (anchor & UIAlignment::LEFT)
-                {
-                    buffer = renderer.render.ui.bottom_left_textured_quad_buffer;
-                }
-                else if (anchor & UIAlignment::RIGHT)
-                {
-                    buffer = renderer.render.ui.bottom_right_textured_quad_buffer;
-                }
-                else
-                {
-                    buffer = renderer.render.ui.bottom_x_centered_textured_quad_buffer;
-                }
+                buffer = renderer->render.ui.top_right_textured_quad_buffer;
+                scaled_info.clip_rect.x = scaled_info.clip_rect.x - scaled_info.clip_rect.width;
             }
             else
             {
-                if (anchor & UIAlignment::LEFT)
-                {
-                    buffer = renderer.render.ui.left_y_centered_textured_quad_buffer;
-                }
-                else if (anchor & UIAlignment::RIGHT)
-                {
-                    buffer = renderer.render.ui.right_y_centered_textured_quad_buffer;
-                }
-                else
-                {
-                    buffer = renderer.render.ui.centered_textured_quad_buffer;
-                }
+                buffer = renderer->render.ui.top_x_centered_textured_quad_buffer;
+            }
+
+            scaled_info.clip_rect.y = scaled_info.clip_rect.y - scaled_info.clip_rect.height;
+        }
+        else if (anchor & UIAlignment::BOTTOM)
+        {
+            if (anchor & UIAlignment::LEFT)
+            {
+                buffer = renderer->render.ui.bottom_left_textured_quad_buffer;
+            }
+            else if (anchor & UIAlignment::RIGHT)
+            {
+                buffer = renderer->render.ui.bottom_right_textured_quad_buffer;
+                scaled_info.clip_rect.x = scaled_info.clip_rect.x - scaled_info.clip_rect.width;
+            }
+            else
+            {
+                buffer = renderer->render.ui.bottom_x_centered_textured_quad_buffer;
             }
         }
         else
         {
-            if (anchor & UIAlignment::TOP)
+            if (anchor & UIAlignment::LEFT)
             {
-                if (anchor & UIAlignment::LEFT)
-                {
-                    buffer = renderer.render.ui.top_left_quad_buffer;
-                }
-                else if (anchor & UIAlignment::RIGHT)
-                {
-                    buffer = renderer.render.ui.top_right_quad_buffer;
-                }
-                else
-                {
-                    buffer = renderer.render.ui.top_x_centered_quad_buffer;
-                }
+                buffer = renderer->render.ui.left_y_centered_textured_quad_buffer;
             }
-            else if (anchor & UIAlignment::BOTTOM)
+            else if (anchor & UIAlignment::RIGHT)
             {
-                if (anchor & UIAlignment::LEFT)
-                {
-                    buffer = renderer.render.ui.bottom_left_quad_buffer;
-                }
-                else if (anchor & UIAlignment::RIGHT)
-                {
-                    buffer = renderer.render.ui.bottom_right_quad_buffer;
-                }
-                else
-                {
-                    buffer = renderer.render.ui.bottom_x_centered_quad_buffer;
-                }
+                buffer = renderer->render.ui.right_y_centered_textured_quad_buffer;
+                scaled_info.clip_rect.x = scaled_info.clip_rect.x - scaled_info.clip_rect.width;
             }
             else
             {
-                if (anchor & UIAlignment::LEFT)
-                {
-                    buffer = renderer.render.ui.left_y_centered_quad_buffer;
-                }
-                else if (anchor & UIAlignment::RIGHT)
-                {
-                    buffer = renderer.render.ui.right_y_centered_quad_buffer;
-                }
-                else
-                {
-                    buffer = renderer.render.ui.centered_quad_buffer;
-                }
+                buffer = renderer->render.ui.centered_textured_quad_buffer;
             }
         }
 

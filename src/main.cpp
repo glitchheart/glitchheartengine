@@ -333,101 +333,92 @@ static void check_shader_files(WorkQueue *queue, void *data)
     while(true)
     {
         Renderer *renderer = (Renderer *)data;
-        rendering::check_for_shader_file_changes(*renderer);
+        rendering::check_for_shader_file_changes(renderer);
     }
 }
 
-static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInfo *reload_thread)
+static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInfo *reload_thread)
 {
-    renderer.pixels_per_unit = global_pixels_per_unit;
-    renderer.frame_lock = 0;
+    renderer->pixels_per_unit = global_pixels_per_unit;
+    renderer->frame_lock = 0;
     
-    renderer.particles = {};
+    renderer->particles = {};
 
-    renderer.particles._max_particle_system_count = global_max_particle_systems;
+    renderer->particles._max_particle_system_count = global_max_particle_systems;
 
-    renderer.particles.particle_systems = push_array(&renderer.particle_arena, global_max_particle_systems, ParticleSystemInfo);
-    renderer.particles._internal_handles = push_array(&renderer.particle_arena, global_max_particle_systems, i32);
+    renderer->particles.particle_systems = push_array(&renderer->particle_arena, global_max_particle_systems, ParticleSystemInfo);
+    renderer->particles._internal_handles = push_array(&renderer->particle_arena, global_max_particle_systems, i32);
 
     PushParams params = default_push_params();
     params.alignment = math::multiple_of_number_uint(member_size(RandomSeries, state), 16);
-    renderer.particles.entropy = push_size(&renderer.particle_arena, sizeof(RandomSeries), RandomSeries, params);
-    random_seed(*renderer.particles.entropy, 1234);
+    renderer->particles.entropy = push_size(&renderer->particle_arena, sizeof(RandomSeries), RandomSeries, params);
+    random_seed(*renderer->particles.entropy, 1234);
 
     for (i32 index = 0; index < global_max_particle_systems; index++)
     {
-        renderer.particles._internal_handles[index] = -1;
+        renderer->particles._internal_handles[index] = -1;
     }
 
-    renderer.particles.particle_system_count = 0;
-    renderer.animation_controllers = push_array(&renderer.animation_arena, 64, AnimationController);
-    renderer.spritesheet_animations = push_array(&renderer.animation_arena, global_max_spritesheet_animations, SpritesheetAnimation);
+    renderer->particles.particle_system_count = 0;
+    renderer->animation_controllers = push_array(&renderer->animation_arena, 64, AnimationController);
+    renderer->spritesheet_animations = push_array(&renderer->animation_arena, global_max_spritesheet_animations, SpritesheetAnimation);
     
-    renderer.render.textures = push_array(&renderer.texture_arena, global_max_textures, Texture*);
+    renderer->render.textures = push_array(&renderer->texture_arena, global_max_textures, Texture*);
 
     for(i32 i = 0; i < global_max_textures; i++)
     {
-        renderer.render.textures[i] = push_struct(&renderer.texture_arena, Texture);
+        renderer->render.textures[i] = push_struct(&renderer->texture_arena, Texture);
     }
-    renderer.render.texture_count = 0;
+    renderer->render.texture_count = 0;
 
-    renderer.updated_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
-    renderer.spritesheet_animation_count = 0;
-    renderer.animation_controller_count = 0;
-    renderer.meshes = push_array(&renderer.mesh_arena, global_max_meshes, Mesh);
-    renderer.tt_font_infos = push_array(&renderer.font_arena, global_max_fonts, TrueTypeFontInfo);
-    renderer._internal_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
-    renderer._current_internal_buffer_handle = 0;
+    renderer->spritesheet_animation_count = 0;
+    renderer->animation_controller_count = 0;
+    renderer->meshes = push_array(&renderer->mesh_arena, global_max_meshes, Mesh);
+    renderer->tt_font_infos = push_array(&renderer->font_arena, global_max_fonts, TrueTypeFontInfo);
     
-    for (i32 index = 0; index < global_max_custom_buffers; index++)
-    {
-        renderer._internal_buffer_handles[index] = -1;
-    }
-    
-    renderer.removed_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
 
     // NEW RENDER PIPELINE
-    renderer.render.shadow_commands = push_array(&renderer.command_arena, global_max_shadow_commands, rendering::ShadowCommand);
-    renderer.render.queued_commands = push_array(&renderer.command_arena, global_max_render_commands, QueuedRenderCommand);
+    renderer->render.shadow_commands = push_array(&renderer->command_arena, global_max_shadow_commands, rendering::ShadowCommand);
+    renderer->render.queued_commands = push_array(&renderer->command_arena, global_max_render_commands, QueuedRenderCommand);
     
-    renderer.render.buffers = push_array(&renderer.buffer_arena, global_max_custom_buffers, rendering::RegisterBufferInfo);
-    renderer.render.updated_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
-    renderer.render.material_count = 0;
+    renderer->render.buffers = push_array(&renderer->buffer_arena, global_max_custom_buffers, rendering::RegisterBufferInfo);
+    renderer->render.updated_buffer_handles = push_array(&renderer->buffer_arena, global_max_custom_buffers, i32);
+    renderer->render.material_count = 0;
     
     //@Incomplete: Make these dynamically allocated?
 
-    renderer.render.directional_lights = push_array(&renderer.mesh_arena, global_max_directional_lights, DirectionalLight);
-    renderer.render.point_lights = push_array(&renderer.mesh_arena, global_max_point_lights, PointLight);
+    renderer->render.directional_lights = push_array(&renderer->mesh_arena, global_max_directional_lights, DirectionalLight);
+    renderer->render.point_lights = push_array(&renderer->mesh_arena, global_max_point_lights, PointLight);
     
-    renderer.render.materials = push_array(&renderer.mesh_arena, global_max_materials, rendering::Material);
-    //renderer.render.material_instances = push_array(&renderer.mesh_arena, global_max_materials, rendering::Material);
+    renderer->render.materials = push_array(&renderer->mesh_arena, global_max_materials, rendering::Material);
+    //renderer->render.material_instances = push_array(&renderer->mesh_arena, global_max_materials, rendering::Material);
 
     // Set all material instance values to their defaults
     for(i32 i = 0; i < MAX_MATERIAL_INSTANCE_ARRAYS; i++)
     {
-        renderer.render._internal_material_instance_array_handles[i] = -1;
-        renderer.render.material_instance_array_counts[i] = 0;
-        renderer.render.material_instance_arrays[i] = nullptr;
+        renderer->render._internal_material_instance_array_handles[i] = -1;
+        renderer->render.material_instance_array_counts[i] = 0;
+        renderer->render.material_instance_arrays[i] = nullptr;
     }
     
-    renderer.render.shaders = push_array(&renderer.mesh_arena, global_max_shaders, rendering::Shader);
-    renderer.render._internal_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
-    renderer.render._current_internal_buffer_handle = 0;
+    renderer->render.shaders = push_array(&renderer->mesh_arena, global_max_shaders, rendering::Shader);
+    renderer->render._internal_buffer_handles = push_array(&renderer->buffer_arena, global_max_custom_buffers, i32);
+    renderer->render._current_internal_buffer_handle = 0;
     
     for(i32 index = 0; index < global_max_custom_buffers; index++)
     {
-        renderer.render._internal_buffer_handles[index] = -1;
+        renderer->render._internal_buffer_handles[index] = -1;
     }
     
-    renderer.render.removed_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
+    renderer->render.removed_buffer_handles = push_array(&renderer->buffer_arena, global_max_custom_buffers, i32);
 
 #if DEBUG
-    renderer.render.shader_count = 0;
-    renderer.render.shaders_to_reload_count = 0;
+    renderer->render.shader_count = 0;
+    renderer->render.shaders_to_reload_count = 0;
     *reload_queue = {};
     *reload_thread = {};
     make_queue(reload_queue, 1, reload_thread);
-    platform.add_entry(reload_queue, check_shader_files, &renderer);
+    platform.add_entry(reload_queue, check_shader_files, renderer);
 #endif
 
     rendering::set_fallback_shader(renderer, "../engine_assets/standard_shaders/fallback.shd");
@@ -440,54 +431,54 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     
     // Final framebuffer
     rendering::FramebufferInfo final_info = rendering::generate_framebuffer_info();
-    final_info.width = renderer.framebuffer_width;
-    final_info.height = renderer.framebuffer_height;
+    final_info.width = renderer->framebuffer_width;
+    final_info.height = renderer->framebuffer_height;
     rendering::add_color_attachment(rendering::ColorAttachmentType::RENDER_BUFFER, 0, final_info);
     rendering::add_depth_attachment(0, final_info);
     
     rendering::FramebufferHandle final_framebuffer = rendering::create_framebuffer(final_info, renderer);
     rendering::set_final_framebuffer(renderer, final_framebuffer);
 
-    renderer.render.ui.top_left_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::LEFT);
-    renderer.render.ui.top_left_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::LEFT, true);
-    renderer.render.ui.top_right_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::RIGHT);
-    renderer.render.ui.top_right_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::RIGHT, true);
-    renderer.render.ui.bottom_left_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM | rendering::UIAlignment::LEFT);
-    renderer.render.ui.bottom_left_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM | rendering::UIAlignment::LEFT, true);
-    renderer.render.ui.bottom_right_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM | rendering::UIAlignment::RIGHT);
-    renderer.render.ui.bottom_right_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM | rendering::UIAlignment::RIGHT, true);
-    renderer.render.ui.top_x_centered_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP);
-    renderer.render.ui.top_x_centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP, true);
-    renderer.render.ui.bottom_x_centered_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM);
-    renderer.render.ui.bottom_x_centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM, true);
-    renderer.render.ui.left_y_centered_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::LEFT);
-    renderer.render.ui.left_y_centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::LEFT, true);
-    renderer.render.ui.right_y_centered_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::RIGHT);
-    renderer.render.ui.right_y_centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::RIGHT, true);
-    renderer.render.ui.centered_quad_buffer = rendering::create_quad_buffer(renderer, 0);
-    renderer.render.ui.centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, 0, true);
+    renderer->render.ui.top_left_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::LEFT);
+    renderer->render.ui.top_left_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::LEFT, true);
+    renderer->render.ui.top_right_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::RIGHT);
+    renderer->render.ui.top_right_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::RIGHT, true);
+    renderer->render.ui.bottom_left_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM | rendering::UIAlignment::LEFT);
+    renderer->render.ui.bottom_left_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM | rendering::UIAlignment::LEFT, true);
+    renderer->render.ui.bottom_right_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM | rendering::UIAlignment::RIGHT);
+    renderer->render.ui.bottom_right_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM | rendering::UIAlignment::RIGHT, true);
+    renderer->render.ui.top_x_centered_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP);
+    renderer->render.ui.top_x_centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP, true);
+    renderer->render.ui.bottom_x_centered_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM);
+    renderer->render.ui.bottom_x_centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM, true);
+    renderer->render.ui.left_y_centered_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::LEFT);
+    renderer->render.ui.left_y_centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::LEFT, true);
+    renderer->render.ui.right_y_centered_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::RIGHT);
+    renderer->render.ui.right_y_centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::RIGHT, true);
+    renderer->render.ui.centered_quad_buffer = rendering::create_quad_buffer(renderer, 0);
+    renderer->render.ui.centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, 0, true);
 
     rendering::create_ui_render_pass(renderer);
-    renderer.render.ui_quad_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/ui_quad.shd");
-    renderer.render.textured_ui_quad_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/ui_texture_quad.shd");
-    renderer.render.ui.material = rendering::create_material(renderer, renderer.render.ui_quad_shader);
-    renderer.render.ui.textured_material = rendering::create_material(renderer, renderer.render.textured_ui_quad_shader);
+    renderer->render.ui_quad_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/ui_quad.shd");
+    renderer->render.textured_ui_quad_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/ui_texture_quad.shd");
+    renderer->render.ui.material = rendering::create_material(renderer, renderer->render.ui_quad_shader);
+    renderer->render.ui.textured_material = rendering::create_material(renderer, renderer->render.textured_ui_quad_shader);
 
     // Initialize font material
-    renderer.render.font_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/font.shd");
-    renderer.render.ui.font_material = rendering::create_material(renderer, renderer.render.font_shader);
+    renderer->render.font_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/font.shd");
+    renderer->render.ui.font_material = rendering::create_material(renderer, renderer->render.font_shader);
 
     rendering::RegisterBufferInfo font_info = rendering::create_register_buffer_info();
 
     add_vertex_attrib(rendering::ValueType::FLOAT4, font_info);
     font_info.usage = rendering::BufferUsage::DYNAMIC;
 
-    renderer.render.ui.font_buffer = rendering::register_buffer(renderer, font_info);
+    renderer->render.ui.font_buffer = rendering::register_buffer(renderer, font_info);
 
     // Add a hdr framebuffer as the standard pass framebuffer
     rendering::FramebufferInfo info = rendering::generate_framebuffer_info();
-    info.width = renderer.framebuffer_width;
-    info.height = renderer.framebuffer_height;
+    info.width = renderer->framebuffer_width;
+    info.height = renderer->framebuffer_height;
     rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, info, 0);
     rendering::add_depth_attachment(rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, info, 0);
     
@@ -496,8 +487,8 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
 
     //HDR PP
     rendering::FramebufferInfo hdr_info = rendering::generate_framebuffer_info();
-    hdr_info.width = renderer.framebuffer_width;
-    hdr_info.height = renderer.framebuffer_height;
+    hdr_info.width = renderer->framebuffer_width;
+    hdr_info.height = renderer->framebuffer_height;
 
     rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, hdr_info, 0);
     rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, hdr_info, 0);
@@ -517,8 +508,8 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
 
     //BLOOM
     rendering::FramebufferInfo bloom_info = rendering::generate_framebuffer_info();
-    bloom_info.width = renderer.framebuffer_width;
-    bloom_info.height = renderer.framebuffer_height;
+    bloom_info.width = renderer->framebuffer_width;
+    bloom_info.height = renderer->framebuffer_height;
 
     rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, bloom_info, 0)
 ;
@@ -530,11 +521,11 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
 
     rendering::FramebufferHandle blur_fbo[2] = {rendering::create_framebuffer(bloom_info, renderer), rendering::create_framebuffer(bloom_info, renderer)};
 
-    renderer.render.bloom.active = true;
-    renderer.render.bloom.exposure = 1.8f;
-    renderer.render.bloom.amount = 5;
+    renderer->render.bloom.active = true;
+    renderer->render.bloom.exposure = 1.8f;
+    renderer->render.bloom.amount = 5;
     
-    for(i32 i = 0; i < renderer.render.bloom.amount; i++)
+    for(i32 i = 0; i < renderer->render.bloom.amount; i++)
     {
         // @Incomplete: Duplicate names for passes?
         rendering::PostProcessingRenderPassHandle blur = rendering::create_post_processing_render_pass("Bloom_Blur", blur_fbo[horizontal], renderer, blur_shader);
@@ -551,32 +542,32 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     rendering::set_uniform_value(renderer, bloom, "scene", rendering::get_texture_from_framebuffer(0, hdr_fbo, renderer));
     rendering::set_uniform_value(renderer, bloom, "blur", src_tex);
 
-    rendering::set_uniform_value(renderer, bloom, "bloom", renderer.render.bloom.active);
-    rendering::set_uniform_value(renderer, bloom, "exposure", renderer.render.bloom.exposure);
+    rendering::set_uniform_value(renderer, bloom, "bloom", renderer->render.bloom.active);
+    rendering::set_uniform_value(renderer, bloom, "exposure", renderer->render.bloom.exposure);
 
     //END BLOOM
 
     // Add tonemapping pass?
 
-    renderer.render.instancing.internal_float_buffers = push_array(&renderer.buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
-    renderer.render.instancing.internal_float2_buffers = push_array(&renderer.buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
-    renderer.render.instancing.internal_float3_buffers = push_array(&renderer.buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
-    renderer.render.instancing.internal_float4_buffers = push_array(&renderer.buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
-    renderer.render.instancing.internal_mat4_buffers = push_array(&renderer.buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
+    renderer->render.instancing.internal_float_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
+    renderer->render.instancing.internal_float2_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
+    renderer->render.instancing.internal_float3_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
+    renderer->render.instancing.internal_float4_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
+    renderer->render.instancing.internal_mat4_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
 
     for(i32 i = 0; i < MAX_INSTANCE_BUFFERS; i++)
     {
-        renderer.render.instancing.free_float_buffers[i] = true;
-        renderer.render.instancing.free_float2_buffers[i] = true;
-        renderer.render.instancing.free_float3_buffers[i] = true;
-        renderer.render.instancing.free_float4_buffers[i] = true;
-        renderer.render.instancing.free_mat4_buffers[i] = true;
+        renderer->render.instancing.free_float_buffers[i] = true;
+        renderer->render.instancing.free_float2_buffers[i] = true;
+        renderer->render.instancing.free_float3_buffers[i] = true;
+        renderer->render.instancing.free_float4_buffers[i] = true;
+        renderer->render.instancing.free_mat4_buffers[i] = true;
 
-        renderer.render.instancing.internal_float_buffers[i] = push_struct(&renderer.buffer_arena, Buffer);
-        renderer.render.instancing.internal_float2_buffers[i] = push_struct(&renderer.buffer_arena, Buffer);
-        renderer.render.instancing.internal_float3_buffers[i] = push_struct(&renderer.buffer_arena, Buffer);
-        renderer.render.instancing.internal_float4_buffers[i] = push_struct(&renderer.buffer_arena, Buffer);
-        renderer.render.instancing.internal_mat4_buffers[i] = push_struct(&renderer.buffer_arena, Buffer);
+        renderer->render.instancing.internal_float_buffers[i] = push_struct(&renderer->buffer_arena, Buffer);
+        renderer->render.instancing.internal_float2_buffers[i] = push_struct(&renderer->buffer_arena, Buffer);
+        renderer->render.instancing.internal_float3_buffers[i] = push_struct(&renderer->buffer_arena, Buffer);
+        renderer->render.instancing.internal_float4_buffers[i] = push_struct(&renderer->buffer_arena, Buffer);
+        renderer->render.instancing.internal_mat4_buffers[i] = push_struct(&renderer->buffer_arena, Buffer);
     }
     
     rendering::RegisterBufferInfo particle_buffer = rendering::create_register_buffer_info();
@@ -595,7 +586,7 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     i32 vertex_size = 5;
     particle_buffer.data.vertex_count = 4;
     particle_buffer.data.vertex_buffer_size = particle_buffer.data.vertex_count * vertex_size * (i32)sizeof(r32);
-    particle_buffer.data.vertex_buffer = push_size(&renderer.buffer_arena, particle_buffer.data.vertex_buffer_size, r32);
+    particle_buffer.data.vertex_buffer = push_size(&renderer->buffer_arena, particle_buffer.data.vertex_buffer_size, r32);
 
     for (i32 i = 0; i < particle_buffer.data.vertex_count * vertex_size; i++)
     {
@@ -606,7 +597,7 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     particle_buffer.data.index_buffer_size = index_count * (i32)sizeof(u16);
     particle_buffer.data.index_buffer_count = index_count;
 
-    particle_buffer.data.index_buffer = push_size(&renderer.buffer_arena, particle_buffer.data.index_buffer_size, u16);
+    particle_buffer.data.index_buffer = push_size(&renderer->buffer_arena, particle_buffer.data.index_buffer_size, u16);
 
     u16 quad_indices[6] =
         {
@@ -618,7 +609,7 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
         particle_buffer.data.index_buffer[i] = quad_indices[i];
     }
 
-    renderer.particles.quad_buffer = rendering::register_buffer(renderer, particle_buffer);
+    renderer->particles.quad_buffer = rendering::register_buffer(renderer, particle_buffer);
 }
 
 #if ENABLE_ANALYTICS
@@ -634,6 +625,8 @@ void process_analytics_events(AnalyticsEventState &analytics_state, WorkQueue *q
     analytics_state.event_count = 0;
 }
 #endif
+
+
 
 #if defined(_WIN32) && !defined(DEBUG)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
@@ -724,8 +717,9 @@ int main(int argc, char **args)
     render_state.gl_shaders = push_array(&platform_state->perm_arena, 64, ShaderGL);
     
     Renderer *renderer_alloc = push_struct(&platform_state->perm_arena, Renderer);
-    Renderer &renderer = *renderer_alloc;
-    renderer = {};
+    Renderer *renderer = renderer_alloc;
+    // *renderer = {};
+    // renderer->render = {};
 
     scene::SceneManager *scene_manager = scene::create_scene_manager(&platform_state->perm_arena, renderer);
     
@@ -795,7 +789,7 @@ int main(int argc, char **args)
 
     r64 last_frame = get_time();
     r64 delta_time = 0.0;
-    renderer.frame_lock = 0;
+    renderer->frame_lock = 0;
 
     scene::EntityTemplateState template_state = {};
     template_state.template_count = 0;
@@ -820,7 +814,7 @@ int main(int argc, char **args)
     r64 start_frame_for_total_time = get_time();
 #endif
 
-    core.renderer = &renderer;
+    core.renderer = renderer;
     core.input_controller = &input_controller;
     core.timer_controller = &timer_controller;
     core.sound_system = &sound_system;
@@ -829,7 +823,7 @@ int main(int argc, char **args)
     core.current_time = get_time();
     game_memory.core = core;
 
-    while (!should_close_window(render_state) && !renderer.should_close)
+    while (!should_close_window(render_state) && !renderer->should_close)
     {
         if (game_memory.exit_game)
         {
@@ -837,7 +831,7 @@ int main(int argc, char **args)
             glfwSetWindowShouldClose(render_state.window, GLFW_TRUE);
         }
         
-        show_mouse_cursor(render_state, renderer.show_mouse_cursor);
+        show_mouse_cursor(render_state, renderer->show_mouse_cursor);
 
         reload_libraries(&game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
         //#endif
@@ -893,7 +887,7 @@ int main(int argc, char **args)
         if (end_counter - last_second_check >= 1.0)
         {
             last_second_check = end_counter;
-            renderer.fps = frames;
+            renderer->fps = frames;
             frames = 0;
         }
 
