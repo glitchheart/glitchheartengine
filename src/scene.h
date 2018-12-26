@@ -4,7 +4,7 @@
 #define EMPTY_ENTITY_HANDLE {0}
 #define EMPTY_COMP_HANDLE {-1}
 #define EMPTY_TEMPLATE_HANDLE {-1}
-#define IS_ENTITY_HANDLE_VALID(ent_handle) ent_handle.handle != 0
+#define IS_ENTITY_HANDLE_VALID(ent_handle) (ent_handle.handle > 0)
 #define IS_COMP_HANDLE_VALID(comp_handle) comp_handle.handle != -1
 #define IS_TEMPLATE_HANDLE_VALID(comp_handle) comp_handle.handle != -1
 #define IS_SCENE_HANDLE_VALID(scene_handle) (scene_handle.handle > 0)
@@ -55,6 +55,9 @@ namespace scene
     
     struct Entity
     {
+        char name[256];
+        EntityHandle handle;
+        
         u64 comp_flags;
         TransformComponentHandle transform_handle;
         RenderComponentHandle render_handle;
@@ -78,7 +81,10 @@ namespace scene
         rendering::MaterialHandle original_material_handle;
         
         b32 casts_shadows;
+        math::Vec3 mesh_scale;
 
+        b32 wireframe_enabled;
+        
         b32 is_new_version;
         struct
         {
@@ -117,6 +123,7 @@ namespace scene
 	
     struct EntityTemplate
     {
+        char name[256];
         char file_path[256];
         u64 comp_flags;
         
@@ -132,7 +139,7 @@ namespace scene
             rendering::MaterialHandle material_handle;
             
             b32 casts_shadows;
-            
+            math::Vec3 mesh_scale;
             b32 is_new_version;
             struct
             {
@@ -236,6 +243,15 @@ namespace scene
         SceneManager *manager;
     };
 
+    typedef void (*OnEntityUpdated)(EntityHandle entity, SceneHandle scene);
+    typedef void (*OnEntitySelected)(EntityHandle entity, SceneHandle scene);
+
+    enum class SceneMode
+    {
+        RUNNING,
+        EDITING
+    };
+    
     struct SceneManager
     {
         Renderer *renderer;
@@ -248,6 +264,16 @@ namespace scene
         i32 scene_count;
         i32 *_internal_scene_handles;
         i32 current_internal_index;
+
+        SceneMode mode;
+
+        Camera play_camera;
+        EntityHandle selected_entity;
+        struct
+        {
+            OnEntityUpdated on_entity_updated;
+            OnEntitySelected on_entity_selected;
+        } callbacks;
     };
 
     static SceneManager* create_scene_manager(MemoryArena *arena, Renderer &renderer)

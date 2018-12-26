@@ -19,6 +19,7 @@ namespace rendering
     struct MaterialInstanceHandle
     {
 		i32 handle;
+        b32 internal; // If internal is true it means that the intance is one of the internal renderer ones
         MaterialInstanceArrayHandle array_handle;
     };
 
@@ -259,6 +260,7 @@ namespace rendering
         i32 structure_count;
 
 		char* vert_shader;
+		char* geo_shader;
 		char* frag_shader;
 
 		char path[256];

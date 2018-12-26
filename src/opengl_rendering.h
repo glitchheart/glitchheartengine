@@ -8,6 +8,7 @@ struct ShaderGL
 	GLuint program;
 	
 	GLuint vert_program;
+    GLuint geo_program;
 	GLuint frag_program;
 
     GLint uniform_locations[1024];

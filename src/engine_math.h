@@ -2487,7 +2487,6 @@ namespace math
     struct Ray
     {
         Vec3 origin;
-        Vec3 target;
         Vec3 ray;
     };
     
@@ -2497,8 +2496,9 @@ namespace math
         Vec3 max;
     };
     
-    inline b32 aabb_ray_intersection(Ray r, BoundingBox b)
+    inline b32 aabb_ray_intersection(Ray r, BoundingBox b, math::Vec3* intersection_point)
     {
+        r32 t = 0;
         math::Vec3 lb = b.min;
         math::Vec3 rt = b.max;
         // r.dir is unit direction vector of ray
@@ -2522,18 +2522,19 @@ namespace math
         // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
         if (tmax < 0)
         {
-            //t = tmax;
+            t = tmax;
             return false;
         }
         
         // if tmin > tmax, ray doesn't intersect AABB
         if (tmin > tmax)
         {
-            //t = tmax;
+            t = tmax;
             return false;
         }
         
-        //t = tmin;
+        t = tmin;
+        *intersection_point = r.origin + r.ray * t;
         return true;
     }
     
@@ -2582,60 +2583,6 @@ namespace math
         if(tz_max < t_max) t_max = tz_max;
         
         return true;
-    }
-    
-    inline Ray raycast_from_mouse_coordinates(r32 mouse_x, r32 mouse_y, Mat4 p, Mat4 v, r32 width, r32 height)
-    {
-        Ray ray;
-        r32 x = 1.0f - (2.0f * mouse_x) / width;
-        r32 y = (2.0f * mouse_y / height) - 1.0f;
-        r32 z = 1.0f;
-        Vec3 ray_nds = Vec3(x, y, z);
-        Vec4 ray_clip = Vec4(ray_nds.xy, 1.0, 1.0f);
-        Vec4 ray_eye = inverse(p) * ray_clip;
-        ray_eye = Vec4(ray_eye.xy, 1.0f, 0.0f);
-        Vec3 ray_world = (v * ray_eye).xyz;
-        ray_world = normalize(ray_world);
-        
-        //printf("Ray world %f %f %f\n", ray_world.x, ray_world.y, ray_world.z);
-        ray.ray = ray_world;
-        return(ray);
-    }
-    
-    inline Ray cast_picking_ray(r32 mouse_x, r32 mouse_y, Mat4 p, Mat4 v, r32 width, r32 height)
-    {
-        auto mx = 1.0f - (2.0f * mouse_x) / width;
-        auto my = 1.0f - (2.0f * mouse_y / height);
-        
-        // 1.0f is the far plane in NDC
-        auto mouse = inverse(p) * math::Vec3(mx, my, 1.0f);
-        mouse.z = 1.0f;
-        mouse = inverse(v) * mouse;
-        
-        // -1.0f is the near plane in NDC
-        auto origin = inverse(p) * math::Vec3(mx, my, -1.0f);
-        origin.z = 1.0f;
-        origin = inverse(v) * origin;
-        
-        auto temp_ray = math::Vec4(mouse - origin, 0.0f);
-        temp_ray = normalize(temp_ray);
-        Ray ray;
-        ray.origin = origin;
-        ray.target = mouse;
-        ray.ray = temp_ray.xyz;
-        //printf("%f %f %f\n", ray.origin.x, ray.origin.y, ray.origin.z);
-        
-        ray.ray = raycast_from_mouse_coordinates(mouse_x, mouse_y, p, v, width, height).ray;
-        return(ray);
-    }
-    
-    inline Ray cast_ray(Vec3 origin, Vec3 target)
-    {
-        Ray ray;
-        ray.origin = origin;
-        ray.target = target;
-        ray.ray = normalize(math::Vec4(target - origin, 0.0f)).xyz;
-        return ray;
     }
     
 #define COLOR_RED math::Rgba(1, 0, 0, 1)
