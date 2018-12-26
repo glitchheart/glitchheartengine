@@ -142,6 +142,20 @@ static void center(Camera &camera)
     camera.mode = CameraMode::CENTERED;
 }
 
+static void set_target(Camera &camera, math::Vec3 target)
+{
+    camera.target = target;
+    
+    camera.forward = math::normalize(camera.target - camera.position);
+    camera.right = math::normalize(math::cross(math::Vec3(0, 1, 0), camera.forward));
+    camera.up = math::cross(camera.forward, camera.right);
+    
+    camera.yaw = atan2(camera.forward.x, camera.forward.z) / DEGREE_IN_RADIANS;
+    camera.pitch = asin(camera.forward.y) / DEGREE_IN_RADIANS;
+    
+	camera.view_matrix = math::look_at(camera.forward, camera.position);
+}
+
 static void free_roam(Camera &camera)
 {
     camera.mode = CameraMode::FREE_ROAM;

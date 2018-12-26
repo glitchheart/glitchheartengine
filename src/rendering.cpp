@@ -220,6 +220,11 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer)
 
                     if(render.v2.render_pass_count > 0)
                     {
+                        if(render.wireframe_enabled)
+                        {
+                            rendering::push_buffer_to_render_pass(renderer, render.v2.buffer_handle, renderer.render.wireframe_material, t, renderer.render.wireframe_shader, render.v2.render_passes[0]);
+                        }
+                        
                         BatchedCommand &batch_command = command->commands[command->count];
                         batch_command.transform = t;
                         batch_command.material_handle = render.v2.material_handle;

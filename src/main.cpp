@@ -36,7 +36,6 @@ static MemoryState memory_state;
 //#include "vulkan_rendering.h"
 #endif
 
-#include "scene.h"
 
 #include "opengl_rendering.h"
 #include "animation.cpp"
@@ -54,10 +53,15 @@ static MemoryState memory_state;
 #include "analytics.cpp"
 #endif
 
+#include "scene.h"
+
 #include "shader_loader.cpp"
 #include "render_pipeline.cpp"
 #include "rendering.cpp"
 #include "particles.cpp"
+#include "particle_api.cpp"
+
+#include "scene.cpp"
 
 #if defined(__linux) || defined(__APPLE__)
 #include "dlfcn.h"
@@ -401,6 +405,7 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     renderer.render.point_lights = push_array(&renderer.mesh_arena, global_max_point_lights, PointLight);
     
     renderer.render.materials = push_array(&renderer.mesh_arena, global_max_materials, rendering::Material);
+    renderer.render.internal_materials = push_array(&renderer.mesh_arena, global_max_materials, rendering::Material);
     //renderer.render.material_instances = push_array(&renderer.mesh_arena, global_max_materials, rendering::Material);
 
     // Set all material instance values to their defaults
@@ -432,6 +437,7 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
 #endif
 
     rendering::set_fallback_shader(renderer, "../engine_assets/standard_shaders/fallback.shd");
+    rendering::set_wireframe_shader(renderer, "../engine_assets/standard_shaders/wireframe.shd");
     rendering::set_shadow_map_shader(renderer, "../engine_assets/standard_shaders/shadow_map.shd");
     rendering::set_light_space_matrices(renderer, math::ortho(-25, 25, -25, 25, 1, 20.0f), math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0.0f, 0.0f, 0.0f));
 
@@ -848,6 +854,7 @@ int main(int argc, char **args)
 
         if(scene_manager->scene_loaded)
         {
+            update_scene_editor(scene_manager->loaded_scene, &input_controller, delta_time);
             push_scene_for_rendering(scene::get_scene(scene_manager->loaded_scene), renderer);
         }
         

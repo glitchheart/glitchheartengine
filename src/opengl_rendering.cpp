@@ -283,6 +283,21 @@ static GLuint load_shader(Renderer &renderer, rendering::Shader &shader, ShaderG
         return GL_FALSE;
     }
 
+    if(shader.geo_shader)
+    {
+        char *geo_shader = shader.geo_shader;
+        gl_shader.geo_program = glCreateShader(GL_GEOMETRY_SHADER);
+
+        glShaderSource(gl_shader.geo_program, 1, (GLchar **)&geo_shader, nullptr);
+
+        if (!compile_shader(&renderer.shader_arena, shader.path, gl_shader.geo_program))
+        {
+            log_error("Failed compilation of geometry shader: %s", shader.path);
+            gl_shader.geo_program = 0;
+            return GL_FALSE;
+        }
+    }
+    
     char *frag_shader = shader.frag_shader;
     gl_shader.frag_program = glCreateShader(GL_FRAGMENT_SHADER);
 
@@ -298,6 +313,7 @@ static GLuint load_shader(Renderer &renderer, rendering::Shader &shader, ShaderG
     gl_shader.program = glCreateProgram();
 
     glAttachShader(gl_shader.program, gl_shader.vert_program);
+    glAttachShader(gl_shader.program, gl_shader.geo_program);
     glAttachShader(gl_shader.program, gl_shader.frag_program);
 
     if (!link_program(&renderer.shader_arena, shader.path, gl_shader.program))
@@ -2014,7 +2030,7 @@ static void render_all_passes(RenderState &render_state, Renderer &renderer)
             rendering::RenderCommand &command = pass.commands.render_commands[i];
 
             rendering::Material &material = get_material_instance(command.material, renderer);
-
+            
             render_buffer(command.transform, command.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
         }
 

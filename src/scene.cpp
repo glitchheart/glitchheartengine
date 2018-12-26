@@ -21,6 +21,7 @@ namespace scene
     static ParticleSystemComponent& get_particle_system_comp(EntityHandle handle, SceneHandle scene);
     static LightComponent &get_light_comp(EntityHandle handle, SceneHandle scene);
     static Camera & get_scene_camera(SceneHandle handle);
+    static EntityHandle pick_entity(i32 mouse_x, i32 mouse_y);
 
     // @Deprecated: Scene struct 
     static RenderComponent& _add_render_component(Scene &scene, EntityHandle entity_handle, b32 cast_shadows);
@@ -289,7 +290,159 @@ namespace scene
             start_particle_system(scene.particle_system_components[i].handle, *scene.renderer);
         }
     }
+    
+    static EntityHandle pick_entity(SceneHandle handle, i32 mouse_x, i32 mouse_y)
+    {
+        Scene &scene = get_scene(handle);
+        Camera &camera = scene.camera;
 
+        i32 width = scene.renderer->window_width;
+        i32 height = scene.renderer->window_height;
+        
+        r32 x = (2.0f * mouse_x) / width - 1.0f;
+        r32 y = 1.0f - (2.0f * mouse_y) / height;
+        r32 z = 1.0f;
+        
+        math::Vec3 ray_nds = math::Vec3(x, y, z);
+        math::Vec4 ray_clip = math::Vec4(ray_nds.x, ray_nds.y, -1.0f, -1.0f);
+        math::Vec4 ray_eye = math::inverse(camera.projection_matrix) * ray_clip;
+        ray_eye = math::Vec4(ray_eye.x, ray_eye.y, -1.0f, 0.0f);
+
+        math::Vec3 ray_wor = (inverse(camera.view_matrix) * ray_eye).xyz;
+        ray_wor = math::normalize(ray_wor);
+        
+        math::Ray ray;
+        ray.origin = camera.position;
+        ray.ray = ray_wor;
+
+        r32 dist = 100000; // Just set a crazy max distance
+        
+        EntityHandle entity_handle = { -1 };
+        
+        for(i32 i = 0; i < scene.entity_count; i++)
+        {
+            const scene::Entity &ent = scene.entities[i];
+            
+            if (scene.active_entities[i])
+            {
+                if (ent.comp_flags & scene::COMP_RENDER)
+                {
+                    scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
+                    scene::RenderComponent &render_comp = scene.render_components[ent.render_handle.handle];
+                    
+                    math::BoundingBox box;
+                    math::Vec3 real_scale = transform.scale * render_comp.mesh_scale;
+                    box.min = math::Vec3(transform.position.x - real_scale.x * 0.5f, transform.position.y - real_scale.y * 0.5f, transform.position.z - real_scale.z * 0.5f);
+                    box.max = math::Vec3(transform.position.x + real_scale.x * 0.5f, transform.position.y + real_scale.y * 0.5f, transform.position.z + real_scale.z * 0.5f);
+
+                    math::Vec3 intersection_point;
+                    if(aabb_ray_intersection(ray, box, &intersection_point))
+                    {
+                        r32 new_dist = math::distance(camera.position, intersection_point);
+                    
+                        if(new_dist < dist)
+                        {
+                            //printf("Found: %s\n", ent.name);
+                            entity_handle = ent.handle;
+                            dist = new_dist;
+                        }
+                    }
+                }
+            }
+        }
+        
+        return entity_handle;
+    }
+
+    static void set_wireframe_enabled(b32 enabled, EntityHandle entity_handle, SceneHandle &handle)
+    {
+        Scene &scene = get_scene(handle);
+        RenderComponent &render_comp = _get_render_comp(entity_handle, scene);
+        render_comp.wireframe_enabled = enabled;
+    }
+    
+    static void update_scene_editor(SceneHandle handle, InputController *input_controller, r64 delta_time)
+    {
+        Scene &scene = get_scene(handle);
+        
+        SceneManager *manager = handle.manager;
+        
+        if(KEY_DOWN(Key_E) && KEY(Key_LeftCtrl))
+        {
+            if(manager->mode == SceneMode::RUNNING)
+            {
+                manager->play_camera = scene.camera;
+                manager->mode = SceneMode::EDITING;
+            }
+            else
+            {
+                scene.camera = manager->play_camera;
+                manager->mode = SceneMode::RUNNING;
+            }
+        }
+
+        if(manager->mode == SceneMode::EDITING)
+        {
+            if(MOUSE_DOWN(Mouse_Left))
+            {
+                scene::EntityHandle entity = scene::pick_entity(handle, (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
+
+                if(IS_ENTITY_HANDLE_VALID(entity))
+                {
+                    if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
+                        scene::set_wireframe_enabled(false, manager->selected_entity, handle);
+
+                    manager->selected_entity = entity;
+                    scene::set_wireframe_enabled(true, entity, handle);
+                    
+                    manager->callbacks.on_entity_selected(entity, handle);
+                    
+                    //scene::TransformComponent t = scene::get_transform_comp(entity, scene);
+                    //set_target(camera, t.position);
+                }
+            }
+
+            // Update camera
+            Camera &camera = scene.camera;
+    
+            if(KEY(Key_W))
+            {
+                translate_forward(camera, (r32)delta_time * 10.0f);
+            }
+
+            if(KEY(Key_S))
+            {
+                translate_forward(camera, (r32)-delta_time * 10.0f);
+            }
+
+            if(KEY(Key_A))
+            {
+                translate_right(camera, (r32)-delta_time * 10.0f);
+            }
+
+            if(KEY(Key_D))
+            {
+                translate_right(camera, (r32)delta_time * 10.0f);
+            }
+
+            if(KEY_DOWN(Key_LeftAlt))
+                center(camera);
+            else if(KEY_UP(Key_LeftAlt))
+                free_roam(camera);
+    
+            if(MOUSE_DOWN(Mouse_Right))
+                set_mouse_lock(true, *scene.renderer);
+            else if(MOUSE_UP(Mouse_Right))
+                set_mouse_lock(false, *scene.renderer);
+    
+            if(MOUSE(Mouse_Right))
+            {
+                rotate_around_x(camera, (r32)-input_controller->mouse_y_delta * 0.1f);
+                rotate_around_y(camera, (r32)input_controller->mouse_x_delta * 0.1f);
+            }
+        }
+    }
+    
     static void load_scene(SceneHandle handle, u64 load_flags = 0)
     {
         SceneManager *scene_manager = handle.manager;
@@ -478,7 +631,7 @@ namespace scene
         Scene &scene = get_scene(handle);
         return _add_light_component(scene, entity_handle);
     }
-    
+
     // Returns a new valid "EntityHandle". "comp_flags" Specifies the components that the entity should contain.
     static EntityHandle _register_entity(u64 comp_flags, Scene &scene)
     {
@@ -488,6 +641,7 @@ namespace scene
         scene._internal_handles[new_handle - 1] = scene.entity_count++;
         
         Entity &entity = scene.entities[scene._internal_handles[new_handle - 1]];
+        entity.handle = handle;
         entity.comp_flags = comp_flags;
         
         if(comp_flags & COMP_TRANSFORM)
@@ -527,16 +681,33 @@ namespace scene
         if(file)
         {
             sprintf(templ.file_path, "%s", path);
+
+            i32 last_slash = 0;
+            for(i32 i = 0; i < (i32)strlen(path); i++)
+            {
+                if(path[i] == '/')
+                    last_slash = i;
+            }
+
+            i32 real_index = 0;
+            for(i32 i = last_slash + 1; i < (i32)strlen(path); i++)
+            {
+                char c = path[i];
+                if(c != '.')
+                    templ.name[real_index++] = c;
+                else
+                {
+                    templ.name[real_index++] = '\0';
+                    break;
+                }
+            }
             
             char buffer[256];
 
-            b32 is_new_version = false;
-            
             while(fgets(buffer, 256, file))
             {
                 if(starts_with(buffer, "v2"))
                 {
-                    is_new_version = true;
                 }
                 else if(starts_with(buffer, "-transform"))
                 {
@@ -610,14 +781,9 @@ namespace scene
                         {
                             char obj_file[256];
                             sscanf(buffer, "obj: %s", obj_file);
-
-                            if(is_new_version)
-                            {
-                                templ.render.is_new_version = true;
-                                templ.render.v2.buffer_handle = rendering::load_obj(*scene.renderer, obj_file, &templ.render.v2.material_handle);
-                            }
-                            // else
-                            //     load_obj(*scene.renderer, obj_file, &templ.render.mesh_handle, &templ.render.material_handle);
+                           
+                            templ.render.is_new_version = true;
+                            templ.render.v2.buffer_handle = rendering::load_obj(*scene.renderer, obj_file, &templ.render.v2.material_handle, &templ.render.mesh_scale);
                         }
                         else if(starts_with(buffer, "prim"))
                         {
@@ -625,19 +791,13 @@ namespace scene
 
                             if(starts_with(prim_type, "cube"))
                             {
-                                if(is_new_version)
-                                {
-                                    templ.render.is_new_version = true;
-                                    templ.render.v2.buffer_handle = rendering::create_plane(*scene.renderer);
-                                }
+                                templ.render.is_new_version = true;
+                                templ.render.v2.buffer_handle = rendering::create_cube(*scene.renderer, &templ.render.mesh_scale);
                             }
                             else if(starts_with(prim_type, "plane"))
                             {
-                                if(is_new_version)
-                                {
-                                    templ.render.is_new_version = true;
-                                    templ.render.v2.buffer_handle = rendering::create_plane(*scene.renderer);
-                                }
+                                templ.render.is_new_version = true;
+                                templ.render.v2.buffer_handle = rendering::create_plane(*scene.renderer, &templ.render.mesh_scale);
                             }
                         }
                         else if(starts_with(buffer, "mtl"))
@@ -649,15 +809,7 @@ namespace scene
 
                             char mtl_file[256];
                             sscanf(buffer, "mtl: %s", mtl_file);
-
-                            if(is_new_version)
-                            {
-                                rendering::load_material_from_mtl(*scene.renderer, templ.render.v2.material_handle, mtl_file);
-                            }
-                            else
-                            {
-                                // load_material(*scene.renderer, mtl_file, &templ.render.material_handle);
-                            }
+                            rendering::load_material_from_mtl(*scene.renderer, templ.render.v2.material_handle, mtl_file);
                         }
                     }
                 }
@@ -889,10 +1041,17 @@ namespace scene
     }
 
 #define EMPTY_TRANSFORM { math::Vec3(), math::Vec3(1, 1, 1), math::Vec3(), EMPTY_COMP_HANDLE, EMPTY_COMP_HANDLE };
+
+    static void _set_entity_name(EntityHandle handle, const char *name, Scene& scene)
+    {
+        Entity &entity = scene.entities[scene._internal_handles[handle.handle - 1]];
+        strcpy(entity.name, name);
+    }
     
     static EntityHandle _register_entity_with_template(EntityTemplate &templ, Scene &scene)
     {
         EntityHandle handle = _register_entity(templ.comp_flags, scene);
+        _set_entity_name(handle, templ.name, scene);
         
         if(templ.comp_flags & COMP_TRANSFORM)
         {
@@ -912,6 +1071,7 @@ namespace scene
                 render.v2.buffer_handle = templ.render.v2.buffer_handle;
                 render.v2.material_handle = rendering::create_material_instance(*scene.renderer, templ.render.v2.material_handle, scene.material_array_handle);
                 render.casts_shadows = templ.render.casts_shadows;
+                render.mesh_scale = templ.render.mesh_scale;
                 
                 for(i32 i = 0; i < templ.render.v2.render_pass_count; i++)
                 {
@@ -1116,7 +1276,7 @@ namespace scene
                     scene.entities[index].render_handle.handle--;
                 }
                 
-                if(scene.entities[index].particle_system_handle.handle > render_handle)
+                if(scene.entities[index].particle_system_handle.handle > particle_system_handle)
                 {
                     scene.entities[index].particle_system_handle.handle--;
                 }

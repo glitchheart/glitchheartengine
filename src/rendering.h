@@ -571,6 +571,8 @@ struct Renderer
 		i32 shader_count;
 
         rendering::ShaderHandle fallback_shader;
+        rendering::ShaderHandle wireframe_shader;
+        rendering::MaterialInstanceHandle wireframe_material;
         rendering::ShaderHandle shadow_map_shader;
         rendering::ShaderHandle bloom_shader;
         rendering::ShaderHandle blur_shader;
@@ -579,12 +581,15 @@ struct Renderer
         rendering::ShaderHandle textured_ui_quad_shader;
         rendering::ShaderHandle font_shader;
         
-		i32 shaders_to_reload[8];
+		i32 shaders_to_reload[2];
 		i32 shaders_to_reload_count;
 	
 		rendering::Material *materials;
 		i32 material_count;
 
+        rendering::Material *internal_materials;
+        i32 internal_material_count;
+        
 		rendering::Material *material_instance_arrays[MAX_MATERIAL_INSTANCE_ARRAYS];
 		i32 material_instance_array_counts[MAX_MATERIAL_INSTANCE_ARRAYS];
         i32 _internal_material_instance_array_handles[MAX_MATERIAL_INSTANCE_ARRAYS];
@@ -639,10 +644,10 @@ struct Renderer
         Texture **textures;
         i32 texture_count;
 
-        rendering::RenderPass passes[32];
+        rendering::RenderPass passes[16];
         i32 pass_count;
 
-        rendering::RenderPass post_processing_passes[32];
+        rendering::RenderPass post_processing_passes[16];
         i32 post_processing_pass_count;
 
         rendering::FramebufferInfo framebuffers[32];
