@@ -5,6 +5,7 @@ namespace rendering
 {
     
 #define MAX_INSTANCE_BUFFERS 256
+#define Z_LAYERS 40
     
     struct ShaderHandle
     {
@@ -611,10 +612,16 @@ namespace rendering
                 rendering::UIRenderCommand *render_commands;
                 i32 render_command_count;
 
+                rendering::UIRenderCommand* transparent_commands;
+                i32 transparent_command_count;
+
                 //@Cleanup: An extra 8 + 8 + 8 bytes?
                 rendering::CharacterData **coords;
                 rendering::TextRenderCommand *text_commands;
                 i32 text_command_count;
+
+                i32 **text_z_layers;
+                i32 *text_z_layer_counts;
             } ui;
         };
 

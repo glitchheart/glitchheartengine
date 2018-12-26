@@ -1910,43 +1910,6 @@ static void render_ui_pass(RenderState &render_state, Renderer &renderer)
     glViewport(0, 0, framebuffer.width, framebuffer.height);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
 
-    Buffer &font_buffer = get_internal_buffer(renderer, render_state, renderer.render.ui.font_buffer);
-
-    i32 internal_handle = renderer.render._internal_buffer_handles[renderer.render.ui.font_buffer.handle - 1];
-
-    rendering::RegisterBufferInfo &info = renderer.render.buffers[internal_handle];
-
-    bind_vertex_array(font_buffer.vao, render_state);
-    glBindBuffer(GL_ARRAY_BUFFER, font_buffer.vbo);
-
-    for (i32 i = 0; i < pass.ui.text_command_count; i++)
-    {
-        rendering::TextRenderCommand &command = pass.ui.text_commands[i];
-
-        // if (command.clip)
-        // {
-        //     glEnable(GL_SCISSOR_TEST);
-        //     math::Rect clip_rect = command.clip_rect;
-        //     glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
-        // }
-
-        rendering::CharacterBufferHandle char_buf_handle = command.buffer;
-        rendering::CharacterData *coords = pass.ui.coords[char_buf_handle.handle];
-
-        info.data.vertex_buffer_size = (i32)(6 * command.text_length * sizeof(rendering::CharacterData));
-        info.data.vertex_count = (i32)(6 * command.text_length * 3);
-        info.data.vertex_buffer = (r32 *)coords;
-
-        update_buffer(font_buffer, info, render_state);
-
-        render_buffer({}, renderer.render.ui.font_buffer, pass, render_state, renderer, command.material, pass.camera, 0 ,&render_state.gl_shaders[command.shader_handle.handle]);
-
-        if (command.clip)
-        {
-            glDisable(GL_SCISSOR_TEST);
-        }
-    }
-
     for (i32 i = 0; i < pass.ui.render_command_count; i++)
     {
         rendering::UIRenderCommand &command = pass.ui.render_commands[i];
@@ -1966,10 +1929,80 @@ static void render_ui_pass(RenderState &render_state, Renderer &renderer)
         }
     }
 
+
+    Buffer &font_buffer = get_internal_buffer(renderer, render_state, renderer.render.ui.font_buffer);
+
+    i32 internal_handle = renderer.render._internal_buffer_handles[renderer.render.ui.font_buffer.handle - 1];
+
+    rendering::RegisterBufferInfo &info = renderer.render.buffers[internal_handle];
+
+    bind_vertex_array(font_buffer.vao, render_state);
+    glBindBuffer(GL_ARRAY_BUFFER, font_buffer.vbo);
+
+    glDisable(GL_DEPTH_TEST);
+
+    for(i32 i = 0; i < Z_LAYERS; i++)
+    {
+        i32* command_indices = pass.ui.text_z_layers[i];
+        i32 command_count = pass.ui.text_z_layer_counts[i];
+
+        for(i32 j = 0; j < command_count; j++)
+        {
+            rendering::TextRenderCommand &command = pass.ui.text_commands[command_indices[j]];
+
+            // if (command.clip)
+            // {
+            //     glEnable(GL_SCISSOR_TEST);
+            //     math::Rect clip_rect = command.clip_rect;
+            //     glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
+            // }
+
+            rendering::CharacterBufferHandle char_buf_handle = command.buffer;
+            rendering::CharacterData *coords = pass.ui.coords[char_buf_handle.handle];
+
+            info.data.vertex_buffer_size = (i32)(6 * command.text_length * sizeof(rendering::CharacterData));
+            info.data.vertex_count = (i32)(6 * command.text_length * 3);
+            info.data.vertex_buffer = (r32 *)coords;
+
+            update_buffer(font_buffer, info, render_state);
+
+            render_buffer({}, renderer.render.ui.font_buffer, pass, render_state, renderer, command.material, pass.camera, 0 ,&render_state.gl_shaders[command.shader_handle.handle]);
+
+            if (command.clip)
+            {
+                glDisable(GL_SCISSOR_TEST);
+            }
+        }
+
+        pass.ui.text_z_layer_counts[i] = 0;
+    }
+
+    for (i32 i = 0; i < pass.ui.transparent_command_count; i++)
+    {
+        rendering::UIRenderCommand &command = pass.ui.transparent_commands[i];
+
+        if (command.clip)
+        {
+            glEnable(GL_SCISSOR_TEST);
+            math::Rect clip_rect = command.clip_rect;
+            glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
+        }
+
+        render_buffer(command.transform, command.buffer, pass, render_state, renderer, command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
+
+        if (command.clip)
+        {
+            glDisable(GL_SCISSOR_TEST);
+        }
+    }
+    
+
+
     glClear(GL_DEPTH_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
 
     pass.ui.text_command_count = 0;
+    pass.ui.transparent_command_count = 0;
     pass.ui.render_command_count = 0;
 }
 

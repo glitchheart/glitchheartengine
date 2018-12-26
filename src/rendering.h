@@ -674,8 +674,8 @@ struct Renderer
 
         MemoryArena render_pass_arena;
         
-		rendering::RenderCommand *render_commands;
-		i32 render_command_count;
+		/* rendering::RenderCommand *render_commands; */
+		/* i32 render_command_count; */
 
         QueuedRenderCommand *queued_commands;
         i32 queued_command_count;
