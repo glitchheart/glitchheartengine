@@ -250,7 +250,7 @@ namespace scene
         i32 current_internal_index;
     };
 
-    static SceneManager* create_scene_manager(MemoryArena *arena, Renderer &renderer)
+    static SceneManager* create_scene_manager(MemoryArena *arena, Renderer *renderer)
     {
         SceneManager *scene_manager = push_struct(arena, SceneManager);
         scene_manager->current_internal_index = 0;
@@ -267,7 +267,7 @@ namespace scene
         scene_manager->template_state.templates = push_array(&scene_manager->arena, global_max_entity_templates, EntityTemplate);
         scene_manager->template_state.template_count = 0;
        
-        scene_manager->renderer = &renderer;
+        scene_manager->renderer = renderer;
         return scene_manager;
     }
 

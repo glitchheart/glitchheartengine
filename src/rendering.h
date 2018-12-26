@@ -376,16 +376,6 @@ enum CommandBlendMode
     CBM_ONE_MINUS_SRC_ALPHA
 };
 
-enum CursorType
-{
-    CURSOR_ARROW,
-    CURSOR_CROSSHAIR,
-    CURSOR_HAND,
-    CURSOR_HRESIZE,
-    CURSOR_IBEAM,
-    CURSOR_VRESIZE
-};
-
 enum FadingMode
 {
     FADING_NONE,
@@ -436,11 +426,26 @@ struct Resolution
 	i32 height;
 };
 
+//@Cleanup: Move out of rendering
+enum CursorType
+{
+    CURSOR_ARROW,
+    CURSOR_CROSSHAIR,
+    CURSOR_HAND,
+    CURSOR_HRESIZE,
+    CURSOR_IBEAM,
+    CURSOR_VRESIZE
+};
+
+
 struct ParticleSystemInfo;
 
 struct RenderState;
 struct Buffer;
 struct Texture;
+
+//@Cleanup: Move out of rendering
+typedef void (*SetWindowCursor)(RenderState* render_state, CursorType cursor);
 
 typedef math::Vec2i (*GetTextureSize)(Texture* texture);
 typedef void (*LoadTexture)(Texture* texture, TextureFiltering filtering, TextureWrap wrap, TextureFormat format, i32 width, i32 height, unsigned char* image_data, RenderState* render_state, Renderer* renderer);
@@ -451,6 +456,7 @@ typedef void (*DeleteAllInstanceBuffers)(RenderState *render_state, Renderer *re
 
 struct GraphicsAPI
 {
+    SetWindowCursor set_window_cursor;
     GetTextureSize get_texture_size;
     LoadTexture load_texture;
     CreateFramebuffer create_framebuffer;
@@ -478,14 +484,14 @@ struct Renderer
 	
 	MemoryArena command_arena;
     
-	i32 *_internal_buffer_handles;
-	i32 _current_internal_buffer_handle;
+	/* i32 *_internal_buffer_handles; */
+	/* i32 _current_internal_buffer_handle; */
     
-	i32 *updated_buffer_handles;
-	i32 updated_buffer_handle_count;
+	/* i32 *updated_buffer_handles; */
+	/* i32 updated_buffer_handle_count; */
     
-	i32 *removed_buffer_handles;
-	i32 removed_buffer_handle_count;
+	/* i32 *removed_buffer_handles; */
+	/* i32 removed_buffer_handle_count; */
     
 	Mesh *meshes;
 	i32 mesh_count;

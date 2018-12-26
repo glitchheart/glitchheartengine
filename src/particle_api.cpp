@@ -1,10 +1,10 @@
 
-static ParticleSystemInfo* get_particle_system_info(ParticleSystemHandle handle, Renderer& renderer)
+static ParticleSystemInfo* get_particle_system_info(ParticleSystemHandle handle, Renderer *renderer)
 {
-    i32 _internal_handle = renderer.particles._internal_handles[handle.handle - 1];
-    if(_internal_handle >= 0 && _internal_handle < renderer.particles.particle_system_count)
+    i32 _internal_handle = renderer->particles._internal_handles[handle.handle - 1];
+    if(_internal_handle >= 0 && _internal_handle < renderer->particles.particle_system_count)
     {
-        return &renderer.particles.particle_systems[_internal_handle];
+        return &renderer->particles.particle_systems[_internal_handle];
     }
     return 0;
 }
@@ -22,32 +22,32 @@ static void start_particle_system(ParticleSystemInfo &system)
     }
 }
 
-static void start_particle_system(ParticleSystemHandle handle, Renderer &renderer)
+static void start_particle_system(ParticleSystemHandle handle, Renderer *renderer)
 {
-    i32 _internal_handle = renderer.particles._internal_handles[handle.handle - 1];
-    assert(_internal_handle >= 0 && _internal_handle < renderer.particles.particle_system_count);
-    ParticleSystemInfo &system = renderer.particles.particle_systems[_internal_handle];
+    i32 _internal_handle = renderer->particles._internal_handles[handle.handle - 1];
+    assert(_internal_handle >= 0 && _internal_handle < renderer->particles.particle_system_count);
+    ParticleSystemInfo &system = renderer->particles.particle_systems[_internal_handle];
     start_particle_system(system);
 }
 
-static void stop_particle_system(ParticleSystemHandle handle, Renderer &renderer)
+static void stop_particle_system(ParticleSystemHandle handle, Renderer *renderer)
 {
-    i32 _internal_handle = renderer.particles._internal_handles[handle.handle - 1];
-    assert(_internal_handle >= 0 && _internal_handle < renderer.particles.particle_system_count);
-    ParticleSystemInfo &system = renderer.particles.particle_systems[_internal_handle];
+    i32 _internal_handle = renderer->particles._internal_handles[handle.handle - 1];
+    assert(_internal_handle >= 0 && _internal_handle < renderer->particles.particle_system_count);
+    ParticleSystemInfo &system = renderer->particles.particle_systems[_internal_handle];
     system.running = false;
 }
 
-static void remove_all_particle_systems(Renderer &renderer)
+static void remove_all_particle_systems(Renderer *renderer)
 {
-    renderer.particles.particle_system_count = 0;
+    renderer->particles.particle_system_count = 0;
 }
 
-static b32 particle_system_is_running(ParticleSystemHandle handle, Renderer &renderer)
+static b32 particle_system_is_running(ParticleSystemHandle handle, Renderer *renderer)
 {
-    i32 _internal_handle = renderer.particles._internal_handles[handle.handle - 1];
-    assert(_internal_handle >= 0 && _internal_handle < renderer.particles.particle_system_count);
-    ParticleSystemInfo &system = renderer.particles.particle_systems[_internal_handle];
+    i32 _internal_handle = renderer->particles._internal_handles[handle.handle - 1];
+    assert(_internal_handle >= 0 && _internal_handle < renderer->particles.particle_system_count);
+    ParticleSystemInfo &system = renderer->particles.particle_systems[_internal_handle];
     return(system.running);
 }
 
@@ -84,7 +84,7 @@ static ParticleSystemAttributes get_default_particle_system_attributes()
     return attributes;
 }
 
-static void _allocate_particle_system(Renderer& renderer, ParticleSystemInfo& system_info, i32 max_particles)
+static void _allocate_particle_system(Renderer *renderer, ParticleSystemInfo& system_info, i32 max_particles)
 {
     MemoryArena* memory_arena = &system_info.arena;
     clear(memory_arena);
@@ -179,22 +179,22 @@ static void _allocate_particle_system(Renderer& renderer, ParticleSystemInfo& sy
     }
 }
 
-i32 _find_unused_particle_system(Renderer& renderer)
+i32 _find_unused_particle_system(Renderer *renderer)
 {
-    for(i32 index = renderer.particles._current_internal_handle; index < renderer.particles._max_particle_system_count; index++)
+    for(i32 index = renderer->particles._current_internal_handle; index < renderer->particles._max_particle_system_count; index++)
     {
-        if(renderer.particles._internal_handles[index] == -1)
+        if(renderer->particles._internal_handles[index] == -1)
         {
-            renderer.particles._current_internal_handle = index;
+            renderer->particles._current_internal_handle = index;
             return index;
         }
     }
     
-    for(i32 index = 0; index < renderer.particles._current_internal_handle; index++)
+    for(i32 index = 0; index < renderer->particles._current_internal_handle; index++)
     {
-        if(renderer.particles._internal_handles[index] == -1)
+        if(renderer->particles._internal_handles[index] == -1)
         {
-            renderer.particles._current_internal_handle = index;
+            renderer->particles._current_internal_handle = index;
             return index;
         }
     }
@@ -204,16 +204,16 @@ i32 _find_unused_particle_system(Renderer& renderer)
     return -1;
 }
 
-static ParticleSystemHandle create_particle_system(Renderer &renderer, i32 max_particles, rendering::MaterialHandle material, rendering::MaterialInstanceArrayHandle array_handle)
+static ParticleSystemHandle create_particle_system(Renderer *renderer, i32 max_particles, rendering::MaterialHandle material, rendering::MaterialInstanceArrayHandle array_handle)
 {
     assert(material.handle != 0 && array_handle.handle != 0);
     
     i32 unused_handle = _find_unused_particle_system(renderer) + 1;
     
     ParticleSystemHandle handle = { unused_handle };
-    renderer.particles._internal_handles[unused_handle - 1] = renderer.particles.particle_system_count++;
+    renderer->particles._internal_handles[unused_handle - 1] = renderer->particles.particle_system_count++;
     
-    ParticleSystemInfo &system_info = renderer.particles.particle_systems[renderer.particles._internal_handles[unused_handle - 1]];
+    ParticleSystemInfo &system_info = renderer->particles.particle_systems[renderer->particles._internal_handles[unused_handle - 1]];
     system_info.running = false;
     
     system_info.attributes = get_default_particle_system_attributes();
@@ -230,7 +230,7 @@ static ParticleSystemHandle create_particle_system(Renderer &renderer, i32 max_p
     return handle;
 }
 
-static void remove_particle_system(Renderer& renderer, ParticleSystemHandle &handle)
+static void remove_particle_system(Renderer *renderer, ParticleSystemHandle &handle)
 {
     if(handle.handle == 0)
         return;
@@ -238,24 +238,24 @@ static void remove_particle_system(Renderer& renderer, ParticleSystemHandle &han
     i32 removed_handle = handle.handle;
     
     
-    if(renderer.particles.particle_system_count == 1)
+    if(renderer->particles.particle_system_count == 1)
     {
-        rendering::free_instance_buffer(renderer.particles.particle_systems[0].offset_buffer_handle, renderer);
-        rendering::free_instance_buffer(renderer.particles.particle_systems[0].size_buffer_handle, renderer);
-        rendering::free_instance_buffer(renderer.particles.particle_systems[0].color_buffer_handle, renderer);
-        rendering::free_instance_buffer(renderer.particles.particle_systems[0].angle_buffer_handle, renderer);
+        rendering::free_instance_buffer(renderer->particles.particle_systems[0].offset_buffer_handle, renderer);
+        rendering::free_instance_buffer(renderer->particles.particle_systems[0].size_buffer_handle, renderer);
+        rendering::free_instance_buffer(renderer->particles.particle_systems[0].color_buffer_handle, renderer);
+        rendering::free_instance_buffer(renderer->particles.particle_systems[0].angle_buffer_handle, renderer);
         
-        renderer.particles.particle_system_count = 0;
-        renderer.particles._current_internal_handle = 0;
-        renderer.particles._internal_handles[removed_handle - 1] = -1;
-		clear(&renderer.particles.particle_systems[0].arena);
-        renderer.particles.particle_systems[0] = {};
-        renderer.particles.particle_systems[0].running = false;
+        renderer->particles.particle_system_count = 0;
+        renderer->particles._current_internal_handle = 0;
+        renderer->particles._internal_handles[removed_handle - 1] = -1;
+		clear(&renderer->particles.particle_systems[0].arena);
+        renderer->particles.particle_systems[0] = {};
+        renderer->particles.particle_systems[0].running = false;
     }
     else
     {
-        i32 real_handle = renderer.particles._internal_handles[removed_handle - 1];
-        ParticleSystemInfo& info = renderer.particles.particle_systems[real_handle];
+        i32 real_handle = renderer->particles._internal_handles[removed_handle - 1];
+        ParticleSystemInfo& info = renderer->particles.particle_systems[real_handle];
 
         rendering::free_instance_buffer(info.offset_buffer_handle, renderer);
         rendering::free_instance_buffer(info.size_buffer_handle, renderer);
@@ -263,37 +263,37 @@ static void remove_particle_system(Renderer& renderer, ParticleSystemHandle &han
         rendering::free_instance_buffer(info.angle_buffer_handle, renderer);
         
         // Swap system infos
-	    clear(&renderer.particles.particle_systems[real_handle].arena);
+	    clear(&renderer->particles.particle_systems[real_handle].arena);
         
-        renderer.particles.particle_systems[real_handle] = renderer.particles.particle_systems[renderer.particles.particle_system_count - 1];
+        renderer->particles.particle_systems[real_handle] = renderer->particles.particle_systems[renderer->particles.particle_system_count - 1];
 
-        move_arena(&renderer.particles.particle_systems[renderer.particles.particle_system_count - 1].arena, &renderer.particles.particle_systems[real_handle].arena);
+        move_arena(&renderer->particles.particle_systems[renderer->particles.particle_system_count - 1].arena, &renderer->particles.particle_systems[real_handle].arena);
 
-        renderer.particles.particle_systems[renderer.particles.particle_system_count - 1] = {};
+        renderer->particles.particle_systems[renderer->particles.particle_system_count - 1] = {};
         
-        renderer.particles.particle_systems[renderer.particles.particle_system_count - 1].running = false;
+        renderer->particles.particle_systems[renderer->particles.particle_system_count - 1].running = false;
         
-        renderer.particles._internal_handles[removed_handle - 1] = -1;
+        renderer->particles._internal_handles[removed_handle - 1] = -1;
         
         // Find the internal handle corresponding to this particle system
-        for(i32 index = 0; index < renderer.particles._max_particle_system_count; index++)
+        for(i32 index = 0; index < renderer->particles._max_particle_system_count; index++)
         {
-            if(renderer.particles._internal_handles[index] == renderer.particles.particle_system_count - 1)
+            if(renderer->particles._internal_handles[index] == renderer->particles.particle_system_count - 1)
             {
-                renderer.particles._internal_handles[index] = real_handle;
+                renderer->particles._internal_handles[index] = real_handle;
                 break;
             }
         }
         
-        renderer.particles.particle_system_count--;
+        renderer->particles.particle_system_count--;
     }
 }
 
-static void update_particle_system(Renderer& renderer, ParticleSystemHandle handle, i32 max_particles)
+static void update_particle_system(Renderer *renderer, ParticleSystemHandle handle, i32 max_particles)
 {
-    i32 _internal_handle = renderer.particles._internal_handles[handle.handle - 1];
-    assert(_internal_handle >= 0 && _internal_handle < renderer.particles.particle_system_count);
-    ParticleSystemInfo &system_info = renderer.particles.particle_systems[_internal_handle];
+    i32 _internal_handle = renderer->particles._internal_handles[handle.handle - 1];
+    assert(_internal_handle >= 0 && _internal_handle < renderer->particles.particle_system_count);
+    ParticleSystemInfo &system_info = renderer->particles.particle_systems[_internal_handle];
     _allocate_particle_system(renderer, system_info, max_particles);
 }
 

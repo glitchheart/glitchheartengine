@@ -2,68 +2,43 @@
 #include <string.h>
 
 // The InfoHandle is used to be able to reference the same animation without having to load the animation again. 
-static void add_animation(Renderer& renderer, SpritesheetAnimation animation, const char* animation_name)
+static void add_animation(Renderer* renderer, SpritesheetAnimation animation, const char* animation_name)
 {
     strcpy(animation.name, animation_name);
-    renderer.spritesheet_animations[renderer.spritesheet_animation_count++] = animation;
+    renderer->spritesheet_animations[renderer->spritesheet_animation_count++] = animation;
 }
 
-static void set_new_resolution(Renderer &renderer, i32 new_width, i32 new_height)
+static void set_new_resolution(Renderer *renderer, i32 new_width, i32 new_height)
 {
-    renderer.window_width = new_width;
-    renderer.window_height = new_height;
+    renderer->window_width = new_width;
+    renderer->window_height = new_height;
 }
 
-static void set_new_resolution(Renderer &renderer, Resolution new_resolution)
+static void set_new_resolution(Renderer *renderer, Resolution new_resolution)
 {
     set_new_resolution(renderer, new_resolution.width, new_resolution.height);
 }
 
-static void set_new_resolution(Renderer &renderer, i32 resolution_index)
+static void set_new_resolution(Renderer *renderer, i32 resolution_index)
 {
-    auto new_resolution = renderer.available_resolutions[resolution_index];
-    renderer.current_resolution_index = resolution_index;
+    auto new_resolution = renderer->available_resolutions[resolution_index];
+    renderer->current_resolution_index = resolution_index;
     set_new_resolution(renderer, new_resolution.width, new_resolution.height);
 }
 
-static void set_new_window_mode(Renderer &renderer, WindowMode new_window_mode)
+static void set_new_window_mode(Renderer *renderer, WindowMode new_window_mode)
 {
-    renderer.window_mode = new_window_mode;
+    renderer->window_mode = new_window_mode;
 }
 
-static i32 _find_unused_handle(Renderer& renderer)
-{
-    for(i32 index = renderer._current_internal_buffer_handle; index < global_max_custom_buffers; index++)
-    {
-        if(renderer._internal_buffer_handles[index] == -1)
-        {
-            renderer._current_internal_buffer_handle = index;
-            return index;
-        }
-    }
-    
-    for(i32 index = 0; index < global_max_custom_buffers; index++)
-    {
-        if(renderer._internal_buffer_handles[index] == -1)
-        {
-            renderer._current_internal_buffer_handle = index;
-            return index;
-        }
-    }
-    
-    assert(false);
-    
-    return -1;
-}
-
-static void update_lighting_for_material(BatchedCommand &render_command, Renderer &renderer)
+static void update_lighting_for_material(BatchedCommand &render_command, Renderer *renderer)
 {
     rendering::UniformValue *dir_light_count_map = rendering::get_mapping(render_command.material_handle, rendering::UniformMappingType::DIRECTIONAL_LIGHT_COUNT, renderer);
                 
     if(dir_light_count_map)
-        rendering::set_uniform_value(renderer, render_command.material_handle, dir_light_count_map->name, renderer.render.dir_light_count);
+        rendering::set_uniform_value(renderer, render_command.material_handle, dir_light_count_map->name, renderer->render.dir_light_count);
 
-    if(renderer.render.dir_light_count > 0)
+    if(renderer->render.dir_light_count > 0)
     {                    
         rendering::UniformValue *mapping = rendering::get_mapping(render_command.material_handle, rendering::UniformMappingType::DIRECTIONAL_LIGHTS, renderer);
         rendering::UniformValue *light_dir = rendering::get_array_variable_mapping(render_command.material_handle, mapping->name, rendering::UniformMappingType::DIRECTIONAL_LIGHT_DIRECTION, renderer);
@@ -71,9 +46,9 @@ static void update_lighting_for_material(BatchedCommand &render_command, Rendere
         rendering::UniformValue *diffuse = rendering::get_array_variable_mapping(render_command.material_handle, mapping->name, rendering::UniformMappingType::DIRECTIONAL_LIGHT_DIFFUSE, renderer);
         rendering::UniformValue *specular = rendering::get_array_variable_mapping(render_command.material_handle, mapping->name, rendering::UniformMappingType::DIRECTIONAL_LIGHT_SPECULAR, renderer);
                     
-        for(i32 light_index = 0; light_index < renderer.render.dir_light_count; light_index++)
+        for(i32 light_index = 0; light_index < renderer->render.dir_light_count; light_index++)
         {
-            DirectionalLight &light = renderer.render.directional_lights[light_index];
+            DirectionalLight &light = renderer->render.directional_lights[light_index];
 
             if(light_dir)
                 rendering::set_uniform_array_value(renderer, render_command.material_handle, mapping->name, light_index, light_dir->name, light.direction);
@@ -89,9 +64,9 @@ static void update_lighting_for_material(BatchedCommand &render_command, Rendere
     rendering::UniformValue *point_light_count_map = rendering::get_mapping(render_command.material_handle, rendering::UniformMappingType::POINT_LIGHT_COUNT, renderer);
                 
     if(point_light_count_map)
-        rendering::set_uniform_value(renderer, render_command.material_handle, point_light_count_map->name, renderer.render.point_light_count);
+        rendering::set_uniform_value(renderer, render_command.material_handle, point_light_count_map->name, renderer->render.point_light_count);
 
-    if(renderer.render.point_light_count > 0)
+    if(renderer->render.point_light_count > 0)
     {
         rendering::UniformValue *mapping = rendering::get_mapping(render_command.material_handle, rendering::UniformMappingType::POINT_LIGHTS, renderer);
         rendering::UniformValue *light_pos = rendering::get_array_variable_mapping(render_command.material_handle, mapping->name, rendering::UniformMappingType::POINT_LIGHT_POSITION, renderer);
@@ -102,9 +77,9 @@ static void update_lighting_for_material(BatchedCommand &render_command, Rendere
         rendering::UniformValue *diffuse = rendering::get_array_variable_mapping(render_command.material_handle, mapping->name, rendering::UniformMappingType::POINT_LIGHT_DIFFUSE, renderer);
         rendering::UniformValue *specular = rendering::get_array_variable_mapping(render_command.material_handle, mapping->name, rendering::UniformMappingType::POINT_LIGHT_SPECULAR, renderer);
                     
-        for(i32 light_index = 0; light_index < renderer.render.point_light_count; light_index++)
+        for(i32 light_index = 0; light_index < renderer->render.point_light_count; light_index++)
         {
-            PointLight &light = renderer.render.point_lights[light_index];
+            PointLight &light = renderer->render.point_lights[light_index];
 
             if(light_pos)
                 rendering::set_uniform_array_value(renderer, render_command.material_handle, mapping->name, light_index, light_pos->name, light.position);
@@ -126,23 +101,23 @@ static void update_lighting_for_material(BatchedCommand &render_command, Rendere
 
 #define STANDARD_PASS_HANDLE { 1 }
 
-static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer)
+static void push_scene_for_rendering(scene::Scene &scene, Renderer *renderer)
 {
-    renderer.camera = scene.camera;
+    renderer->camera = scene.camera;
 
-    for(i32 i = 0; i < renderer.render.pass_count; i++)
+    for(i32 i = 0; i < renderer->render.pass_count; i++)
     {
-        rendering::RenderPass &pass = renderer.render.passes[i];
+        rendering::RenderPass &pass = renderer->render.passes[i];
         if(pass.use_scene_camera)
         {
             pass.camera = scene.camera;
         }
     }
     
-    renderer.render.dir_light_count = 0;
-    renderer.render.point_light_count = 0;
+    renderer->render.dir_light_count = 0;
+    renderer->render.point_light_count = 0;
     
-    QueuedRenderCommand *queued_commands = renderer.render.queued_commands;
+    QueuedRenderCommand *queued_commands = renderer->render.queued_commands;
     i32 normal_count = 0;
 
     i32 particles_to_push[64];
@@ -168,11 +143,11 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer)
                 switch(light_comp.type)
                 {
                 case scene::LightType::DIRECTIONAL:
-                renderer.render.directional_lights[renderer.render.dir_light_count++] = light_comp.dir_light;
+                renderer->render.directional_lights[renderer->render.dir_light_count++] = light_comp.dir_light;
                 break;
                 case scene::LightType::POINT:
                 light_comp.point_light.position = position;
-                renderer.render.point_lights[renderer.render.point_light_count++] = light_comp.point_light;
+                renderer->render.point_lights[renderer->render.point_light_count++] = light_comp.point_light;
                 break;
                 default:
                 assert(false);
@@ -237,8 +212,8 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer)
                 {
                     scene::ParticleSystemComponent &ps = scene.particle_system_components[ent.particle_system_handle.handle];
                     
-                    i32 _internal_handle = renderer.particles._internal_handles[ps.handle.handle - 1];
-                    ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
+                    i32 _internal_handle = renderer->particles._internal_handles[ps.handle.handle - 1];
+                    ParticleSystemInfo& system = renderer->particles.particle_systems[_internal_handle];
                     
                     system.transform.position = system.attributes.base_position;
                     
@@ -369,10 +344,10 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer)
     
     for(i32 i = 0; i < particles_count; i++)
     {
-        i32 _internal_handle = renderer.particles._internal_handles[particles_to_push[i] - 1];
-        ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
+        i32 _internal_handle = renderer->particles._internal_handles[particles_to_push[i] - 1];
+        ParticleSystemInfo& system = renderer->particles.particle_systems[_internal_handle];
         rendering::Material& particle_material = get_material_instance(system.material_handle, renderer);
             
-        rendering::push_instanced_buffer_to_render_pass(renderer, system.particle_count, renderer.particles.quad_buffer, system.material_handle, particle_material.shader, rendering::get_render_pass_handle_for_name(STANDARD_PASS, renderer));
+        rendering::push_instanced_buffer_to_render_pass(renderer, system.particle_count, renderer->particles.quad_buffer, system.material_handle, particle_material.shader, rendering::get_render_pass_handle_for_name(STANDARD_PASS, renderer));
     }    
 }

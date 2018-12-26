@@ -268,7 +268,7 @@ static void set_all_uniform_locations(rendering::Shader &shader, ShaderGL &gl_sh
     }
 }
 
-static GLuint load_shader(Renderer &renderer, rendering::Shader &shader, ShaderGL &gl_shader)
+static GLuint load_shader(Renderer *renderer, rendering::Shader &shader, ShaderGL &gl_shader)
 {
     char *vert_shader = shader.vert_shader;
     gl_shader.vert_program = glCreateShader(GL_VERTEX_SHADER);
@@ -276,7 +276,7 @@ static GLuint load_shader(Renderer &renderer, rendering::Shader &shader, ShaderG
     // @Incomplete: Think about common preamble stuff like #version 330 core and stuff
     glShaderSource(gl_shader.vert_program, 1, (GLchar **)&vert_shader, nullptr);
 
-    if (!compile_shader(&renderer.shader_arena, shader.path, gl_shader.vert_program))
+    if (!compile_shader(&renderer->shader_arena, shader.path, gl_shader.vert_program))
     {
         log_error("Failed compilation of vertex shader: %s", shader.path);
         gl_shader.vert_program = 0;
@@ -288,7 +288,7 @@ static GLuint load_shader(Renderer &renderer, rendering::Shader &shader, ShaderG
 
     glShaderSource(gl_shader.frag_program, 1, (GLchar **)&frag_shader, nullptr);
 
-    if (!compile_shader(&renderer.shader_arena, shader.path, gl_shader.frag_program))
+    if (!compile_shader(&renderer->shader_arena, shader.path, gl_shader.frag_program))
     {
         log_error("Failed compilation of fragment shader: %s", shader.path);
         gl_shader.frag_program = 0;
@@ -300,7 +300,7 @@ static GLuint load_shader(Renderer &renderer, rendering::Shader &shader, ShaderG
     glAttachShader(gl_shader.program, gl_shader.vert_program);
     glAttachShader(gl_shader.program, gl_shader.frag_program);
 
-    if (!link_program(&renderer.shader_arena, shader.path, gl_shader.program))
+    if (!link_program(&renderer->shader_arena, shader.path, gl_shader.program))
     {
         log_error("Failed linking of program: %s", shader.path);
         gl_shader.program = 0;
@@ -324,19 +324,19 @@ static void delete_shader_program(ShaderGL &shader)
     shader.frag_program = 0;
 }
 
-static void reload_shaders(RenderState &render_state, Renderer &renderer)
+static void reload_shaders(RenderState &render_state, Renderer *renderer)
 {
-    if (renderer.render.shaders_to_reload_count > 0)
+    if (renderer->render.shaders_to_reload_count > 0)
     {
         i32 shaders_to_reload[8];
-        i32 count = renderer.render.shaders_to_reload_count;
-        memcpy(shaders_to_reload, renderer.render.shaders_to_reload, sizeof(i32) * count);
-        renderer.render.shaders_to_reload_count = 0;
+        i32 count = renderer->render.shaders_to_reload_count;
+        memcpy(shaders_to_reload, renderer->render.shaders_to_reload, sizeof(i32) * count);
+        renderer->render.shaders_to_reload_count = 0;
 
         for (i32 i = 0; i < count; i++)
         {
             i32 index = shaders_to_reload[i];
-            rendering::Shader &shader = renderer.render.shaders[index];
+            rendering::Shader &shader = renderer->render.shaders[index];
             ShaderGL &gl_shader = render_state.gl_shaders[index];
 
             delete_shader_program(gl_shader);
@@ -391,7 +391,7 @@ static void create_instance_buffer(Buffer *buffer, size_t buffer_size, rendering
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-static void create_framebuffer_color_attachment(RenderState &render_state, Renderer &renderer, rendering::FramebufferInfo &info, Framebuffer &framebuffer, i32 width, i32 height)
+static void create_framebuffer_color_attachment(RenderState &render_state, Renderer *renderer, rendering::FramebufferInfo &info, Framebuffer &framebuffer, i32 width, i32 height)
 {
     framebuffer.tex_color_buffer_count = info.color_attachments.count;
 
@@ -452,14 +452,14 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
             
             if (framebuffer.tex_color_buffer_handles[i] != 0)
             {
-                texture = renderer.render.textures[framebuffer.tex_color_buffer_handles[i] - 1];
+                texture = renderer->render.textures[framebuffer.tex_color_buffer_handles[i] - 1];
                 glDeleteTextures(1, &texture->handle);
                 handle = framebuffer.tex_color_buffer_handles[i];
             }
             else
             {
-                texture = renderer.render.textures[renderer.render.texture_count++];
-                handle = renderer.render.texture_count;
+                texture = renderer->render.textures[renderer->render.texture_count++];
+                handle = renderer->render.texture_count;
             }
             assert(handle != 0);
 
@@ -574,7 +574,7 @@ static void create_shadow_map(Framebuffer &framebuffer, i32 width, i32 height)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-static void create_new_framebuffer(rendering::FramebufferInfo &info, Framebuffer &framebuffer, RenderState &render_state, Renderer &renderer)
+static void create_new_framebuffer(rendering::FramebufferInfo &info, Framebuffer &framebuffer, RenderState &render_state, Renderer *renderer)
 {
     framebuffer.width = info.width;
     framebuffer.height = info.height;
@@ -608,7 +608,7 @@ static void create_new_framebuffer(rendering::FramebufferInfo &info, Framebuffer
     }
 }
 
-static void reload_framebuffer(rendering::FramebufferInfo &info, Framebuffer &framebuffer, RenderState &render_state, Renderer &renderer, i32 width, i32 height)
+static void reload_framebuffer(rendering::FramebufferInfo &info, Framebuffer &framebuffer, RenderState &render_state, Renderer *renderer, i32 width, i32 height)
 {
     switch (info.size_ratio)
     {
@@ -639,7 +639,7 @@ void window_iconify_callback(GLFWwindow *window, i32 iconified)
     }
 }
 
-static void reload_framebuffer(rendering::FramebufferInfo &info, Framebuffer &framebuffer, RenderState &render_state, Renderer &renderer, i32 width, i32 height);
+static void reload_framebuffer(rendering::FramebufferInfo &info, Framebuffer &framebuffer, RenderState &render_state, Renderer *renderer, i32 width, i32 height);
 
 void frame_buffer_size_callback(GLFWwindow *window, int width, int height)
 {
@@ -662,7 +662,7 @@ void frame_buffer_size_callback(GLFWwindow *window, int width, int height)
         {
             rendering::FramebufferInfo &info = renderer->render.framebuffers[i];
             Framebuffer &framebuffer = render_state->v2.framebuffers[i];
-            reload_framebuffer(info, framebuffer, *render_state, *renderer, width, height);
+            reload_framebuffer(info, framebuffer, *render_state, renderer, width, height);
         }
 
         rendering::FramebufferInfo &ui_framebuffer = renderer->render.framebuffers[renderer->render.ui.pass.framebuffer.handle - 1];
@@ -699,6 +699,13 @@ static void setup_quad(RenderState &render_state, MemoryArena *arena)
     bind_vertex_array(0, render_state);
 }
 
+// @Cleanup: Move glfw stuff to separate header!
+static void set_window_cursor(RenderState* render_state, CursorType cursor)
+{
+    glfwSetCursor(render_state->window, render_state->cursors[cursor]);
+}
+
+// @Cleanup: Move glfw stuff to separate header!
 static void create_standard_cursors(RenderState &render_state)
 {
     render_state.cursors[CURSOR_ARROW] = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
@@ -725,12 +732,12 @@ static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
     render_state->gl_buffers = push_array(render_state->perm_arena, global_max_custom_buffers, Buffer);
 }
 
-static void load_new_shaders(RenderState &render_state, Renderer &renderer)
+static void load_new_shaders(RenderState &render_state, Renderer *renderer)
 {
     // @Note: Load the "new" shader system shaders
-    for (i32 index = render_state.gl_shader_count; index < renderer.render.shader_count; index++)
+    for (i32 index = render_state.gl_shader_count; index < renderer->render.shader_count; index++)
     {
-        rendering::Shader &shader = renderer.render.shaders[index];
+        rendering::Shader &shader = renderer->render.shaders[index];
         ShaderGL &gl_shader = render_state.gl_shaders[index];
         gl_shader.location_count = 0;
 
@@ -741,7 +748,7 @@ static void load_new_shaders(RenderState &render_state, Renderer &renderer)
     }
 
     // @Note: Even if loading a shader fails, we don't want to continue to compile it
-    render_state.gl_shader_count = renderer.render.shader_count;
+    render_state.gl_shader_count = renderer->render.shader_count;
 }
 
 static const GLFWvidmode *create_open_gl_window(RenderState &render_state, WindowMode window_mode, const char *title, i32 width, i32 height)
@@ -807,7 +814,7 @@ static const GLFWvidmode *create_open_gl_window(RenderState &render_state, Windo
 static void create_framebuffer(rendering::FramebufferInfo &info, RenderState *render_state, Renderer *renderer)
 {
     Framebuffer &framebuffer = render_state->v2.framebuffers[render_state->v2.framebuffer_count++];
-    create_new_framebuffer(info, framebuffer, *render_state, *renderer);
+    create_new_framebuffer(info, framebuffer, *render_state, renderer);
 }
 
 static void load_texture(Texture* texture, TextureFiltering filtering, TextureWrap wrap, TextureFormat format, i32 width, i32 height, unsigned char* image_data, RenderState* render_state, Renderer* renderer)
@@ -881,14 +888,15 @@ static math::Vec2i get_texture_size(Texture* texture)
     return math::Vec2i(texture->width, texture->height);
 }
 
-static void initialize_opengl(RenderState &render_state, Renderer &renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char *title, MemoryArena *perm_arena, b32 *do_save_config)
+static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char *title, MemoryArena *perm_arena, b32 *do_save_config)
 {
-    renderer.api_functions.render_state = &render_state;
-    renderer.api_functions.get_texture_size = &get_texture_size;
-    renderer.api_functions.load_texture = &load_texture;
-    renderer.api_functions.create_framebuffer = &create_framebuffer;
-    renderer.api_functions.create_instance_buffer = &create_instance_buffer;
-    renderer.api_functions.delete_instance_buffer = &delete_instance_buffer;
+    renderer->api_functions.render_state = &render_state;
+    renderer->api_functions.get_texture_size = &get_texture_size;
+    renderer->api_functions.load_texture = &load_texture;
+    renderer->api_functions.set_window_cursor = &set_window_cursor;
+    renderer->api_functions.create_framebuffer = &create_framebuffer;
+    renderer->api_functions.create_instance_buffer = &create_instance_buffer;
+    renderer->api_functions.delete_instance_buffer = &delete_instance_buffer;
 
     auto recreate_window = render_state.window != nullptr;
 
@@ -934,17 +942,17 @@ static void initialize_opengl(RenderState &render_state, Renderer &renderer, r32
     }
 
     auto mode = create_open_gl_window(render_state, window_mode, title, screen_width, screen_height);
-    renderer.window_mode = render_state.window_mode;
+    renderer->window_mode = render_state.window_mode;
 
-    if (mode && renderer.window_mode == FM_BORDERLESS)
+    if (mode && renderer->window_mode == FM_BORDERLESS)
     {
-        renderer.window_width = mode->width;
-        renderer.window_height = mode->height;
+        renderer->window_width = mode->width;
+        renderer->window_height = mode->height;
     }
     else
     {
-        renderer.window_width = screen_width;
-        renderer.window_height = screen_height;
+        renderer->window_width = screen_width;
+        renderer->window_height = screen_height;
     }
 
     if (!render_state.window)
@@ -954,7 +962,7 @@ static void initialize_opengl(RenderState &render_state, Renderer &renderer, r32
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 
         create_open_gl_window(render_state, window_mode, title, screen_width, screen_height);
-        renderer.window_mode = render_state.window_mode;
+        renderer->window_mode = render_state.window_mode;
 
         if (!render_state.window)
         {
@@ -995,7 +1003,7 @@ static void initialize_opengl(RenderState &render_state, Renderer &renderer, r32
     log("Glad Version: %d.%d", GLVersion.major, GLVersion.minor);
 
     rendering_state.render_state = &render_state;
-    rendering_state.renderer = &renderer;
+    rendering_state.renderer = renderer;
 
     glfwSetWindowUserPointer(render_state.window, &rendering_state);
     glfwSetKeyCallback(render_state.window, key_callback);
@@ -1008,11 +1016,11 @@ static void initialize_opengl(RenderState &render_state, Renderer &renderer, r32
     glGetIntegerv(GL_VIEWPORT, viewport);
 
     memcpy(render_state.viewport, viewport, sizeof(GLint) * 4);
-    memcpy(renderer.viewport, render_state.viewport, sizeof(i32) * 4);
+    memcpy(renderer->viewport, render_state.viewport, sizeof(i32) * 4);
 
     controller_present();
 
-    renderer.should_close = false;
+    renderer->should_close = false;
 
     render_setup(&render_state, perm_arena);
 
@@ -1020,17 +1028,17 @@ static void initialize_opengl(RenderState &render_state, Renderer &renderer, r32
 
     create_standard_cursors(render_state);
 
-    renderer.framebuffer_width = render_state.framebuffer_width;
-    renderer.framebuffer_height = render_state.framebuffer_height;
+    renderer->framebuffer_width = render_state.framebuffer_width;
+    renderer->framebuffer_height = render_state.framebuffer_height;
 
     GLFWmonitor *monitor = glfwGetPrimaryMonitor();
 
     i32 video_mode_count;
     auto video_modes = glfwGetVideoModes(monitor, &video_mode_count);
 
-    if (!renderer.available_resolutions)
+    if (!renderer->available_resolutions)
     {
-        renderer.available_resolutions = push_array(render_state.perm_arena, video_mode_count, Resolution);
+        renderer->available_resolutions = push_array(render_state.perm_arena, video_mode_count, Resolution);
 
         for (i32 video_mode_index = 0; video_mode_index < video_mode_count; video_mode_index++)
         {
@@ -1038,9 +1046,9 @@ static void initialize_opengl(RenderState &render_state, Renderer &renderer, r32
 
             auto skip = false;
 
-            for (i32 i = 0; i < renderer.available_resolutions_count; i++)
+            for (i32 i = 0; i < renderer->available_resolutions_count; i++)
             {
-                if (renderer.available_resolutions[i].width == vm.width && renderer.available_resolutions[i].height == vm.height)
+                if (renderer->available_resolutions[i].width == vm.width && renderer->available_resolutions[i].height == vm.height)
                 {
                     skip = true;
                 }
@@ -1048,19 +1056,19 @@ static void initialize_opengl(RenderState &render_state, Renderer &renderer, r32
 
             if (!skip)
             {
-                renderer.available_resolutions[renderer.available_resolutions_count++] = {vm.width, vm.height};
+                renderer->available_resolutions[renderer->available_resolutions_count++] = {vm.width, vm.height};
 
-                if (renderer.window_width == vm.width && renderer.window_height == vm.height)
+                if (renderer->window_width == vm.width && renderer->window_height == vm.height)
                 {
-                    renderer.current_resolution_index = renderer.available_resolutions_count - 1;
-                    //auto res = renderer.available_resolutions[renderer.current_resolution_index];
-                    renderer.resolution = {vm.width, vm.height};
+                    renderer->current_resolution_index = renderer->available_resolutions_count - 1;
+                    //auto res = renderer->available_resolutions[renderer->current_resolution_index];
+                    renderer->resolution = {vm.width, vm.height};
                 }
             }
         }
 
         // @Incomplete: Replace with own sort? Don't like using qsort here :(
-        qsort(renderer.available_resolutions, (size_t)renderer.available_resolutions_count, sizeof(Resolution), [](const void *a, const void *b) {
+        qsort(renderer->available_resolutions, (size_t)renderer->available_resolutions_count, sizeof(Resolution), [](const void *a, const void *b) {
             auto r_1 = (const Resolution *)a;
             auto r_2 = (const Resolution *)b;
 
@@ -1079,19 +1087,19 @@ static void initialize_opengl(RenderState &render_state, Renderer &renderer, r32
     }
     else
     {
-        for (i32 res_index = 0; res_index < renderer.available_resolutions_count; res_index++)
+        for (i32 res_index = 0; res_index < renderer->available_resolutions_count; res_index++)
         {
-            auto resolution = renderer.available_resolutions[res_index];
-            if (renderer.window_width == resolution.width && renderer.window_height == resolution.height)
+            auto resolution = renderer->available_resolutions[res_index];
+            if (renderer->window_width == resolution.width && renderer->window_height == resolution.height)
             {
-                renderer.current_resolution_index = res_index;
+                renderer->current_resolution_index = res_index;
                 break;
             }
         }
     }
 }
 
-static void initialize_opengl(RenderState &render_state, Renderer &renderer, ConfigData *config_data, MemoryArena *perm_arena, b32 *do_save_config)
+static void initialize_opengl(RenderState &render_state, Renderer *renderer, ConfigData *config_data, MemoryArena *perm_arena, b32 *do_save_config)
 {
     initialize_opengl(render_state, renderer, config_data->contrast, config_data->brightness, config_data->window_mode, config_data->screen_width, config_data->screen_height, config_data->title, perm_arena, do_save_config);
 }
@@ -1328,17 +1336,17 @@ static void register_buffer(Buffer &buffer, rendering::RegisterBufferInfo info, 
     bind_vertex_array(0, render_state);
 }
 
-static void register_framebuffers(RenderState &render_state, Renderer &renderer)
+static void register_framebuffers(RenderState &render_state, Renderer *renderer)
 {
-    for (i32 index = render_state.v2.framebuffer_count; index < renderer.render.framebuffer_count; index++)
+    for (i32 index = render_state.v2.framebuffer_count; index < renderer->render.framebuffer_count; index++)
     {
-        rendering::FramebufferInfo &info = renderer.render.framebuffers[index];
+        rendering::FramebufferInfo &info = renderer->render.framebuffers[index];
         Framebuffer &framebuffer = render_state.v2.framebuffers[index];
         create_new_framebuffer(info, framebuffer, render_state, renderer);
 
         for (i32 i = 0; i < info.pending_textures.count; i++)
         {
-            rendering::RenderPass &pass = renderer.render.post_processing_passes[info.pending_textures.pass_handles[i].handle - 1];
+            rendering::RenderPass &pass = renderer->render.post_processing_passes[info.pending_textures.pass_handles[i].handle - 1];
             char *name = info.pending_textures.uniform_names[i];
             rendering::ColorAttachment &attachment = info.color_attachments.attachments[info.pending_textures.color_attachment_indices[i]];
 
@@ -1355,36 +1363,36 @@ static void register_framebuffers(RenderState &render_state, Renderer &renderer)
 
         info.pending_textures.count = 0;
     }
-    render_state.v2.framebuffer_count = renderer.render.framebuffer_count;
+    render_state.v2.framebuffer_count = renderer->render.framebuffer_count;
 }
 
 //@Cleanup: Remove new
-static void register_new_buffers(RenderState &render_state, Renderer &renderer)
+static void register_new_buffers(RenderState &render_state, Renderer *renderer)
 {
-    for (i32 index = render_state.gl_buffer_count; index < renderer.render.buffer_count; index++)
+    for (i32 index = render_state.gl_buffer_count; index < renderer->render.buffer_count; index++)
     {
-        rendering::RegisterBufferInfo &info = renderer.render.buffers[index];
+        rendering::RegisterBufferInfo &info = renderer->render.buffers[index];
         Buffer &gl_buffer = render_state.gl_buffers[index];
         register_buffer(gl_buffer, info, render_state);
     }
 
-    render_state.gl_buffer_count = renderer.render.buffer_count;
+    render_state.gl_buffer_count = renderer->render.buffer_count;
 }
 
-static void update_new_buffers(RenderState &render_state, Renderer &renderer)
+static void update_new_buffers(RenderState &render_state, Renderer *renderer)
 {
-    for (i32 index = 0; renderer.render.updated_buffer_handle_count; index++)
+    for (i32 index = 0; renderer->render.updated_buffer_handle_count; index++)
     {
-        i32 handle = renderer.render.updated_buffer_handles[index];
-        rendering::RegisterBufferInfo &info = renderer.render.buffers[handle];
+        i32 handle = renderer->render.updated_buffer_handles[index];
+        rendering::RegisterBufferInfo &info = renderer->render.buffers[handle];
         Buffer &gl_buffer = render_state.gl_buffers[handle];
         update_buffer(gl_buffer, info, render_state);
     }
 
-    renderer.updated_buffer_handle_count = 0;
+    renderer->render.updated_buffer_handle_count = 0;
 }
 
-static void set_uniform(RenderState &render_state, Renderer &renderer, GLuint program, rendering::UniformValue &uniform_value, GLuint location, i32 *texture_count = nullptr)
+static void set_uniform(RenderState &render_state, Renderer *renderer, GLuint program, rendering::UniformValue &uniform_value, GLuint location, i32 *texture_count = nullptr)
 {
     switch (uniform_value.uniform.type)
     {
@@ -1428,7 +1436,7 @@ static void set_uniform(RenderState &render_state, Renderer &renderer, GLuint pr
         if(uniform_value.texture.handle == 0)
             return;
         
-        Texture *texture = renderer.render.textures[uniform_value.texture.handle - 1];
+        Texture *texture = renderer->render.textures[uniform_value.texture.handle - 1];
         set_int_uniform(program, location, *texture_count);
         set_texture_uniform(program, texture->handle, *texture_count);
         (*texture_count)++;
@@ -1439,7 +1447,7 @@ static void set_uniform(RenderState &render_state, Renderer &renderer, GLuint pr
         if(uniform_value.texture.handle == 0)
             return;
         
-        Texture *texture = renderer.render.textures[uniform_value.ms_texture.handle - 1];
+        Texture *texture = renderer->render.textures[uniform_value.ms_texture.handle - 1];
         set_int_uniform(program, location, *texture_count);
         set_ms_texture_uniform(program, texture->handle, *texture_count);
         (*texture_count)++;
@@ -1451,7 +1459,7 @@ static void set_uniform(RenderState &render_state, Renderer &renderer, GLuint pr
     }
 }
 
-static void set_uniform(rendering::Transform transform, const rendering::RenderPass &render_pass, rendering::UniformValue &uniform_value, ShaderGL &gl_shader, const Camera &camera, i32 *texture_count, RenderState &render_state, Renderer &renderer)
+static void set_uniform(rendering::Transform transform, const rendering::RenderPass &render_pass, rendering::UniformValue &uniform_value, ShaderGL &gl_shader, const Camera &camera, i32 *texture_count, RenderState &render_state, Renderer *renderer)
 {
     rendering::Uniform &uniform = uniform_value.uniform;
 
@@ -1507,7 +1515,7 @@ static void set_uniform(rendering::Transform transform, const rendering::RenderP
         break;
         case rendering::UniformMappingType::LIGHT_SPACE_MATRIX:
         {
-            set_mat4_uniform(gl_shader.program, location, renderer.render.light_space_matrix);
+            set_mat4_uniform(gl_shader.program, location, renderer->render.light_space_matrix);
         }
         break;
         case rendering::UniformMappingType::SHADOW_MAP:
@@ -1519,7 +1527,7 @@ static void set_uniform(rendering::Transform transform, const rendering::RenderP
         break;
         case rendering::UniformMappingType::SHADOW_VIEW_POSITION:
         {
-            set_vec3_uniform(gl_shader.program, location, renderer.render.shadow_view_position);
+            set_vec3_uniform(gl_shader.program, location, renderer->render.shadow_view_position);
         }
         break;
         case rendering::UniformMappingType::MODEL:
@@ -1563,7 +1571,7 @@ static void set_uniform(rendering::Transform transform, const rendering::RenderP
     }
 }
 
-static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeInstanced *instanced_vertex_attributes, i32 attr_count, rendering::Shader &shader_info, RenderState &render_state, Renderer &renderer)
+static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeInstanced *instanced_vertex_attributes, i32 attr_count, rendering::Shader &shader_info, RenderState &render_state, Renderer *renderer)
 {
     for (i32 i = 0; i < attr_count; i++)
     {
@@ -1582,11 +1590,11 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
         case rendering::ValueType::FLOAT:
         {
             num_values = 1;
-            buf_ptr = renderer.render.instancing.float_buffers[handle];
+            buf_ptr = renderer->render.instancing.float_buffers[handle];
             size = sizeof(r32);
-            count = renderer.render.instancing.float_buffer_counts[handle];
+            count = renderer->render.instancing.float_buffer_counts[handle];
 
-            Buffer *buffer = renderer.render.instancing.internal_float_buffers[handle];
+            Buffer *buffer = renderer->render.instancing.internal_float_buffers[handle];
             
             glEnableVertexAttribArray(array_num);
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
@@ -1599,11 +1607,11 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
         case rendering::ValueType::FLOAT2:
         {
             num_values = 2;
-            buf_ptr = renderer.render.instancing.float2_buffers[handle];
+            buf_ptr = renderer->render.instancing.float2_buffers[handle];
             size = sizeof(r32) * num_values;
-            count = renderer.render.instancing.float2_buffer_counts[handle];
+            count = renderer->render.instancing.float2_buffer_counts[handle];
 
-            Buffer *buffer = renderer.render.instancing.internal_float2_buffers[handle];
+            Buffer *buffer = renderer->render.instancing.internal_float2_buffers[handle];
 
             glEnableVertexAttribArray(array_num);
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
@@ -1616,11 +1624,11 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
         case rendering::ValueType::FLOAT3:
         {
             num_values = 3;
-            buf_ptr = renderer.render.instancing.float3_buffers[handle];
+            buf_ptr = renderer->render.instancing.float3_buffers[handle];
             size = sizeof(r32) * num_values;
-            count = renderer.render.instancing.float3_buffer_counts[handle];
+            count = renderer->render.instancing.float3_buffer_counts[handle];
 
-            Buffer *buffer = renderer.render.instancing.internal_float3_buffers[handle];
+            Buffer *buffer = renderer->render.instancing.internal_float3_buffers[handle];
 
             glEnableVertexAttribArray(array_num);
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
@@ -1633,11 +1641,11 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
         case rendering::ValueType::FLOAT4:
         {
             num_values = 4;
-            buf_ptr = renderer.render.instancing.float4_buffers[handle];
+            buf_ptr = renderer->render.instancing.float4_buffers[handle];
             size = sizeof(r32) * num_values;
-            count = renderer.render.instancing.float4_buffer_counts[handle];
+            count = renderer->render.instancing.float4_buffer_counts[handle];
 
-            Buffer *buffer = renderer.render.instancing.internal_float4_buffers[handle];
+            Buffer *buffer = renderer->render.instancing.internal_float4_buffers[handle];
             
             glEnableVertexAttribArray(array_num);
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
@@ -1650,11 +1658,11 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
         case rendering::ValueType::MAT4:
         {
             num_values = 16;
-            buf_ptr = renderer.render.instancing.mat4_buffers[handle];
+            buf_ptr = renderer->render.instancing.mat4_buffers[handle];
             size = sizeof(math::Mat4);
-            count = renderer.render.instancing.mat4_buffer_counts[handle];
+            count = renderer->render.instancing.mat4_buffer_counts[handle];
 
-            Buffer *buffer = renderer.render.instancing.internal_mat4_buffers[handle];
+            Buffer *buffer = renderer->render.instancing.internal_mat4_buffers[handle];
             GLsizei vec4_size = sizeof(math::Vec4);
 
             glEnableVertexAttribArray(array_num);
@@ -1680,21 +1688,21 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
     }
 }
 
-static Buffer &get_internal_buffer(Renderer &renderer, RenderState &render_state, rendering::BufferHandle buffer)
+static Buffer &get_internal_buffer(Renderer *renderer, RenderState &render_state, rendering::BufferHandle buffer)
 {
-    i32 handle = renderer.render._internal_buffer_handles[buffer.handle - 1];
+    i32 handle = renderer->render._internal_buffer_handles[buffer.handle - 1];
     Buffer &gl_buffer = render_state.gl_buffers[handle];
     return gl_buffer;
 }
 
-static void render_buffer(rendering::Transform transform, rendering::BufferHandle& buffer_handle, const rendering::RenderPass &render_pass, RenderState &render_state, Renderer &renderer, rendering::Material& material, const Camera &camera, i32 count = 0, ShaderGL *shader = nullptr)
+static void render_buffer(rendering::Transform transform, rendering::BufferHandle& buffer_handle, const rendering::RenderPass &render_pass, RenderState &render_state, Renderer *renderer, rendering::Material& material, const Camera &camera, i32 count = 0, ShaderGL *shader = nullptr)
 {
     Buffer& buffer = get_internal_buffer(renderer, render_state, buffer_handle);
     
     bind_vertex_array(buffer.vao, render_state);
 
     ShaderGL gl_shader;
-    rendering::Shader &shader_info = renderer.render.shaders[material.shader.handle];
+    rendering::Shader &shader_info = renderer->render.shaders[material.shader.handle];
 
     // If we specified a custom shader, use it
     if (shader)
@@ -1712,7 +1720,7 @@ static void render_buffer(rendering::Transform transform, rendering::BufferHandl
     {
         fallback = true;
 
-        gl_shader = render_state.gl_shaders[renderer.render.fallback_shader.handle];
+        gl_shader = render_state.gl_shaders[renderer->render.fallback_shader.handle];
 
         if (!gl_shader.program)
             return;
@@ -1794,14 +1802,14 @@ static void render_buffer(rendering::Transform transform, rendering::BufferHandl
     }
 }
 
-static void render_shadow_buffer(rendering::ShadowCommand &shadow_command, RenderState &render_state, Renderer &renderer)
+static void render_shadow_buffer(rendering::ShadowCommand &shadow_command, RenderState &render_state, Renderer *renderer)
 {
-    i32 handle = renderer.render._internal_buffer_handles[shadow_command.buffer.handle - 1];
+    i32 handle = renderer->render._internal_buffer_handles[shadow_command.buffer.handle - 1];
     Buffer &buffer = render_state.gl_buffers[handle];
 
     bind_vertex_array(buffer.vao, render_state);
 
-    ShaderGL gl_shader = render_state.gl_shaders[renderer.render.shadow_map_shader.handle];
+    ShaderGL gl_shader = render_state.gl_shaders[renderer->render.shadow_map_shader.handle];
 
     if (render_state.current_state.shader_program != gl_shader.program)
     {
@@ -1830,7 +1838,7 @@ static void render_shadow_buffer(rendering::ShadowCommand &shadow_command, Rende
     static GLint lsLoc = glGetUniformLocation(gl_shader.program, "lightSpaceMatrix");
     static GLint mLoc = glGetUniformLocation(gl_shader.program, "model");
 
-    set_mat4_uniform(gl_shader.program, lsLoc, renderer.render.light_space_matrix);
+    set_mat4_uniform(gl_shader.program, lsLoc, renderer->render.light_space_matrix);
     set_mat4_uniform(gl_shader.program, mLoc, model_matrix);
 
     if (buffer.ibo)
@@ -1845,22 +1853,22 @@ static void render_shadow_buffer(rendering::ShadowCommand &shadow_command, Rende
     bind_vertex_array(0, render_state);
 }
 
-static void render_instanced_shadow_buffer(rendering::ShadowCommand &shadow_command, RenderState &render_state, Renderer &renderer)
+static void render_instanced_shadow_buffer(rendering::ShadowCommand &shadow_command, RenderState &render_state, Renderer *renderer)
 {
-    i32 handle = renderer.render._internal_buffer_handles[shadow_command.buffer.handle - 1];
+    i32 handle = renderer->render._internal_buffer_handles[shadow_command.buffer.handle - 1];
     Buffer &buffer = render_state.gl_buffers[handle];
 
     bind_vertex_array(buffer.vao, render_state);
 
-    ShaderGL gl_shader = render_state.gl_shaders[renderer.render.shadow_map_shader.handle];
-    rendering::Shader &shader_info = renderer.render.shaders[renderer.render.shadow_map_shader.handle];
+    ShaderGL gl_shader = render_state.gl_shaders[renderer->render.shadow_map_shader.handle];
+    rendering::Shader &shader_info = renderer->render.shaders[renderer->render.shadow_map_shader.handle];
 
     glUseProgram(gl_shader.program);
 
     setup_instanced_vertex_attribute_buffers(shadow_command.instanced_vertex_attributes, shadow_command.instanced_vertex_attribute_count, shader_info, render_state, renderer);
 
     static GLint lsLoc = glGetUniformLocation(gl_shader.program, "lightSpaceMatrix");
-    set_mat4_uniform(gl_shader.program, lsLoc, renderer.render.light_space_matrix);
+    set_mat4_uniform(gl_shader.program, lsLoc, renderer->render.light_space_matrix);
 
     if (buffer.ibo)
     {
@@ -1874,7 +1882,7 @@ static void render_instanced_shadow_buffer(rendering::ShadowCommand &shadow_comm
     bind_vertex_array(0, render_state);
 }
 
-static void render_shadows(RenderState &render_state, Renderer &renderer, Framebuffer &framebuffer)
+static void render_shadows(RenderState &render_state, Renderer *renderer, Framebuffer &framebuffer)
 {
     glCullFace(GL_FRONT); // KILL PETER PAN!
     glViewport(0, 0, framebuffer.shadow_map.width, framebuffer.shadow_map.height);
@@ -1883,9 +1891,9 @@ static void render_shadows(RenderState &render_state, Renderer &renderer, Frameb
 
     glEnable(GL_DEPTH_TEST);
 
-    for (i32 i = 0; i < renderer.render.shadow_command_count; i++)
+    for (i32 i = 0; i < renderer->render.shadow_command_count; i++)
     {
-        rendering::ShadowCommand &shadow_command = renderer.render.shadow_commands[i];
+        rendering::ShadowCommand &shadow_command = renderer->render.shadow_commands[i];
         if (shadow_command.count > 1)
             render_instanced_shadow_buffer(shadow_command, render_state, renderer);
         else
@@ -1895,49 +1903,45 @@ static void render_shadows(RenderState &render_state, Renderer &renderer, Frameb
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glCullFace(GL_BACK);
 
-    renderer.render.shadow_command_count = 0;
+    renderer->render.shadow_command_count = 0;
 }
 
-static void render_ui_pass(RenderState &render_state, Renderer &renderer)
+static void render_ui_pass(RenderState &render_state, Renderer *renderer)
 {
     glClear(GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
 
-    rendering::RenderPass &pass = renderer.render.ui.pass;
+    rendering::RenderPass &pass = renderer->render.ui.pass;
 
     Framebuffer &framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
 
     glViewport(0, 0, framebuffer.width, framebuffer.height);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
 
-    for (i32 i = 0; i < pass.ui.render_command_count; i++)
-    {
-        rendering::UIRenderCommand &command = pass.ui.render_commands[i];
+    // for (i32 i = 0; i < pass.ui.render_command_count; i++)
+    // {
+    //     rendering::UIRenderCommand &command = pass.ui.render_commands[i];
 
-        if (command.clip)
-        {
-            glEnable(GL_SCISSOR_TEST);
-            math::Rect clip_rect = command.clip_rect;
-            glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
-        }
+    //     if (command.clip)
+    //     {
+    //         glEnable(GL_SCISSOR_TEST);
+    //         math::Rect clip_rect = command.clip_rect;
+    //         glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
+    //     }
 
-        render_buffer(command.transform, command.buffer, pass, render_state, renderer, command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
+    //     render_buffer(command.transform, command.buffer, pass, render_state, renderer, command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
 
-        if (command.clip)
-        {
-            glDisable(GL_SCISSOR_TEST);
-        }
-    }
+    //     if (command.clip)
+    //     {
+    //         glDisable(GL_SCISSOR_TEST);
+    //     }
+    // }
 
+    Buffer &font_buffer = get_internal_buffer(renderer, render_state, renderer->render.ui.font_buffer);
 
-    Buffer &font_buffer = get_internal_buffer(renderer, render_state, renderer.render.ui.font_buffer);
+    i32 internal_handle = renderer->render._internal_buffer_handles[renderer->render.ui.font_buffer.handle - 1];
 
-    i32 internal_handle = renderer.render._internal_buffer_handles[renderer.render.ui.font_buffer.handle - 1];
-
-    rendering::RegisterBufferInfo &info = renderer.render.buffers[internal_handle];
-
-    bind_vertex_array(font_buffer.vao, render_state);
-    glBindBuffer(GL_ARRAY_BUFFER, font_buffer.vbo);
+    rendering::RegisterBufferInfo &info = renderer->render.buffers[internal_handle];
 
     glDisable(GL_DEPTH_TEST);
 
@@ -1946,16 +1950,19 @@ static void render_ui_pass(RenderState &render_state, Renderer &renderer)
         i32* command_indices = pass.ui.text_z_layers[i];
         i32 command_count = pass.ui.text_z_layer_counts[i];
 
+        bind_vertex_array(font_buffer.vao, render_state);
+        glBindBuffer(GL_ARRAY_BUFFER, font_buffer.vbo);
+        
         for(i32 j = 0; j < command_count; j++)
         {
             rendering::TextRenderCommand &command = pass.ui.text_commands[command_indices[j]];
 
-            // if (command.clip)
-            // {
-            //     glEnable(GL_SCISSOR_TEST);
-            //     math::Rect clip_rect = command.clip_rect;
-            //     glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
-            // }
+            if (command.clip)
+            {
+                glEnable(GL_SCISSOR_TEST);
+                math::Rect clip_rect = command.clip_rect;
+                glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
+            }
 
             rendering::CharacterBufferHandle char_buf_handle = command.buffer;
             rendering::CharacterData *coords = pass.ui.coords[char_buf_handle.handle];
@@ -1966,7 +1973,7 @@ static void render_ui_pass(RenderState &render_state, Renderer &renderer)
 
             update_buffer(font_buffer, info, render_state);
 
-            render_buffer({}, renderer.render.ui.font_buffer, pass, render_state, renderer, command.material, pass.camera, 0 ,&render_state.gl_shaders[command.shader_handle.handle]);
+            render_buffer({}, renderer->render.ui.font_buffer, pass, render_state, renderer, command.material, pass.camera, 0 ,&render_state.gl_shaders[command.shader_handle.handle]);
 
             if (command.clip)
             {
@@ -1974,6 +1981,29 @@ static void render_ui_pass(RenderState &render_state, Renderer &renderer)
             }
         }
 
+        command_indices = pass.ui.ui_z_layers[i];
+        command_count = pass.ui.ui_z_layer_counts[i];
+
+        for(i32 j = 0; j < command_count; j++)
+        {
+            rendering::UIRenderCommand &command = pass.ui.render_commands[command_indices[j]];
+
+            if (command.clip)
+            {
+                glEnable(GL_SCISSOR_TEST);
+                math::Rect clip_rect = command.clip_rect;
+                glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
+            }
+
+            render_buffer(command.transform, command.buffer, pass, render_state, renderer, command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
+
+            if (command.clip)
+            {
+                glDisable(GL_SCISSOR_TEST);
+            }
+        }
+
+        pass.ui.ui_z_layer_counts[i] = 0;
         pass.ui.text_z_layer_counts[i] = 0;
     }
 
@@ -2006,7 +2036,7 @@ static void render_ui_pass(RenderState &render_state, Renderer &renderer)
     pass.ui.render_command_count = 0;
 }
 
-static void render_all_passes(RenderState &render_state, Renderer &renderer)
+static void render_all_passes(RenderState &render_state, Renderer *renderer)
 {
     bind_vertex_array(0, render_state);
 
@@ -2015,9 +2045,9 @@ static void render_all_passes(RenderState &render_state, Renderer &renderer)
     glEnable(GL_CLIP_PLANE0);
 
     // Go backwards through the array to enable easy render pass adding
-    for (i32 pass_index = renderer.render.pass_count - 1; pass_index >= 0; pass_index--)
+    for (i32 pass_index = renderer->render.pass_count - 1; pass_index >= 0; pass_index--)
     {
-        rendering::RenderPass &pass = renderer.render.passes[pass_index];
+        rendering::RenderPass &pass = renderer->render.passes[pass_index];
 
         Framebuffer &framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
 
@@ -2028,7 +2058,7 @@ static void render_all_passes(RenderState &render_state, Renderer &renderer)
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glClearColor(renderer.clear_color.r, renderer.clear_color.g, renderer.clear_color.b, renderer.clear_color.a);
+        glClearColor(renderer->clear_color.r, renderer->clear_color.g, renderer->clear_color.b, renderer->clear_color.a);
 
         for (i32 i = 0; i < pass.commands.render_command_count; i++)
         {
@@ -2047,11 +2077,11 @@ static void render_all_passes(RenderState &render_state, Renderer &renderer)
 
     for (i32 i = 0; i < MAX_INSTANCE_BUFFERS; i++)
     {
-        renderer.render.instancing.float_buffer_counts[i] = 0;
-        renderer.render.instancing.float2_buffer_counts[i] = 0;
-        renderer.render.instancing.float3_buffer_counts[i] = 0;
-        renderer.render.instancing.float4_buffer_counts[i] = 0;
-        renderer.render.instancing.mat4_buffer_counts[i] = 0;
+        renderer->render.instancing.float_buffer_counts[i] = 0;
+        renderer->render.instancing.float2_buffer_counts[i] = 0;
+        renderer->render.instancing.float3_buffer_counts[i] = 0;
+        renderer->render.instancing.float4_buffer_counts[i] = 0;
+        renderer->render.instancing.mat4_buffer_counts[i] = 0;
     }
 }
 
@@ -2060,50 +2090,50 @@ static void swap_buffers(RenderState &render_state)
     glfwSwapBuffers(render_state.window);
 }
 
-static void check_window_mode_and_size(RenderState &render_state, Renderer &renderer, b32 *save_config)
+static void check_window_mode_and_size(RenderState &render_state, Renderer *renderer, b32 *save_config)
 {
-    if (renderer.window_width != render_state.window_width || renderer.window_height != render_state.window_height || renderer.window_mode != render_state.window_mode)
+    if (renderer->window_width != render_state.window_width || renderer->window_height != render_state.window_height || renderer->window_mode != render_state.window_mode)
     {
-        render_state.window_width = renderer.window_width;
-        render_state.window_height = renderer.window_height;
+        render_state.window_width = renderer->window_width;
+        render_state.window_height = renderer->window_height;
         *save_config = true;
 
-        if (renderer.window_mode != render_state.window_mode)
+        if (renderer->window_mode != render_state.window_mode)
         {
             const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-            if (renderer.window_mode == FM_BORDERLESS)
+            if (renderer->window_mode == FM_BORDERLESS)
             {
                 glfwSetWindowMonitor(render_state.window, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, mode->refreshRate);
-                renderer.window_width = mode->width;
-                renderer.window_height = mode->height;
+                renderer->window_width = mode->width;
+                renderer->window_height = mode->height;
 
-                for (i32 res_index = 0; res_index < renderer.available_resolutions_count; res_index++)
+                for (i32 res_index = 0; res_index < renderer->available_resolutions_count; res_index++)
                 {
-                    auto res = renderer.available_resolutions[res_index];
-                    if (res.width == renderer.window_width && res.height == renderer.window_height)
+                    auto res = renderer->available_resolutions[res_index];
+                    if (res.width == renderer->window_width && res.height == renderer->window_height)
                     {
-                        renderer.current_resolution_index = res_index;
+                        renderer->current_resolution_index = res_index;
                         break;
                     }
                 }
             }
             else
             {
-                glfwSetWindowMonitor(render_state.window, nullptr, mode->width / 2 - renderer.window_width / 2, mode->height / 2 - renderer.window_height / 2, renderer.window_width, renderer.window_height, 0);
+                glfwSetWindowMonitor(render_state.window, nullptr, mode->width / 2 - renderer->window_width / 2, mode->height / 2 - renderer->window_height / 2, renderer->window_width, renderer->window_height, 0);
                 glfwSetWindowSize(render_state.window, render_state.window_width, render_state.window_height);
 
-                for (i32 res_index = 0; res_index < renderer.available_resolutions_count; res_index++)
+                for (i32 res_index = 0; res_index < renderer->available_resolutions_count; res_index++)
                 {
-                    auto res = renderer.available_resolutions[res_index];
-                    if (res.width == renderer.window_width && res.height == renderer.window_height)
+                    auto res = renderer->available_resolutions[res_index];
+                    if (res.width == renderer->window_width && res.height == renderer->window_height)
                     {
-                        renderer.current_resolution_index = res_index;
+                        renderer->current_resolution_index = res_index;
                         break;
                     }
                 }
             }
 
-            render_state.window_mode = renderer.window_mode;
+            render_state.window_mode = renderer->window_mode;
         }
         else
         {
@@ -2113,20 +2143,20 @@ static void check_window_mode_and_size(RenderState &render_state, Renderer &rend
 }
 
 
-static void render_post_processing_passes(RenderState &render_state, Renderer &renderer)
+static void render_post_processing_passes(RenderState &render_state, Renderer *renderer)
 {
     glDisable(GL_DEPTH_TEST);
 
     bind_vertex_array(render_state.framebuffer_quad_vao, render_state);
 
-    Framebuffer final_buffer = render_state.v2.framebuffers[renderer.render.final_framebuffer.handle - 1];
+    Framebuffer final_buffer = render_state.v2.framebuffers[renderer->render.final_framebuffer.handle - 1];
 
-    for (i32 pass_index = 0; pass_index < renderer.render.post_processing_pass_count; pass_index++)
+    for (i32 pass_index = 0; pass_index < renderer->render.post_processing_pass_count; pass_index++)
     {
-        rendering::RenderPass &pass = renderer.render.post_processing_passes[pass_index];
+        rendering::RenderPass &pass = renderer->render.post_processing_passes[pass_index];
         Framebuffer pass_buffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
 
-        // if(pass_index == renderer.render.post_processing_pass_count - 1)
+        // if(pass_index == renderer->render.post_processing_pass_count - 1)
         // {
         //     glBindFramebuffer(GL_FRAMEBUFFER, final_buffer.buffer_handle);
         // }
@@ -2155,7 +2185,7 @@ static void render_post_processing_passes(RenderState &render_state, Renderer &r
     // glBindFramebuffer(GL_FRAMEBUFFER, final_buffer.buffer_handle);
 
     // bind_vertex_array(render_state.framebuffer_quad_vao, render_state);
-    // ShaderGL hdr_shader = render_state.gl_shaders[renderer.render.hdr_shader.handle];
+    // ShaderGL hdr_shader = render_state.gl_shaders[renderer->render.hdr_shader.handle];
 
     // glUseProgram(hdr_shader.program);
 
@@ -2163,7 +2193,7 @@ static void render_post_processing_passes(RenderState &render_state, Renderer &r
     // set_int_uniform(hdr_shader.program, "width", final_buffer.width);
     // set_int_uniform(hdr_shader.program, "height", final_buffer.height);
 
-    // set_float_uniform(hdr_shader.program, "exposure", renderer.render.hdr.exposure);
+    // set_float_uniform(hdr_shader.program, "exposure", renderer->render.hdr.exposure);
 
     // glActiveTexture(GL_TEXTURE0);
     // glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, render_state.v2.framebuffers[0].tex_color_buffer_handles[0]);
@@ -2172,16 +2202,16 @@ static void render_post_processing_passes(RenderState &render_state, Renderer &r
     // glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
 }
 
-static void render(RenderState &render_state, Renderer &renderer, r64 delta_time, b32 *save_config)
+static void render(RenderState &render_state, Renderer *renderer, r64 delta_time, b32 *save_config)
 {
     check_window_mode_and_size(render_state, renderer, save_config);
     load_new_shaders(render_state, renderer);
     reload_shaders(render_state, renderer);
 
     // @Speed: Do we have to clear this every frame?
-    clear(&renderer.shader_arena);
+    clear(&renderer->shader_arena);
 
-    b32 should_render = renderer.window_width != 0;
+    b32 should_render = renderer->window_width != 0;
 
     register_new_buffers(render_state, renderer);
     //register_framebuffers(render_state, renderer);
@@ -2196,9 +2226,9 @@ static void render(RenderState &render_state, Renderer &renderer, r64 delta_time
 
         render_state.bound_texture = 0;
 
-        Framebuffer &final_framebuffer = render_state.v2.framebuffers[renderer.render.final_framebuffer.handle - 1];
-        renderer.framebuffer_width = render_state.framebuffer_width;
-        renderer.framebuffer_height = render_state.framebuffer_height;
+        Framebuffer &final_framebuffer = render_state.v2.framebuffers[renderer->render.final_framebuffer.handle - 1];
+        renderer->framebuffer_width = render_state.framebuffer_width;
+        renderer->framebuffer_height = render_state.framebuffer_height;
 
         // Blit the final framebuffer to screen
         glBindFramebuffer(GL_READ_FRAMEBUFFER, final_framebuffer.buffer_handle);
@@ -2215,10 +2245,10 @@ static void render(RenderState &render_state, Renderer &renderer, r64 delta_time
 
         /////// NOTHING WITH FRAMEBUFFERS ///////
 
-        if (renderer.frame_lock != 0)
+        if (renderer->frame_lock != 0)
         {
             render_state.total_delta = 0.0;
-            render_state.frame_delta += 1.0 / renderer.frame_lock;
+            render_state.frame_delta += 1.0 / renderer->frame_lock;
         }
         else
         {

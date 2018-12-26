@@ -361,7 +361,7 @@ r32_4x get_angle_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x 
 // Any particle that is NOT dead, will be written into the alive buffer of the next frame
 // This ensures that we can clear the current frame buffer, and only ever iterate over
 // particles that are actually alive.
-void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r64 delta_time, i32 *emitted_buf, i32 *emitted_this_frame, i32* next_frame_buf, i32 *next_frame_count)
+void update_particles(Renderer *renderer, ParticleSystemInfo &particle_system, r64 delta_time, i32 *emitted_buf, i32 *emitted_this_frame, i32* next_frame_buf, i32 *next_frame_count)
 {
 	particle_system.particle_count = 0;
 
@@ -575,7 +575,7 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
 //              Ideally if emitted_count < 4, we want to put the index back into dead particles
 //              and then when we emit next time, we look at the index and fill it up.
 //              Really, we could just look at the last index used, and see if that index is filled up.
-void emit_particle(Renderer& renderer, ParticleSystemInfo &particle_system, i32* alive_buf, i32* count, RandomSeries& entropy, i32 emitted_count)
+void emit_particle(Renderer *renderer, ParticleSystemInfo &particle_system, i32* alive_buf, i32* count, RandomSeries& entropy, i32 emitted_count)
 {
 	i32 original_index = find_unused_particle(particle_system);
 	assert(original_index != -1);
@@ -725,7 +725,7 @@ void emit_particle(Renderer& renderer, ParticleSystemInfo &particle_system, i32*
 
 // @Note(Niels): The way we update and choose particles is based on the link below
 // https://turanszkij.wordpress.com/2017/11/07/gpu-based-particle-simulation/
-void update_particle_system(ParticleSystemInfo& particle_system, Renderer &renderer, r64 delta_time)
+void update_particle_system(ParticleSystemInfo& particle_system, Renderer *renderer, r64 delta_time)
 {
 	if (particle_system.attributes.prewarm && !particle_system.prewarmed)
 	{
@@ -839,18 +839,18 @@ void update_particle_system(ParticleSystemInfo& particle_system, Renderer &rende
 			new_particles -= 4;
 			if (new_particles < 0)
 			{
-				emit_particle(renderer, particle_system, emitted_alive_buf, emitted_alive_count, *renderer.particles.entropy, 4 + new_particles);
+				emit_particle(renderer, particle_system, emitted_alive_buf, emitted_alive_count, *renderer->particles.entropy, 4 + new_particles);
 			}
 			else
 			{
-				emit_particle(renderer, particle_system, emitted_alive_buf, emitted_alive_count, *renderer.particles.entropy, 4);
+				emit_particle(renderer, particle_system, emitted_alive_buf, emitted_alive_count, *renderer->particles.entropy, 4);
 			}
 		}
 
 		// @Note(Niels): Same goes for burst		
 		for (i32 i = 0; i < simd_burst_particles / 4; i++)
 		{
-			emit_particle(renderer, particle_system, emitted_alive_buf, emitted_alive_count, *renderer.particles.entropy, 4);
+			emit_particle(renderer, particle_system, emitted_alive_buf, emitted_alive_count, *renderer->particles.entropy, 4);
 		}
 	}
 
@@ -866,11 +866,11 @@ void update_particle_system(ParticleSystemInfo& particle_system, Renderer &rende
 }
 
 
-void update_particle_systems(Renderer &renderer, r64 delta_time)
+void update_particle_systems(Renderer *renderer, r64 delta_time)
 {
-	for (i32 particle_system_index = 0; particle_system_index < renderer.particles.particle_system_count; particle_system_index++)
+	for (i32 particle_system_index = 0; particle_system_index < renderer->particles.particle_system_count; particle_system_index++)
 	{
-		ParticleSystemInfo &particle_system = renderer.particles.particle_systems[particle_system_index];
+		ParticleSystemInfo &particle_system = renderer->particles.particle_systems[particle_system_index];
 
 		if (particle_system.running)
 		{
