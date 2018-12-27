@@ -391,7 +391,8 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     renderer.removed_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
 
     // NEW RENDER PIPELIN
-    renderer.render.render_commands = push_array(&renderer.command_arena, global_max_render_commands, rendering::RenderCommand);
+    //renderer.render.render_commands = push_array(&renderer.command_arena, global_max_render_commands, rendering::RenderCommand);
+    //renderer.render.depth_free_commands = push_array(&renderer.command_arena, global_max_depth_free_commands, rendering::RenderCommand);
     renderer.render.shadow_commands = push_array(&renderer.command_arena, global_max_shadow_commands, rendering::ShadowCommand);
     renderer.render.queued_commands = push_array(&renderer.command_arena, global_max_render_commands, QueuedRenderCommand);
     
@@ -407,7 +408,7 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     renderer.render.materials = push_array(&renderer.mesh_arena, global_max_materials, rendering::Material);
     renderer.render.internal_materials = push_array(&renderer.mesh_arena, global_max_materials, rendering::Material);
     //renderer.render.material_instances = push_array(&renderer.mesh_arena, global_max_materials, rendering::Material);
-
+ 
     // Set all material instance values to their defaults
     for(i32 i = 0; i < MAX_MATERIAL_INSTANCE_ARRAYS; i++)
     {

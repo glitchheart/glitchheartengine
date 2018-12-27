@@ -323,6 +323,7 @@ namespace rendering
         
         strncpy(pass.name, name, strlen(name) + 1);
         pass.commands.render_commands = push_array(&renderer.render.render_pass_arena, global_max_render_commands, RenderCommand);
+        pass.commands.depth_free_commands = push_array(&renderer.render.render_pass_arena, global_max_depth_free_commands, RenderCommand);
         
         return { (renderer.render.pass_count++) + 1};
     }

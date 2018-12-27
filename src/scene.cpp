@@ -290,14 +290,12 @@ namespace scene
             start_particle_system(scene.particle_system_components[i].handle, *scene.renderer);
         }
     }
-    
-    static EntityHandle pick_entity(SceneHandle handle, i32 mouse_x, i32 mouse_y)
-    {
-        Scene &scene = get_scene(handle);
-        Camera &camera = scene.camera;
 
+    static math::Ray cast_ray(Scene &scene, i32 mouse_x, i32 mouse_y)
+    {
         i32 width = scene.renderer->window_width;
         i32 height = scene.renderer->window_height;
+        Camera &camera = scene.camera;
         
         r32 x = (2.0f * mouse_x) / width - 1.0f;
         r32 y = 1.0f - (2.0f * mouse_y) / height;
@@ -315,6 +313,53 @@ namespace scene
         ray.origin = camera.position;
         ray.ray = ray_wor;
 
+        return ray;
+    }
+
+    math::Vec3 ray_vs_plane(math::Vec3 ray_origin, math::Vec3 ray_direction, math::Vec3 plane_normal, r32 plane_d)
+    {
+        r32 denominator = math::dot(plane_normal, ray_direction);
+        r32 numerator = math::dot(plane_normal, ray_origin);
+        r32 t = -((plane_d + numerator) / denominator);
+        return ray_origin + t * ray_direction;
+    }
+
+    static b32 _is_gizmo(EntityHandle entity, SceneManager *manager)
+    {
+        if(entity.handle == manager->gizmos.x_arrow.handle)
+        {
+            manager->gizmos.selected_gizmo = Gizmos::X_ARROW;
+            return true;
+        }
+
+        if(entity.handle == manager->gizmos.y_arrow.handle)
+        {
+            manager->gizmos.selected_gizmo = Gizmos::Y_ARROW;
+            return true;
+        }
+
+        if(entity.handle == manager->gizmos.z_arrow.handle)
+        {
+            manager->gizmos.selected_gizmo = Gizmos::Z_ARROW;
+            return true;
+        }
+
+        return false;
+    }
+
+    static void deactivate_gizmo_arrows(SceneManager *manager)
+    {
+        set_active(manager->gizmos.x_arrow, false, manager->loaded_scene);
+        set_active(manager->gizmos.y_arrow, false, manager->loaded_scene);
+        set_active(manager->gizmos.z_arrow, false, manager->loaded_scene);
+    }
+    
+    static EntityHandle pick_entity(SceneHandle handle, i32 mouse_x, i32 mouse_y)
+    {
+        Scene &scene = get_scene(handle);
+
+        math::Ray ray = cast_ray(scene, mouse_x, mouse_y);
+        
         r32 dist = 100000; // Just set a crazy max distance
         
         EntityHandle entity_handle = { -1 };
@@ -338,7 +383,10 @@ namespace scene
                     math::Vec3 intersection_point;
                     if(aabb_ray_intersection(ray, box, &intersection_point))
                     {
-                        r32 new_dist = math::distance(camera.position, intersection_point);
+                        if(_is_gizmo(ent.handle, handle.manager))
+                            return ent.handle;
+                        
+                        r32 new_dist = math::distance(scene.camera.position, intersection_point);
                     
                         if(new_dist < dist)
                         {
@@ -350,6 +398,9 @@ namespace scene
                 }
             }
         }
+
+        if(IS_ENTITY_HANDLE_VALID(entity_handle))
+           handle.manager->gizmos.selected_gizmo = Gizmos::NONE;
         
         return entity_handle;
     }
@@ -359,6 +410,112 @@ namespace scene
         Scene &scene = get_scene(handle);
         RenderComponent &render_comp = _get_render_comp(entity_handle, scene);
         render_comp.wireframe_enabled = enabled;
+    }
+
+    static void _register_gizmos(SceneHandle scene)
+    {
+        SceneManager *manager = scene.manager;
+
+        manager->gizmos.x_arrow = scene::register_entity_from_template_file("../assets/templates/editor/gizmos/x_arrow.tmpl", scene);
+        manager->gizmos.y_arrow = scene::register_entity_from_template_file("../assets/templates/editor/gizmos/y_arrow.tmpl", scene);
+        manager->gizmos.z_arrow = scene::register_entity_from_template_file("../assets/templates/editor/gizmos/z_arrow.tmpl", scene);
+
+        scene::TransformComponent &x_t = scene::get_transform_comp(manager->gizmos.x_arrow, scene);
+        scene::TransformComponent &y_t = scene::get_transform_comp(manager->gizmos.y_arrow, scene);
+        scene::TransformComponent &z_t = scene::get_transform_comp(manager->gizmos.z_arrow, scene);
+        
+        x_t.position = math::Vec3(0.5f, 2, 0);
+        y_t.position = math::Vec3(0, 2.5f, 0);
+        z_t.position = math::Vec3(0, 2, 0.5f);
+
+        set_active(manager->gizmos.x_arrow, false, scene);
+        set_active(manager->gizmos.y_arrow, false, scene);
+        set_active(manager->gizmos.z_arrow, false, scene);
+    }
+
+    static void _set_gizmo_arrow(math::Vec3 position, SceneHandle scene)
+    {
+        SceneManager *manager = scene.manager;
+        
+        TransformComponent &x_t = scene::get_transform_comp(manager->gizmos.x_arrow, scene);
+        TransformComponent &y_t = scene::get_transform_comp(manager->gizmos.y_arrow, scene);
+        TransformComponent &z_t = scene::get_transform_comp(manager->gizmos.z_arrow, scene);
+
+        x_t.position = position + math::Vec3(0.5f, 0, 0);
+        y_t.position = position + math::Vec3(0, 0.5f, 0);
+        z_t.position = position + math::Vec3(0, 0, 0.5f);
+        
+        set_active(manager->gizmos.x_arrow, true, scene);
+        set_active(manager->gizmos.y_arrow, true, scene);
+        set_active(manager->gizmos.z_arrow, true, scene);
+    }
+
+    static void update_transform(TransformComponent &transform, Camera &camera, SceneManager *manager, InputController *input_controller, r64 delta_time)
+    {
+        if(manager->dragging)
+        {
+            math::Vec3 camera_position = camera.position;
+            math::Vec3 axis;
+            math::Vec3 entity_position = transform.position;
+            math::Vec3 point;
+                
+            switch(manager->gizmos.selected_gizmo)
+            {
+            case Gizmos::X_ARROW:
+            {
+                axis = math::Vec3(1, 0, 0);
+                point = transform.position + math::Vec3(100, 0, 0);
+            }
+            break;
+            case Gizmos::Y_ARROW:
+            {
+                axis = math::Vec3(0, 1, 0);
+                point = transform.position + math::Vec3(0, 100, 0);
+            }
+            break;
+            case Gizmos::Z_ARROW:
+            {
+                axis = math::Vec3(0, 0, 1);
+                point = transform.position + math::Vec3(0, 0, 100);
+            }
+            break;
+            case Gizmos::NONE:
+            return;
+            }
+            
+            math::Vec3 u = camera_position - entity_position;
+            math::Vec3 v = point - entity_position;
+            math::Vec3 normal = math::cross(-camera.forward, axis);
+            normal = math::cross(normal, axis);
+            //math::Vec3 normal = math::cross(entity_position, point);
+            r32 d = -math::dot(normal, point);
+            math::Ray ray = cast_ray(get_scene(manager->loaded_scene), (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
+            
+            // Ray intersection
+            math::Vec3 intersection_point = ray_vs_plane(ray.origin, ray.ray, normal, d);
+            printf("Intersection point %f %f %f\n", intersection_point.x, intersection_point.y, intersection_point.z);
+
+            switch(manager->gizmos.selected_gizmo)
+            {
+            case Gizmos::X_ARROW:
+            {
+                transform.position.x = intersection_point.x;
+            }
+            break;
+            case Gizmos::Y_ARROW:
+            {
+                transform.position.y = intersection_point.y;
+            }
+            break;
+            case Gizmos::Z_ARROW:
+            {
+                transform.position.z = intersection_point.z;
+            }
+            break;
+            case Gizmos::NONE:
+            return;
+            }
+        }
     }
     
     static void update_scene_editor(SceneHandle handle, InputController *input_controller, r64 delta_time)
@@ -373,6 +530,9 @@ namespace scene
             {
                 manager->play_camera = scene.camera;
                 manager->mode = SceneMode::EDITING;
+
+                _register_gizmos(handle);
+                
             }
             else
             {
@@ -383,28 +543,72 @@ namespace scene
 
         if(manager->mode == SceneMode::EDITING)
         {
+            manager->dragging = MOUSE(Mouse_Left);
+
+            Camera &camera = scene.camera;
+            
+            if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
+            {
+                TransformComponent &t = get_transform_comp(manager->selected_entity, handle);
+                
+                update_transform(t, camera, manager, input_controller, delta_time);
+                
+                TransformComponent &x_t = scene::get_transform_comp(manager->gizmos.x_arrow, handle);
+                TransformComponent &y_t = scene::get_transform_comp(manager->gizmos.y_arrow, handle);
+                TransformComponent &z_t = scene::get_transform_comp(manager->gizmos.z_arrow, handle);
+
+                manager->gizmos.x_scale = math::Vec3(1.0f, 0.1f, 0.1f);
+                manager->gizmos.y_scale = math::Vec3(0.1f, 1.0f, 0.1f);
+                manager->gizmos.z_scale = math::Vec3(0.1f, 0.1f, 1.0f);
+
+                r32 distance = math::distance(camera.position, t.position) * 0.1f;
+
+                x_t.scale = manager->gizmos.x_scale * distance;
+                y_t.scale = manager->gizmos.y_scale * distance;
+                z_t.scale = manager->gizmos.z_scale * distance;
+                x_t.position = t.position + math::Vec3(0.5f * distance, 0, 0);
+                y_t.position = t.position + math::Vec3(0, 0.5f * distance, 0);
+                z_t.position = t.position + math::Vec3(0, 0, 0.5f * distance);
+
+                if(KEY_DOWN(Key_F))
+                {
+                    set_target(camera, t.position);
+                }
+            }
+
             if(MOUSE_DOWN(Mouse_Left))
             {
+                manager->dragging = true;
+                
                 scene::EntityHandle entity = scene::pick_entity(handle, (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
 
                 if(IS_ENTITY_HANDLE_VALID(entity))
                 {
-                    if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
-                        scene::set_wireframe_enabled(false, manager->selected_entity, handle);
-
-                    manager->selected_entity = entity;
-                    scene::set_wireframe_enabled(true, entity, handle);
-                    
-                    manager->callbacks.on_entity_selected(entity, handle);
+                    if(_is_gizmo(entity, manager))
+                    {
+                        printf("GIZMO!\n");
+                    }
+                    else
+                    {
+                        // Deselect the previously selected entity
+                        if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
+                            scene::set_wireframe_enabled(false, manager->selected_entity, handle);
+                        
+                        manager->selected_entity = entity;
+                        scene::set_wireframe_enabled(true, entity, handle);
+                        TransformComponent &t = get_transform_comp(entity, handle);
+                        
+                        _set_gizmo_arrow(t.position, handle);
+                        
+                        manager->callbacks.on_entity_selected(entity, handle);
+                    }
                     
                     //scene::TransformComponent t = scene::get_transform_comp(entity, scene);
                     //set_target(camera, t.position);
                 }
             }
-
+                
             // Update camera
-            Camera &camera = scene.camera;
-    
             if(KEY(Key_W))
             {
                 translate_forward(camera, (r32)delta_time * 10.0f);
@@ -593,7 +797,7 @@ namespace scene
     }
 
     
-    static ParticleSystemComponent& _add_particle_system_component(Scene &scene, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles, rendering::MaterialHandle material, rendering::MaterialInstanceArrayHandle array_handle)
+    static ParticleSystemComponent & _add_particle_system_component(Scene &scene, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles, rendering::MaterialHandle material, rendering::MaterialInstanceArrayHandle array_handle)
     {
         Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
         entity.comp_flags |= COMP_PARTICLES;
@@ -610,13 +814,13 @@ namespace scene
         return(comp);
     }
 
-    static ParticleSystemComponent& add_particle_system_component(SceneHandle handle, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles, rendering::MaterialHandle material, rendering::MaterialInstanceArrayHandle array_handle)
+    static ParticleSystemComponent & add_particle_system_component(SceneHandle handle, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles, rendering::MaterialHandle material, rendering::MaterialInstanceArrayHandle array_handle)
     {
         Scene &scene = get_scene(handle);
         return _add_particle_system_component(scene, entity_handle, attributes, max_particles, material, array_handle);
     }
 
-    static LightComponent &_add_light_component(Scene &scene, EntityHandle entity_handle)
+    static LightComponent& _add_light_component(Scene &scene, EntityHandle entity_handle)
     {
         Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
         entity.comp_flags |= COMP_LIGHT;
@@ -626,7 +830,7 @@ namespace scene
         return(comp); 
     }
     
-    static LightComponent &add_light_component(SceneHandle &handle, EntityHandle entity_handle)
+    static LightComponent & add_light_component(SceneHandle &handle, EntityHandle entity_handle)
     {
         Scene &scene = get_scene(handle);
         return _add_light_component(scene, entity_handle);
@@ -768,6 +972,10 @@ namespace scene
                                 strncpy(templ.render.v2.render_pass_names[templ.render.v2.render_pass_count], STANDARD_PASS, strlen(STANDARD_PASS) + 1);
                                 templ.render.v2.shader_handles[templ.render.v2.render_pass_count++] = shader_handle;
                             }
+                        }
+                        else if(starts_with(buffer, "ignore depth"))
+                        {
+                             sscanf(buffer, "ignore depth: %d\n", &templ.render.ignore_depth);
                         }
                         else if(starts_with(buffer, "receives shadows"))
                         {
@@ -1068,6 +1276,7 @@ namespace scene
             if(templ.render.is_new_version)
             {
                 render.is_new_version = true;
+                render.ignore_depth = templ.render.ignore_depth;
                 render.v2.buffer_handle = templ.render.v2.buffer_handle;
                 render.v2.material_handle = rendering::create_material_instance(*scene.renderer, templ.render.v2.material_handle, scene.material_array_handle);
                 render.casts_shadows = templ.render.casts_shadows;

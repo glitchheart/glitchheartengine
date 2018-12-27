@@ -2034,7 +2034,21 @@ static void render_all_passes(RenderState &render_state, Renderer &renderer)
             render_buffer(command.transform, command.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
         }
 
+        glDisable(GL_DEPTH_TEST);
+        
+        for (i32 i = 0; i < pass.commands.depth_free_command_count; i++)
+        {
+            rendering::RenderCommand &command = pass.commands.depth_free_commands[i];
+
+            rendering::Material &material = get_material_instance(command.material, renderer);
+            
+            render_buffer(command.transform, command.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
+        }
+
+        glEnable(GL_DEPTH_TEST);
+        
         pass.commands.render_command_count = 0;
+        pass.commands.depth_free_command_count = 0;
     }
 
     //glBindFramebuffer(GL_FRAMEBUFFER, 0);

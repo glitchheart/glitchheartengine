@@ -365,7 +365,8 @@ struct QueuedRenderCommand
 {
     rendering::BufferHandle buffer_handle;
     rendering::MaterialHandle original_material;
-
+    b32 ignore_depth;
+    
     BatchedCommand commands[1024];
     i32 count;
 };

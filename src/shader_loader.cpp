@@ -2787,7 +2787,7 @@ namespace rendering
         renderer.render.shadow_commands[renderer.render.shadow_command_count++] = shadow_command;
     }
 
-    static void push_buffer_to_render_pass(Renderer &renderer, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, Transform &transform, ShaderHandle shader_handle, RenderPassHandle render_pass_handle)
+    static void push_buffer_to_render_pass(Renderer &renderer, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, Transform &transform, ShaderHandle shader_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH)
     {
         assert(renderer.render.render_command_count < global_max_render_commands);
 
@@ -2797,10 +2797,14 @@ namespace rendering
         render_command.transform = transform;
         render_command.pass.shader_handle = shader_handle;
         RenderPass &pass = renderer.render.passes[render_pass_handle.handle - 1];
-        pass.commands.render_commands[pass.commands.render_command_count++] = render_command;
+
+        if(type == CommandType::WITH_DEPTH)
+            pass.commands.render_commands[pass.commands.render_command_count++] = render_command;
+        else
+            pass.commands.depth_free_commands[pass.commands.depth_free_command_count++] = render_command;
     }
 
-    static void push_instanced_buffer_to_render_pass(Renderer &renderer, i32 count, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, ShaderHandle shader_handle, RenderPassHandle render_pass_handle)
+    static void push_instanced_buffer_to_render_pass(Renderer &renderer, i32 count, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, ShaderHandle shader_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH)
     {
         RenderCommand render_command = {};
         render_command.count = count;
@@ -2809,6 +2813,15 @@ namespace rendering
         render_command.pass.shader_handle = shader_handle;
         RenderPass &pass = renderer.render.passes[render_pass_handle.handle - 1];
         pass.commands.render_commands[pass.commands.render_command_count++] = render_command;
+
+        if(type == CommandType::WITH_DEPTH)
+            pass.commands.render_commands[pass.commands.render_command_count++] = render_command;
+        else
+            pass.commands.depth_free_commands[pass.commands.depth_free_command_count++] = render_command;
+    }
+
+    static void push_instanced_buffer_to_render_pass(Renderer &renderer, i32 count, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, ShaderHandle shader_handle, RenderPassHandle render_pass_handle)
+    {
     }
 
     static void push_instanced_buffer_to_shadow_pass(Renderer &renderer, i32 count, BufferHandle buffer_handle, VertexAttributeInstanced *instanced_attrs, i32 attr_count)

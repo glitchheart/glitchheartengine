@@ -84,6 +84,7 @@ namespace scene
         math::Vec3 mesh_scale;
 
         b32 wireframe_enabled;
+        b32 ignore_depth;
         
         b32 is_new_version;
         struct
@@ -137,7 +138,8 @@ namespace scene
         struct
         {
             rendering::MaterialHandle material_handle;
-            
+
+            b32 ignore_depth;
             b32 casts_shadows;
             math::Vec3 mesh_scale;
             b32 is_new_version;
@@ -251,6 +253,14 @@ namespace scene
         RUNNING,
         EDITING
     };
+
+    enum class Gizmos
+    {
+        NONE,
+        X_ARROW,
+        Y_ARROW,
+        Z_ARROW
+    };
     
     struct SceneManager
     {
@@ -269,6 +279,21 @@ namespace scene
 
         Camera play_camera;
         EntityHandle selected_entity;
+
+        b32 dragging;
+        
+        struct
+        {
+            Gizmos selected_gizmo;
+            
+            math::Vec3 x_scale;
+            math::Vec3 y_scale;
+            math::Vec3 z_scale;
+            EntityHandle x_arrow;
+            EntityHandle y_arrow;
+            EntityHandle z_arrow;
+        } gizmos;
+        
         struct
         {
             OnEntityUpdated on_entity_updated;
