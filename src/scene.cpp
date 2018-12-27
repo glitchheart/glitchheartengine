@@ -87,7 +87,7 @@ namespace scene
     }
 
     static SceneHandle create_scene(SceneManager *scene_manager, i32 initial_entity_array_size = 1024)
-    {
+    {                
         i32 internal_handle = _find_next_free_internal_handle(scene_manager);
         assert(internal_handle != -1);
 
@@ -115,6 +115,16 @@ namespace scene
         scene.particle_system_components = push_array(&memory_arena, initial_entity_array_size, ParticleSystemComponent);
 
         scene.material_array_handle = rendering::allocate_material_instance_array(*scene_manager->renderer, initial_entity_array_size);
+
+        if(scene_manager->debug_cube.handle == 0)
+        {
+            scene_manager->debug_cube = rendering::create_cube(*scene_manager->renderer, nullptr);
+            scene_manager->debug_shader_handle = rendering::load_shader(*scene_manager->renderer, "../assets/shaders/standard.shd");
+            scene_manager->debug_material = rendering::create_material(*scene_manager->renderer, scene_manager->debug_shader_handle);
+        }
+
+        scene_manager->debug_material_instance = rendering::create_material_instance(*scene_manager->renderer, scene_manager->debug_material, scene.material_array_handle);
+
         
         for(i32 index = 0; index < initial_entity_array_size; index++)
         {
@@ -316,12 +326,23 @@ namespace scene
         return ray;
     }
 
-    math::Vec3 ray_vs_plane(math::Vec3 ray_origin, math::Vec3 ray_direction, math::Vec3 plane_normal, r32 plane_d)
+    b32 ray_vs_plane(math::Vec3 *x_point, math::Vec3 p0, math::Vec3 dir, math::Vec3 plane_point, math::Vec3 plane_n)
     {
-        r32 denominator = math::dot(plane_normal, ray_direction);
-        r32 numerator = math::dot(plane_normal, ray_origin);
-        r32 t = -((plane_d + numerator) / denominator);
-        return ray_origin + t * ray_direction;
+        math::Vec3 local_p0 = p0 - plane_point;
+
+        r32 denom = math::dot(plane_n, dir);
+        r32 epsilon = 0.0001f;
+        if(ABS(denom) < epsilon) return false;
+
+        r32 t = -(math::dot(plane_n, local_p0) / denom);
+
+        debug("t: %f\n", t);
+        
+        *x_point = p0 + dir * t;
+        
+        if(t < 0) return false;
+
+        return true;
     }
 
     static b32 _is_gizmo(EntityHandle entity, SceneManager *manager)
@@ -487,17 +508,13 @@ namespace scene
         case Gizmos::NONE:
         return { false, math::Vec3(0.0f) };
         }
-            
+        
         math::Vec3 u = camera_position - entity_position;
         math::Vec3 v = point - entity_position;
-
-        math::Vec3 the_v = entity_position - camera_position;
-        math::Vec3 normal = math::normalize(math::cross(math::cross(the_v, axis), the_v));
-        
-        //math::Vec3 normal = math::cross(-camera.forward, axis);
-        //normal = -math::normalize(math::cross(normal, axis));
-            
-        r32 d = -math::dot(axis, entity_position);
+        math::Vec3 normal = math::cross(-camera.forward, axis);
+        normal = math::normalize(math::cross(normal, axis));
+        //math::Vec3 normal = math::cross(entity_position, point);
+        r32 d = -math::dot(normal, entity_position);
         math::Ray ray = cast_ray(get_scene(manager->loaded_scene), (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
             
         // Ray intersection
@@ -515,6 +532,14 @@ namespace scene
                 math::Vec3 diff = manager->gizmos.first_intersection_point - data.intersection_point;
                 transform.position = manager->gizmos.starting_transform_position;
                 
+            
+            // Ray intersection
+            math::Vec3 intersection_point;
+            
+            if(ray_vs_plane(&intersection_point, ray.origin, ray.ray, entity_position, normal))
+            {
+//                printf("Intersection point %f %f %f\n", intersection_point.x, intersection_point.y, intersection_point.z);
+
                 switch(manager->gizmos.selected_gizmo)
                 {
                 case Gizmos::X_ARROW:
@@ -536,6 +561,18 @@ namespace scene
                 return;
                 }
             }
+
+            for(i32 i = 0; i < 20; i++)
+            {
+                rendering::Transform t = {};
+                t.position = entity_position + normal * (r32)(0.5f * (r32)i);
+                t.scale = math::Vec3(0.1f);
+            
+                rendering::push_buffer_to_render_pass(*manager->renderer, manager->debug_cube, manager->debug_material_instance, t, manager->debug_shader_handle, rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer), rendering::CommandType::NO_DEPTH);
+            }
+            
+            
+            
         }
     }
     
