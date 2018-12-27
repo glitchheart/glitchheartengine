@@ -570,6 +570,12 @@ namespace rendering
         HORIZONTAL_ABOVE,
         HORIZONTAL_BELOW
     };
+
+    enum class CommandType
+    {
+        WITH_DEPTH,
+        NO_DEPTH
+    };
     
 #define STANDARD_PASS "STANDARD_PASS"
 
@@ -607,6 +613,9 @@ namespace rendering
             {
                 rendering::RenderCommand *render_commands;
                 i32 render_command_count;
+
+                rendering::RenderCommand *depth_free_commands;
+                i32 depth_free_command_count;
             } commands;
             struct
             {

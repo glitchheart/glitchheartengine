@@ -197,7 +197,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer)
                     {
                         QueuedRenderCommand &cmd = queued_commands[i];
                         if(cmd.buffer_handle.handle == render.v2.buffer_handle.handle
-                            && cmd.original_material.handle == instance.source_material.handle)
+                            && cmd.original_material.handle == instance.source_material.handle && cmd.ignore_depth == render.ignore_depth)
                         {
                             // It's a doozy
                             command = &cmd;
@@ -208,6 +208,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer)
                     if(!command)
                     {
                         command = &queued_commands[normal_count++];
+                        command->ignore_depth = render.ignore_depth;
                         command->buffer_handle = render.v2.buffer_handle;
                         command->original_material = instance.source_material;
                         command->count = 0;
@@ -222,7 +223,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer)
                     {
                         if(render.wireframe_enabled)
                         {
-                            rendering::push_buffer_to_render_pass(renderer, render.v2.buffer_handle, renderer.render.wireframe_material, t, renderer.render.wireframe_shader, render.v2.render_passes[0]);
+                            rendering::push_buffer_to_render_pass(renderer, render.v2.buffer_handle, renderer.render.wireframe_material, t, renderer.render.wireframe_shader, render.v2.render_passes[0], rendering::CommandType::NO_DEPTH);
                         }
                         
                         BatchedCommand &batch_command = command->commands[command->count];
@@ -289,7 +290,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer)
                 // Just push the buffer as a normal draw call
                 for (i32 pass_index = 0; pass_index < render_command.pass_count; pass_index++)
                 {
-                    rendering::push_buffer_to_render_pass(renderer, queued_command.buffer_handle, first_command.material_handle, render_command.transform, render_command.shader_handles[pass_index], render_command.passes[pass_index]);
+                    rendering::push_buffer_to_render_pass(renderer, queued_command.buffer_handle, first_command.material_handle, render_command.transform, render_command.shader_handles[pass_index], render_command.passes[pass_index], queued_command.ignore_depth ? rendering::CommandType::NO_DEPTH : rendering::CommandType::WITH_DEPTH);
                 }
                 continue;
             }
@@ -373,7 +374,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer)
         // Push the command to the correct render passes
         for (i32 pass_index = 0; pass_index < first_command.pass_count; pass_index++)
         {
-            rendering::push_instanced_buffer_to_render_pass(renderer, queued_command.count, queued_command.buffer_handle, first_command.material_handle, first_command.shader_handles[pass_index], first_command.passes[pass_index]);
+            rendering::push_instanced_buffer_to_render_pass(renderer, queued_command.count, queued_command.buffer_handle, first_command.material_handle, first_command.shader_handles[pass_index], first_command.passes[pass_index], queued_command.ignore_depth ? rendering::CommandType::NO_DEPTH : rendering::CommandType::WITH_DEPTH);
         }
     }
     
@@ -383,6 +384,6 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer)
         ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
         rendering::Material& particle_material = get_material_instance(system.material_handle, renderer);
             
-        rendering::push_instanced_buffer_to_render_pass(renderer, system.particle_count, renderer.particles.quad_buffer, system.material_handle, particle_material.shader, rendering::get_render_pass_handle_for_name(STANDARD_PASS, renderer));
+        rendering::push_instanced_buffer_to_render_pass(renderer, system.particle_count, renderer.particles.quad_buffer, system.material_handle, particle_material.shader, rendering::get_render_pass_handle_for_name(STANDARD_PASS, renderer), rendering::CommandType::WITH_DEPTH);
     }    
 }
