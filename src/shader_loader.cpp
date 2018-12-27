@@ -2951,6 +2951,12 @@ namespace rendering
 
     static void push_text(Renderer *renderer, CreateTextCommandInfo info, const char *text)
     {
+        if(info.position.y > 1000.0f || info.position.y < 0.0f
+           || info.position.x < 0.0f || info.position.x > 1000.0f)
+        {
+            return;
+        }
+        
         RenderPass &pass = renderer->render.ui.pass;
         TextRenderCommand &command = pass.ui.text_commands[pass.ui.text_command_count];
 
@@ -3108,6 +3114,12 @@ namespace rendering
         CreateUICommandInfo scaled_info = info;
         math::Vec2i resolution_scale = get_scale(renderer);
 
+        if(info.position.y > 1000.0f || info.position.y < 0.0f
+           || info.position.x < 0.0f || info.position.x > 1000.0f)
+        {
+            return;
+        }
+        
         math::Vec2 pos;
         pos.x = (info.position.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
         pos.y = (info.position.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
