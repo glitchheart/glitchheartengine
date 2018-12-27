@@ -281,11 +281,16 @@ namespace scene
         EntityHandle selected_entity;
 
         b32 dragging;
+
+        rendering::BufferHandle debug_cube;
+        rendering::MaterialInstanceHandle debug_material_instance;
+        rendering::MaterialHandle debug_material;
+        rendering::ShaderHandle debug_shader_handle;
         
         struct
         {
             Gizmos selected_gizmo;
-            
+
             math::Vec3 x_scale;
             math::Vec3 y_scale;
             math::Vec3 z_scale;
@@ -319,6 +324,9 @@ namespace scene
         scene_manager->template_state.template_count = 0;
        
         scene_manager->renderer = &renderer;
+
+        scene_manager->debug_cube.handle = 0;
+        
         return scene_manager;
     }
 
