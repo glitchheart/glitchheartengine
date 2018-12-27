@@ -652,23 +652,14 @@ struct Renderer
 
         struct
         {
-            rendering::BufferHandle top_left_quad_buffer;
             rendering::BufferHandle top_left_textured_quad_buffer;
-            rendering::BufferHandle top_right_quad_buffer;
             rendering::BufferHandle top_right_textured_quad_buffer;
-            rendering::BufferHandle bottom_left_quad_buffer;
             rendering::BufferHandle bottom_left_textured_quad_buffer;
-            rendering::BufferHandle bottom_right_quad_buffer;
             rendering::BufferHandle bottom_right_textured_quad_buffer;
-            rendering::BufferHandle top_x_centered_quad_buffer;
             rendering::BufferHandle top_x_centered_textured_quad_buffer;
-            rendering::BufferHandle bottom_x_centered_quad_buffer;
             rendering::BufferHandle bottom_x_centered_textured_quad_buffer;
-            rendering::BufferHandle left_y_centered_quad_buffer;
             rendering::BufferHandle left_y_centered_textured_quad_buffer;
-            rendering::BufferHandle right_y_centered_quad_buffer;
             rendering::BufferHandle right_y_centered_textured_quad_buffer;
-            rendering::BufferHandle centered_quad_buffer;
             rendering::BufferHandle centered_textured_quad_buffer;
             rendering::RenderPass pass;
             rendering::MaterialHandle material;

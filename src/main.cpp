@@ -376,7 +376,6 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     renderer->meshes = push_array(&renderer->mesh_arena, global_max_meshes, Mesh);
     renderer->tt_font_infos = push_array(&renderer->font_arena, global_max_fonts, TrueTypeFontInfo);
     
-
     // NEW RENDER PIPELINE
     renderer->render.shadow_commands = push_array(&renderer->command_arena, global_max_shadow_commands, rendering::ShadowCommand);
     renderer->render.queued_commands = push_array(&renderer->command_arena, global_max_render_commands, QueuedRenderCommand);
@@ -400,7 +399,7 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
         renderer->render.material_instance_array_counts[i] = 0;
         renderer->render.material_instance_arrays[i] = nullptr;
     }
-    
+
     renderer->render.shaders = push_array(&renderer->mesh_arena, global_max_shaders, rendering::Shader);
     renderer->render._internal_buffer_handles = push_array(&renderer->buffer_arena, global_max_custom_buffers, i32);
     renderer->render._current_internal_buffer_handle = 0;
@@ -417,10 +416,11 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     renderer->render.shaders_to_reload_count = 0;
     *reload_queue = {};
     *reload_thread = {};
+
     make_queue(reload_queue, 1, reload_thread);
     platform.add_entry(reload_queue, check_shader_files, renderer);
 #endif
-
+    
     rendering::set_fallback_shader(renderer, "../engine_assets/standard_shaders/fallback.shd");
     rendering::set_shadow_map_shader(renderer, "../engine_assets/standard_shaders/shadow_map.shd");
     rendering::set_light_space_matrices(renderer, math::ortho(-25, 25, -25, 25, 1, 20.0f), math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0.0f, 0.0f, 0.0f));
@@ -439,23 +439,14 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     rendering::FramebufferHandle final_framebuffer = rendering::create_framebuffer(final_info, renderer);
     rendering::set_final_framebuffer(renderer, final_framebuffer);
 
-    renderer->render.ui.top_left_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::LEFT);
     renderer->render.ui.top_left_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::LEFT, true);
-    renderer->render.ui.top_right_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::RIGHT);
     renderer->render.ui.top_right_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::RIGHT, true);
-    renderer->render.ui.bottom_left_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM | rendering::UIAlignment::LEFT);
     renderer->render.ui.bottom_left_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM | rendering::UIAlignment::LEFT, true);
-    renderer->render.ui.bottom_right_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM | rendering::UIAlignment::RIGHT);
     renderer->render.ui.bottom_right_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM | rendering::UIAlignment::RIGHT, true);
-    renderer->render.ui.top_x_centered_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP);
     renderer->render.ui.top_x_centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP, true);
-    renderer->render.ui.bottom_x_centered_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM);
     renderer->render.ui.bottom_x_centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM, true);
-    renderer->render.ui.left_y_centered_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::LEFT);
     renderer->render.ui.left_y_centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::LEFT, true);
-    renderer->render.ui.right_y_centered_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::RIGHT);
     renderer->render.ui.right_y_centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::RIGHT, true);
-    renderer->render.ui.centered_quad_buffer = rendering::create_quad_buffer(renderer, 0);
     renderer->render.ui.centered_textured_quad_buffer = rendering::create_quad_buffer(renderer, 0, true);
 
     rendering::create_ui_render_pass(renderer);
@@ -715,11 +706,10 @@ int main(int argc, char **args)
     render_state.gl_shader_count = 0;
     render_state.gl_buffer_count = 0;
     render_state.gl_shaders = push_array(&platform_state->perm_arena, 64, ShaderGL);
-    
+
     Renderer *renderer_alloc = push_struct(&platform_state->perm_arena, Renderer);
     Renderer *renderer = renderer_alloc;
-    // *renderer = {};
-    // renderer->render = {};
+    *renderer = {};
 
     scene::SceneManager *scene_manager = scene::create_scene_manager(&platform_state->perm_arena, renderer);
     
