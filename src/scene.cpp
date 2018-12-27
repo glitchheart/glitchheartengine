@@ -326,6 +326,7 @@ namespace scene
 
     static b32 _is_gizmo(EntityHandle entity, SceneManager *manager)
     {
+        
         if(entity.handle == manager->gizmos.x_arrow.handle)
         {
             manager->gizmos.selected_gizmo = Gizmos::X_ARROW;
@@ -450,70 +451,90 @@ namespace scene
         set_active(manager->gizmos.z_arrow, true, scene);
     }
 
+    struct IntersectionData
+    {
+        b32 intersected;
+        math::Vec3 intersection_point;
+    };
+    
+    static IntersectionData get_intersection_point(SceneManager *manager, InputController *input_controller, Camera &camera, math::Vec3 position)
+    {
+        math::Vec3 camera_position = camera.position;
+        math::Vec3 axis;
+        math::Vec3 entity_position = position;
+        math::Vec3 point;
+
+        switch(manager->gizmos.selected_gizmo)
+        {
+        case Gizmos::X_ARROW:
+        {
+            axis = math::Vec3(1, 0, 0);
+            point = position + math::Vec3(100, 0, 0);
+        }
+        break;
+        case Gizmos::Y_ARROW:
+        {
+            axis = math::Vec3(0, 1, 0);
+            point = position + math::Vec3(0, 100, 0);
+        }
+        break;
+        case Gizmos::Z_ARROW:
+        {
+            axis = math::Vec3(0, 0, 1);
+            point = position + math::Vec3(0, 0, 100);
+        }
+        break;
+        case Gizmos::NONE:
+        return { false, math::Vec3(0.0f) };
+        }
+            
+        math::Vec3 u = camera_position - entity_position;
+        math::Vec3 v = point - entity_position;
+
+        math::Vec3 the_v = entity_position - camera_position;
+        math::Vec3 normal = math::normalize(math::cross(math::cross(the_v, axis), the_v));
+        
+        //math::Vec3 normal = math::cross(-camera.forward, axis);
+        //normal = -math::normalize(math::cross(normal, axis));
+            
+        r32 d = -math::dot(axis, entity_position);
+        math::Ray ray = cast_ray(get_scene(manager->loaded_scene), (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
+            
+        // Ray intersection
+        return { true, ray_vs_plane(ray.origin, ray.ray, normal, d) };
+    }
+    
     static void update_transform(TransformComponent &transform, Camera &camera, SceneManager *manager, InputController *input_controller, r64 delta_time)
     {
         if(manager->dragging)
         {
-            math::Vec3 camera_position = camera.position;
-            math::Vec3 axis;
-            math::Vec3 entity_position = transform.position;
-            math::Vec3 point;
-                
-            switch(manager->gizmos.selected_gizmo)
-            {
-            case Gizmos::X_ARROW:
-            {
-                axis = math::Vec3(1, 0, 0);
-                point = transform.position + math::Vec3(100, 0, 0);
-            }
-            break;
-            case Gizmos::Y_ARROW:
-            {
-                axis = math::Vec3(0, 1, 0);
-                point = transform.position + math::Vec3(0, 100, 0);
-            }
-            break;
-            case Gizmos::Z_ARROW:
-            {
-                axis = math::Vec3(0, 0, 1);
-                point = transform.position + math::Vec3(0, 0, 100);
-            }
-            break;
-            case Gizmos::NONE:
-            return;
-            }
-            
-            math::Vec3 u = camera_position - entity_position;
-            math::Vec3 v = point - entity_position;
-            math::Vec3 normal = math::cross(-camera.forward, axis);
-            normal = math::cross(normal, axis);
-            //math::Vec3 normal = math::cross(entity_position, point);
-            r32 d = -math::dot(normal, point);
-            math::Ray ray = cast_ray(get_scene(manager->loaded_scene), (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
-            
-            // Ray intersection
-            math::Vec3 intersection_point = ray_vs_plane(ray.origin, ray.ray, normal, d);
-            printf("Intersection point %f %f %f\n", intersection_point.x, intersection_point.y, intersection_point.z);
+            IntersectionData data = get_intersection_point(manager, input_controller, camera, transform.position);
 
-            switch(manager->gizmos.selected_gizmo)
+            if(data.intersected)
             {
-            case Gizmos::X_ARROW:
-            {
-                transform.position.x = intersection_point.x;
-            }
-            break;
-            case Gizmos::Y_ARROW:
-            {
-                transform.position.y = intersection_point.y;
-            }
-            break;
-            case Gizmos::Z_ARROW:
-            {
-                transform.position.z = intersection_point.z;
-            }
-            break;
-            case Gizmos::NONE:
-            return;
+                math::Vec3 diff = manager->gizmos.first_intersection_point - data.intersection_point;
+                transform.position = manager->gizmos.starting_transform_position;
+                
+                switch(manager->gizmos.selected_gizmo)
+                {
+                case Gizmos::X_ARROW:
+                {
+                    transform.position.x += diff.x;
+                }
+                break;
+                case Gizmos::Y_ARROW:
+                {
+                    transform.position.y += diff.y;
+                }
+                break;
+                case Gizmos::Z_ARROW:
+                {
+                    transform.position.z += diff.z;
+                }
+                break;
+                case Gizmos::NONE:
+                return;
+                }
             }
         }
     }
@@ -586,7 +607,10 @@ namespace scene
                 {
                     if(_is_gizmo(entity, manager))
                     {
-                        printf("GIZMO!\n");
+                        TransformComponent &transform = get_transform_comp(entity, manager->loaded_scene);
+                        IntersectionData data = get_intersection_point(manager, input_controller, camera, transform.position);
+                        manager->gizmos.first_intersection_point = data.intersection_point;
+                        manager->gizmos.starting_transform_position = transform.position;
                     }
                     else
                     {
