@@ -292,6 +292,9 @@ namespace scene
             EntityHandle x_arrow;
             EntityHandle y_arrow;
             EntityHandle z_arrow;
+
+            math::Vec3 first_intersection_point;
+            math::Vec3 starting_transform_position;
         } gizmos;
         
         struct

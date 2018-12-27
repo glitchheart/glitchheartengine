@@ -2538,7 +2538,7 @@ namespace math
         return true;
     }
     
-    inline b32 new_aabb_ray_intersection(Ray ray, BoundingBox b)
+    inline b32 new_aabb_ray_intersection(Ray ray, BoundingBox b, math::Vec3* intersection_point)
     {
         auto ray_dir = ray.ray;
         auto ray_origin = ray.origin;
@@ -2581,6 +2581,8 @@ namespace math
         if(t_min > tz_max || tz_min > t_max) return false;
         if(tz_min > t_min) t_min = tz_min;
         if(tz_max < t_max) t_max = tz_max;
+        
+        *intersection_point = ray_origin + ray_dir * temp;
         
         return true;
     }
