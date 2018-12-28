@@ -1331,6 +1331,7 @@ namespace math
     Vec3 normalize(Vec3 v);
     Vec4 normalize(Vec4 v);
     Quat normalize(Quat q);
+    r32 norm(Vec3 v);
     Mat4 scale(Mat4 in, Vec3 scale);
     Mat4 translate(Mat4 in, Vec3 translate);
     Mat4 x_rotate(r32 angle);
@@ -1416,6 +1417,11 @@ namespace math
     inline Quat normalize(Quat q)
     {
         return q / magnitude(q);
+    }
+
+    inline r32 norm(Vec3 v)
+    {
+        return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
     }
     
     //@Incomplete JBlow, CaseyM, ShawnM say don't use this
@@ -2487,7 +2493,7 @@ namespace math
     struct Ray
     {
         Vec3 origin;
-        Vec3 ray;
+        Vec3 direction;
     };
     
     struct BoundingBox
@@ -2503,9 +2509,9 @@ namespace math
         math::Vec3 rt = b.max;
         // r.dir is unit direction vector of ray
         math::Vec3 dirfrac;
-        dirfrac.x = 1.0f / r.ray.x;
-        dirfrac.y = 1.0f / r.ray.y;
-        dirfrac.z = 1.0f / r.ray.z;
+        dirfrac.x = 1.0f / r.direction.x;
+        dirfrac.y = 1.0f / r.direction.y;
+        dirfrac.z = 1.0f / r.direction.z;
         
         // lb is the corner of AABB with minimal coordinates - left bottom, rt is maximal corner
         // r.org is origin of ray
@@ -2534,13 +2540,13 @@ namespace math
         }
         
         t = tmin;
-        *intersection_point = r.origin + r.ray * t;
+        *intersection_point = r.origin + r.direction * t;
         return true;
     }
     
     inline b32 new_aabb_ray_intersection(Ray ray, BoundingBox b, math::Vec3* intersection_point)
     {
-        auto ray_dir = ray.ray;
+        auto ray_dir = ray.direction;
         auto ray_origin = ray.origin;
         
         auto temp = 0.0f;
