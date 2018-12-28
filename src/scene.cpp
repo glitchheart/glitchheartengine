@@ -299,6 +299,22 @@ namespace scene
             start_particle_system(scene.particle_system_components[i].handle, *scene.renderer);
         }
     }
+    static math::Ray cast_ray_new(Scene &scene, i32 mouse_x, i32 mouse_y)
+    {
+        i32 width = scene.renderer->window_width;
+        i32 height = scene.renderer->window_height;
+        Camera &camera = scene.camera;
+
+        r32 x = ((2.0f * ((r32)mouse_x / (r32)width)) - 1.0f) / camera.projection_matrix.a;
+        r32 y = -((2.0f * ((r32)mouse_y / (r32)height)) - 1.0f) / camera.projection_matrix.f;
+        r32 z = -1.0f;
+
+        math::Ray ray;
+        ray.direction = math::normalize(math::Vec3(x, y, z) * camera.view_matrix);
+        ray.origin = camera.position;
+
+        return ray;
+    }
 
     static math::Ray cast_ray(Scene &scene, i32 mouse_x, i32 mouse_y)
     {
@@ -388,6 +404,7 @@ namespace scene
         Scene &scene = get_scene(handle);
 
         math::Ray ray = cast_ray(scene, mouse_x, mouse_y);
+        math::Ray new_ray = cast_ray_new(scene, mouse_x, mouse_y);
         
         r32 dist = 100000; // Just set a crazy max distance
         
@@ -448,7 +465,7 @@ namespace scene
         manager->gizmos.x_arrow = scene::register_entity_from_template_file("../assets/templates/editor/gizmos/x_arrow.tmpl", scene);
         manager->gizmos.y_arrow = scene::register_entity_from_template_file("../assets/templates/editor/gizmos/y_arrow.tmpl", scene);
         manager->gizmos.z_arrow = scene::register_entity_from_template_file("../assets/templates/editor/gizmos/z_arrow.tmpl", scene);
-
+        
         scene::TransformComponent &x_t = scene::get_transform_comp(manager->gizmos.x_arrow, scene);
         scene::TransformComponent &y_t = scene::get_transform_comp(manager->gizmos.y_arrow, scene);
         scene::TransformComponent &z_t = scene::get_transform_comp(manager->gizmos.z_arrow, scene);
@@ -483,6 +500,7 @@ namespace scene
     {
         b32 intersected;
         math::Vec3 intersection_point;
+        math::Vec3 direction;;
     };
     
     static IntersectionData get_intersection_point(SceneManager *manager, InputController *input_controller, Camera &camera, math::Vec3 position)
@@ -500,21 +518,21 @@ namespace scene
         {
         case Gizmos::X_ARROW:
         {
-            normal = math::Vec3(0.0f, n.y, n.z);
+            normal = math::Vec3(0.0f, -1.0f, 0.0f);
             axis = math::Vec3(1, 0, 0);
             point = position + math::Vec3(100, 0, 0);
         }
         break;
         case Gizmos::Y_ARROW:
         {
-            normal = math::Vec3(n.x, 0.0f, n.z);
+            normal = math::Vec3(1.0f, 0.0f, 0.0f);
             axis = math::Vec3(0, 1, 0);
             point = position + math::Vec3(0, 100, 0);
         }
         break;
         case Gizmos::Z_ARROW:
         {
-            normal = math::Vec3(n.x, n.y, 0.0f);
+            normal = math::Vec3(1.0f, 0.0f, 0.0f);
             axis = math::Vec3(0, 0, 1);
             point = position + math::Vec3(0, 0, 100);
         }
@@ -529,19 +547,62 @@ namespace scene
         // // math::Vec3 the_v = entity_position - camera_position;
         // // math::Vec3 normal = math::normalize(math::cross(math::cross(the_v, axis), the_v));
         
-        // math::Vec3 normal = math::cross(-camera.forward, axis);
-        // normal = -math::normalize(math::cross(normal, axis));
-        math::Vec3 intersection_point;
-        ray_vs_plane(&intersection_point, ray.origin, ray.direction, entity_position, math::normalize(normal));
+        normal = math::cross(camera.position, axis);
+        normal = math::normalize(math::cross(normal, axis));
+
+//        math::Plane plane = math::get_plane(entity_position, point, camera_position);
+        math::Plane plane = {};
+        plane.normal = math::normalize(normal);
+        plane.d = dot(plane.normal, entity_position);
         
+        // math::Vec3 intersection_point;
+        // ray_vs_plane(&intersection_point, ray.origin, ray.direction, entity_position, plane.normal);
+        math::Vec3 intersection_point = ray_vs_plane(ray.origin, ray.direction, plane.normal, plane.d);
+
         rendering::Transform t = {};
-        t.position = intersection_point;
-        t.scale = math::Vec3(1.0f);
-            
-        rendering::push_buffer_to_render_pass(*manager->renderer, manager->debug_cube, manager->debug_material_instance, t, manager->debug_shader_handle, rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer), rendering::CommandType::NO_DEPTH);
+        t.scale = math::Vec3(0.1f);
+        
+        for(i32 i = 0; i < 50; i++)
+        {
+            t.position = plane.normal * plane.d + plane.normal * (r32)i * 0.5f;
+            rendering::push_buffer_to_render_pass(*manager->renderer, manager->debug_cube, manager->debug_material_instance, t, manager->debug_shader_handle, rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer));
+        }
+        
         
         // Ray intersection
         return { true, intersection_point };
+    }
+
+    r32 closest_distance_between_lines_new(math::Ray l1, math::Ray l2)
+    {
+        r32 a = math::dot(l1.direction, l1.direction);
+        r32 b = math::dot(l1.direction, l2.direction );
+        math::Vec3 r = l1.origin - l2.origin;
+        r32 c = math::dot(l1.direction, r);
+        r32 e = math::dot(l2.direction, l2.direction);
+        r32 f = math::dot(l2.direction, r);
+
+        r32 d = a * e - b * b;
+
+        if(ABS(d) >= 0.0001f)
+        {
+            r32 s = (b * f - c * e) / d;
+            r32 t = (a * f - b * c) / d;
+
+            math::Vec3 p1 = (l1.origin + l1.direction * s);
+            math::Vec3 p2 = (l2.origin + l2.direction * t);
+            
+            debug("p1: %f %f %f\n", p1.x, p1.y, p1.z);
+            debug("p2: %f %f %f\n", p2.x, p2.y, p2.z);
+            
+            return t;
+        }
+        else
+        {
+        }
+
+        assert(false);
+        return 0.0f;
     }
 
     r32 closest_distance_between_lines(math::Ray l1, math::Ray l2)
@@ -555,7 +616,7 @@ namespace scene
 
         const r32 det = v1v2 * v1v2 - v12 * v22;
 
-        if (ABS(det) < 0.0001f)
+        if (ABS(det) > 0.0001f)
         {
             const r32 inv_det = 1.f / det;
 
@@ -565,12 +626,18 @@ namespace scene
             t1 = inv_det * (v22 * dpv1 - v1v2 * dpv2);
             t2 = inv_det * (v1v2 * dpv1 - v12 * dpv2);
 
-            //return math::norm(dp + l2.direction * t2 - l1.direction * t1);
+            math::Vec3 p1 = (l1.origin + l1.direction * t1);
+            math::Vec3 p2 = (l2.origin + l2.direction * t2);
+            
+            debug("p1: %f %f %f\n", p1.x, p1.y, p1.z);
+            debug("p2: %f %f %f\n", p2.x, p2.y, p2.z);
+            
+            // return math::norm(dp + l2.direction * t2 - l1.direction * t1);
         }
         else
         {
             const math::Vec3 a = math::cross(dp, l1.direction);
-            //return math::sqrt(dot(a, a) / v12);
+            // return math::sqrt(dot(a, a) / v12);
         }
 
         return t2;
@@ -585,7 +652,7 @@ namespace scene
         math::Vec3 normal;
             
         math::Ray ray = cast_ray(get_scene(manager->loaded_scene), (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
-       
+        
         switch(manager->gizmos.selected_gizmo)
         {
         case Gizmos::X_ARROW:
@@ -613,14 +680,43 @@ namespace scene
         return { false, math::Vec3(0.0f) };
         }
 
+        // math::Plane p = {};
+        // p.normal = ray.direction;
+        // p.d = -math::dot(p.normal, manager->gizmos.first_intersection_point);
+
+        // math::Vec3 intersection_point = ray_vs_plane(ray.origin, ray.direction, p.normal, p.d);
+
+        // return { true, intersection_point, axis };
+
         math::Ray ray2;
         ray2.direction = normal;
-        ray.origin = entity_position;
+        ray2.origin = entity_position;
         
-        r32 t = closest_distance_between_lines(ray, ray2);
+        r32 t = closest_distance_between_lines_new(ray, ray2);
         // Ray intersection
 
+        rendering::Transform xf = {};
+        xf.scale = math::Vec3(0.1f);
+
+        for(i32 i = 0; i < 50; i++)
+        {
+            xf.position = ray2.origin + ray2.direction * t;
+            rendering::push_buffer_to_render_pass(*manager->renderer, manager->debug_cube, manager->debug_material_instance, xf, manager->debug_shader_handle, rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer));
+        }
+
         return { true, entity_position + ray2.direction * t };
+
+        // math::Plane p = get_plane(entity_position, camera_position, point);
+
+        // math::Vec3 intersection_point = ray_vs_plane(ray.origin, ray.direction, p.normal, p.d);
+
+        // return {true, intersection_point };
+    }
+
+    static math::Vec3 closest_line_point(math::Vec3 origin, math::Vec3 dir, math::Vec3 p)
+    {
+        r32 t = math::dot((p - origin), dir);
+        return origin + dir * t;
     }
     
     static void update_transform(TransformComponent &transform, Camera &camera, SceneManager *manager, InputController *input_controller, r64 delta_time)
@@ -629,9 +725,11 @@ namespace scene
         {
             IntersectionData data = get_intersection_point_new(manager, input_controller, camera, transform.position);
 
+            debug("intersection point: %f %f %f\n", data.intersection_point.x, data.intersection_point.y, data.intersection_point.z);
             if(data.intersected)
             {
                 math::Vec3 diff = data.intersection_point - manager->gizmos.first_intersection_point;
+                
                 manager->gizmos.first_intersection_point = data.intersection_point;
                 
                 switch(manager->gizmos.selected_gizmo)
@@ -657,7 +755,24 @@ namespace scene
             }
         }
     }
-    
+
+    static void _deselect_gizmos(SceneHandle handle)
+    {
+        RenderComponent &render_x = get_render_comp(handle.manager->gizmos.x_arrow, handle);
+        rendering::set_uniform_value(*handle.manager->renderer, render_x.v2.material_handle, "color", math::Rgba(1.0f, 0.0f, 0.0f, 1.0f));
+        RenderComponent &render_y = get_render_comp(handle.manager->gizmos.y_arrow, handle);
+        rendering::set_uniform_value(*handle.manager->renderer, render_y.v2.material_handle, "color", math::Rgba(0.0f, 1.0f, 0.0f, 1.0f));
+        RenderComponent &render_z = get_render_comp(handle.manager->gizmos.z_arrow, handle);
+        rendering::set_uniform_value(*handle.manager->renderer, render_z.v2.material_handle, "color", math::Rgba(0.0f, 0.0f, 1.0f, 1.0f));
+    }
+
+    static void _select_gizmo(SceneHandle handle, EntityHandle gizmo)
+    {
+        _deselect_gizmos(handle);
+        RenderComponent &render_selected = get_render_comp(gizmo, handle);
+        rendering::set_uniform_value(*handle.manager->renderer, render_selected.v2.material_handle, "color", math::Rgba(1.0f, 1.0f, 0.0f, 1.0f));
+    }
+
     static void update_scene_editor(SceneHandle handle, InputController *input_controller, r64 delta_time)
     {
         Scene &scene = get_scene(handle);
@@ -684,6 +799,9 @@ namespace scene
         if(manager->mode == SceneMode::EDITING)
         {
             manager->dragging = MOUSE(Mouse_Left);
+
+            if(!manager->dragging)
+                _deselect_gizmos(handle);
 
             Camera &camera = scene.camera;
             
@@ -717,7 +835,7 @@ namespace scene
             }
 
             if(MOUSE_DOWN(Mouse_Left))
-            {
+            {        
                 manager->dragging = true;
                 
                 scene::EntityHandle entity = scene::pick_entity(handle, (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
@@ -727,7 +845,9 @@ namespace scene
                     if(_is_gizmo(entity, manager))
                     {
                         TransformComponent &transform = get_transform_comp(entity, manager->loaded_scene);
-                        IntersectionData data = get_intersection_point(manager, input_controller, camera, transform.position);
+                        IntersectionData data = get_intersection_point_new(manager, input_controller, camera, transform.position);                       
+                        _select_gizmo(handle, entity);
+                        
                         manager->gizmos.first_intersection_point = data.intersection_point;
                         manager->gizmos.starting_transform_position = transform.position;
                     }
@@ -735,7 +855,7 @@ namespace scene
                     {
                         // Deselect the previously selected entity
                         if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
-                            scene::set_wireframe_enabled(false, manager->selected_entity, handle);
+                            scene::set_wireframe_enabled(false, manager->selected_entity, handle);                        
                         
                         manager->selected_entity = entity;
                         scene::set_wireframe_enabled(true, entity, handle);
