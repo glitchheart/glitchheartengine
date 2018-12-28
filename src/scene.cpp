@@ -119,7 +119,7 @@ namespace scene
         if(scene_manager->debug_cube.handle == 0)
         {
             scene_manager->debug_cube = rendering::create_cube(*scene_manager->renderer, nullptr);
-            scene_manager->debug_shader_handle = rendering::load_shader(*scene_manager->renderer, "../assets/shaders/standard.shd");
+            scene_manager->debug_shader_handle = rendering::load_shader(*scene_manager->renderer, "../assets/shaders/unlit.shd");
             scene_manager->debug_material = rendering::create_material(*scene_manager->renderer, scene_manager->debug_shader_handle);
         }
 
@@ -558,16 +558,6 @@ namespace scene
         // math::Vec3 intersection_point;
         // ray_vs_plane(&intersection_point, ray.origin, ray.direction, entity_position, plane.normal);
         math::Vec3 intersection_point = ray_vs_plane(ray.origin, ray.direction, plane.normal, plane.d);
-
-        rendering::Transform t = {};
-        t.scale = math::Vec3(0.1f);
-        
-        for(i32 i = 0; i < 50; i++)
-        {
-            t.position = plane.normal * plane.d + plane.normal * (r32)i * 0.5f;
-            rendering::push_buffer_to_render_pass(*manager->renderer, manager->debug_cube, manager->debug_material_instance, t, manager->debug_shader_handle, rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer));
-        }
-        
         
         // Ray intersection
         return { true, intersection_point };
@@ -584,7 +574,7 @@ namespace scene
 
         r32 d = a * e - b * b;
 
-        if(ABS(d) >= 0.0001f)
+        if(ABS(d) >= FLT_MIN)
         {
             r32 s = (b * f - c * e) / d;
             r32 t = (a * f - b * c) / d;
@@ -599,10 +589,8 @@ namespace scene
         }
         else
         {
+            return 0.0f;
         }
-
-        assert(false);
-        return 0.0f;
     }
 
     r32 closest_distance_between_lines(math::Ray l1, math::Ray l2)
@@ -689,7 +677,8 @@ namespace scene
         // return { true, intersection_point, axis };
 
         math::Ray ray2;
-        ray2.direction = normal;
+        ray2.direction = normal * 100000.0f;
+        ray.direction *= 100000.0f;
         ray2.origin = entity_position;
         
         r32 t = closest_distance_between_lines_new(ray, ray2);
@@ -698,12 +687,10 @@ namespace scene
         rendering::Transform xf = {};
         xf.scale = math::Vec3(0.1f);
 
-        for(i32 i = 0; i < 50; i++)
-        {
-            xf.position = ray2.origin + ray2.direction * t;
-            rendering::push_buffer_to_render_pass(*manager->renderer, manager->debug_cube, manager->debug_material_instance, xf, manager->debug_shader_handle, rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer));
-        }
-
+        rendering::set_uniform_value(*manager->renderer, manager->debug_material_instance, "color", math::Rgba(1.0f, 1.0f, 0.0f, 1.0f));
+        xf.position = ray2.origin + ray2.direction * t;
+        rendering::push_buffer_to_render_pass(*manager->renderer, manager->debug_cube, manager->debug_material_instance, xf, manager->debug_shader_handle, rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer), rendering::CommandType::NO_DEPTH);
+        
         return { true, entity_position + ray2.direction * t };
 
         // math::Plane p = get_plane(entity_position, camera_position, point);
