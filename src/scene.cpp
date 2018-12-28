@@ -574,7 +574,7 @@ namespace scene
 
         r32 d = a * e - b * b;
 
-        if(ABS(d) >= FLT_MIN)
+        if(ABS(d) >= 0.00001f)
         {
             r32 s = (b * f - c * e) / d;
             r32 t = (a * f - b * c) / d;
