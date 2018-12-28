@@ -1584,7 +1584,7 @@ namespace math
     
     inline Vec3 operator*(Mat4 m, const Vec3& v)
     {
-        Vec3 r = transform(m,Vec4(v,1.0f)).xyz;
+        Vec3 r = transform(m,Vec4(v,0.0f)).xyz;
         return r;
     }
     
@@ -1620,9 +1620,9 @@ namespace math
     inline Vec3 operator*(const Vec3& v, const Mat4& m)
     {
         Vec3 result(0.0f);
-        result.x = m.a * v.x + m.b * v.y + m.c * v.z + m.d * 1.0f;
-        result.y = m.e * v.x + m.f * v.y + m.g * v.z + m.h * 1.0f;
-        result.z = m.i * v.x + m.j * v.y + m.k * v.z + m.l * 1.0f;
+        result.x = m.a * v.x + m.b * v.y + m.c * v.z;// + m.d * 1.0f;
+        result.y = m.e * v.x + m.f * v.y + m.g * v.z;// + m.h * 1.0f;
+        result.z = m.i * v.x + m.j * v.y + m.k * v.z;// + m.l * 1.0f;
         return result;
     }
     
@@ -2592,7 +2592,25 @@ namespace math
         
         return true;
     }
-    
+
+    struct Plane
+    {
+        Vec3 normal;
+        r32 d;
+    };
+
+    static Plane get_plane(math::Vec3 a, math::Vec3 b, math::Vec3 c)
+    {
+        Vec3 u = b - a;
+        Vec3 v = c - a;
+
+        Plane p = {};
+        p.normal = normalize(cross(u, v));
+        p.d = dot(p.normal, b);
+
+        return p;
+    }
+
 #define COLOR_RED math::Rgba(1, 0, 0, 1)
 #define COLOR_GREEN math::Rgba(0, 1, 0, 1)
 #define COLOR_BLUE math::Rgba(0, 0, 1, 1)

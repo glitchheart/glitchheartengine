@@ -284,6 +284,7 @@ namespace scene
 
         rendering::BufferHandle debug_cube;
         rendering::MaterialInstanceHandle debug_material_instance;
+        rendering::MaterialInstanceHandle debug_material_instance_2;
         rendering::MaterialHandle debug_material;
         rendering::ShaderHandle debug_shader_handle;
         
