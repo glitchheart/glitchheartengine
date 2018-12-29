@@ -2809,7 +2809,7 @@ namespace rendering
         break;
         case RELATIVE_RIGHT:
         {
-            relative_pos.x += (i32)scaled_size.x + scaled_size.x;
+            relative_pos.x += (i32)scaled_size.x;
         }
         break;
         case RELATIVE_BOTTOM:
@@ -2987,7 +2987,6 @@ namespace rendering
         }
 
         scaled_clip_rect.y = scaled_clip_rect.y - scaled_clip_rect.height;
-
 
         command.clip = info.clip;
         command.clip_rect = scaled_clip_rect;
