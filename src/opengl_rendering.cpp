@@ -1714,7 +1714,7 @@ static Buffer &get_internal_buffer(Renderer &renderer, RenderState &render_state
     return gl_buffer;
 }
 
-static void render_buffer(rendering::Transform transform, rendering::BufferHandle& buffer_handle, const rendering::RenderPass &render_pass, RenderState &render_state, Renderer &renderer, rendering::Material& material, const Camera &camera, i32 count = 0, ShaderGL *shader = nullptr)
+static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Transform transform, rendering::BufferHandle& buffer_handle, const rendering::RenderPass &render_pass, RenderState &render_state, Renderer &renderer, rendering::Material& material, const Camera &camera, i32 count = 0, ShaderGL *shader = nullptr)
 {
     Buffer& buffer = get_internal_buffer(renderer, render_state, buffer_handle);
     
@@ -1816,7 +1816,10 @@ static void render_buffer(rendering::Transform transform, rendering::BufferHandl
         }
         else
         {
-            glDrawArrays(GL_TRIANGLES, 0, buffer.vertex_count / 3);
+            if(primitive_type == rendering::PrimitiveType::TRIANGLES)
+                glDrawArrays(GL_TRIANGLES, 0, buffer.vertex_count / 3);
+            else if(primitive_type == rendering::PrimitiveType::LINES)
+                glDrawArrays(GL_LINES, 0, 2);
         }
     }
 }
@@ -1967,7 +1970,7 @@ static void render_ui_pass(RenderState &render_state, Renderer &renderer)
 
         update_buffer(font_buffer, info, render_state);
 
-        render_buffer({}, renderer.render.ui.font_buffer, pass, render_state, renderer, command.material, pass.camera, 0 ,&render_state.gl_shaders[command.shader_handle.handle]);
+        render_buffer(rendering::PrimitiveType::TRIANGLES, {}, renderer.render.ui.font_buffer, pass, render_state, renderer, command.material, pass.camera, 0 ,&render_state.gl_shaders[command.shader_handle.handle]);
 
         if (command.clip)
         {
@@ -1986,7 +1989,7 @@ static void render_ui_pass(RenderState &render_state, Renderer &renderer)
             glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
         }
 
-        render_buffer(command.transform, command.buffer, pass, render_state, renderer, command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
+        render_buffer(rendering::PrimitiveType::TRIANGLES, command.transform, command.buffer, pass, render_state, renderer, command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
 
         if (command.clip)
         {
@@ -1999,6 +2002,34 @@ static void render_ui_pass(RenderState &render_state, Renderer &renderer)
 
     pass.ui.text_command_count = 0;
     pass.ui.render_command_count = 0;
+}
+
+static void setup_line_buffer(rendering::RenderCommand &command, Renderer *renderer, RenderState *render_state)
+{
+    Buffer &buffer = get_internal_buffer(*renderer, *render_state, command.buffer);
+
+    i32 internal_handle = renderer->render._internal_buffer_handles[command.buffer.handle - 1];
+
+    rendering::RegisterBufferInfo &info = renderer->render.buffers[internal_handle];
+
+    bind_vertex_array(buffer.vao, *render_state);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+
+    info.data.vertex_buffer_size = (i32)(2 * sizeof(math::Vec3));
+    info.data.vertex_count = 2;
+
+    r32 points[6];
+    points[0] = command.lines.p1.x;
+    points[1] = command.lines.p1.y;
+    points[2] = command.lines.p1.z;
+    points[3] = command.lines.p2.x;
+    points[4] = command.lines.p2.y;
+    points[5] = command.lines.p2.z;
+    
+    info.data.vertex_buffer = (r32 *)points;
+
+    update_buffer(buffer, info, *render_state);
+
 }
 
 static void render_all_passes(RenderState &render_state, Renderer &renderer)
@@ -2028,10 +2059,12 @@ static void render_all_passes(RenderState &render_state, Renderer &renderer)
         for (i32 i = 0; i < pass.commands.render_command_count; i++)
         {
             rendering::RenderCommand &command = pass.commands.render_commands[i];
-
+            if(command.primitive_type == rendering::PrimitiveType::LINES)
+                setup_line_buffer(command, &renderer, &render_state);
+            
             rendering::Material &material = get_material_instance(command.material, renderer);
             
-            render_buffer(command.transform, command.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
+            render_buffer(command.primitive_type, command.transform, command.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
         }
 
         glDisable(GL_DEPTH_TEST);
@@ -2040,9 +2073,12 @@ static void render_all_passes(RenderState &render_state, Renderer &renderer)
         {
             rendering::RenderCommand &command = pass.commands.depth_free_commands[i];
 
+            if(command.primitive_type == rendering::PrimitiveType::LINES)
+                setup_line_buffer(command, &renderer, &render_state);
+
             rendering::Material &material = get_material_instance(command.material, renderer);
             
-            render_buffer(command.transform, command.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
+            render_buffer(command.primitive_type, command.transform, command.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
         }
 
         glEnable(GL_DEPTH_TEST);

@@ -354,12 +354,23 @@ namespace rendering
         BufferHandle buffer;
         BufferData update_data;
     };
+
+    struct LineBufferHandle
+    {
+        i32 handle;
+    };
     
     struct Transform
     {
 		math::Vec3 position;
 		math::Vec3 rotation;
 		math::Vec3 scale;
+    };
+
+    enum class PrimitiveType
+    {
+        TRIANGLES,
+        LINES
     };
     
     struct RenderCommand
@@ -369,7 +380,13 @@ namespace rendering
 		BufferHandle buffer;
 
         i32 count;
-        
+
+        PrimitiveType primitive_type;
+        struct
+        {
+            math::Vec3 p1;
+            math::Vec3 p2;
+        } lines;
         struct
         {
             rendering::RenderPassHandle pass_handle;
@@ -392,6 +409,12 @@ namespace rendering
         RIGHT = (1 << 1),
         TOP = (1 << 2),
         BOTTOM = (1 << 3),
+    };
+
+    struct LineCommandData
+    {
+        math::Vec3 p1;
+        math::Vec3 p2;
     };
 
     struct FontHandle

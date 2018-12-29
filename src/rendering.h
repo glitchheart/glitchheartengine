@@ -582,6 +582,10 @@ struct Renderer
         rendering::ShaderHandle textured_ui_quad_shader;
         rendering::ShaderHandle font_shader;
         
+        rendering::MaterialInstanceHandle line_material;
+        rendering::ShaderHandle line_shader;
+        rendering::BufferHandle line_buffer;
+        
 		i32 shaders_to_reload[2];
 		i32 shaders_to_reload_count;
 	

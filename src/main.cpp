@@ -439,6 +439,7 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
 
     rendering::set_fallback_shader(renderer, "../engine_assets/standard_shaders/fallback.shd");
     rendering::set_wireframe_shader(renderer, "../engine_assets/standard_shaders/wireframe.shd");
+    rendering::set_debug_line_shader(renderer, "../engine_assets/standard_shaders/line.shd");
     rendering::set_shadow_map_shader(renderer, "../engine_assets/standard_shaders/shadow_map.shd");
     rendering::set_light_space_matrices(renderer, math::ortho(-25, 25, -25, 25, 1, 20.0f), math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0.0f, 0.0f, 0.0f));
 
@@ -456,6 +457,8 @@ static void init_renderer(Renderer &renderer, WorkQueue *reload_queue, ThreadInf
     rendering::FramebufferHandle final_framebuffer = rendering::create_framebuffer(final_info, renderer);
     rendering::set_final_framebuffer(renderer, final_framebuffer);
 
+    
+    renderer.render.line_buffer = rendering::create_line_buffer(renderer);
     renderer.render.ui.top_left_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::LEFT);
     renderer.render.ui.top_left_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::LEFT, true);
     renderer.render.ui.top_right_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::RIGHT);
