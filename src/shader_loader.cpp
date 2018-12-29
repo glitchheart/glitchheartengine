@@ -1002,6 +1002,13 @@ namespace rendering
         renderer.render.wireframe_material = create_internal_material_instance(renderer, material);
     }
 
+    static void set_debug_line_shader(Renderer &renderer, const char *path)
+    {
+        renderer.render.line_shader = load_shader(renderer, path);
+        MaterialHandle material = create_material(renderer, renderer.render.line_shader);
+        renderer.render.line_material = create_internal_material_instance(renderer, material);
+    }
+
     static void set_bloom_shader(Renderer &renderer, const char *path)
     {
         renderer.render.bloom_shader = load_shader(renderer, path);
@@ -1821,6 +1828,34 @@ namespace rendering
         renderer.render.buffers[renderer.render._internal_buffer_handles[unused_handle - 1]] = info;
 
         return {unused_handle};
+    }
+
+    static BufferHandle create_line_buffer(Renderer &renderer)
+    {
+       assert(renderer.render.buffer_count + 1 < global_max_custom_buffers);
+
+        // @Note: Untextured
+        i32 vertex_size = 3;
+
+        RegisterBufferInfo info = create_register_buffer_info();
+        info.usage = BufferUsage::DYNAMIC;
+        add_vertex_attrib(ValueType::FLOAT3, info);
+        r32 vertices[6] = { 0, 0, 0, 0, 0, 0};
+
+        info.data.vertex_count = 2;
+        info.data.vertex_buffer_size = info.data.vertex_count * vertex_size * (i32)sizeof(r32);
+
+        info.data.vertex_buffer = push_size(&renderer.buffer_arena, info.data.vertex_buffer_size, r32);
+
+        for (i32 i = 0; i < 6; i++)
+        {
+            info.data.vertex_buffer[i] = vertices[i];
+        }
+
+        info.data.index_buffer_size = 0;
+        info.data.index_buffer_count = 0;
+
+        return {register_buffer(renderer, info).handle}; 
     }
 
     static BufferHandle create_quad_buffer(Renderer &renderer, u64 anchor = 0, b32 uvs = false)
@@ -2787,11 +2822,12 @@ namespace rendering
         renderer.render.shadow_commands[renderer.render.shadow_command_count++] = shadow_command;
     }
 
-    static void push_buffer_to_render_pass(Renderer &renderer, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, Transform &transform, ShaderHandle shader_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH)
+    static void push_buffer_to_render_pass(Renderer &renderer, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, Transform &transform, ShaderHandle shader_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH, PrimitiveType primitive_type = PrimitiveType::TRIANGLES)
     {
         assert(renderer.render.render_command_count < global_max_render_commands);
 
         RenderCommand render_command = {};
+        render_command.primitive_type = primitive_type;
         render_command.buffer = buffer_handle;
         render_command.material = material_instance_handle;
         render_command.transform = transform;
@@ -2804,9 +2840,10 @@ namespace rendering
             pass.commands.depth_free_commands[pass.commands.depth_free_command_count++] = render_command;
     }
 
-    static void push_instanced_buffer_to_render_pass(Renderer &renderer, i32 count, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, ShaderHandle shader_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH)
+    static void push_instanced_buffer_to_render_pass(Renderer &renderer, i32 count, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, ShaderHandle shader_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH, PrimitiveType primitive_type = PrimitiveType::TRIANGLES)
     {
         RenderCommand render_command = {};
+        render_command.primitive_type = primitive_type;
         render_command.count = count;
         render_command.buffer = buffer_handle;
         render_command.material = material_instance_handle;
@@ -3056,6 +3093,25 @@ namespace rendering
             i32 kerning = stbtt_GetCodepointKernAdvance(&font_info.info, text[i] - font_info.first_char, text[i + 1] - font_info.first_char);
             x += (r32)kerning * font_info.scale;
         }
+    }
+
+    static void push_line_to_render_pass(Renderer &renderer, math::Vec3 p1, math::Vec3 p2, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH)
+    {
+        RenderCommand render_command = {};
+        render_command.primitive_type = PrimitiveType::LINES;
+        render_command.buffer = renderer.render.line_buffer;
+
+        render_command.lines.p1 = p1;
+        render_command.lines.p2 = p2;
+        
+        render_command.material = renderer.render.line_material;
+        render_command.pass.shader_handle = renderer.render.line_shader;
+        RenderPass &pass = renderer.render.passes[render_pass_handle.handle - 1];
+
+        if(type == CommandType::WITH_DEPTH)
+            pass.commands.render_commands[pass.commands.render_command_count++] = render_command;
+        else
+            pass.commands.depth_free_commands[pass.commands.depth_free_command_count++] = render_command;
     }
 
     static void push_text(Renderer &renderer, CreateTextCommandInfo info, const char *text)
