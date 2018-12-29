@@ -341,6 +341,36 @@ namespace scene
         return ray;
     }
 
+    #define EPSILON 0.00001f
+
+    // b32 ray_intersects_plane(math::Vec3 plane_normal, math::Vec3 plane_position, math::Vec3 ray_origin, math::Vec3 ray_direction, math::Vec3 &intersection_point)
+    // {
+    //     r32 denom = math::dot(plane_normal, ray_direction);
+    //     if(denom > EPSILON)
+    //     {
+    //         math::Vec3 dist_vec = plane_position - ray_origin;
+    //         r32 t = math::dot(dist_vec, plane_normal) / denom;
+    //         intersection_point = ray_origin + ray_direction * t;
+    //         return t >= 0;
+    //     }
+
+    //     return false;
+    // }
+
+    b32 ray_intersects_plane(math::Vec3 plane_normal, math::Vec3 plane_position, math::Vec3 ray_origin, math::Vec3 ray_direction, math::Vec3 &intersection_point)
+    {
+        math::Vec3 local_p = ray_origin - plane_position;
+
+        r32 denom = math::dot(plane_normal, ray_direction);
+        if(ABS(denom) < EPSILON) return false;
+
+        r32 t = -(math::dot(plane_normal, local_p) / denom);
+        if(t < 0) return false;
+
+        intersection_point = ray_origin + ray_direction * t;
+        return false;
+    }
+
     math::Vec3 ray_vs_plane(math::Vec3 ray_origin, math::Vec3 ray_direction, math::Vec3 plane_normal, r32 plane_d)
     {
         r32 denominator = math::dot(plane_normal, ray_direction);
@@ -576,10 +606,9 @@ namespace scene
     static IntersectionData get_intersection_point(SceneManager *manager, InputController *input_controller, Camera &camera, math::Vec3 position)
     {
         math::Vec3 camera_position = camera.position;
-        math::Vec3 axis;
         math::Vec3 entity_position = position;
-        math::Vec3 point;
-        math::Vec3 normal;
+        
+        math::Vec3 axis;
             
         math::Ray ray = cast_ray(get_scene(manager->loaded_scene), (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
         
@@ -587,63 +616,35 @@ namespace scene
         {
         case Gizmos::X_ARROW:
         {
-            normal = math::Vec3(1.0f, 0.0f, 0.0f);
             axis = math::Vec3(1, 0, 0);
-            point = position + math::Vec3(100, 0, 0);
         }
         break;
         case Gizmos::Y_ARROW:
         {
-            normal = math::Vec3(0.0f, 1.0f, 0.0f);
             axis = math::Vec3(0, 1, 0);
-            point = position + math::Vec3(0, 100, 0);
         }
         break;
         case Gizmos::Z_ARROW:
         {
-            normal = math::Vec3(0.0f, 0.0f, 1.0f);
             axis = math::Vec3(0, 0, 1);
-            point = position + math::Vec3(0, 0, 100);
         }
         break;
         case Gizmos::NONE:
         return { false, math::Vec3(0.0f) };
         }
 
-        // math::Plane p = {};
-        // p.normal = ray.direction;
-        // p.d = -math::dot(p.normal, manager->gizmos.first_intersection_point);
-
-        // math::Vec3 intersection_point = ray_vs_plane(ray.origin, ray.direction, p.normal, p.d);
-
-        // return { true, intersection_point, axis };
-
-        math::Ray ray2;
-        ray2.direction = normal;
-        ray2.origin = entity_position;
+        math::Vec3 plane_position = position;
+        math::Vec3 plane_normal = math::cross(-camera.forward, axis);
+        plane_normal = math::normalize(math::cross(plane_normal, axis));
+        //plane_normal = math::cross(plane_normal, axis);
         
-
-        r32 t = closest_distance_between_lines_new(ray, ray2, *manager->renderer);
-        // Ray intersection
-
-        rendering::Transform xf = {};
-        xf.scale = math::Vec3(0.1f);
-
-        rendering::set_uniform_value(*manager->renderer, manager->debug_material_instance, "color", math::Rgba(1.0f, 1.0f, 0.0f, 1.0f));
-        xf.position = ray2.origin + ray2.direction * t;
-        rendering::push_buffer_to_render_pass(*manager->renderer, manager->debug_cube, manager->debug_material_instance, xf, manager->debug_shader_handle, rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer), rendering::CommandType::NO_DEPTH);
+        rendering::push_line_to_render_pass(*manager->renderer, plane_position, plane_position + plane_normal * 20, rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer), rendering::CommandType::NO_DEPTH);
         
-        rendering::push_line_to_render_pass(*manager->renderer, ray.origin, ray.origin + ray.direction * 20, rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer), rendering::CommandType::NO_DEPTH);
-        
-        rendering::push_line_to_render_pass(*manager->renderer, ray2.origin, ray2.origin + ray2.direction * 20, rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer), rendering::CommandType::NO_DEPTH);
-        
-        return { true, entity_position + ray2.direction * t };
+        math::Vec3 intersection_point;
 
-        // math::Plane p = get_plane(entity_position, camera_position, point);
+        b32 intersects = ray_intersects_plane(plane_normal, plane_position, ray.origin, ray.direction, intersection_point);
 
-        // math::Vec3 intersection_point = ray_vs_plane(ray.origin, ray.direction, p.normal, p.d);
-
-        // return {true, intersection_point };
+        return { true, intersection_point, axis };
     }
 
     static math::Vec3 closest_line_point(math::Vec3 origin, math::Vec3 dir, math::Vec3 p)
@@ -660,10 +661,20 @@ namespace scene
             IntersectionData data = get_intersection_point(manager, input_controller, camera, transform.position);
 
             debug("intersection point: %f %f %f\n", data.intersection_point.x, data.intersection_point.y, data.intersection_point.z);
+            
+            rendering::Transform xf = {};
+            xf.scale = math::Vec3(0.1f);
+
+            rendering::set_uniform_value(*manager->renderer, manager->debug_material_instance, "color", math::Rgba(1.0f, 1.0f, 0.0f, 1.0f));
+            xf.position = data.intersection_point;
+
+            rendering::push_buffer_to_render_pass(*manager->renderer, manager->debug_cube, manager->debug_material_instance, xf, manager->debug_shader_handle, rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer), rendering::CommandType::NO_DEPTH);
+                
             if(data.intersected)
             {
-                math::Vec3 diff = data.intersection_point - manager->gizmos.first_intersection_point;
                 
+                
+                math::Vec3 diff = data.intersection_point - manager->gizmos.first_intersection_point;
                 manager->gizmos.first_intersection_point = data.intersection_point;
                 
                 switch(manager->gizmos.selected_gizmo)
@@ -675,12 +686,12 @@ namespace scene
                 break;
                 case Gizmos::Y_ARROW:
                 {
-                    transform.position.y += diff.y;
+                    transform.position.y += diff.x;
                 }
                 break;
                 case Gizmos::Z_ARROW:
                 {
-                    transform.position.z += diff.z;
+                    transform.position.z += diff.x;
                 }
                 break;
                 case Gizmos::NONE:
@@ -779,11 +790,12 @@ namespace scene
                     if(_is_gizmo(entity, manager))
                     {
                         TransformComponent &transform = get_transform_comp(entity, manager->loaded_scene);
+                        TransformComponent &selected_entity_transform = get_transform_comp(manager->selected_entity, manager->loaded_scene);
                         IntersectionData data = get_intersection_point(manager, input_controller, camera, transform.position);                       
                         _select_gizmo(handle, entity);
                         
                         manager->gizmos.first_intersection_point = data.intersection_point;
-                        manager->gizmos.starting_transform_position = transform.position;
+                        manager->gizmos.starting_transform_position = selected_entity_transform.position;
                     }
                     else
                     {
