@@ -502,11 +502,46 @@ namespace scene
         math::Vec3 intersection_point;
         math::Vec3 direction;;
     };
+
+    r32 closest_distance_between_lines_2(math::Ray l1, math::Ray l2, Renderer &renderer)
+    {
+        math::Vec3 dp = l2.origin - l1.origin;
+        r32 v12 = math::dot(l1.direction, l1.direction);
+        r32 v22 = math::dot(l2.direction, l2.direction);
+        r32 v1v2 = math::dot(l1.direction, l2.direction);
+
+        r32 det = v1v2 * v1v2 - v12 * v22;
+
+        if(ABS(det) > 0.00001f)
+        {
+            r32 inv_det = 1.f / det;
+
+            r32 dpv1 = dot(dp, l1.direction);
+            r32 dpv2 = dot(dp, l2.direction);
+            
+            r32 t = inv_det * (v22 * dpv1 - v1v2 * dpv2);
+            r32 s = inv_det * (v1v2 * dpv1 - v12 * dpv2);
+
+            math::Vec3 p1 = l1.origin + l1.direction * t;
+            math::Vec3 p2 = l2.origin + l2.direction * s;
+            
+            rendering::push_line_to_render_pass(renderer, p1, p2, rendering::get_render_pass_handle_for_name(STANDARD_PASS, renderer), rendering::CommandType::NO_DEPTH);
+ 
+            math::norm(dp + p2 - p1);
+            return t;
+        }
+        else
+        {
+            math::Vec3 a = math::cross(dp, l1.direction);
+            //return std::sqrt(dot(a, a) / v12);
+            return 0.0f;
+        }
+    }
     
     r32 closest_distance_between_lines_new(math::Ray l1, math::Ray l2, Renderer &renderer)
     {
         r32 a = math::dot(l1.direction, l1.direction);
-        r32 b = math::dot(l1.direction, l2.direction );
+        r32 b = math::dot(l1.direction, l2.direction);
         math::Vec3 r = l1.origin - l2.origin;
         r32 c = math::dot(l1.direction, r);
         r32 e = math::dot(l2.direction, l2.direction);
@@ -534,45 +569,7 @@ namespace scene
             return 0.0f;
         }
     }
-
-    r32 closest_distance_between_lines(math::Ray l1, math::Ray l2)
-    {
-        math::Vec3 dp = l2.origin - l1.origin;
-        const r32 v12 = math::dot(l1.direction, l1.direction);
-        r32 t1 = 0.0f;
-        r32 t2 = 0.0f;
-        const r32 v22 = math::dot(l2.direction, l2.direction);
-        const r32 v1v2 = math::dot(l1.direction, l2.direction);
-
-        const r32 det = v1v2 * v1v2 - v12 * v22;
-
-        if (ABS(det) > 0.0001f)
-        {
-            const r32 inv_det = 1.f / det;
-
-            const r32 dpv1 = dot(dp, l1.direction);
-            const r32 dpv2 = dot(dp, l2.direction);
-
-            t1 = inv_det * (v22 * dpv1 - v1v2 * dpv2);
-            t2 = inv_det * (v1v2 * dpv1 - v12 * dpv2);
-
-            math::Vec3 p1 = (l1.origin + l1.direction * t1);
-            math::Vec3 p2 = (l2.origin + l2.direction * t2);
-            
-            debug("p1: %f %f %f\n", p1.x, p1.y, p1.z);
-            debug("p2: %f %f %f\n", p2.x, p2.y, p2.z);
-            
-            // return math::norm(dp + l2.direction * t2 - l1.direction * t1);
-        }
-        else
-        {
-            const math::Vec3 a = math::cross(dp, l1.direction);
-            // return math::sqrt(dot(a, a) / v12);
-        }
-
-        return t2;
-    }
-
+    
     static IntersectionData get_intersection_point(SceneManager *manager, InputController *input_controller, Camera &camera, math::Vec3 position)
     {
         math::Vec3 camera_position = camera.position;
@@ -609,23 +606,14 @@ namespace scene
         case Gizmos::NONE:
         return { false, math::Vec3(0.0f) };
         }
-
-        // math::Plane p = {};
-        // p.normal = ray.direction;
-        // p.d = -math::dot(p.normal, manager->gizmos.first_intersection_point);
-
-        // math::Vec3 intersection_point = ray_vs_plane(ray.origin, ray.direction, p.normal, p.d);
-
-        // return { true, intersection_point, axis };
-
+        
         math::Ray ray2;
         ray2.direction = normal;
         ray2.origin = entity_position;
-        
 
         r32 t = closest_distance_between_lines_new(ray, ray2, *manager->renderer);
+        
         // Ray intersection
-
         rendering::Transform xf = {};
         xf.scale = math::Vec3(0.1f);
 
@@ -633,11 +621,10 @@ namespace scene
         xf.position = ray2.origin + ray2.direction * t;
         rendering::push_buffer_to_render_pass(*manager->renderer, manager->debug_cube, manager->debug_material_instance, xf, manager->debug_shader_handle, rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer), rendering::CommandType::NO_DEPTH);
         
-        rendering::push_line_to_render_pass(*manager->renderer, ray.origin, ray.origin + ray.direction * 20, rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer), rendering::CommandType::NO_DEPTH);
         
-        rendering::push_line_to_render_pass(*manager->renderer, ray2.origin, ray2.origin + ray2.direction * 20, rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer), rendering::CommandType::NO_DEPTH);
+        rendering::push_line_to_render_pass(*manager->renderer, ray2.origin, ray2.origin + ray2.direction * 80, rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer), rendering::CommandType::NO_DEPTH);
         
-        return { true, entity_position + ray2.direction * t };
+        return { true, ray2.origin + ray2.direction * t };
 
         // math::Plane p = get_plane(entity_position, camera_position, point);
 
