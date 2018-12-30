@@ -333,6 +333,13 @@ UPDATE(update_stub)
 {
 }
 
+#define UPDATE_EDITOR(name) void name(GameMemory* game_memory)
+
+typedef UPDATE_EDITOR(UpdateEditor);
+UPDATE_EDITOR(update_editor_stub)
+{
+}
+
 #define ERR(msg) HandleError(__FILE__,__LINE__,msg)
 
 #endif

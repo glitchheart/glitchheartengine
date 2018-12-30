@@ -127,6 +127,12 @@ static void rotate_around_x(Camera &camera, r32 amount)
         update_arcball_rotation(camera, amount * 10.0f, 0.0f);
 }
 
+static void invert_pitch(Camera &camera)
+{
+    camera.pitch = -camera.pitch;
+    update_rotation(camera);
+}
+
 static void rotate_around_y(Camera &camera, r32 amount)
 {
     camera.yaw += amount;

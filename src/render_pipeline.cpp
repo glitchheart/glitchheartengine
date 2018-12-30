@@ -19,56 +19,6 @@ namespace rendering
         return -1;
     }
 
-
-    static MaterialInstanceArrayHandle allocate_material_instance_array(Renderer &renderer, i32 size = 2056)
-    {
-        i32 internal_handle = _find_next_internal_handle(renderer.render.current_material_instance_array_index, MAX_MATERIAL_INSTANCE_ARRAYS, renderer.render._internal_material_instance_array_handles);
-        if(internal_handle == -1)
-        {
-            internal_handle = _find_next_internal_handle(0, renderer.render.current_material_instance_array_index, renderer.render._internal_material_instance_array_handles);
-        }
-
-        assert(internal_handle != -1);
-
-        // Set the currently used index for less overhead later when looking for the next free index
-        renderer.render.current_material_instance_array_index = internal_handle + 1;
-        if(renderer.render.current_material_instance_array_index == MAX_MATERIAL_INSTANCE_ARRAYS)
-            renderer.render.current_material_instance_array_index = 0;
-        
-        i32 real_handle = renderer.render.material_instance_array_count++;
-        renderer.render._internal_material_instance_array_handles[internal_handle] = real_handle;
-        renderer.render.material_instance_arrays[real_handle] = (Material*)malloc(size * sizeof(Material));
-        
-        MaterialInstanceArrayHandle handle;
-        handle.handle = internal_handle + 1;
-        return handle;
-    }
-
-    static void free_material_instance_array(rendering::MaterialInstanceArrayHandle handle, Renderer &renderer)
-    {
-        i32 real_handle = renderer.render._internal_material_instance_array_handles[handle.handle - 1];
-
-        free(renderer.render.material_instance_arrays[real_handle]);
-        renderer.render.material_instance_arrays[real_handle] = nullptr;
-        
-        renderer.render._internal_material_instance_array_handles[handle.handle - 1] = -1;
-        
-        if(real_handle < renderer.render.material_instance_array_count - 1)
-        {
-            renderer.render.material_instance_arrays[real_handle] = renderer.render.material_instance_arrays[renderer.render.material_instance_array_count - 1];
-            
-            for(i32 i = 0; i < MAX_MATERIAL_INSTANCE_ARRAYS; i++)
-            {
-                if(renderer.render._internal_material_instance_array_handles[i] == renderer.render.material_instance_array_count - 1)
-                {
-                    renderer.render._internal_material_instance_array_handles[i] = real_handle;
-                }
-            }
-        }
-        
-        renderer.render.material_instance_array_count--;
-    }
-
     static i32 _find_and_update_next_free_buffer_index(i32 *current_index, b32 *free_buffers)
     {
         for(i32 i = *current_index; i < MAX_INSTANCE_BUFFERS; i++)
@@ -96,6 +46,161 @@ namespace rendering
         return -1;
     }
 
+    
+    static MaterialHandle create_material(Renderer &renderer, ShaderHandle shader_handle)
+    {
+        Material &material = renderer.render.materials[renderer.render.material_count];
+        material.shader = shader_handle;
+
+        Shader &shader = renderer.render.shaders[shader_handle.handle];
+
+        set_shader_values(material, shader, renderer);
+
+        return {renderer.render.material_count++};
+    }
+    
+    static MaterialInstanceHandle create_material_instance(Renderer &renderer, MaterialHandle material_handle)
+    {
+        Material &material = renderer.render.materials[material_handle.handle];
+
+        i32 real_handle = renderer.render.material_instance_count++;
+        i32 internal_index = _find_next_internal_handle(renderer.render.current_material_instance_index, global_max_material_instances, renderer.render._internal_material_instance_handles);
+
+        if(internal_index == -1)
+            internal_index = _find_next_internal_handle(0, renderer.render.current_material_instance_index, renderer.render._internal_material_instance_handles);
+
+        assert(internal_index != -1);
+
+        // Update the internal handle array
+        renderer.render._internal_material_instance_handles[internal_index] = real_handle;
+        
+        renderer.render.material_instances[real_handle] = material;
+        renderer.render.material_instances[real_handle].source_material = material_handle;
+
+        return { internal_index + 1 };
+    }
+
+    static void delete_material_instance(Renderer &renderer, MaterialInstanceHandle material_handle)
+    {
+        i32 real_handle = renderer.render._internal_material_instance_handles[material_handle.handle - 1];
+        renderer.render._internal_material_instance_handles[material_handle.handle - 1] = -1;
+
+        if(renderer.render.material_instance_count > 1)
+        {
+            renderer.render.material_instances[real_handle] = renderer.render.material_instances[renderer.render.material_instance_count - 1];
+
+            for(i32 i = 0; i < global_max_material_instances; i++)
+            {
+                if(renderer.render._internal_material_instance_handles[i] == renderer.render.material_instance_count - 1)
+                {
+                    renderer.render._internal_material_instance_handles[i] = real_handle;
+                }
+            }
+        }
+        
+        renderer.render.material_instance_count--;
+    }
+    
+    static void set_fallback_shader(Renderer &renderer, const char *path)
+    {
+        renderer.render.fallback_shader = load_shader(renderer, path);
+    }
+
+    static void set_shadow_map_shader(Renderer &renderer, const char *path)
+    {
+        renderer.render.shadow_map_shader = load_shader(renderer, path);
+    }
+
+    static void set_wireframe_shader(Renderer &renderer, const char *path)
+    {
+        renderer.render.wireframe_shader = load_shader(renderer, path);
+        MaterialHandle material = rendering::create_material(renderer, renderer.render.wireframe_shader);
+        renderer.render.wireframe_material = create_material_instance(renderer, material);
+    }
+
+    static void set_debug_line_shader(Renderer &renderer, const char *path)
+    {
+        renderer.render.line_shader = load_shader(renderer, path);
+        MaterialHandle material = create_material(renderer, renderer.render.line_shader);
+        renderer.render.line_material = create_material_instance(renderer, material);
+    }
+
+    // Reallocates the buffer with the new max count and copies over the old data
+    static void realloc_instance_buffer(InstanceBufferHandle handle, i32 new_instance_max, Renderer &renderer)
+    {
+        i32 *max = nullptr;
+        size_t type_size = 0;
+        Buffer *buffer = nullptr;
+        
+        switch(handle.type)
+        {
+        case ValueType::FLOAT:
+        {
+            r32 *new_ptr = (r32*)malloc(sizeof(r32) * new_instance_max);
+            memcpy(new_ptr, renderer.render.instancing.float_buffers[handle.handle - 1], renderer.render.instancing.float_buffer_counts[handle.handle - 1] * sizeof(r32));
+            free(renderer.render.instancing.float_buffers[handle.handle - 1]);
+            max = &renderer.render.instancing.float_buffer_max[handle.handle - 1];
+            type_size = sizeof(r32);
+            renderer.render.instancing.float_buffers[handle.handle - 1] = new_ptr;
+            buffer = renderer.render.instancing.internal_float_buffers[handle.handle - 1];
+        }
+        break;
+        case ValueType::FLOAT2:
+        {
+            math::Vec2 *new_ptr = (math::Vec2*)malloc(sizeof(math::Vec2) * new_instance_max);
+            memcpy(new_ptr, renderer.render.instancing.float2_buffers[handle.handle - 1], renderer.render.instancing.float2_buffer_counts[handle.handle - 1] * sizeof(math::Vec2));
+            free(renderer.render.instancing.float2_buffers[handle.handle - 1]);
+            max = &renderer.render.instancing.float2_buffer_max[handle.handle - 1];
+            type_size = sizeof(math::Vec2);
+            renderer.render.instancing.float2_buffers[handle.handle - 1] = new_ptr;
+            buffer = renderer.render.instancing.internal_float2_buffers[handle.handle - 1];
+        }
+        break;
+        case ValueType::FLOAT3:
+        {
+            math::Vec3 *new_ptr = (math::Vec3*)malloc(sizeof(math::Vec3) * new_instance_max);
+            memcpy(new_ptr, renderer.render.instancing.float3_buffers[handle.handle - 1], renderer.render.instancing.float3_buffer_counts[handle.handle - 1] * sizeof(math::Vec3));
+            free(renderer.render.instancing.float3_buffers[handle.handle - 1]);
+            max = &renderer.render.instancing.float3_buffer_max[handle.handle - 1];
+            type_size = sizeof(math::Vec3);
+            renderer.render.instancing.float3_buffers[handle.handle - 1] = new_ptr;
+            buffer = renderer.render.instancing.internal_float3_buffers[handle.handle - 1];
+        }
+        break;
+        case ValueType::FLOAT4:
+        {
+            math::Vec4 *new_ptr = (math::Vec4*)malloc(sizeof(math::Vec4) * new_instance_max);
+            memcpy(new_ptr, renderer.render.instancing.float4_buffers[handle.handle - 1], renderer.render.instancing.float4_buffer_counts[handle.handle - 1] * sizeof(math::Vec4));
+            free(renderer.render.instancing.float4_buffers[handle.handle - 1]);
+            max = &renderer.render.instancing.float4_buffer_max[handle.handle - 1];
+            type_size = sizeof(math::Vec4);
+            renderer.render.instancing.float4_buffers[handle.handle - 1] = new_ptr;
+            buffer = renderer.render.instancing.internal_float4_buffers[handle.handle - 1];
+        }
+        break;
+        case ValueType::MAT4:
+        {
+            math::Mat4 *new_ptr = (math::Mat4*)malloc(sizeof(math::Mat4) * new_instance_max);
+            memcpy(new_ptr, renderer.render.instancing.mat4_buffers[handle.handle - 1], renderer.render.instancing.mat4_buffer_counts[handle.handle - 1] * sizeof(math::Mat4));
+            free(renderer.render.instancing.mat4_buffers[handle.handle - 1]);
+            max = &renderer.render.instancing.mat4_buffer_max[handle.handle - 1];
+            type_size = sizeof(math::Mat4);
+            renderer.render.instancing.mat4_buffers[handle.handle - 1] = new_ptr;
+            buffer = renderer.render.instancing.internal_mat4_buffers[handle.handle - 1];
+        }
+        break;
+        default:
+        assert(false);
+        break;
+        }
+        
+        renderer.api_functions.delete_instance_buffer(buffer, renderer.api_functions.render_state, &renderer);
+        renderer.api_functions.create_instance_buffer(buffer, type_size * new_instance_max, BufferUsage::DYNAMIC, renderer.api_functions.render_state, &renderer);
+        
+        *max = new_instance_max;
+    }
+
+    // Allocates a new instance buffer with the specified max count
     static InstanceBufferHandle allocate_instance_buffer(ValueType type, i32 instance_max, Renderer &renderer)
     {
         InstanceBufferHandle handle;
@@ -105,6 +210,7 @@ namespace rendering
         void **buf_ptr = nullptr;
 
         Buffer *buffer = nullptr;
+        i32 *max = nullptr;
         
         switch(type)
         {
@@ -113,6 +219,7 @@ namespace rendering
             i32 index = _find_and_update_next_free_buffer_index(&renderer.render.instancing.current_internal_float_handle, renderer.render.instancing.free_float_buffers);
             type_size = sizeof(r32);
             buf_ptr = (void **)&renderer.render.instancing.float_buffers[index];
+            max = &renderer.render.instancing.float_buffer_max[index];
             buffer = renderer.render.instancing.internal_float_buffers[index];
             handle.handle = index + 1;
         }
@@ -122,6 +229,7 @@ namespace rendering
             i32 index = _find_and_update_next_free_buffer_index(&renderer.render.instancing.current_internal_float_handle, renderer.render.instancing.free_float2_buffers);
             type_size = sizeof(r32) * 2;
             buf_ptr = (void **)&renderer.render.instancing.float2_buffers[index];
+            max = &renderer.render.instancing.float2_buffer_max[index];
             buffer = renderer.render.instancing.internal_float2_buffers[index];
             handle.handle = index + 1;
         }
@@ -131,6 +239,7 @@ namespace rendering
             i32 index = _find_and_update_next_free_buffer_index(&renderer.render.instancing.current_internal_float_handle, renderer.render.instancing.free_float3_buffers);
             type_size = sizeof(r32) * 3;
             buf_ptr = (void **)&renderer.render.instancing.float3_buffers[index];
+            max = &renderer.render.instancing.float3_buffer_max[index];
             buffer = renderer.render.instancing.internal_float3_buffers[index];
             handle.handle = index + 1;
         }
@@ -140,6 +249,7 @@ namespace rendering
             i32 index = _find_and_update_next_free_buffer_index(&renderer.render.instancing.current_internal_float_handle, renderer.render.instancing.free_float4_buffers);
             type_size = sizeof(r32) * 4;
             buf_ptr = (void **)&renderer.render.instancing.float4_buffers[index];
+            max = &renderer.render.instancing.float4_buffer_max[index];
             buffer = renderer.render.instancing.internal_float4_buffers[index];
             handle.handle = index + 1;
         }
@@ -149,6 +259,7 @@ namespace rendering
             i32 index = _find_and_update_next_free_buffer_index(&renderer.render.instancing.current_internal_mat4_handle, renderer.render.instancing.free_mat4_buffers);
             type_size = sizeof(r32) * 16;
             buf_ptr = (void **)&renderer.render.instancing.mat4_buffers[index];
+            max = &renderer.render.instancing.mat4_buffer_max[index];
             buffer = renderer.render.instancing.internal_mat4_buffers[index];
             handle.handle = index + 1;
         }
@@ -156,11 +267,55 @@ namespace rendering
         default:
             assert(false);
         }
-
+        
+        *max = instance_max;
         *buf_ptr = malloc(type_size * instance_max);
         renderer.api_functions.create_instance_buffer(buffer, type_size * instance_max, BufferUsage::DYNAMIC, renderer.api_functions.render_state, &renderer);
 
         return handle;
+    }
+    
+    static i32 get_instance_buffer_max(InstanceBufferHandle buffer_handle, Renderer *renderer)
+    {
+        switch(buffer_handle.type)
+        {
+        case ValueType::FLOAT:
+        return renderer->render.instancing.float_buffer_max[buffer_handle.handle - 1];
+        case ValueType::FLOAT2:
+        return renderer->render.instancing.float2_buffer_max[buffer_handle.handle - 1];
+        case ValueType::FLOAT3:
+        return renderer->render.instancing.float3_buffer_max[buffer_handle.handle - 1];
+        case ValueType::FLOAT4:
+        return renderer->render.instancing.float4_buffer_max[buffer_handle.handle - 1];
+        case ValueType::MAT4:
+        return renderer->render.instancing.mat4_buffer_max[buffer_handle.handle - 1];
+        default:
+        assert(false);
+        break;
+        }
+        return -1;
+    }
+
+    static i32 get_instance_buffer_count(InstanceBufferHandle buffer_handle, Renderer *renderer)
+    {
+        switch(buffer_handle.type)
+        {
+        case ValueType::FLOAT:
+        return renderer->render.instancing.float_buffer_counts[buffer_handle.handle - 1];
+        case ValueType::FLOAT2:
+        return renderer->render.instancing.float2_buffer_counts[buffer_handle.handle - 1];
+        case ValueType::FLOAT3:
+        return renderer->render.instancing.float3_buffer_counts[buffer_handle.handle - 1];
+        case ValueType::FLOAT4:
+        return renderer->render.instancing.float4_buffer_counts[buffer_handle.handle - 1];
+        case ValueType::MAT4:
+        return renderer->render.instancing.mat4_buffer_counts[buffer_handle.handle - 1];
+        default:
+        assert(false);
+        break;
+        }
+        
+        return -1;
     }
     
     static r32* get_float_buffer_pointer(InstanceBufferHandle buffer_handle, Renderer& renderer)

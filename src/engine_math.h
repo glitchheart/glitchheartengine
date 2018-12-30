@@ -206,7 +206,7 @@ namespace math
         Vec3() : x(0.0f), y(0.0f), z(0.0f) {}
         Vec3(r32 i) : e{i,i,i} {}
         Vec3(r32 i[3]) : e{i[0],i[1], i[2]} {}
-        Vec3(const Vec3& o) : e{o.x, o.y, o.z} {}
+        Vec3(const Vec3& o) = default;
         Vec3(r64 x, r64 y, r64 z) : x((r32)x), y((r32)y), z((r32)z) {}
         Vec3(r64 x, i32 y, r64 z) : x((r32)x), y((r32)y), z((r32)z) {}
         Vec3(i32 x, i32 y, i32 z) : x((r32)x), y((r32)y), z((r32)z) {}
@@ -412,7 +412,7 @@ namespace math
         Vec4() : x(0.0f), y(0.0f), z(0.0f), w(0.0f) {}
         Vec4(r32 i) : e{i,i,i,i} {}
         Vec4(r32 i[4]) : e{i[0], i[1], i[2], i[3]} {}
-        Vec4(const Vec4& o) : x(o.x), y(o.y), z(o.z), w(o.w) {}
+        Vec4(const Vec4& o) = default;
         
         Vec4(i32 x, i32 y, i32 z, i32 w) : 
         x((r32)x), y((r32)y), z((r32)z), w((r32)w) {}
@@ -1106,10 +1106,7 @@ namespace math
         
         Mat4(r32 i) : v {{i,0,0,0},{0,i,0,0},{0,0,i,0},{0,0,0,i}} {}
         
-        Mat4(const Mat4& o) : v{ {o.v[0][0],o.v[0][1],o.v[0][2],o.v[0][3]}, 
-            {o.v[1][0],o.v[1][1],o.v[1][2],o.v[1][3]}, 
-            {o.v[2][0],o.v[2][1],o.v[2][2],o.v[2][3]}, 
-            {o.v[3][0],o.v[3][1],o.v[3][2],o.v[3][3]}} {}
+        Mat4(const Mat4& o) = default;
         
         
         Mat4& operator=(const Mat4& m) = default;

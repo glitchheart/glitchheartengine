@@ -204,9 +204,9 @@ i32 _find_unused_particle_system(Renderer& renderer)
     return -1;
 }
 
-static ParticleSystemHandle create_particle_system(Renderer &renderer, i32 max_particles, rendering::MaterialHandle material, rendering::MaterialInstanceArrayHandle array_handle)
+static ParticleSystemHandle create_particle_system(Renderer &renderer, i32 max_particles, rendering::MaterialHandle material)
 {
-    assert(material.handle != 0 && array_handle.handle != 0);
+    assert(material.handle != 0);
     
     i32 unused_handle = _find_unused_particle_system(renderer) + 1;
     
@@ -223,7 +223,7 @@ static ParticleSystemHandle create_particle_system(Renderer &renderer, i32 max_p
     system_info.particle_count = 0;
     system_info.last_used_particle = 0;
 
-    system_info.material_handle = rendering::create_material_instance(renderer, material, array_handle);
+    system_info.material_handle = rendering::create_material_instance(renderer, material);
     
     _allocate_particle_system(renderer, system_info, max_particles);
     
@@ -244,7 +244,7 @@ static void remove_particle_system(Renderer& renderer, ParticleSystemHandle &han
         rendering::free_instance_buffer(renderer.particles.particle_systems[0].size_buffer_handle, renderer);
         rendering::free_instance_buffer(renderer.particles.particle_systems[0].color_buffer_handle, renderer);
         rendering::free_instance_buffer(renderer.particles.particle_systems[0].angle_buffer_handle, renderer);
-        
+        rendering::delete_material_instance(renderer, renderer.particles.particle_systems[0].material_handle);
         renderer.particles.particle_system_count = 0;
         renderer.particles._current_internal_handle = 0;
         renderer.particles._internal_handles[removed_handle - 1] = -1;
@@ -256,7 +256,7 @@ static void remove_particle_system(Renderer& renderer, ParticleSystemHandle &han
     {
         i32 real_handle = renderer.particles._internal_handles[removed_handle - 1];
         ParticleSystemInfo& info = renderer.particles.particle_systems[real_handle];
-
+        rendering::delete_material_instance(renderer, info.material_handle);
         rendering::free_instance_buffer(info.offset_buffer_handle, renderer);
         rendering::free_instance_buffer(info.size_buffer_handle, renderer);
         rendering::free_instance_buffer(info.color_buffer_handle, renderer);

@@ -56,6 +56,10 @@ namespace scene
     struct Entity
     {
         char name[256];
+        b32 savable; // Should this be saved in the scene file?
+        
+        char template_path[256];
+        
         EntityHandle handle;
         
         u64 comp_flags;
@@ -200,6 +204,18 @@ namespace scene
     };
 
     #define MAX_INSTANCE_BUFFER_HANDLES 128
+    struct InstanceBufferData
+    {
+        rendering::BufferHandle buffer_handle;
+        rendering::MaterialHandle source_material_handle;
+
+        rendering::InstanceBufferHandle instance_buffer_handles[MAX_INSTANCE_BUFFER_HANDLES];
+        i32 instance_buffer_count;
+
+        i32 max_count;
+    };
+
+    #define GIZMO_TOLERANCE 0.07f
     struct Scene
     {
         b32 valid;
@@ -209,8 +225,8 @@ namespace scene
 
         Camera camera;
 
-        rendering::InstanceBufferHandle instance_buffer_handles[MAX_INSTANCE_BUFFER_HANDLES];
-        i32 instance_buffer_count;
+        InstanceBufferData instance_buffer_data[MAX_INSTANCE_BUFFER_HANDLES];
+        i32 instance_buffer_data_count;
 
         Entity *entities;
         i32 *_internal_handles;
@@ -230,8 +246,6 @@ namespace scene
         LightComponent *light_components;
         i32 light_component_count;
 
-        rendering::MaterialInstanceArrayHandle material_array_handle;
-        
         i32 max_entity_count;
         
         EntityTemplateState *template_state;
@@ -246,6 +260,7 @@ namespace scene
     };
 
     typedef void (*OnStartedEditMode)(SceneHandle scene);
+    typedef void (*OnLoad)(SceneHandle scene);
     typedef void (*OnSave)(SceneHandle scene);
     typedef void (*OnEntityUpdated)(EntityHandle entity, SceneHandle scene);
     typedef void (*OnEntitySelected)(EntityHandle entity, SceneHandle scene);
@@ -299,8 +314,8 @@ namespace scene
         b32 dragging;
 
         rendering::BufferHandle debug_cube;
-        rendering::MaterialInstanceHandle debug_material_instance;
-        rendering::MaterialInstanceHandle debug_material_instance_2;
+        rendering::Material debug_material_instance;
+        rendering::Material debug_material_instance_2;
         rendering::MaterialHandle debug_material;
         rendering::ShaderHandle debug_shader_handle;
         
@@ -310,6 +325,15 @@ namespace scene
             Gizmos selected_gizmo;
             TranslationConstraint constraint;
 
+            rendering::BufferHandle x_buffer;
+            rendering::BufferHandle y_buffer;
+            rendering::BufferHandle z_buffer;
+            rendering::ShaderHandle line_shader;
+            rendering::MaterialHandle line_material;
+            rendering::MaterialInstanceHandle x_material;
+            rendering::MaterialInstanceHandle y_material;
+            rendering::MaterialInstanceHandle z_material;
+            
             math::Vec3 x_scale;
             math::Vec3 y_scale;
             math::Vec3 z_scale;
@@ -322,6 +346,7 @@ namespace scene
         struct
         {
             OnStartedEditMode on_started_edit_mode;
+            OnLoad on_load;
             OnSave on_save;
             OnEntityUpdated on_entity_updated;
             OnEntitySelected on_entity_selected;
@@ -332,6 +357,7 @@ namespace scene
     {
         SceneManager *scene_manager = push_struct(arena, SceneManager);
         scene_manager->current_internal_index = 0;
+        scene_manager->scene_loaded = false;
         scene_manager->loaded_scene = { -1 };
         scene_manager->scenes = push_array(arena, global_max_scenes, scene::Scene);
         scene_manager->_internal_scene_handles = push_array(arena, global_max_scenes, i32);
@@ -348,6 +374,17 @@ namespace scene
         scene_manager->renderer = &renderer;
 
         scene_manager->debug_cube.handle = 0;
+
+        scene_manager->gizmos.x_buffer = rendering::create_line_buffer(renderer);
+        scene_manager->gizmos.y_buffer = rendering::create_line_buffer(renderer);
+        scene_manager->gizmos.z_buffer = rendering::create_line_buffer(renderer);
+
+        scene_manager->gizmos.line_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/line.shd");
+        scene_manager->gizmos.line_material = rendering::create_material(renderer, scene_manager->gizmos.line_shader);
+        
+        scene_manager->gizmos.x_material = rendering::create_material_instance(renderer, scene_manager->gizmos.line_material);
+        scene_manager->gizmos.y_material = rendering::create_material_instance(renderer, scene_manager->gizmos.line_material);
+        scene_manager->gizmos.z_material = rendering::create_material_instance(renderer, scene_manager->gizmos.line_material);
         
         return scene_manager;
     }
