@@ -261,7 +261,21 @@ namespace scene
         Y_ARROW,
         Z_ARROW
     };
+
+    enum class TranslationConstraint
+    {
+        NONE,
+        X,
+        Y,
+        Z
+    };
     
+    struct Line
+    {
+        math::Vec3 start;
+        math::Vec3 end;
+    };
+
     struct SceneManager
     {
         Renderer *renderer;
@@ -290,17 +304,24 @@ namespace scene
         
         struct
         {
+            b32 active;
             Gizmos selected_gizmo;
+            TranslationConstraint constraint;
 
             math::Vec3 x_scale;
             math::Vec3 y_scale;
             math::Vec3 z_scale;
-            EntityHandle x_arrow;
-            EntityHandle y_arrow;
-            EntityHandle z_arrow;
-
+            r32 current_distance_to_camera;
+            
             math::Vec3 first_intersection_point;
-            math::Vec3 starting_transform_position;
+            EntityHandle target_entity;
+
+            math::Vec3 initial_offset;
+            Line current_line;
+            math::Ray current_ray;
+            math::Vec3 intersection_points[6];
+            i32 point_count;
+            
         } gizmos;
         
         struct

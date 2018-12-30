@@ -384,6 +384,7 @@ namespace rendering
         PrimitiveType primitive_type;
         struct
         {
+            math::Vec3 color;
             math::Vec3 p1;
             math::Vec3 p2;
         } lines;

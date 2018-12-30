@@ -3095,12 +3095,13 @@ namespace rendering
         }
     }
 
-    static void push_line_to_render_pass(Renderer &renderer, math::Vec3 p1, math::Vec3 p2, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH)
+    static void push_line_to_render_pass(Renderer &renderer, math::Vec3 p1, math::Vec3 p2, math::Vec3 color, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH)
     {
         RenderCommand render_command = {};
         render_command.primitive_type = PrimitiveType::LINES;
         render_command.buffer = renderer.render.line_buffer;
 
+        render_command.lines.color = color;
         render_command.lines.p1 = p1;
         render_command.lines.p2 = p2;
         
