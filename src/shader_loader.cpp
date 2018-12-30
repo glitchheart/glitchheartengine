@@ -1315,7 +1315,7 @@ namespace rendering
                 stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
                                     text[i] - font.first_char, &size.x, &placeholder_y, &quad, 1);
         
-                if(quad.y1 - quad.y0 > size.y)
+                if(MAX(quad.y1, quad.y0) - MIN(quad.y0, quad.y1) > size.y)
                 {
                     size.y = quad.y1 - quad.y0;
                 }
@@ -1361,7 +1361,7 @@ namespace rendering
                 stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
                                     text[i] - font.first_char, &line_data.line_sizes[line_data.line_count - 1].x, &placeholder_y, &quad, 1);
         
-                if(quad.y1 - quad.y0 > size.y)
+                if(MAX(quad.y1, quad.y0) - MIN(quad.y0, quad.y1) > size.y)
                 {
                     line_data.line_sizes[line_data.line_count - 1].y = quad.y1 - quad.y0;
                 }
@@ -1385,6 +1385,32 @@ namespace rendering
         return line_data;
     }
 
+    static LineData get_line_size_data_scaled(Renderer* renderer, const char *text, TrueTypeFontInfo font, u64 scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)
+    {
+        LineData line_data = get_line_size_data(text, font);
+
+        math::Vec2i scale = get_scale(renderer);
+        
+        for(i32 i = 0; i < line_data.line_count; i++)
+        {
+            if(scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)
+            {
+                r32 ratio = line_data.line_sizes[i].y / line_data.line_sizes[i].x;
+                line_data.line_sizes[i].x = to_ui(renderer, scale.x, line_data.line_sizes[i].x);
+                line_data.line_sizes[i].y = line_data.line_sizes[i].y * ratio;
+            }
+            else
+            {
+                line_data.line_sizes[i].x = to_ui(renderer, scale.x, line_data.line_sizes[i].x);
+                line_data.line_sizes[i].y = to_ui(renderer, scale.y, line_data.line_sizes[i].y);
+            }
+        }
+
+        line_data.total_height = to_ui(renderer, scale.y, line_data.total_height);
+        line_data.line_spacing = to_ui(renderer, scale.y, line_data.line_spacing);
+
+        return line_data;
+    }
 
     static math::Vec2 get_text_size_scaled(Renderer *renderer, const char* text, TrueTypeFontInfo font, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
     {
@@ -2881,7 +2907,7 @@ namespace rendering
         return scaled_clip_rect;
     }
 
-    static void generate_text_coordinates(const char *text, TrueTypeFontInfo &font_info, math::Vec3 position, u64 alignment_flags, FramebufferInfo &framebuffer, CharacterData **coords)
+    static void generate_text_coordinates(Renderer* renderer, const char *text, TrueTypeFontInfo &font_info, math::Vec3 position, u64 alignment_flags, FramebufferInfo &framebuffer, CharacterData **coords)
     {
         // @Note: Compute the coord buffer
         i32 n = 0;
@@ -2951,10 +2977,36 @@ namespace rendering
 
     static void push_text(Renderer *renderer, CreateTextCommandInfo info, const char *text)
     {
-        if(info.position.y > 1000.0f || info.position.y < 0.0f
-           || info.position.x < 0.0f || info.position.x > 1000.0f)
+        math::Vec2 size = get_text_size_scaled(renderer, text, get_tt_font_info(renderer, info.font.handle), 0);
+        
+        if(info.alignment_flags & UIAlignment::LEFT)
         {
-            return;
+            if(info.position.x + size.x < 0.0f || info.position.x > 1000.0f)
+            {
+                return;
+            }
+        }
+        else
+        {
+            if(info.position.x < 0.0f || info.position.x - size.x > 1000.0f)
+            {
+                return;
+            }
+        }
+        
+        if(info.alignment_flags & UIAlignment::TOP)
+        {
+            if(info.position.y > 1000.0f || info.position.y - size.y < 0.0f)
+            {
+                return;
+            }
+        }
+        else
+        {
+            if(info.position.y + size.y < 0.0f || info.position.y > 1000.0f)
+            {
+                return;
+            }
         }
         
         RenderPass &pass = renderer->render.ui.pass;
@@ -2986,8 +3038,6 @@ namespace rendering
             info.clip = false;
         }
 
-        scaled_clip_rect.y = scaled_clip_rect.y - scaled_clip_rect.height;
-
         command.clip = info.clip;
         command.clip_rect = scaled_clip_rect;
         command.text_length = strlen(text);
@@ -3007,7 +3057,7 @@ namespace rendering
 
         CharacterData *coords = pass.ui.coords[pass.ui.text_command_count];
 
-        generate_text_coordinates(text, font_info, pos, info.alignment_flags, *framebuffer, &coords);
+        generate_text_coordinates(renderer, text, font_info, pos, info.alignment_flags, *framebuffer, &coords);
 
         command.buffer = {pass.ui.text_command_count++};
     }
@@ -3113,16 +3163,40 @@ namespace rendering
         CreateUICommandInfo scaled_info = info;
         math::Vec2i resolution_scale = get_scale(renderer);
 
-        if(info.position.y > 1000.0f || info.position.y < 0.0f
-           || info.position.x < 0.0f || info.position.x > 1000.0f)
-        {
-            return;
-        }
+        // if(info.anchor_flag & UIAlignment::LEFT)
+        // {
+        //     if(info.position.x + info.scale.x < 0.0f || info.position.x > 1000.0f)
+        //     {
+        //         return;
+        //     }
+        // }
+        // else
+        // {
+        //     if(info.position.x < 0.0f || info.position.x + info.scale.x > 1000.0f)
+        //     {
+        //         return;
+        //     }
+        // }
+        
+        // if(info.anchor_flag & UIAlignment::TOP)
+        // {
+        //     if(info.position.y > 1000.0f || info.position.y - info.scale.y < 0.0f)
+        //     {
+        //         return;
+        //     }
+        // }
+        // else
+        // {
+        //     if(info.position.y + info.scale.y < 0.0f || info.position.y > 1000.0f)
+        //     {
+        //         return;
+        //     }
+        // }
         
         math::Vec2 pos;
         pos.x = (info.position.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
         pos.y = (info.position.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-
+        
         scaled_info.position = pos;
         scaled_info.z_layer = info.z_layer;
 
@@ -3147,6 +3221,11 @@ namespace rendering
 
         if (anchor & UIAlignment::TOP)
         {
+            r32 overflow = pos.y - scaled_info.scale.y;
+            if(overflow < 0.0f)
+            {
+                scaled_info.scale.y -= overflow;
+            }
             if (anchor & UIAlignment::LEFT)
             {
                 buffer = renderer->render.ui.top_left_textured_quad_buffer;
@@ -3154,14 +3233,11 @@ namespace rendering
             else if (anchor & UIAlignment::RIGHT)
             {
                 buffer = renderer->render.ui.top_right_textured_quad_buffer;
-                scaled_info.clip_rect.x = scaled_info.clip_rect.x - scaled_info.clip_rect.width;
             }
             else
             {
                 buffer = renderer->render.ui.top_x_centered_textured_quad_buffer;
             }
-
-            scaled_info.clip_rect.y = scaled_info.clip_rect.y - scaled_info.clip_rect.height;
         }
         else if (anchor & UIAlignment::BOTTOM)
         {
@@ -3172,7 +3248,6 @@ namespace rendering
             else if (anchor & UIAlignment::RIGHT)
             {
                 buffer = renderer->render.ui.bottom_right_textured_quad_buffer;
-                scaled_info.clip_rect.x = scaled_info.clip_rect.x - scaled_info.clip_rect.width;
             }
             else
             {
@@ -3188,7 +3263,6 @@ namespace rendering
             else if (anchor & UIAlignment::RIGHT)
             {
                 buffer = renderer->render.ui.right_y_centered_textured_quad_buffer;
-                scaled_info.clip_rect.x = scaled_info.clip_rect.x - scaled_info.clip_rect.width;
             }
             else
             {
