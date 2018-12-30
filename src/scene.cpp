@@ -299,23 +299,7 @@ namespace scene
             start_particle_system(scene.particle_system_components[i].handle, *scene.renderer);
         }
     }
-    static math::Ray cast_ray_new(Scene &scene, i32 mouse_x, i32 mouse_y)
-    {
-        i32 width = scene.renderer->window_width;
-        i32 height = scene.renderer->window_height;
-        Camera &camera = scene.camera;
-
-        r32 x = ((2.0f * ((r32)mouse_x / (r32)width)) - 1.0f) / camera.projection_matrix.a;
-        r32 y = -((2.0f * ((r32)mouse_y / (r32)height)) - 1.0f) / camera.projection_matrix.f;
-        r32 z = -1.0f;
-
-        math::Ray ray;
-        ray.direction = math::normalize(math::Vec3(x, y, z) * camera.view_matrix);
-        ray.origin = camera.position;
-
-        return ray;
-    }
-
+    
     static math::Ray cast_ray(Scene &scene, i32 mouse_x, i32 mouse_y)
     {
         i32 width = scene.renderer->window_width;
@@ -432,7 +416,6 @@ namespace scene
         Scene &scene = get_scene(handle);
 
         math::Ray ray = cast_ray(scene, mouse_x, mouse_y);
-        handle.manager->gizmos.current_ray = ray;
         
         r32 dist = 100000; // Just set a crazy max distance
         
@@ -508,24 +491,15 @@ namespace scene
             rendering::push_line_to_render_pass(*manager->renderer, position, position + math::Vec3(0.0f, manager->gizmos.current_distance_to_camera, 0.0f), c == TranslationConstraint::Y ? yellow : math::Vec3(0.0f, 1.0f, 0.0f), rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer), rendering::CommandType::NO_DEPTH);
             // Z
             rendering::push_line_to_render_pass(*manager->renderer, position, position + math::Vec3(0.0f, 0.0f, manager->gizmos.current_distance_to_camera), c == TranslationConstraint::Z ? yellow : math::Vec3(0.0f, 0.0f, 1.0f), rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer), rendering::CommandType::NO_DEPTH);
-
-            // Draw debug ray
-            //rendering::push_line_to_render_pass(*manager->renderer, manager->gizmos.current_ray.origin, manager->gizmos.current_ray.origin + manager->gizmos.current_ray.direction * 200,  math::Vec3(0.0f, 0.0f, 0.0f), rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer), rendering::CommandType::NO_DEPTH);
-
-            // rendering::Transform xf = {};
-            // xf.scale = math::Vec3(0.02f);
-
-            // for(i32 i = 0; i < manager->gizmos.point_count; i++)
-            // {
-            //     xf.position = manager->gizmos.intersection_points[i];
-            //     rendering::push_buffer_to_render_pass(*manager->renderer, manager->debug_cube, manager->debug_material_instance, xf, manager->debug_shader_handle, rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer), rendering::CommandType::NO_DEPTH);
-            // }
         }
     }
 
     // Finds the line between two lines with the minimum distance
-    b32 line_vs_line(Line l1, Line l2, math::Vec3 *points, r32 *mua, r32 *mub)
+    b32 line_vs_line(Line l1, Line l2, math::Vec3 *points)
     {
+        r32 mua = 0.0f;
+        r32 mub = 0.0f;
+        
         math::Vec3 p1 = l1.start;
         math::Vec3 p2 = l1.end;
         math::Vec3 p3 = l2.start;
@@ -560,19 +534,27 @@ namespace scene
             return false;
         numer = d1343 * d4321 - d1321 * d4343;
 
-        *mua = numer / denom;
-        *mub = (d1343 + d4321 * (*mua)) / d4343;
+        mua = numer / denom;
+        mub = (d1343 + d4321 * (mua)) / d4343;
 
-        points[0].x = p1.x + *mua * p21.x;
-        points[0].y = p1.y + *mua * p21.y;
-        points[0].z = p1.z + *mua * p21.z;
-        points[1].x = p3.x + *mub * p43.x;
-        points[1].y = p3.y + *mub * p43.y;
-        points[1].z = p3.z + *mub * p43.z;
+        points[0].x = p1.x + mua * p21.x;
+        points[0].y = p1.y + mua * p21.y;
+        points[0].z = p1.z + mua * p21.z;
+        points[1].x = p3.x + mub * p43.x;
+        points[1].y = p3.y + mub * p43.y;
+        points[1].z = p3.z + mub * p43.z;
 
         return true;
     }
 
+    static Line line_from_ray(math::Ray ray)
+    {
+        Line l;
+        l.start = ray.origin;
+        l.end = ray.origin + ray.direction * 1000;
+        return l;
+    }
+    
     static void update_transform(TransformComponent &transform, Camera &camera, SceneManager *manager, InputController *input_controller, r64 delta_time)
     {
         if(manager->dragging)
@@ -580,16 +562,10 @@ namespace scene
             math::Vec3 points[2];
             Scene &scene = get_scene(manager->loaded_scene);
             math::Ray ray = cast_ray(scene, (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
-            manager->gizmos.current_ray = ray;
             
-            Line l1;
-            l1.start = ray.origin;
-            l1.end = ray.origin + ray.direction * 1000;
-           
-            r32 one = 0.0f;
-            r32 two = 0.0f;
-                
-            line_vs_line(l1, manager->gizmos.current_line, points, &one, &two);
+            Line l1 = line_from_ray(ray);
+            
+            line_vs_line(l1, manager->gizmos.current_line, points);
                 
             switch(manager->gizmos.constraint)
             {
@@ -654,8 +630,7 @@ namespace scene
                 TransformComponent &t = get_transform_comp(manager->selected_entity, handle);
                 
                 update_transform(t, camera, manager, input_controller, delta_time);
-                
-                manager->gizmos.current_distance_to_camera = 1.0f; //math::distance(camera.position, t.position) * 0.1f;
+                manager->gizmos.current_distance_to_camera = math::distance(camera.position, t.position) * 0.1f;
                 
                 if(KEY_DOWN(Key_F))
                 {
@@ -673,61 +648,52 @@ namespace scene
                     math::Vec3 pos = t.position;
                     
                     TranslationConstraint constraint = TranslationConstraint::NONE;
-                
-                    manager->gizmos.point_count = 0;
 
                     math::Vec3 points[2];
-
+                    
                     math::Ray ray = cast_ray(scene, (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
-                    manager->gizmos.current_ray = ray;
-                    Line l1;
-                    l1.start = ray.origin;
-                    l1.end = ray.origin + ray.direction * 1000;
-                
+
+                    r32 max_distance = 0.04f * manager->gizmos.current_distance_to_camera;
+                    r32 current_distance = 1000.0f;
+                    Line l1 = line_from_ray(ray);
+
+                    // Check X axis
                     Line l2;
                     l2.start = pos + math::Vec3(-1000, 0, 0);
                     l2.end = pos + math::Vec3(1000, 0, 0);
                 
-                    r32 one = 0.0f;
-                    r32 two = 0.0f;
-                    r32 current_distance = 1000.0f;
-                
-                    line_vs_line(l1, l2, points, &one, &two);
+                    line_vs_line(l1, l2, points);
                     r32 x_dist = math::distance(points[0], points[1]);
-                    if(x_dist < 0.04f)
+                    if(x_dist < max_distance)
                     {
                         current_distance = x_dist;
                         constraint = TranslationConstraint::X;
                         manager->gizmos.current_line = l2;
                         manager->gizmos.initial_offset = points[1] - pos;
                     }
-                
-                    manager->gizmos.intersection_points[manager->gizmos.point_count++] = points[0];
-                    manager->gizmos.intersection_points[manager->gizmos.point_count++] = points[1];
 
+                    // Check Y axis
                     l2.start = pos + math::Vec3(0, -1000, 0);
                     l2.end = pos + math::Vec3(0, 1000, 0);
                 
-                    line_vs_line(l1, l2, points, &one, &two);
+                    line_vs_line(l1, l2, points);
                 
                     r32 y_dist = math::distance(points[0], points[1]);
-                    if(y_dist < current_distance && y_dist < 0.04f)
+                    if(y_dist < current_distance && y_dist < max_distance)
                     {
                         current_distance = y_dist;
                         constraint = TranslationConstraint::Y;
                         manager->gizmos.current_line = l2;
                         manager->gizmos.initial_offset = points[1] - pos;
                     }
-                
-                    manager->gizmos.intersection_points[manager->gizmos.point_count++] = points[0];
-                    manager->gizmos.intersection_points[manager->gizmos.point_count++] = points[1];
-                
+
+                    // Check Z axis
                     l2.start = pos + math::Vec3(0, 0, -1000);
                     l2.end = pos + math::Vec3(0, 0, 1000);
 
-                    line_vs_line(l1, l2, points, &one, &two);
+                    line_vs_line(l1, l2, points);
                     r32 z_dist = math::distance(points[0], points[1]);
-                    if(z_dist < current_distance && z_dist < 0.04f)
+                    if(z_dist < current_distance && z_dist < max_distance)
                     {
                         current_distance = z_dist;
                         constraint = TranslationConstraint::Z;
@@ -735,27 +701,9 @@ namespace scene
                         manager->gizmos.initial_offset = points[1] - pos;
                     }
 
-                    switch(constraint)
-                    {
-                    case TranslationConstraint::NONE:
-                    printf("NONE!\n");
-                    break;
-                    case TranslationConstraint::X:
-                    printf("X!\n");
-                    break;
-                    case TranslationConstraint::Y:
-                    printf("Y!\n");
-                    break;
-                    case TranslationConstraint::Z:
-                    printf("Z!\n");
-                    break;
-                    }
-
                     manager->gizmos.constraint = constraint;
-                
                 }
                 
-
                 scene::EntityHandle entity = scene::pick_entity(handle, (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
 
                 if(manager->gizmos.constraint == TranslationConstraint::NONE)
@@ -780,6 +728,11 @@ namespace scene
 
             if(MOUSE_UP(Mouse_Left))
             {
+                if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
+                {
+                    manager->callbacks.on_entity_updated(manager->selected_entity, handle);
+                }
+                
                 manager->gizmos.constraint = TranslationConstraint::NONE;
                 manager->dragging = false;
             }

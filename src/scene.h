@@ -245,6 +245,8 @@ namespace scene
         SceneManager *manager;
     };
 
+    typedef void (*OnStartedEditMode)(SceneHandle scene);
+    typedef void (*OnSave)(SceneHandle scene);
     typedef void (*OnEntityUpdated)(EntityHandle entity, SceneHandle scene);
     typedef void (*OnEntitySelected)(EntityHandle entity, SceneHandle scene);
 
@@ -313,19 +315,14 @@ namespace scene
             math::Vec3 z_scale;
             r32 current_distance_to_camera;
             
-            math::Vec3 first_intersection_point;
-            EntityHandle target_entity;
-
             math::Vec3 initial_offset;
             Line current_line;
-            math::Ray current_ray;
-            math::Vec3 intersection_points[6];
-            i32 point_count;
-            
         } gizmos;
         
         struct
         {
+            OnStartedEditMode on_started_edit_mode;
+            OnSave on_save;
             OnEntityUpdated on_entity_updated;
             OnEntitySelected on_entity_selected;
         } callbacks;
