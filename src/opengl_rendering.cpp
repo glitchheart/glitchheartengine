@@ -1918,25 +1918,6 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
     glViewport(0, 0, framebuffer.width, framebuffer.height);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
 
-    // for (i32 i = 0; i < pass.ui.render_command_count; i++)
-    // {
-    //     rendering::UIRenderCommand &command = pass.ui.render_commands[i];
-
-    //     if (command.clip)
-    //     {
-    //         glEnable(GL_SCISSOR_TEST);
-    //         math::Rect clip_rect = command.clip_rect;
-    //         glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
-    //     }
-
-    //     render_buffer(command.transform, command.buffer, pass, render_state, renderer, command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
-
-    //     if (command.clip)
-    //     {
-    //         glDisable(GL_SCISSOR_TEST);
-    //     }
-    // }
-
     Buffer &font_buffer = get_internal_buffer(renderer, render_state, renderer->render.ui.font_buffer);
 
     i32 internal_handle = renderer->render._internal_buffer_handles[renderer->render.ui.font_buffer.handle - 1];
