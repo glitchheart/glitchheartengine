@@ -313,7 +313,10 @@ static GLuint load_shader(Renderer &renderer, rendering::Shader &shader, ShaderG
     gl_shader.program = glCreateProgram();
 
     glAttachShader(gl_shader.program, gl_shader.vert_program);
-    glAttachShader(gl_shader.program, gl_shader.geo_program);
+
+    if(shader.geo_shader)
+        glAttachShader(gl_shader.program, gl_shader.geo_program);
+    
     glAttachShader(gl_shader.program, gl_shader.frag_program);
 
     if (!link_program(&renderer.shader_arena, shader.path, gl_shader.program))
@@ -905,6 +908,27 @@ static void set_mouse_lock(b32 locked, RenderState *render_state)
         glfwSetInputMode(render_state->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
+static Buffer &get_internal_buffer(Renderer &renderer, RenderState &render_state, rendering::BufferHandle buffer)
+{
+    i32 handle = renderer.render._internal_buffer_handles[buffer.handle - 1];
+    Buffer &gl_buffer = render_state.gl_buffers[handle];
+    return gl_buffer;
+}
+
+static void direct_update_buffer(rendering::BufferHandle handle, r32 *data, size_t count, size_t size, RenderState *render_state, Renderer *renderer)
+{
+    Buffer& buffer = get_internal_buffer(*renderer, *render_state, handle);
+
+    bind_vertex_array(buffer.vao, *render_state);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+    //buffer.vertex_count = (i32)count;
+    //buffer.vertex_buffer_size = (i32)size;
+
+    glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW);
+
+    bind_vertex_array(0, *render_state);
+}
+
 static void initialize_opengl(RenderState &render_state, Renderer &renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char *title, MemoryArena *perm_arena, b32 *do_save_config)
 {
     renderer.api_functions.render_state = &render_state;
@@ -913,6 +937,7 @@ static void initialize_opengl(RenderState &render_state, Renderer &renderer, r32
     renderer.api_functions.create_framebuffer = &create_framebuffer;
     renderer.api_functions.create_instance_buffer = &create_instance_buffer;
     renderer.api_functions.delete_instance_buffer = &delete_instance_buffer;
+    renderer.api_functions.update_buffer = &direct_update_buffer;
     renderer.api_functions.set_mouse_lock = &set_mouse_lock;
         
 
@@ -1216,7 +1241,6 @@ static void set_ms_texture_uniform(GLuint shader_handle, GLuint texture, i32 ind
 }
 
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
-
 
 // @Incomplete: Ignores if the register info has new vertex attributes
 static void update_buffer(Buffer &buffer, rendering::RegisterBufferInfo info, RenderState &render_state)
@@ -1707,13 +1731,6 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
     }
 }
 
-static Buffer &get_internal_buffer(Renderer &renderer, RenderState &render_state, rendering::BufferHandle buffer)
-{
-    i32 handle = renderer.render._internal_buffer_handles[buffer.handle - 1];
-    Buffer &gl_buffer = render_state.gl_buffers[handle];
-    return gl_buffer;
-}
-
 static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Transform transform, rendering::BufferHandle& buffer_handle, const rendering::RenderPass &render_pass, RenderState &render_state, Renderer &renderer, rendering::Material& material, const Camera &camera, i32 count = 0, ShaderGL *shader = nullptr)
 {
     Buffer& buffer = get_internal_buffer(renderer, render_state, buffer_handle);
@@ -1819,7 +1836,7 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
             if(primitive_type == rendering::PrimitiveType::TRIANGLES)
                 glDrawArrays(GL_TRIANGLES, 0, buffer.vertex_count / 3);
             else if(primitive_type == rendering::PrimitiveType::LINES)
-                glDrawArrays(GL_LINES, 0, 2);
+                glDrawArrays(GL_LINES, 0, buffer.vertex_count);
         }
     }
 }
@@ -2004,33 +2021,6 @@ static void render_ui_pass(RenderState &render_state, Renderer &renderer)
     pass.ui.render_command_count = 0;
 }
 
-static void setup_line_buffer(rendering::RenderCommand &command, Renderer *renderer, RenderState *render_state)
-{
-    Buffer &buffer = get_internal_buffer(*renderer, *render_state, command.buffer);
-
-    i32 internal_handle = renderer->render._internal_buffer_handles[command.buffer.handle - 1];
-
-    rendering::RegisterBufferInfo &info = renderer->render.buffers[internal_handle];
-
-    bind_vertex_array(buffer.vao, *render_state);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
-
-    info.data.vertex_buffer_size = (i32)(2 * sizeof(math::Vec3));
-    info.data.vertex_count = 2;
-
-    r32 points[6];
-    points[0] = command.lines.p1.x;
-    points[1] = command.lines.p1.y;
-    points[2] = command.lines.p1.z;
-    points[3] = command.lines.p2.x;
-    points[4] = command.lines.p2.y;
-    points[5] = command.lines.p2.z;
-    
-    info.data.vertex_buffer = (r32 *)points;
-
-    update_buffer(buffer, info, *render_state);
-}
-
 static void render_all_passes(RenderState &render_state, Renderer &renderer)
 {
     bind_vertex_array(0, render_state);
@@ -2060,12 +2050,6 @@ static void render_all_passes(RenderState &render_state, Renderer &renderer)
             rendering::RenderCommand &command = pass.commands.render_commands[i];
             rendering::Material &material = get_material_instance(command.material, renderer);
             
-            if(command.primitive_type == rendering::PrimitiveType::LINES)
-            {
-                setup_line_buffer(command, &renderer, &render_state);
-                rendering::set_uniform_value(renderer, material, "color", command.lines.color);
-            }
-            
             render_buffer(command.primitive_type, command.transform, command.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
         }
 
@@ -2076,12 +2060,6 @@ static void render_all_passes(RenderState &render_state, Renderer &renderer)
             rendering::RenderCommand &command = pass.commands.depth_free_commands[i];
             rendering::Material &material = get_material_instance(command.material, renderer);
 
-            if(command.primitive_type == rendering::PrimitiveType::LINES)
-            {
-                setup_line_buffer(command, &renderer, &render_state);
-                rendering::set_uniform_value(renderer, material, "color", command.lines.color);
-            }
-            
             render_buffer(command.primitive_type, command.transform, command.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
         }
 
@@ -2226,7 +2204,7 @@ static void render(RenderState &render_state, Renderer &renderer, r64 delta_time
     check_window_mode_and_size(render_state, renderer, save_config);
     load_new_shaders(render_state, renderer);
     reload_shaders(render_state, renderer);
-
+    
     // @Speed: Do we have to clear this every frame?
     clear(&renderer.shader_arena);
 

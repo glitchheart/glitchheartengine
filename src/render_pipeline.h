@@ -11,16 +11,9 @@ namespace rendering
 		i32 handle;
     };
 
-    struct MaterialInstanceArrayHandle
-    {
-        i32 handle;
-    };
-
     struct MaterialInstanceHandle
     {
 		i32 handle;
-        b32 internal; // If internal is true it means that the intance is one of the internal renderer ones
-        MaterialInstanceArrayHandle array_handle;
     };
 
     struct MaterialHandle
@@ -298,10 +291,6 @@ namespace rendering
         } lighting;
 
         b32 instanced;
-        struct
-        {
-            
-        } instancing;
         
 		Material () {}
     };
@@ -382,12 +371,6 @@ namespace rendering
         i32 count;
 
         PrimitiveType primitive_type;
-        struct
-        {
-            math::Vec3 color;
-            math::Vec3 p1;
-            math::Vec3 p2;
-        } lines;
         struct
         {
             rendering::RenderPassHandle pass_handle;

@@ -2,5 +2,3 @@
 
 pushd $GLITCH_ENGINE
 time ./actual_build.sh
-popd
-

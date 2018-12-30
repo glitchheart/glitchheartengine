@@ -449,6 +449,7 @@ typedef void (*CreateFramebuffer)(rendering::FramebufferInfo &framebuffer_info, 
 typedef void (*CreateInstanceBuffer)(Buffer *buffer, size_t buffer_size, rendering::BufferUsage usage, RenderState *render_state, Renderer *renderer);
 typedef void (*DeleteInstanceBuffer)(Buffer *buffer, RenderState *render_state, Renderer *renderer);
 typedef void (*DeleteAllInstanceBuffers)(RenderState *render_state, Renderer *renderer);
+typedef void (*UpdateBuffer)(rendering::BufferHandle handle, r32 *data, size_t count, size_t size, RenderState *render_state, Renderer *renderer);
 typedef void (*SetMouseLock)(b32 locked, RenderState *render_state);
 
 struct GraphicsAPI
@@ -460,6 +461,8 @@ struct GraphicsAPI
     DeleteInstanceBuffer delete_instance_buffer;
     DeleteAllInstanceBuffers delete_all_instance_buffers;
 
+    UpdateBuffer update_buffer;
+    
     SetMouseLock set_mouse_lock;
     
     RenderState *render_state;
@@ -592,14 +595,10 @@ struct Renderer
 		rendering::Material *materials;
 		i32 material_count;
 
-        rendering::Material *internal_materials;
-        i32 internal_material_count;
-        
-		rendering::Material *material_instance_arrays[MAX_MATERIAL_INSTANCE_ARRAYS];
-		i32 material_instance_array_counts[MAX_MATERIAL_INSTANCE_ARRAYS];
-        i32 _internal_material_instance_array_handles[MAX_MATERIAL_INSTANCE_ARRAYS];
-        i32 material_instance_array_count;
-        i32 current_material_instance_array_index;
+		rendering::Material *material_instances;
+        i32 material_instance_count;
+        i32 *_internal_material_instance_handles;
+        i32 current_material_instance_index;
 		
 		rendering::RegisterBufferInfo *buffers;
 		i32 buffer_count;
@@ -615,30 +614,42 @@ struct Renderer
 
         struct
         {
+            // All instance buffers
             r32 *float_buffers[MAX_INSTANCE_BUFFERS];
             math::Vec2 *float2_buffers[MAX_INSTANCE_BUFFERS];
             math::Vec3 *float3_buffers[MAX_INSTANCE_BUFFERS];
             math::Vec4 *float4_buffers[MAX_INSTANCE_BUFFERS];
             math::Mat4 *mat4_buffers[MAX_INSTANCE_BUFFERS];
 
+            // All internal instance buffers (API specific)
             Buffer **internal_float_buffers;
             Buffer **internal_float2_buffers;
             Buffer **internal_float3_buffers;
             Buffer **internal_float4_buffers;
             Buffer **internal_mat4_buffers;
 
+            // Flags to keep track of all free buffers
             b32 free_float_buffers[MAX_INSTANCE_BUFFERS];
             b32 free_float2_buffers[MAX_INSTANCE_BUFFERS];
             b32 free_float3_buffers[MAX_INSTANCE_BUFFERS];
             b32 free_float4_buffers[MAX_INSTANCE_BUFFERS];
             b32 free_mat4_buffers[MAX_INSTANCE_BUFFERS];
-            
+
+            // The current count
             i32 float_buffer_counts[MAX_INSTANCE_BUFFERS];
             i32 float2_buffer_counts[MAX_INSTANCE_BUFFERS];
             i32 float3_buffer_counts[MAX_INSTANCE_BUFFERS];
             i32 float4_buffer_counts[MAX_INSTANCE_BUFFERS];
             i32 mat4_buffer_counts[MAX_INSTANCE_BUFFERS];
 
+            // The allocated max count
+            i32 float_buffer_max[MAX_INSTANCE_BUFFERS];
+            i32 float2_buffer_max[MAX_INSTANCE_BUFFERS];
+            i32 float3_buffer_max[MAX_INSTANCE_BUFFERS];
+            i32 float4_buffer_max[MAX_INSTANCE_BUFFERS];
+            i32 mat4_buffer_max[MAX_INSTANCE_BUFFERS];
+
+            // The internal handle last used + 1
             i32 current_internal_float_handle;
             i32 current_internal_float2_handle;
             i32 current_internal_float3_handle;
