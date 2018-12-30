@@ -2494,6 +2494,7 @@ namespace math
     {
         Vec3 origin;
         Vec3 direction;
+        r32 t;
     };
     
     struct BoundingBox

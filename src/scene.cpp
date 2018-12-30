@@ -22,7 +22,7 @@ namespace scene
     static LightComponent &get_light_comp(EntityHandle handle, SceneHandle scene);
     static Camera & get_scene_camera(SceneHandle handle);
     static EntityHandle pick_entity(i32 mouse_x, i32 mouse_y);
-
+    
     // @Deprecated: Scene struct 
     static RenderComponent& _add_render_component(Scene &scene, EntityHandle entity_handle, b32 cast_shadows);
     static TransformComponent& _add_transform_component(Scene &scene, EntityHandle entity_handle);
@@ -341,7 +341,7 @@ namespace scene
         return ray;
     }
 
-    #define EPSILON 0.00001f
+#define EPSILON 0.00001f
 
     // b32 ray_intersects_plane(math::Vec3 plane_normal, math::Vec3 plane_position, math::Vec3 ray_origin, math::Vec3 ray_direction, math::Vec3 &intersection_point)
     // {
@@ -401,32 +401,30 @@ namespace scene
     static b32 _is_gizmo(EntityHandle entity, SceneManager *manager)
     {
         
-        if(entity.handle == manager->gizmos.x_arrow.handle)
-        {
-            manager->gizmos.selected_gizmo = Gizmos::X_ARROW;
-            return true;
-        }
+        // if(entity.handle == manager->gizmos.x_arrow.handle)
+        // {
+        //     manager->gizmos.selected_gizmo = Gizmos::X_ARROW;
+        //     return true;
+        // }
 
-        if(entity.handle == manager->gizmos.y_arrow.handle)
-        {
-            manager->gizmos.selected_gizmo = Gizmos::Y_ARROW;
-            return true;
-        }
+        // if(entity.handle == manager->gizmos.y_arrow.handle)
+        // {
+        //     manager->gizmos.selected_gizmo = Gizmos::Y_ARROW;
+        //     return true;
+        // }
 
-        if(entity.handle == manager->gizmos.z_arrow.handle)
-        {
-            manager->gizmos.selected_gizmo = Gizmos::Z_ARROW;
-            return true;
-        }
+        // if(entity.handle == manager->gizmos.z_arrow.handle)
+        // {
+        //     manager->gizmos.selected_gizmo = Gizmos::Z_ARROW;
+        //     return true;
+        // }
 
         return false;
     }
 
     static void deactivate_gizmo_arrows(SceneManager *manager)
     {
-        set_active(manager->gizmos.x_arrow, false, manager->loaded_scene);
-        set_active(manager->gizmos.y_arrow, false, manager->loaded_scene);
-        set_active(manager->gizmos.z_arrow, false, manager->loaded_scene);
+        manager->gizmos.active = false;
     }
     
     static EntityHandle pick_entity(SceneHandle handle, i32 mouse_x, i32 mouse_y)
@@ -434,7 +432,7 @@ namespace scene
         Scene &scene = get_scene(handle);
 
         math::Ray ray = cast_ray(scene, mouse_x, mouse_y);
-        math::Ray new_ray = cast_ray_new(scene, mouse_x, mouse_y);
+        handle.manager->gizmos.current_ray = ray;
         
         r32 dist = 100000; // Just set a crazy max distance
         
@@ -476,7 +474,7 @@ namespace scene
         }
 
         if(IS_ENTITY_HANDLE_VALID(entity_handle))
-           handle.manager->gizmos.selected_gizmo = Gizmos::NONE;
+            handle.manager->gizmos.selected_gizmo = Gizmos::NONE;
         
         return entity_handle;
     }
@@ -491,231 +489,135 @@ namespace scene
     static void _register_gizmos(SceneHandle scene)
     {
         SceneManager *manager = scene.manager;
-
-        manager->gizmos.x_arrow = scene::register_entity_from_template_file("../assets/templates/editor/gizmos/x_arrow.tmpl", scene);
-        manager->gizmos.y_arrow = scene::register_entity_from_template_file("../assets/templates/editor/gizmos/y_arrow.tmpl", scene);
-        manager->gizmos.z_arrow = scene::register_entity_from_template_file("../assets/templates/editor/gizmos/z_arrow.tmpl", scene);
-        
-        scene::TransformComponent &x_t = scene::get_transform_comp(manager->gizmos.x_arrow, scene);
-        scene::TransformComponent &y_t = scene::get_transform_comp(manager->gizmos.y_arrow, scene);
-        scene::TransformComponent &z_t = scene::get_transform_comp(manager->gizmos.z_arrow, scene);
-        
-        x_t.position = math::Vec3(0.5f, 2, 0);
-        y_t.position = math::Vec3(0, 2.5f, 0);
-        z_t.position = math::Vec3(0, 2, 0.5f);
-
-        set_active(manager->gizmos.x_arrow, false, scene);
-        set_active(manager->gizmos.y_arrow, false, scene);
-        set_active(manager->gizmos.z_arrow, false, scene);
+        manager->gizmos.active = true;
     }
 
-    static void _set_gizmo_arrow(math::Vec3 position, SceneHandle scene)
+    static void draw_gizmos(SceneManager *manager)
     {
-        SceneManager *manager = scene.manager;
-        
-        TransformComponent &x_t = scene::get_transform_comp(manager->gizmos.x_arrow, scene);
-        TransformComponent &y_t = scene::get_transform_comp(manager->gizmos.y_arrow, scene);
-        TransformComponent &z_t = scene::get_transform_comp(manager->gizmos.z_arrow, scene);
-
-        x_t.position = position + math::Vec3(0.5f, 0, 0);
-        y_t.position = position + math::Vec3(0, 0.5f, 0);
-        z_t.position = position + math::Vec3(0, 0, 0.5f);
-        
-        set_active(manager->gizmos.x_arrow, true, scene);
-        set_active(manager->gizmos.y_arrow, true, scene);
-        set_active(manager->gizmos.z_arrow, true, scene);
-    }
-
-    struct IntersectionData
-    {
-        b32 intersected;
-        math::Vec3 intersection_point;
-        math::Vec3 direction;;
-    };
-    
-    r32 closest_distance_between_lines_new(math::Ray l1, math::Ray l2, Renderer &renderer)
-    {
-        r32 a = math::dot(l1.direction, l1.direction);
-        r32 b = math::dot(l1.direction, l2.direction );
-        math::Vec3 r = l1.origin - l2.origin;
-        r32 c = math::dot(l1.direction, r);
-        r32 e = math::dot(l2.direction, l2.direction);
-        r32 f = math::dot(l2.direction, r);
-
-        r32 d = a * e - b * b;
-
-        if(ABS(d) >= 0.00001f)
+        TranslationConstraint c = manager->gizmos.constraint;
+        if(manager->gizmos.active)
         {
-            r32 s = (b * f - c * e) / d;
-            r32 t = (a * f - b * c) / d;
+            TransformComponent &transform = get_transform_comp(manager->selected_entity, manager->loaded_scene);
+            math::Vec3 position = transform.position;
 
-            math::Vec3 p1 = (l1.origin + l1.direction * s);
-            math::Vec3 p2 = (l2.origin + l2.direction * t);
-            
-            rendering::push_line_to_render_pass(renderer, p1, p2, rendering::get_render_pass_handle_for_name(STANDARD_PASS, renderer), rendering::CommandType::NO_DEPTH);
-        
-            debug("p1: %f %f %f\n", p1.x, p1.y, p1.z);
-            debug("p2: %f %f %f\n", p2.x, p2.y, p2.z);
-            
-            return t;
-        }
-        else
-        {
-            return 0.0f;
+            math::Vec3 yellow(RGB_FLOAT(189), RGB_FLOAT(183), RGB_FLOAT(107));
+            // Draw arrows
+            // X
+            rendering::push_line_to_render_pass(*manager->renderer, position, position + math::Vec3(manager->gizmos.current_distance_to_camera, 0.0f, 0.0f), c == TranslationConstraint::X ? yellow : math::Vec3(1.0f, 0.0f, 0.0f), rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer), rendering::CommandType::NO_DEPTH);
+            // Y
+            rendering::push_line_to_render_pass(*manager->renderer, position, position + math::Vec3(0.0f, manager->gizmos.current_distance_to_camera, 0.0f), c == TranslationConstraint::Y ? yellow : math::Vec3(0.0f, 1.0f, 0.0f), rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer), rendering::CommandType::NO_DEPTH);
+            // Z
+            rendering::push_line_to_render_pass(*manager->renderer, position, position + math::Vec3(0.0f, 0.0f, manager->gizmos.current_distance_to_camera), c == TranslationConstraint::Z ? yellow : math::Vec3(0.0f, 0.0f, 1.0f), rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer), rendering::CommandType::NO_DEPTH);
+
+            // Draw debug ray
+            //rendering::push_line_to_render_pass(*manager->renderer, manager->gizmos.current_ray.origin, manager->gizmos.current_ray.origin + manager->gizmos.current_ray.direction * 200,  math::Vec3(0.0f, 0.0f, 0.0f), rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer), rendering::CommandType::NO_DEPTH);
+
+            // rendering::Transform xf = {};
+            // xf.scale = math::Vec3(0.02f);
+
+            // for(i32 i = 0; i < manager->gizmos.point_count; i++)
+            // {
+            //     xf.position = manager->gizmos.intersection_points[i];
+            //     rendering::push_buffer_to_render_pass(*manager->renderer, manager->debug_cube, manager->debug_material_instance, xf, manager->debug_shader_handle, rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer), rendering::CommandType::NO_DEPTH);
+            // }
         }
     }
 
-    r32 closest_distance_between_lines(math::Ray l1, math::Ray l2)
+    // Finds the line between two lines with the minimum distance
+    b32 line_vs_line(Line l1, Line l2, math::Vec3 *points, r32 *mua, r32 *mub)
     {
-        math::Vec3 dp = l2.origin - l1.origin;
-        const r32 v12 = math::dot(l1.direction, l1.direction);
-        r32 t1 = 0.0f;
-        r32 t2 = 0.0f;
-        const r32 v22 = math::dot(l2.direction, l2.direction);
-        const r32 v1v2 = math::dot(l1.direction, l2.direction);
+        math::Vec3 p1 = l1.start;
+        math::Vec3 p2 = l1.end;
+        math::Vec3 p3 = l2.start;
+        math::Vec3 p4 = l2.end;
+        
+        math::Vec3 p13,p43,p21;
+        r32 d1343,d4321,d1321,d4343,d2121;
+        r32 numer,denom;
 
-        const r32 det = v1v2 * v1v2 - v12 * v22;
+        p13.x = p1.x - p3.x;
+        p13.y = p1.y - p3.y;
+        p13.z = p1.z - p3.z;
+        p43.x = p4.x - p3.x;
+        p43.y = p4.y - p3.y;
+        p43.z = p4.z - p3.z;
+        if (ABS(p43.x) < EPSILON && ABS(p43.y) < EPSILON && ABS(p43.z) < EPSILON)
+            return false;
+        p21.x = p2.x - p1.x;
+        p21.y = p2.y - p1.y;
+        p21.z = p2.z - p1.z;
+        if (ABS(p21.x) < EPSILON && ABS(p21.y) < EPSILON && ABS(p21.z) < EPSILON)
+            return false;
 
-        if (ABS(det) > 0.0001f)
-        {
-            const r32 inv_det = 1.f / det;
+        d1343 = p13.x * p43.x + p13.y * p43.y + p13.z * p43.z;
+        d4321 = p43.x * p21.x + p43.y * p21.y + p43.z * p21.z;
+        d1321 = p13.x * p21.x + p13.y * p21.y + p13.z * p21.z;
+        d4343 = p43.x * p43.x + p43.y * p43.y + p43.z * p43.z;
+        d2121 = p21.x * p21.x + p21.y * p21.y + p21.z * p21.z;
 
-            const r32 dpv1 = dot(dp, l1.direction);
-            const r32 dpv2 = dot(dp, l2.direction);
+        denom = d2121 * d4343 - d4321 * d4321;
+        if (ABS(denom) < EPSILON)
+            return false;
+        numer = d1343 * d4321 - d1321 * d4343;
 
-            t1 = inv_det * (v22 * dpv1 - v1v2 * dpv2);
-            t2 = inv_det * (v1v2 * dpv1 - v12 * dpv2);
+        *mua = numer / denom;
+        *mub = (d1343 + d4321 * (*mua)) / d4343;
 
-            math::Vec3 p1 = (l1.origin + l1.direction * t1);
-            math::Vec3 p2 = (l2.origin + l2.direction * t2);
-            
-            debug("p1: %f %f %f\n", p1.x, p1.y, p1.z);
-            debug("p2: %f %f %f\n", p2.x, p2.y, p2.z);
-            
-            // return math::norm(dp + l2.direction * t2 - l1.direction * t1);
-        }
-        else
-        {
-            const math::Vec3 a = math::cross(dp, l1.direction);
-            // return math::sqrt(dot(a, a) / v12);
-        }
+        points[0].x = p1.x + *mua * p21.x;
+        points[0].y = p1.y + *mua * p21.y;
+        points[0].z = p1.z + *mua * p21.z;
+        points[1].x = p3.x + *mub * p43.x;
+        points[1].y = p3.y + *mub * p43.y;
+        points[1].z = p3.z + *mub * p43.z;
 
-        return t2;
+        return true;
     }
 
-    static IntersectionData get_intersection_point(SceneManager *manager, InputController *input_controller, Camera &camera, math::Vec3 position)
-    {
-        math::Vec3 camera_position = camera.position;
-        math::Vec3 entity_position = position;
-        
-        math::Vec3 axis;
-            
-        math::Ray ray = cast_ray(get_scene(manager->loaded_scene), (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
-        
-        switch(manager->gizmos.selected_gizmo)
-        {
-        case Gizmos::X_ARROW:
-        {
-            axis = math::Vec3(1, 0, 0);
-        }
-        break;
-        case Gizmos::Y_ARROW:
-        {
-            axis = math::Vec3(0, 1, 0);
-        }
-        break;
-        case Gizmos::Z_ARROW:
-        {
-            axis = math::Vec3(0, 0, 1);
-        }
-        break;
-        case Gizmos::NONE:
-        return { false, math::Vec3(0.0f) };
-        }
-
-        math::Vec3 plane_position = position;
-        math::Vec3 plane_normal = math::cross(-camera.forward, axis);
-        plane_normal = math::normalize(math::cross(plane_normal, axis));
-        //plane_normal = math::cross(plane_normal, axis);
-        
-        rendering::push_line_to_render_pass(*manager->renderer, plane_position, plane_position + plane_normal * 20, rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer), rendering::CommandType::NO_DEPTH);
-        
-        math::Vec3 intersection_point;
-
-        b32 intersects = ray_intersects_plane(plane_normal, plane_position, ray.origin, ray.direction, intersection_point);
-
-        return { true, intersection_point, axis };
-    }
-
-    static math::Vec3 closest_line_point(math::Vec3 origin, math::Vec3 dir, math::Vec3 p)
-    {
-        r32 t = math::dot((p - origin), dir);
-        return origin + dir * t;
-    }
-    
     static void update_transform(TransformComponent &transform, Camera &camera, SceneManager *manager, InputController *input_controller, r64 delta_time)
     {
         if(manager->dragging)
         {
-
-            IntersectionData data = get_intersection_point(manager, input_controller, camera, transform.position);
-
-            debug("intersection point: %f %f %f\n", data.intersection_point.x, data.intersection_point.y, data.intersection_point.z);
+            math::Vec3 points[2];
+            Scene &scene = get_scene(manager->loaded_scene);
+            math::Ray ray = cast_ray(scene, (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
+            manager->gizmos.current_ray = ray;
             
-            rendering::Transform xf = {};
-            xf.scale = math::Vec3(0.1f);
-
-            rendering::set_uniform_value(*manager->renderer, manager->debug_material_instance, "color", math::Rgba(1.0f, 1.0f, 0.0f, 1.0f));
-            xf.position = data.intersection_point;
-
-            rendering::push_buffer_to_render_pass(*manager->renderer, manager->debug_cube, manager->debug_material_instance, xf, manager->debug_shader_handle, rendering::get_render_pass_handle_for_name(STANDARD_PASS, *manager->renderer), rendering::CommandType::NO_DEPTH);
+            Line l1;
+            l1.start = ray.origin;
+            l1.end = ray.origin + ray.direction * 1000;
+           
+            r32 one = 0.0f;
+            r32 two = 0.0f;
                 
-            if(data.intersected)
+            line_vs_line(l1, manager->gizmos.current_line, points, &one, &two);
+                
+            switch(manager->gizmos.constraint)
             {
-                
-                
-                math::Vec3 diff = data.intersection_point - manager->gizmos.first_intersection_point;
-                manager->gizmos.first_intersection_point = data.intersection_point;
-                
-                switch(manager->gizmos.selected_gizmo)
-                {
-                case Gizmos::X_ARROW:
-                {
-                    transform.position.x += diff.x;
-                }
-                break;
-                case Gizmos::Y_ARROW:
-                {
-                    transform.position.y += diff.x;
-                }
-                break;
-                case Gizmos::Z_ARROW:
-                {
-                    transform.position.z += diff.x;
-                }
-                break;
-                case Gizmos::NONE:
-                return;
-                }
+            case TranslationConstraint::X:
+            {
+                transform.position.x = points[1].x - manager->gizmos.initial_offset.x;
+            }
+            break;
+            case TranslationConstraint::Y:
+            {
+                transform.position.y = points[1].y - manager->gizmos.initial_offset.y;
+            }
+            break;
+            case TranslationConstraint::Z:
+            {
+                transform.position.z = points[1].z - manager->gizmos.initial_offset.z;
+            }
+            break;
+            case Gizmos::NONE:
+            return;
             }
         }
     }
 
-    static void _deselect_gizmos(SceneHandle handle)
-    {
-        RenderComponent &render_x = get_render_comp(handle.manager->gizmos.x_arrow, handle);
-        rendering::set_uniform_value(*handle.manager->renderer, render_x.v2.material_handle, "color", math::Rgba(1.0f, 0.0f, 0.0f, 1.0f));
-        RenderComponent &render_y = get_render_comp(handle.manager->gizmos.y_arrow, handle);
-        rendering::set_uniform_value(*handle.manager->renderer, render_y.v2.material_handle, "color", math::Rgba(0.0f, 1.0f, 0.0f, 1.0f));
-        RenderComponent &render_z = get_render_comp(handle.manager->gizmos.z_arrow, handle);
-        rendering::set_uniform_value(*handle.manager->renderer, render_z.v2.material_handle, "color", math::Rgba(0.0f, 0.0f, 1.0f, 1.0f));
-    }
-
     static void _select_gizmo(SceneHandle handle, EntityHandle gizmo)
     {
-        _deselect_gizmos(handle);
-        RenderComponent &render_selected = get_render_comp(gizmo, handle);
-        rendering::set_uniform_value(*handle.manager->renderer, render_selected.v2.material_handle, "color", math::Rgba(1.0f, 1.0f, 0.0f, 1.0f));
+        //RenderComponent &render_selected = get_render_comp(gizmo, handle);
+        //rendering::set_uniform_value(*handle.manager->renderer, render_selected.v2.material_handle, "color", math::Rgba(1.0f, 1.0f, 0.0f, 1.0f));
     }
 
     static void update_scene_editor(SceneHandle handle, InputController *input_controller, r64 delta_time)
@@ -730,9 +632,6 @@ namespace scene
             {
                 manager->play_camera = scene.camera;
                 manager->mode = SceneMode::EDITING;
-
-                _register_gizmos(handle);
-                
             }
             else
             {
@@ -743,10 +642,10 @@ namespace scene
 
         if(manager->mode == SceneMode::EDITING)
         {
-            manager->dragging = MOUSE(Mouse_Left);
+            //manager->dragging = MOUSE(Mouse_Left);
 
-            if(!manager->dragging)
-                _deselect_gizmos(handle);
+            // if(!manager->dragging)
+            //_deselect_gizmos(handle);
 
             Camera &camera = scene.camera;
             
@@ -756,23 +655,8 @@ namespace scene
                 
                 update_transform(t, camera, manager, input_controller, delta_time);
                 
-                TransformComponent &x_t = scene::get_transform_comp(manager->gizmos.x_arrow, handle);
-                TransformComponent &y_t = scene::get_transform_comp(manager->gizmos.y_arrow, handle);
-                TransformComponent &z_t = scene::get_transform_comp(manager->gizmos.z_arrow, handle);
-
-                manager->gizmos.x_scale = math::Vec3(1.0f, 0.1f, 0.1f);
-                manager->gizmos.y_scale = math::Vec3(0.1f, 1.0f, 0.1f);
-                manager->gizmos.z_scale = math::Vec3(0.1f, 0.1f, 1.0f);
-
-                r32 distance = math::distance(camera.position, t.position) * 0.1f;
-
-                x_t.scale = manager->gizmos.x_scale * distance;
-                y_t.scale = manager->gizmos.y_scale * distance;
-                z_t.scale = manager->gizmos.z_scale * distance;
-                x_t.position = t.position + math::Vec3(0.5f * distance, 0, 0);
-                y_t.position = t.position + math::Vec3(0, 0.5f * distance, 0);
-                z_t.position = t.position + math::Vec3(0, 0, 0.5f * distance);
-
+                manager->gizmos.current_distance_to_camera = 1.0f; //math::distance(camera.position, t.position) * 0.1f;
+                
                 if(KEY_DOWN(Key_F))
                 {
                     set_target(camera, t.position);
@@ -782,39 +666,122 @@ namespace scene
             if(MOUSE_DOWN(Mouse_Left))
             {        
                 manager->dragging = true;
+
+                if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
+                {
+                    TransformComponent &t = get_transform_comp(manager->selected_entity, handle);
+                    math::Vec3 pos = t.position;
+                    
+                    TranslationConstraint constraint = TranslationConstraint::NONE;
                 
+                    manager->gizmos.point_count = 0;
+
+                    math::Vec3 points[2];
+
+                    math::Ray ray = cast_ray(scene, (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
+                    manager->gizmos.current_ray = ray;
+                    Line l1;
+                    l1.start = ray.origin;
+                    l1.end = ray.origin + ray.direction * 1000;
+                
+                    Line l2;
+                    l2.start = pos + math::Vec3(-1000, 0, 0);
+                    l2.end = pos + math::Vec3(1000, 0, 0);
+                
+                    r32 one = 0.0f;
+                    r32 two = 0.0f;
+                    r32 current_distance = 1000.0f;
+                
+                    line_vs_line(l1, l2, points, &one, &two);
+                    r32 x_dist = math::distance(points[0], points[1]);
+                    if(x_dist < 0.04f)
+                    {
+                        current_distance = x_dist;
+                        constraint = TranslationConstraint::X;
+                        manager->gizmos.current_line = l2;
+                        manager->gizmos.initial_offset = points[1] - pos;
+                    }
+                
+                    manager->gizmos.intersection_points[manager->gizmos.point_count++] = points[0];
+                    manager->gizmos.intersection_points[manager->gizmos.point_count++] = points[1];
+
+                    l2.start = pos + math::Vec3(0, -1000, 0);
+                    l2.end = pos + math::Vec3(0, 1000, 0);
+                
+                    line_vs_line(l1, l2, points, &one, &two);
+                
+                    r32 y_dist = math::distance(points[0], points[1]);
+                    if(y_dist < current_distance && y_dist < 0.04f)
+                    {
+                        current_distance = y_dist;
+                        constraint = TranslationConstraint::Y;
+                        manager->gizmos.current_line = l2;
+                        manager->gizmos.initial_offset = points[1] - pos;
+                    }
+                
+                    manager->gizmos.intersection_points[manager->gizmos.point_count++] = points[0];
+                    manager->gizmos.intersection_points[manager->gizmos.point_count++] = points[1];
+                
+                    l2.start = pos + math::Vec3(0, 0, -1000);
+                    l2.end = pos + math::Vec3(0, 0, 1000);
+
+                    line_vs_line(l1, l2, points, &one, &two);
+                    r32 z_dist = math::distance(points[0], points[1]);
+                    if(z_dist < current_distance && z_dist < 0.04f)
+                    {
+                        current_distance = z_dist;
+                        constraint = TranslationConstraint::Z;
+                        manager->gizmos.current_line = l2;
+                        manager->gizmos.initial_offset = points[1] - pos;
+                    }
+
+                    switch(constraint)
+                    {
+                    case TranslationConstraint::NONE:
+                    printf("NONE!\n");
+                    break;
+                    case TranslationConstraint::X:
+                    printf("X!\n");
+                    break;
+                    case TranslationConstraint::Y:
+                    printf("Y!\n");
+                    break;
+                    case TranslationConstraint::Z:
+                    printf("Z!\n");
+                    break;
+                    }
+
+                    manager->gizmos.constraint = constraint;
+                
+                }
+                
+
                 scene::EntityHandle entity = scene::pick_entity(handle, (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
 
-                if(IS_ENTITY_HANDLE_VALID(entity))
+                if(manager->gizmos.constraint == TranslationConstraint::NONE)
                 {
-                    if(_is_gizmo(entity, manager))
-                    {
-                        TransformComponent &transform = get_transform_comp(entity, manager->loaded_scene);
-                        TransformComponent &selected_entity_transform = get_transform_comp(manager->selected_entity, manager->loaded_scene);
-                        IntersectionData data = get_intersection_point(manager, input_controller, camera, transform.position);                       
-                        _select_gizmo(handle, entity);
-                        
-                        manager->gizmos.first_intersection_point = data.intersection_point;
-                        manager->gizmos.starting_transform_position = selected_entity_transform.position;
-                    }
-                    else
+                    if(IS_ENTITY_HANDLE_VALID(entity))
                     {
                         // Deselect the previously selected entity
                         if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
                             scene::set_wireframe_enabled(false, manager->selected_entity, handle);                        
                         
                         manager->selected_entity = entity;
+                        manager->gizmos.active = true;
+
                         scene::set_wireframe_enabled(true, entity, handle);
-                        TransformComponent &t = get_transform_comp(entity, handle);
-                        
-                        _set_gizmo_arrow(t.position, handle);
-                        
                         manager->callbacks.on_entity_selected(entity, handle);
-                    }
                     
-                    //scene::TransformComponent t = scene::get_transform_comp(entity, scene);
-                    //set_target(camera, t.position);
+                        //scene::TransformComponent t = scene::get_transform_comp(entity, scene);
+                        //set_target(camera, t.position);
+                    }
                 }
+            }
+
+            if(MOUSE_UP(Mouse_Left))
+            {
+                manager->gizmos.constraint = TranslationConstraint::NONE;
+                manager->dragging = false;
             }
                 
             // Update camera
@@ -1184,7 +1151,7 @@ namespace scene
                         }
                         else if(starts_with(buffer, "ignore depth"))
                         {
-                             sscanf(buffer, "ignore depth: %d\n", &templ.render.ignore_depth);
+                            sscanf(buffer, "ignore depth: %d\n", &templ.render.ignore_depth);
                         }
                         else if(starts_with(buffer, "receives shadows"))
                         {
@@ -1882,17 +1849,279 @@ namespace scene
 	}
 
 #define SET_MAT_ARRAY_VALUE(type) static void set_uniform_array_value(EntityHandle handle, const char *array_name, i32 index, const char *variable_name, type value, SceneHandle &scene) \
-    { \
-       RenderComponent &render = get_render_comp(handle, scene); \
-    rendering::set_uniform_array_value(*scene.manager->renderer, render.v2.material_handle, array_name, index, variable_name, value);\
-    } \
+    {                                                                   \
+        RenderComponent &render = get_render_comp(handle, scene);       \
+        rendering::set_uniform_array_value(*scene.manager->renderer, render.v2.material_handle, array_name, index, variable_name, value); \
+    }                                                                   \
 
-SET_MAT_ARRAY_VALUE(r32)
-SET_MAT_ARRAY_VALUE(math::Vec2)
-SET_MAT_ARRAY_VALUE(math::Vec3)
-SET_MAT_ARRAY_VALUE(math::Vec4)
-SET_MAT_ARRAY_VALUE(i32)
-SET_MAT_ARRAY_VALUE(math::Mat4)
-SET_MAT_ARRAY_VALUE(rendering::TextureHandle)
+    SET_MAT_ARRAY_VALUE(r32)
+    SET_MAT_ARRAY_VALUE(math::Vec2)
+    SET_MAT_ARRAY_VALUE(math::Vec3)
+    SET_MAT_ARRAY_VALUE(math::Vec4)
+    SET_MAT_ARRAY_VALUE(i32)
+    SET_MAT_ARRAY_VALUE(math::Mat4)
+    SET_MAT_ARRAY_VALUE(rendering::TextureHandle)
+
+
+#define STANDARD_PASS_HANDLE { 1 }
+
+    static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer)
+    {
+        renderer.camera = scene.camera;
+
+        for(i32 i = 0; i < renderer.render.pass_count; i++)
+        {
+            rendering::RenderPass &pass = renderer.render.passes[i];
+            if(pass.use_scene_camera)
+            {
+                pass.camera = scene.camera;
+            }
+        }
+    
+        renderer.render.dir_light_count = 0;
+        renderer.render.point_light_count = 0;
+    
+        QueuedRenderCommand *queued_commands = renderer.render.queued_commands;
+        i32 normal_count = 0;
+
+        i32 particles_to_push[64];
+        i32 particles_count = 0;
+    
+        for(i32 ent_index = 0; ent_index < scene.entity_count; ent_index++)
+        {
+            const scene::Entity &ent = scene.entities[ent_index];
+        
+            if (scene.active_entities[ent_index])
+            {
+                scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
+            
+                // Create a copy of the position, rotation and scale since we don't want the parents transform to change the child's transform. Only when rendering.
+                math::Vec3 position = transform.position;
+                math::Vec3 rotation = transform.rotation;
+                math::Vec3 scale = transform.scale;
+            
+                if(ent.comp_flags & scene::COMP_LIGHT)
+                {
+                    scene::LightComponent &light_comp = scene.light_components[ent.light_handle.handle];
+                
+                    switch(light_comp.type)
+                    {
+                    case scene::LightType::DIRECTIONAL:
+                    renderer.render.directional_lights[renderer.render.dir_light_count++] = light_comp.dir_light;
+                    break;
+                    case scene::LightType::POINT:
+                    light_comp.point_light.position = position;
+                    renderer.render.point_lights[renderer.render.point_light_count++] = light_comp.point_light;
+                    break;
+                    default:
+                    assert(false);
+                    }
+                }
+
+                if (ent.comp_flags & scene::COMP_RENDER)
+                {
+                    scene::RenderComponent &render = scene.render_components[ent.render_handle.handle];
+                
+                    if(render.is_new_version)
+                    {
+                        QueuedRenderCommand *command = nullptr;
+                        rendering::Material &instance = get_material_instance(render.v2.material_handle, renderer);
+                    
+                        for(i32 i = 0; i < normal_count; i++)
+                        {
+                            QueuedRenderCommand &cmd = queued_commands[i];
+                            if(cmd.buffer_handle.handle == render.v2.buffer_handle.handle
+                               && cmd.original_material.handle == instance.source_material.handle && cmd.ignore_depth == render.ignore_depth)
+                            {
+                                // It's a doozy
+                                command = &cmd;
+                                break;
+                            }
+                        }
+
+                        if(!command)
+                        {
+                            command = &queued_commands[normal_count++];
+                            command->ignore_depth = render.ignore_depth;
+                            command->buffer_handle = render.v2.buffer_handle;
+                            command->original_material = instance.source_material;
+                            command->count = 0;
+                        }
+                    
+                        rendering::Transform t;
+                        t.position = position;
+                        t.rotation = rotation;
+                        t.scale = scale;
+
+                        if(render.v2.render_pass_count > 0)
+                        {
+                            if(render.wireframe_enabled)
+                            {
+                                rendering::push_buffer_to_render_pass(renderer, render.v2.buffer_handle, renderer.render.wireframe_material, t, renderer.render.wireframe_shader, render.v2.render_passes[0], rendering::CommandType::NO_DEPTH);
+                            }
+                        
+                            BatchedCommand &batch_command = command->commands[command->count];
+                            batch_command.transform = t;
+                            batch_command.material_handle = render.v2.material_handle;
+                            batch_command.casts_shadows = render.casts_shadows;
+                            batch_command.pass_count = render.v2.render_pass_count;
+                        
+                            for(i32 i = 0; i < render.v2.render_pass_count; i++)
+                            {
+                                batch_command.passes[i] = render.v2.render_passes[i];
+                                batch_command.shader_handles[i] = render.v2.shader_handles[i];
+                            }
+                        
+                            command->count++;
+                        }
+                    }
+                }
+                else if(ent.comp_flags & scene::COMP_PARTICLES)
+                {
+                    if(ent.particle_system_handle.handle != -1)
+                    {
+                        scene::ParticleSystemComponent &ps = scene.particle_system_components[ent.particle_system_handle.handle];
+                    
+                        i32 _internal_handle = renderer.particles._internal_handles[ps.handle.handle - 1];
+                        ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
+                    
+                        system.transform.position = system.attributes.base_position;
+                    
+                        if(ent.comp_flags & scene::COMP_TRANSFORM)
+                        {
+                            system.transform.position += position;
+                            system.transform.scale = scale;
+                            system.transform.rotation = rotation;
+                        }
+
+                        if(system.running)
+                        {
+                            particles_to_push[particles_count++] = ps.handle.handle;
+                        }
+                    }
+                }
+            }
+        }
+
+        for(i32 index = 0; index < normal_count; index++)
+        {
+            QueuedRenderCommand &queued_command = queued_commands[index];
+        
+            BatchedCommand &first_command = queued_command.commands[0];
+            rendering::Material &material = get_material_instance(first_command.material_handle, renderer);
+
+            if(material.lighting.receives_light)
+                update_lighting_for_material(first_command, renderer);
+
+            for(i32 batch_index = 0; batch_index < queued_command.count; batch_index++)
+            {
+                BatchedCommand &render_command = queued_command.commands[batch_index];
+
+                rendering::Material &mat_instance = get_material_instance(render_command.material_handle, renderer);
+
+                if (mat_instance.instanced_vertex_attribute_count == 0)
+                {
+                    // Just push the buffer as a normal draw call
+                    for (i32 pass_index = 0; pass_index < render_command.pass_count; pass_index++)
+                    {
+                        rendering::push_buffer_to_render_pass(renderer, queued_command.buffer_handle, first_command.material_handle, render_command.transform, render_command.shader_handles[pass_index], render_command.passes[pass_index], queued_command.ignore_depth ? rendering::CommandType::NO_DEPTH : rendering::CommandType::WITH_DEPTH);
+                    }
+                    continue;
+                }
+                else
+                {
+                    // We can make one call instead
+                    for (i32 i = 0; i < mat_instance.instanced_vertex_attribute_count; i++)
+                    {
+                        rendering::VertexAttributeInstanced &va = mat_instance.instanced_vertex_attributes[i];
+                        rendering::VertexAttribute &attr = va.attribute;
+                        
+                        switch (attr.type)
+                        {
+                        case rendering::ValueType::FLOAT:
+                        rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float_val, renderer);
+                        break;
+                        case rendering::ValueType::FLOAT2:
+                        rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float2_val, renderer);
+                        break;
+                        case rendering::ValueType::FLOAT3:
+                        {
+                            math::Vec3 val = attr.float3_val;
+                            
+                            if(va.mapping_type != rendering::VertexAttributeMappingType::NONE)
+                            {
+                                if(va.mapping_type == rendering::VertexAttributeMappingType::POSITION)
+                                    val = render_command.transform.position;
+                                else if(va.mapping_type == rendering::VertexAttributeMappingType::ROTATION)
+                                    val = render_command.transform.rotation;
+                                else if(va.mapping_type == rendering::VertexAttributeMappingType::SCALE)
+                                    val = render_command.transform.scale;
+                            }
+                            rendering::add_instance_buffer_value(va.instance_buffer_handle, val, renderer);
+                        }
+                        break;
+                        case rendering::ValueType::FLOAT4:
+                        rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float4_val, renderer);
+                        break;
+                        case rendering::ValueType::MAT4:
+                        {
+                            math::Mat4 val = attr.mat4_val;
+                            
+                            if(va.mapping_type == rendering::VertexAttributeMappingType::MODEL)
+                            {
+                                rendering::Transform &transform = render_command.transform;
+                                
+                                math::Mat4 model_matrix(1.0f);
+                                model_matrix = math::scale(model_matrix, transform.scale);
+    
+                                math::Vec3 rotation = transform.rotation;
+                                auto x_axis = rotation.x > 0.0f ? 1.0f : 0.0f;
+                                auto y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
+                                auto z_axis = rotation.z > 0.0f ? 1.0f : 0.0f;
+    
+                                math::Quat orientation = math::Quat();
+                                orientation = math::rotate(orientation, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
+                                orientation = math::rotate(orientation, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
+                                orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
+    
+                                model_matrix = to_matrix(orientation) * model_matrix;
+    
+                                model_matrix = math::translate(model_matrix, transform.position);
+                                val = math::transpose(model_matrix);
+                            }
+                            rendering::add_instance_buffer_value(va.instance_buffer_handle, val, renderer);
+                        }
+                        break;
+                        default:
+                        assert(false);
+                        }
+                    }
+                }
+            }
+        
+            // Push the command to the shadow buffer if it casts shadows
+            if(first_command.casts_shadows)
+            {
+                rendering::push_instanced_buffer_to_shadow_pass(renderer, queued_command.count, queued_command.buffer_handle, material.instanced_vertex_attributes, material.instanced_vertex_attribute_count);
+            }
+        
+            // Push the command to the correct render passes
+            for (i32 pass_index = 0; pass_index < first_command.pass_count; pass_index++)
+            {
+                rendering::push_instanced_buffer_to_render_pass(renderer, queued_command.count, queued_command.buffer_handle, first_command.material_handle, first_command.shader_handles[pass_index], first_command.passes[pass_index], queued_command.ignore_depth ? rendering::CommandType::NO_DEPTH : rendering::CommandType::WITH_DEPTH);
+            }
+        }
+    
+        for(i32 i = 0; i < particles_count; i++)
+        {
+            i32 _internal_handle = renderer.particles._internal_handles[particles_to_push[i] - 1];
+            ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
+            rendering::Material& particle_material = get_material_instance(system.material_handle, renderer);
+            
+            rendering::push_instanced_buffer_to_render_pass(renderer, system.particle_count, renderer.particles.quad_buffer, system.material_handle, particle_material.shader, rendering::get_render_pass_handle_for_name(STANDARD_PASS, renderer), rendering::CommandType::WITH_DEPTH);
+        }
+
+        draw_gizmos(scene.scene_manager);
+    }
     
 }

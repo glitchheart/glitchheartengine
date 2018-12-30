@@ -2029,7 +2029,6 @@ static void setup_line_buffer(rendering::RenderCommand &command, Renderer *rende
     info.data.vertex_buffer = (r32 *)points;
 
     update_buffer(buffer, info, *render_state);
-
 }
 
 static void render_all_passes(RenderState &render_state, Renderer &renderer)
@@ -2059,10 +2058,13 @@ static void render_all_passes(RenderState &render_state, Renderer &renderer)
         for (i32 i = 0; i < pass.commands.render_command_count; i++)
         {
             rendering::RenderCommand &command = pass.commands.render_commands[i];
-            if(command.primitive_type == rendering::PrimitiveType::LINES)
-                setup_line_buffer(command, &renderer, &render_state);
-            
             rendering::Material &material = get_material_instance(command.material, renderer);
+            
+            if(command.primitive_type == rendering::PrimitiveType::LINES)
+            {
+                setup_line_buffer(command, &renderer, &render_state);
+                rendering::set_uniform_value(renderer, material, "color", command.lines.color);
+            }
             
             render_buffer(command.primitive_type, command.transform, command.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
         }
@@ -2072,11 +2074,13 @@ static void render_all_passes(RenderState &render_state, Renderer &renderer)
         for (i32 i = 0; i < pass.commands.depth_free_command_count; i++)
         {
             rendering::RenderCommand &command = pass.commands.depth_free_commands[i];
+            rendering::Material &material = get_material_instance(command.material, renderer);
 
             if(command.primitive_type == rendering::PrimitiveType::LINES)
+            {
                 setup_line_buffer(command, &renderer, &render_state);
-
-            rendering::Material &material = get_material_instance(command.material, renderer);
+                rendering::set_uniform_value(renderer, material, "color", command.lines.color);
+            }
             
             render_buffer(command.primitive_type, command.transform, command.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
         }
