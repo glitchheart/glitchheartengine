@@ -830,6 +830,7 @@ int main(int argc, char **args)
                 game.update_editor(&game_memory);
             
             update_scene_editor(scene_manager->loaded_scene, &input_controller, delta_time);
+            
             push_scene_for_rendering(scene::get_scene(scene_manager->loaded_scene), renderer);
         }
         else

@@ -334,6 +334,11 @@ namespace scene
         return ray;
     }
 
+    static math::Ray cast_ray(SceneHandle handle, i32 mouse_x, i32 mouse_y)
+    {
+        return cast_ray(get_scene(handle), mouse_x, mouse_y);
+    }
+
 #define EPSILON 0.00001f
 
     // b32 ray_intersects_plane(math::Vec3 plane_normal, math::Vec3 plane_position, math::Vec3 ray_origin, math::Vec3 ray_direction, math::Vec3 &intersection_point)
@@ -342,7 +347,7 @@ namespace scene
     //     if(denom > EPSILON)
     //     {
     //         math::Vec3 dist_vec = plane_position - ray_origin;
-    //         r32 t = math::dot(dist_vec, plane_normal) / denom;
+    //         r32 t = -math::dot(dist_vec, plane_normal) / denom;
     //         intersection_point = ray_origin + ray_direction * t;
     //         return t >= 0;
     //     }
@@ -352,16 +357,18 @@ namespace scene
 
     b32 ray_intersects_plane(math::Vec3 plane_normal, math::Vec3 plane_position, math::Vec3 ray_origin, math::Vec3 ray_direction, math::Vec3 &intersection_point)
     {
-        math::Vec3 local_p = ray_origin - plane_position;
+        // assuming vectors are all normalized
+        float denom = math::dot(plane_normal, ray_direction);
+        if (denom > 1e-6)
+        {
+            math::Vec3 p0l0 = plane_position - ray_origin;
+            r32 t = math::dot(p0l0, plane_normal) / denom;
+            intersection_point = ray_origin + t * ray_direction;
+            return (t >= 0);
+        }
 
-        r32 denom = math::dot(plane_normal, ray_direction);
-        if(ABS(denom) < EPSILON) return false;
-
-        r32 t = -(math::dot(plane_normal, local_p) / denom);
-        if(t < 0) return false;
-
-        intersection_point = ray_origin + ray_direction * t;
-        return false;
+        return false; 
+        
     }
 
     math::Vec3 ray_vs_plane(math::Vec3 ray_origin, math::Vec3 ray_direction, math::Vec3 plane_normal, r32 plane_d)
@@ -492,14 +499,16 @@ namespace scene
             TransformComponent &transform = get_transform_comp(manager->selected_entity, manager->loaded_scene);
             math::Vec3 position = transform.position;
             rendering::Transform t;
+            t.position = position;
+            t.scale = math::Vec3(1.0f);
             math::Vec3 yellow(RGB_FLOAT(189), RGB_FLOAT(183), RGB_FLOAT(107));
             
             // Draw transform manipulators
             math::Vec3 line[6];
             math::Vec3 p1;
             math::Vec3 p2;
-            line[0] = position + math::Vec3(0.0f, 0.0f, 0.0f);
-            line[1] = position + math::Vec3(manager->gizmos.current_distance_to_camera, 0.0f, 0.0f);
+            line[0] = math::Vec3(0.0f, 0.0f, 0.0f);
+            line[1] = math::Vec3(manager->gizmos.current_distance_to_camera, 0.0f, 0.0f);
 
             // X
             rendering::direct_update_buffer(*manager->renderer, manager->gizmos.x_buffer, (r32*)line, 2, sizeof(math::Vec3) * 2);
@@ -507,13 +516,13 @@ namespace scene
             rendering::push_buffer_to_render_pass(*manager->renderer, manager->gizmos.x_buffer, manager->gizmos.x_material, t, manager->gizmos.line_shader, {1}, rendering::CommandType::NO_DEPTH, rendering::PrimitiveType::LINES);
 
             // Y
-            line[1] = position + math::Vec3(0.0f, manager->gizmos.current_distance_to_camera, 0.0f);
+            line[1] = math::Vec3(0.0f, manager->gizmos.current_distance_to_camera, 0.0f);
             rendering::direct_update_buffer(*manager->renderer, manager->gizmos.y_buffer, (r32*)line, 2, sizeof(math::Vec3) * 2);
             rendering::set_uniform_value(*manager->renderer, manager->gizmos.y_material, "color", c == TranslationConstraint::Y ? yellow : math::Vec3(0.0f, 1.0f, 0.0f));
             rendering::push_buffer_to_render_pass(*manager->renderer, manager->gizmos.y_buffer, manager->gizmos.y_material, t, manager->gizmos.line_shader, {1}, rendering::CommandType::NO_DEPTH, rendering::PrimitiveType::LINES);
 
             // Z
-            line[1] = position + math::Vec3(0.0f, 0.0f, manager->gizmos.current_distance_to_camera);
+            line[1] = math::Vec3(0.0f, 0.0f, manager->gizmos.current_distance_to_camera);
             rendering::direct_update_buffer(*manager->renderer, manager->gizmos.z_buffer, (r32*)line, 2, sizeof(math::Vec3) * 2);
             rendering::set_uniform_value(*manager->renderer, manager->gizmos.z_material, "color", c == TranslationConstraint::Z ? yellow : math::Vec3(0.0f, 0.0f, 1.0f));
             rendering::push_buffer_to_render_pass(*manager->renderer, manager->gizmos.z_buffer, manager->gizmos.z_material, t, manager->gizmos.line_shader, {1}, rendering::CommandType::NO_DEPTH, rendering::PrimitiveType::LINES);
@@ -699,13 +708,14 @@ namespace scene
                     math::Ray ray = cast_ray(scene, (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
 
                     r32 max_distance = GIZMO_TOLERANCE * manager->gizmos.current_distance_to_camera;
+                    r32 gizmo_size = manager->gizmos.current_distance_to_camera;
                     r32 current_distance = 1000.0f;
                     Line l1 = line_from_ray(ray);
 
                     // Check X axis
                     Line l2;
-                    l2.start = pos + math::Vec3(-1000, 0, 0);
-                    l2.end = pos + math::Vec3(1000, 0, 0);
+                    l2.start = pos;
+                    l2.end = pos + math::Vec3(gizmo_size, 0, 0);
                 
                     line_vs_line(l1, l2, points);
                     r32 x_dist = math::distance(points[0], points[1]);
@@ -718,8 +728,7 @@ namespace scene
                     }
 
                     // Check Y axis
-                    l2.start = pos + math::Vec3(0, -1000, 0);
-                    l2.end = pos + math::Vec3(0, 1000, 0);
+                    l2.end = pos + math::Vec3(0, gizmo_size, 0);
                 
                     line_vs_line(l1, l2, points);
                 
@@ -733,8 +742,7 @@ namespace scene
                     }
 
                     // Check Z axis
-                    l2.start = pos + math::Vec3(0, 0, -1000);
-                    l2.end = pos + math::Vec3(0, 0, 1000);
+                    l2.end = pos + math::Vec3(0, 0, gizmo_size);
 
                     line_vs_line(l1, l2, points);
                     r32 z_dist = math::distance(points[0], points[1]);

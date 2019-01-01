@@ -1806,77 +1806,86 @@ namespace rendering
         return {register_buffer(renderer, info).handle}; 
     }
 
-    static BufferHandle create_grid_buffer(Renderer &renderer, i32 size, r32 unit_size)
+    static r32 *generate_grid_buffer(Renderer &renderer, i32 width, i32 height, r32 unit_size)
+    {
+        r32 *grid_vertices = nullptr;
+        r32 real_grid_width = width * unit_size;
+        r32 real_grid_height = height * unit_size;
+        r32 half_size = 0.5f * unit_size;
+
+        // Bottom left -> Top left
+        buf_push(grid_vertices, -real_grid_width * 0.5f - half_size);
+        buf_push(grid_vertices, 0.0f);
+        buf_push(grid_vertices, -real_grid_height * 0.5f - half_size);
+        buf_push(grid_vertices, -real_grid_width * 0.5f - half_size);
+        buf_push(grid_vertices, 0.0f);
+        buf_push(grid_vertices, real_grid_height * 0.5f - half_size);
+
+        // Top left -> Top right
+        buf_push(grid_vertices, -real_grid_width * 0.5f - half_size);
+        buf_push(grid_vertices, 0.0f);
+        buf_push(grid_vertices, real_grid_height * 0.5f - half_size);
+        buf_push(grid_vertices, real_grid_width * 0.5f - half_size);
+        buf_push(grid_vertices, 0.0f);
+        buf_push(grid_vertices, real_grid_height * 0.5f - half_size);
+        
+        // Top right -> bottom right
+        buf_push(grid_vertices, real_grid_width * 0.5f - half_size);
+        buf_push(grid_vertices, 0.0f);
+        buf_push(grid_vertices, real_grid_height * 0.5f - half_size);
+        buf_push(grid_vertices, real_grid_width * 0.5f - half_size);
+        buf_push(grid_vertices, 0.0f);
+        buf_push(grid_vertices, -real_grid_height * 0.5f - half_size);
+
+        // Bottom left -> Bottom right
+        buf_push(grid_vertices, -real_grid_width * 0.5f - half_size);
+        buf_push(grid_vertices, 0.0f);
+        buf_push(grid_vertices, -real_grid_height * 0.5f - half_size);
+        buf_push(grid_vertices, real_grid_width * 0.5f - half_size);
+        buf_push(grid_vertices, 0.0f);
+        buf_push(grid_vertices, -real_grid_height * 0.5f - half_size);
+                     
+        for(i32 i = 1; i < MAX(width, height); i++)
+        {
+            if(i < width)
+            {
+                buf_push(grid_vertices, -real_grid_width * 0.5f + i - half_size);
+                buf_push(grid_vertices, 0.0f);
+                buf_push(grid_vertices, -real_grid_height * 0.5f - half_size);
+            
+                buf_push(grid_vertices, -real_grid_width * 0.5f + i - half_size);
+                buf_push(grid_vertices, 0.0f);
+                buf_push(grid_vertices, real_grid_height * 0.5f - half_size);    
+            }
+            
+            if(i < height)
+            {
+                buf_push(grid_vertices, -real_grid_width * 0.5f - half_size);
+                buf_push(grid_vertices, 0.0f);
+                buf_push(grid_vertices, -real_grid_height * 0.5f + i - half_size);
+                buf_push(grid_vertices, real_grid_width * 0.5f - half_size);
+                buf_push(grid_vertices, 0.0f);
+                buf_push(grid_vertices, -real_grid_height * 0.5f + i - half_size);
+            }
+        }
+
+        return grid_vertices;
+    }
+    
+    static BufferHandle create_vertex_buffer(Renderer &renderer, r32 *vertices, i32 size, i32 vertex_count)
     {
         assert(renderer.render.buffer_count + 1 < global_max_custom_buffers);
-
-        // @Note: Untextured
-        i32 vertex_size = 3;
 
         RegisterBufferInfo info = create_register_buffer_info();
         info.usage = BufferUsage::STATIC;
         add_vertex_attrib(ValueType::FLOAT3, info);
 
-        r32 *grid_vertices = nullptr;
-        r32 real_grid_size = size * unit_size;
-        r32 half_size = 0.5f * unit_size;
-        
-        // Bottom left -> Top left
-        buf_push(grid_vertices, -real_grid_size * 0.5f - half_size);
-        buf_push(grid_vertices, 0.0f);
-        buf_push(grid_vertices, -real_grid_size * 0.5f - half_size);
-        buf_push(grid_vertices, -real_grid_size * 0.5f - half_size);
-        buf_push(grid_vertices, 0.0f);
-        buf_push(grid_vertices, real_grid_size * 0.5f - half_size);
-
-        // Top left -> Top right
-        buf_push(grid_vertices, -real_grid_size * 0.5f - half_size);
-        buf_push(grid_vertices, 0.0f);
-        buf_push(grid_vertices, real_grid_size * 0.5f - half_size);
-        buf_push(grid_vertices, real_grid_size * 0.5f - half_size);
-        buf_push(grid_vertices, 0.0f);
-        buf_push(grid_vertices, real_grid_size * 0.5f - half_size);
-        
-        // Top right -> bottom right
-        buf_push(grid_vertices, real_grid_size * 0.5f - half_size);
-        buf_push(grid_vertices, 0.0f);
-        buf_push(grid_vertices, real_grid_size * 0.5f - half_size);
-        buf_push(grid_vertices, real_grid_size * 0.5f - half_size);
-        buf_push(grid_vertices, 0.0f);
-        buf_push(grid_vertices, -real_grid_size * 0.5f - half_size);
-
-        // Bottom left -> Bottom right
-        buf_push(grid_vertices, -real_grid_size * 0.5f - half_size);
-        buf_push(grid_vertices, 0.0f);
-        buf_push(grid_vertices, -real_grid_size * 0.5f - half_size);
-        buf_push(grid_vertices, real_grid_size * 0.5f - half_size);
-        buf_push(grid_vertices, 0.0f);
-        buf_push(grid_vertices, -real_grid_size * 0.5f - half_size);
-                     
-        for(i32 i = 1; i < size - 1; i++)
-        {
-            buf_push(grid_vertices, -real_grid_size * 0.5f - half_size);
-            buf_push(grid_vertices, 0.0f);
-            buf_push(grid_vertices, -real_grid_size * 0.5f + i - half_size);
-            buf_push(grid_vertices, real_grid_size * 0.5f);
-            buf_push(grid_vertices, 0.0f);
-            buf_push(grid_vertices, -real_grid_size * 0.5f + i - half_size);
-
-            buf_push(grid_vertices, -real_grid_size * 0.5f + i - half_size);
-            buf_push(grid_vertices, 0.0f);
-            buf_push(grid_vertices, -real_grid_size * 0.5f - half_size);
-            
-            buf_push(grid_vertices, -real_grid_size * 0.5f + i - half_size);
-            buf_push(grid_vertices, 0.0f);
-            buf_push(grid_vertices, real_grid_size * 0.5f - half_size);
-        }
-
-        info.data.vertex_count = (i32)buf_len(grid_vertices) / 3;;
-        info.data.vertex_buffer_size = info.data.vertex_count * vertex_size * (i32)sizeof(r32);
+        info.data.vertex_count = vertex_count;
+        info.data.vertex_buffer_size = size;
 
         info.data.vertex_buffer = push_size(&renderer.buffer_arena, info.data.vertex_buffer_size, r32);
-        memcpy(info.data.vertex_buffer, grid_vertices, (size_t)info.data.vertex_buffer_size);
-        
+        memcpy(info.data.vertex_buffer, vertices, (size_t)info.data.vertex_buffer_size);
+
         info.data.index_buffer_size = 0;
         info.data.index_buffer_count = 0;
 
