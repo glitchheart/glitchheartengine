@@ -2996,7 +2996,7 @@ namespace rendering
         
         if(info.alignment_flags & UIAlignment::TOP)
         {
-            if(info.position.y > 1000.0f || info.position.y - size.y < 0.0f)
+            if(info.position.y - size.y > 1000.0f || info.position.y < 0.0f)
             {
                 return;
             }
