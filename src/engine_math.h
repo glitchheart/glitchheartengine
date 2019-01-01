@@ -1803,27 +1803,27 @@ namespace math
     
     inline r32 dot(Vec2 v1, Vec2 v2)
     {
-        return v1.x * v2.x + v1.y + v2.y;
+        return v1.x * v2.x + v1.y * v2.y;
     }
     
     inline r32 dot(Vec3 v1, Vec3 v2)
     {
-        return v1.x * v2.x + v1.y + v2.y + v1.z * v2.z;
+        return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
     }
     
     inline r32 dot(Vec4 v1, Vec4 v2)
     {
-        return v1.x * v2.x + v1.y + v2.y + v1.z * v2.z + v1.w * v2.w;
+        return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z + v1.w * v2.w;
     }
     
     inline i32 dot(Vec2i v1, Vec2i v2)
     {
-        return v1.x * v2.x + v1.y + v2.y;
+        return v1.x * v2.x + v1.y * v2.y;
     }
-    
+    \
     inline i32 dot(Vec3i v1, Vec3i v2)
     {
-        return v1.x * v2.x + v1.y + v2.y + v1.z + v2.z;
+        return v1.x * v2.x + v1.y * v2.y + v1.z + v2.z;
     }
     
     inline r32 distance(Vec2 v1, Vec2 v2)
@@ -2490,8 +2490,8 @@ namespace math
     struct Ray
     {
         Vec3 origin;
+        Vec3 end;
         Vec3 direction;
-        r32 t;
     };
     
     struct BoundingBox
