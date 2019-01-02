@@ -261,6 +261,7 @@ namespace scene
     };
 
     typedef void (*OnStartedEditMode)(SceneHandle scene);
+    typedef void (*OnExitedEditMode)(SceneHandle scene);
     typedef void (*OnLoad)(SceneHandle scene);
     typedef void (*OnSave)(SceneHandle scene);
     typedef void (*OnEntityUpdated)(EntityHandle entity, SceneHandle scene);
@@ -343,10 +344,16 @@ namespace scene
             math::Vec3 initial_offset;
             Line current_line;
         } gizmos;
+
+        struct
+        {
+            b32 selection_enabled;
+        } editor;
         
         struct
         {
             OnStartedEditMode on_started_edit_mode;
+            OnExitedEditMode on_exited_edit_mode;
             OnLoad on_load;
             OnSave on_save;
             OnEntityUpdated on_entity_updated;
@@ -359,6 +366,7 @@ namespace scene
         SceneManager *scene_manager = push_struct(arena, SceneManager);
         scene_manager->current_internal_index = 0;
         scene_manager->scene_loaded = false;
+        scene_manager->editor.selection_enabled = true;
         scene_manager->loaded_scene = { -1 };
         scene_manager->scenes = push_array(arena, global_max_scenes, scene::Scene);
         scene_manager->_internal_scene_handles = push_array(arena, global_max_scenes, i32);
