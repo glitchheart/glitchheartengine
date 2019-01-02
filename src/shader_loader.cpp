@@ -3031,7 +3031,7 @@ namespace rendering
         pos.y = (info.position.y / UI_COORD_DIMENSION) * resolution_scale.y;
         pos.z = 0.0f;
 
-        math::Rect scaled_clip_rect = scale_clip_rect(renderer, info.clip_rect);
+        math::Rect scaled_clip_rect = scale_clip_rect(renderer, info.clip_rect, 0);
 
         if(scaled_clip_rect.width == 0.0f || scaled_clip_rect.height == 0.0f)
         {
@@ -3163,35 +3163,49 @@ namespace rendering
         CreateUICommandInfo scaled_info = info;
         math::Vec2i resolution_scale = get_scale(renderer);
 
-        // if(info.anchor_flag & UIAlignment::LEFT)
-        // {
-        //     if(info.position.x + info.scale.x < 0.0f || info.position.x > 1000.0f)
-        //     {
-        //         return;
-        //     }
-        // }
-        // else
-        // {
-        //     if(info.position.x < 0.0f || info.position.x + info.scale.x > 1000.0f)
-        //     {
-        //         return;
-        //     }
-        // }
+        if(info.anchor_flag & UIAlignment::LEFT)
+        {
+            if(info.position.x + info.scale.x < 0.0f || info.position.x > 1000.0f)
+            {
+                return;
+            }
+        }
+        else if(info.anchor_flag & UIAlignment::RIGHT)
+        {
+            if(info.position.x < 0.0f || info.position.x + info.scale.x > 1000.0f)
+            {
+                return;
+            }
+        }
+        else
+        {
+            if(info.position.x - info.scale.x / 2.0f < 0.0f || info.position.x + info.scale.x / 2.0f > 1000.0f)
+            {
+                return;
+            }
+        }
         
-        // if(info.anchor_flag & UIAlignment::TOP)
-        // {
-        //     if(info.position.y > 1000.0f || info.position.y - info.scale.y < 0.0f)
-        //     {
-        //         return;
-        //     }
-        // }
-        // else
-        // {
-        //     if(info.position.y + info.scale.y < 0.0f || info.position.y > 1000.0f)
-        //     {
-        //         return;
-        //     }
-        // }
+        if(info.anchor_flag & UIAlignment::TOP)
+        {
+            if(info.position.y - info.scale.y > 1000.0f || info.position.y < 0.0f)
+            {
+                return;
+            }
+        }
+        else if(info.anchor_flag & UIAlignment::BOTTOM)
+        {
+            if(info.position.y + info.scale.y < 0.0f || info.position.y > 1000.0f)
+            {
+                return;
+            }
+        }
+        else
+        {
+            if(info.position.y - info.scale.y / 2.0f < 0.0f || info.position.y + info.scale.y / 2.0f > 1000.0f)
+            {
+                return;
+            }
+        }
         
         math::Vec2 pos;
         pos.x = (info.position.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
