@@ -298,7 +298,6 @@ namespace scene
             stop_particle_system(scene.particle_system_components[i].handle, *scene.renderer);
         }
     }
-
     
     static void activate_particle_systems(SceneHandle handle)
     {
@@ -634,7 +633,26 @@ namespace scene
         //RenderComponent &render_selected = get_render_comp(gizmo, handle);
         //rendering::set_uniform_value(*handle.manager->renderer, render_selected.v2.material_handle, "color", math::Rgba(1.0f, 1.0f, 0.0f, 1.0f));
     }
+    
+    static void set_selection_enabled(b32 enabled, SceneManager *scene_manager)
+    {
+        scene_manager->editor.selection_enabled = enabled;
 
+        if(!scene_manager->editor.selection_enabled)
+        {
+            if(IS_ENTITY_HANDLE_VALID(scene_manager->selected_entity))
+                scene::set_wireframe_enabled(false, scene_manager->selected_entity, scene_manager->loaded_scene);
+            
+            scene_manager->selected_entity = { -1 };
+            scene_manager->gizmos.active = false;
+        }
+    }
+    
+    static void toggle_selection_enabled(SceneManager *scene_manager)
+    {
+        set_selection_enabled(!scene_manager->editor.selection_enabled, scene_manager);
+    }
+    
     static void update_scene_editor(SceneHandle handle, InputController *input_controller, r64 delta_time)
     {
         Scene &scene = get_scene(handle);
@@ -645,14 +663,23 @@ namespace scene
         {
             if(manager->mode == SceneMode::RUNNING)
             {
+                // @Note: Unnecessary?
                 if(manager->callbacks.on_load)
                     manager->callbacks.on_load(handle);
+
+                if(manager->callbacks.on_started_edit_mode)
+                    manager->callbacks.on_started_edit_mode(handle);
                 
                 manager->play_camera = scene.camera;
                 manager->mode = SceneMode::EDITING;
             }
             else
             {
+                // When exiting to running mode we should make sure to notify the game about it, to ensure that all
+                // editor-specific entities are cleaned up before the game is running again.
+                if(manager->callbacks.on_exited_edit_mode)
+                    manager->callbacks.on_exited_edit_mode(handle);
+                
                 // Tell the game to save everything that changed
                 if(manager->callbacks.on_save)
                     manager->callbacks.on_save(handle);
@@ -665,7 +692,8 @@ namespace scene
                 // Disable wireframes
                 if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
                     scene::set_wireframe_enabled(false, manager->selected_entity, handle);
-                
+
+                manager->selected_entity = { -1 };
                 manager->mode = SceneMode::RUNNING;
             }
         }
@@ -693,92 +721,95 @@ namespace scene
             }
 
             if(MOUSE_DOWN(Mouse_Left))
-            {        
+            {
                 manager->dragging = true;
-
-                if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
+                
+                if(manager->editor.selection_enabled)
                 {
-                    TransformComponent &t = get_transform_comp(manager->selected_entity, handle);
-                    math::Vec3 pos = t.position;
+                    if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
+                    {
+                        TransformComponent &t = get_transform_comp(manager->selected_entity, handle);
+                        math::Vec3 pos = t.position;
                     
-                    TranslationConstraint constraint = TranslationConstraint::NONE;
+                        TranslationConstraint constraint = TranslationConstraint::NONE;
 
-                    math::Vec3 points[2];
+                        math::Vec3 points[2];
                     
-                    math::Ray ray = cast_ray(scene, (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
+                        math::Ray ray = cast_ray(scene, (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
 
-                    r32 max_distance = GIZMO_TOLERANCE * manager->gizmos.current_distance_to_camera;
-                    r32 gizmo_size = manager->gizmos.current_distance_to_camera;
-                    r32 current_distance = 1000.0f;
-                    Line l1 = line_from_ray(ray);
+                        r32 max_distance = GIZMO_TOLERANCE * manager->gizmos.current_distance_to_camera;
+                        r32 gizmo_size = manager->gizmos.current_distance_to_camera;
+                        r32 current_distance = 1000.0f;
+                        Line l1 = line_from_ray(ray);
 
-                    // Check X axis
-                    Line l2;
-                    l2.start = pos;
-                    l2.end = pos + math::Vec3(gizmo_size, 0, 0);
+                        // Check X axis
+                        Line l2;
+                        l2.start = pos;
+                        l2.end = pos + math::Vec3(gizmo_size, 0, 0);
                 
-                    line_vs_line(l1, l2, points);
-                    r32 x_dist = math::distance(points[0], points[1]);
-                    if(x_dist < max_distance)
-                    {
-                        current_distance = x_dist;
-                        constraint = TranslationConstraint::X;
-                        manager->gizmos.current_line = l2;
-                        manager->gizmos.initial_offset = points[1] - pos;
+                        line_vs_line(l1, l2, points);
+                        r32 x_dist = math::distance(points[0], points[1]);
+                        if(x_dist < max_distance)
+                        {
+                            current_distance = x_dist;
+                            constraint = TranslationConstraint::X;
+                            manager->gizmos.current_line = l2;
+                            manager->gizmos.initial_offset = points[1] - pos;
+                        }
+
+                        // Check Y axis
+                        l2.end = pos + math::Vec3(0, gizmo_size, 0);
+                
+                        line_vs_line(l1, l2, points);
+                
+                        r32 y_dist = math::distance(points[0], points[1]);
+                        if(y_dist < current_distance && y_dist < max_distance)
+                        {
+                            current_distance = y_dist;
+                            constraint = TranslationConstraint::Y;
+                            manager->gizmos.current_line = l2;
+                            manager->gizmos.initial_offset = points[1] - pos;
+                        }
+
+                        // Check Z axis
+                        l2.end = pos + math::Vec3(0, 0, gizmo_size);
+
+                        line_vs_line(l1, l2, points);
+                        r32 z_dist = math::distance(points[0], points[1]);
+                        if(z_dist < current_distance && z_dist < max_distance)
+                        {
+                            current_distance = z_dist;
+                            constraint = TranslationConstraint::Z;
+                            manager->gizmos.current_line = l2;
+                            manager->gizmos.initial_offset = points[1] - pos;
+                        }
+
+                        manager->gizmos.constraint = constraint;
                     }
-
-                    // Check Y axis
-                    l2.end = pos + math::Vec3(0, gizmo_size, 0);
                 
-                    line_vs_line(l1, l2, points);
-                
-                    r32 y_dist = math::distance(points[0], points[1]);
-                    if(y_dist < current_distance && y_dist < max_distance)
+                    scene::EntityHandle entity = scene::pick_entity(handle, (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
+
+                    if(manager->gizmos.constraint == TranslationConstraint::NONE)
                     {
-                        current_distance = y_dist;
-                        constraint = TranslationConstraint::Y;
-                        manager->gizmos.current_line = l2;
-                        manager->gizmos.initial_offset = points[1] - pos;
-                    }
-
-                    // Check Z axis
-                    l2.end = pos + math::Vec3(0, 0, gizmo_size);
-
-                    line_vs_line(l1, l2, points);
-                    r32 z_dist = math::distance(points[0], points[1]);
-                    if(z_dist < current_distance && z_dist < max_distance)
-                    {
-                        current_distance = z_dist;
-                        constraint = TranslationConstraint::Z;
-                        manager->gizmos.current_line = l2;
-                        manager->gizmos.initial_offset = points[1] - pos;
-                    }
-
-                    manager->gizmos.constraint = constraint;
-                }
-                
-                scene::EntityHandle entity = scene::pick_entity(handle, (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
-
-                if(manager->gizmos.constraint == TranslationConstraint::NONE)
-                {
-                    if(IS_ENTITY_HANDLE_VALID(entity))
-                    {
-                        // Deselect the previously selected entity
-                        if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
-                            scene::set_wireframe_enabled(false, manager->selected_entity, handle);                        
+                        if(IS_ENTITY_HANDLE_VALID(entity))
+                        {
+                            // Deselect the previously selected entity
+                            if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
+                                scene::set_wireframe_enabled(false, manager->selected_entity, handle);                        
                         
-                        manager->selected_entity = entity;
-                        manager->gizmos.active = true;
+                            manager->selected_entity = entity;
+                            manager->gizmos.active = true;
 
-                        scene::set_wireframe_enabled(true, entity, handle);
-                        manager->callbacks.on_entity_selected(entity, handle);
+                            scene::set_wireframe_enabled(true, entity, handle);
+                            manager->callbacks.on_entity_selected(entity, handle);
                     
-                        //scene::TransformComponent t = scene::get_transform_comp(entity, scene);
-                        //set_target(camera, t.position);
+                            //scene::TransformComponent t = scene::get_transform_comp(entity, scene);
+                            //set_target(camera, t.position);
+                        }
                     }
                 }
             }
-
+            
             if(MOUSE_UP(Mouse_Left))
             {
                 if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
@@ -789,7 +820,7 @@ namespace scene
                 manager->gizmos.constraint = TranslationConstraint::NONE;
                 manager->dragging = false;
             }
-                
+            
             // Update camera
             if(KEY(Key_W))
             {
@@ -1789,6 +1820,16 @@ namespace scene
     {
         Scene &scene = get_scene(scene_handle);
         _set_active(handle, active, scene);
+    }
+
+    static const char * get_entity_name(EntityHandle entity_handle, SceneHandle scene_handle)
+    {
+        Scene &scene = get_scene(scene_handle);
+        i32 internal_handle = scene._internal_handles[entity_handle.handle - 1];
+        assert(internal_handle > -1);
+        
+        const Entity &entity = scene.entities[internal_handle];
+        return entity.name;
     }
     
     // Returns a direct pointer to the TransformComponent of the specified entity
