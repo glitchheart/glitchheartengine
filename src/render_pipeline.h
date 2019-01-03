@@ -12,15 +12,9 @@ namespace rendering
 		i32 handle;
     };
 
-    struct MaterialInstanceArrayHandle
-    {
-        i32 handle;
-    };
-
     struct MaterialInstanceHandle
     {
 		i32 handle;
-        MaterialInstanceArrayHandle array_handle;
     };
 
     struct MaterialHandle
@@ -260,6 +254,7 @@ namespace rendering
         i32 structure_count;
 
 		char* vert_shader;
+		char* geo_shader;
 		char* frag_shader;
 
 		char path[256];
@@ -297,10 +292,6 @@ namespace rendering
         } lighting;
 
         b32 instanced;
-        struct
-        {
-            
-        } instancing;
         
 		Material () {}
     };
@@ -353,12 +344,23 @@ namespace rendering
         BufferHandle buffer;
         BufferData update_data;
     };
+
+    struct LineBufferHandle
+    {
+        i32 handle;
+    };
     
     struct Transform
     {
 		math::Vec3 position;
 		math::Vec3 rotation;
 		math::Vec3 scale;
+    };
+
+    enum class PrimitiveType
+    {
+        TRIANGLES,
+        LINES
     };
     
     struct RenderCommand
@@ -368,7 +370,8 @@ namespace rendering
 		BufferHandle buffer;
 
         i32 count;
-        
+
+        PrimitiveType primitive_type;
         struct
         {
             rendering::RenderPassHandle pass_handle;
@@ -391,6 +394,12 @@ namespace rendering
         RIGHT = (1 << 1),
         TOP = (1 << 2),
         BOTTOM = (1 << 3),
+    };
+
+    struct LineCommandData
+    {
+        math::Vec3 p1;
+        math::Vec3 p2;
     };
 
     struct FontHandle
@@ -569,6 +578,12 @@ namespace rendering
         HORIZONTAL_ABOVE,
         HORIZONTAL_BELOW
     };
+
+    enum class CommandType
+    {
+        WITH_DEPTH,
+        NO_DEPTH
+    };
     
 #define STANDARD_PASS "STANDARD_PASS"
 
@@ -606,6 +621,9 @@ namespace rendering
             {
                 rendering::RenderCommand *render_commands;
                 i32 render_command_count;
+
+                rendering::RenderCommand *depth_free_commands;
+                i32 depth_free_command_count;
             } commands;
             struct
             {
