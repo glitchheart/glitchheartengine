@@ -3215,7 +3215,7 @@ namespace rendering
         scaled_info.z_layer = info.z_layer;
 
         scaled_info.scale = get_relative_size(renderer, info.scale, info.scaling_flag);
-        scaled_info.clip_rect = scale_clip_rect(renderer, info.clip_rect, info.scaling_flag);
+        scaled_info.clip_rect = scale_clip_rect(renderer, info.clip_rect, 0);
 
         if(scaled_info.clip_rect.width == 0.0f || scaled_info.clip_rect.height == 0.0f)
         {
