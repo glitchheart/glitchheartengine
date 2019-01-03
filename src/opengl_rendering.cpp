@@ -519,7 +519,7 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
 
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
+                
                 if(attachment.flags & rendering::ColorAttachmentFlags::CLAMP_TO_EDGE)
                 {
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -866,7 +866,7 @@ static void load_texture(Texture* texture, TextureFiltering filtering, TextureWr
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     }
-
+    
     //enable alpha for textures
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -892,14 +892,15 @@ static void load_texture(Texture* texture, TextureFiltering filtering, TextureWr
     break;
     }
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
-
     texture->width = width;
     texture->height = height;
     
     glTexImage2D(GL_TEXTURE_2D, 0, gl_format, width, height, 0, gl_format,
                  GL_UNSIGNED_BYTE, (GLvoid *)image_data);
+
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, -1);
 }
 
 static math::Vec2i get_texture_size(Texture* texture)
@@ -1919,6 +1920,7 @@ static void render_instanced_shadow_buffer(rendering::ShadowCommand &shadow_comm
 
     if (buffer.ibo)
     {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
         glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void *)nullptr, shadow_command.count);
     }
     else
