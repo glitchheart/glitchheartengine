@@ -1920,6 +1920,7 @@ static void render_instanced_shadow_buffer(rendering::ShadowCommand &shadow_comm
 
     if (buffer.ibo)
     {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
         glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void *)nullptr, shadow_command.count);
     }
     else
