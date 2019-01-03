@@ -15,14 +15,14 @@ static void error_callback(int error, const char *description)
 
 static void show_mouse_cursor(RenderState &render_state, b32 show)
 {
-    if (show)
-    {
-        glfwSetInputMode(render_state.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    }
-    else
-    {
-        glfwSetInputMode(render_state.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-    }
+    // if (show)
+    // {
+    //     glfwSetInputMode(render_state.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    // }
+    // else
+    // {
+    //     glfwSetInputMode(render_state.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    // }
 }
 
 #define error_gl() _error_gl(__LINE__, __FILE__)
@@ -283,6 +283,21 @@ static GLuint load_shader(Renderer *renderer, rendering::Shader &shader, ShaderG
         return GL_FALSE;
     }
 
+    if(shader.geo_shader)
+    {
+        char *geo_shader = shader.geo_shader;
+        gl_shader.geo_program = glCreateShader(GL_GEOMETRY_SHADER);
+
+        glShaderSource(gl_shader.geo_program, 1, (GLchar **)&geo_shader, nullptr);
+
+        if (!compile_shader(&renderer->shader_arena, shader.path, gl_shader.geo_program))
+        {
+            log_error("Failed compilation of geometry shader: %s", shader.path);
+            gl_shader.geo_program = 0;
+            return GL_FALSE;
+        }
+    }
+    
     char *frag_shader = shader.frag_shader;
     gl_shader.frag_program = glCreateShader(GL_FRAGMENT_SHADER);
 
@@ -298,6 +313,10 @@ static GLuint load_shader(Renderer *renderer, rendering::Shader &shader, ShaderG
     gl_shader.program = glCreateProgram();
 
     glAttachShader(gl_shader.program, gl_shader.vert_program);
+
+    if(shader.geo_shader)
+        glAttachShader(gl_shader.program, gl_shader.geo_program);
+    
     glAttachShader(gl_shader.program, gl_shader.frag_program);
 
     if (!link_program(&renderer->shader_arena, shader.path, gl_shader.program))
@@ -888,15 +907,47 @@ static math::Vec2i get_texture_size(Texture* texture)
     return math::Vec2i(texture->width, texture->height);
 }
 
+static void set_mouse_lock(b32 locked, RenderState *render_state)
+{
+    if(locked)
+        glfwSetInputMode(render_state->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    else
+        glfwSetInputMode(render_state->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+}
+
+static Buffer &get_internal_buffer(Renderer *renderer, RenderState &render_state, rendering::BufferHandle buffer)
+{
+    i32 handle = renderer->render._internal_buffer_handles[buffer.handle - 1];
+    Buffer &gl_buffer = render_state.gl_buffers[handle];
+    return gl_buffer;
+}
+
+static void direct_update_buffer(rendering::BufferHandle handle, r32 *data, size_t count, size_t size, RenderState *render_state, Renderer *renderer)
+{
+    Buffer& buffer = get_internal_buffer(renderer, *render_state, handle);
+
+    bind_vertex_array(buffer.vao, *render_state);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+    //buffer.vertex_count = (i32)count;
+    //buffer.vertex_buffer_size = (i32)size;
+
+    glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW);
+
+    bind_vertex_array(0, *render_state);
+}
+
 static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char *title, MemoryArena *perm_arena, b32 *do_save_config)
 {
     renderer->api_functions.render_state = &render_state;
     renderer->api_functions.get_texture_size = &get_texture_size;
     renderer->api_functions.load_texture = &load_texture;
-    renderer->api_functions.set_window_cursor = &set_window_cursor;
     renderer->api_functions.create_framebuffer = &create_framebuffer;
     renderer->api_functions.create_instance_buffer = &create_instance_buffer;
     renderer->api_functions.delete_instance_buffer = &delete_instance_buffer;
+    renderer->api_functions.update_buffer = &direct_update_buffer;
+    renderer->api_functions.set_mouse_lock = &set_mouse_lock;
+    renderer->api_functions.set_window_cursor = &set_window_cursor;
+        
 
     auto recreate_window = render_state.window != nullptr;
 
@@ -972,7 +1023,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
         }
     }
 
-    glfwSetInputMode(render_state.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    //glfwSetInputMode(render_state.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
     glfwSetFramebufferSizeCallback(render_state.window, frame_buffer_size_callback);
     glfwSetWindowIconifyCallback(render_state.window, window_iconify_callback);
@@ -981,7 +1032,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
 
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
 
     glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
     glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
@@ -994,6 +1045,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     glDisable(GL_DITHER);
 
     glDisable(GL_CULL_FACE);
+    
     glEnable(GL_DEPTH_TEST);
 
     glDepthFunc(GL_LESS);
@@ -1197,7 +1249,6 @@ static void set_ms_texture_uniform(GLuint shader_handle, GLuint texture, i32 ind
 }
 
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
-
 
 // @Incomplete: Ignores if the register info has new vertex attributes
 static void update_buffer(Buffer &buffer, rendering::RegisterBufferInfo info, RenderState &render_state)
@@ -1671,7 +1722,7 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             glEnableVertexAttribArray(array_num + 3);
 
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), &((math::Mat4*)buf_ptr)[0]);
 
             glVertexAttribPointer(array_num, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)0);
             glVertexAttribPointer(array_num + 1, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)(vec4_size));
@@ -1688,14 +1739,7 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
     }
 }
 
-static Buffer &get_internal_buffer(Renderer *renderer, RenderState &render_state, rendering::BufferHandle buffer)
-{
-    i32 handle = renderer->render._internal_buffer_handles[buffer.handle - 1];
-    Buffer &gl_buffer = render_state.gl_buffers[handle];
-    return gl_buffer;
-}
-
-static void render_buffer(rendering::Transform transform, rendering::BufferHandle& buffer_handle, const rendering::RenderPass &render_pass, RenderState &render_state, Renderer *renderer, rendering::Material& material, const Camera &camera, i32 count = 0, ShaderGL *shader = nullptr)
+static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Transform transform, rendering::BufferHandle& buffer_handle, const rendering::RenderPass &render_pass, RenderState &render_state, Renderer *renderer, rendering::Material& material, const Camera &camera, i32 count = 0, ShaderGL *shader = nullptr)
 {
     Buffer& buffer = get_internal_buffer(renderer, render_state, buffer_handle);
     
@@ -1797,7 +1841,10 @@ static void render_buffer(rendering::Transform transform, rendering::BufferHandl
         }
         else
         {
-            glDrawArrays(GL_TRIANGLES, 0, buffer.vertex_count / 3);
+            if(primitive_type == rendering::PrimitiveType::TRIANGLES)
+                glDrawArrays(GL_TRIANGLES, 0, buffer.vertex_count / 3);
+            else if(primitive_type == rendering::PrimitiveType::LINES)
+                glDrawArrays(GL_LINES, 0, buffer.vertex_count);
         }
     }
 }
@@ -1884,6 +1931,7 @@ static void render_instanced_shadow_buffer(rendering::ShadowCommand &shadow_comm
 
 static void render_shadows(RenderState &render_state, Renderer *renderer, Framebuffer &framebuffer)
 {
+    glEnable(GL_CULL_FACE);
     glCullFace(GL_FRONT); // KILL PETER PAN!
     glViewport(0, 0, framebuffer.shadow_map.width, framebuffer.shadow_map.height);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
@@ -1902,7 +1950,7 @@ static void render_shadows(RenderState &render_state, Renderer *renderer, Frameb
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glCullFace(GL_BACK);
-
+    glDisable(GL_CULL_FACE);
     renderer->render.shadow_command_count = 0;
 }
 
@@ -1953,8 +2001,7 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
             info.data.vertex_buffer = (r32 *)coords;
 
             update_buffer(font_buffer, info, render_state);
-
-            render_buffer({}, renderer->render.ui.font_buffer, pass, render_state, renderer, command.material, pass.camera, 0 ,&render_state.gl_shaders[command.shader_handle.handle]);
+            render_buffer(rendering::PrimitiveType::TRIANGLES, {}, renderer->render.ui.font_buffer, pass, render_state, renderer, command.material, pass.camera, 0 ,&render_state.gl_shaders[command.shader_handle.handle]);
 
             if (command.clip)
             {
@@ -1976,8 +2023,8 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
                 glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
             }
 
-            render_buffer(command.transform, command.buffer, pass, render_state, renderer, command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
-
+            render_buffer(rendering::PrimitiveType::TRIANGLES, command.transform, command.buffer, pass, render_state, renderer, command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
+            
             if (command.clip)
             {
                 glDisable(GL_SCISSOR_TEST);
@@ -1999,7 +2046,7 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
             glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
         }
 
-        render_buffer(command.transform, command.buffer, pass, render_state, renderer, command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
+        render_buffer(rendering::PrimitiveType::TRIANGLES, command.transform, command.buffer, pass, render_state, renderer, command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
 
         if (command.clip)
         {
@@ -2044,13 +2091,25 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
         for (i32 i = 0; i < pass.commands.render_command_count; i++)
         {
             rendering::RenderCommand &command = pass.commands.render_commands[i];
-
             rendering::Material &material = get_material_instance(command.material, renderer);
-
-            render_buffer(command.transform, command.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
+            
+            render_buffer(command.primitive_type, command.transform, command.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
         }
 
+        glDisable(GL_DEPTH_TEST);
+        
+        for (i32 i = 0; i < pass.commands.depth_free_command_count; i++)
+        {
+            rendering::RenderCommand &command = pass.commands.depth_free_commands[i];
+            rendering::Material &material = get_material_instance(command.material, renderer);
+
+            render_buffer(command.primitive_type, command.transform, command.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
+        }
+
+        glEnable(GL_DEPTH_TEST);
+        
         pass.commands.render_command_count = 0;
+        pass.commands.depth_free_command_count = 0;
     }
 
     //glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -2188,7 +2247,7 @@ static void render(RenderState &render_state, Renderer *renderer, r64 delta_time
     check_window_mode_and_size(render_state, renderer, save_config);
     load_new_shaders(render_state, renderer);
     reload_shaders(render_state, renderer);
-
+    
     // @Speed: Do we have to clear this every frame?
     clear(&renderer->shader_arena);
 

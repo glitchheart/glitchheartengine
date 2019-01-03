@@ -18,6 +18,7 @@ struct GameCode
     time_t last_library_write_time;
     
     Update *update;
+    UpdateEditor *update_editor;
     
     b32 is_valid;
 };

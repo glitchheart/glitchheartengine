@@ -36,7 +36,6 @@ static MemoryState memory_state;
 //#include "vulkan_rendering.h"
 #endif
 
-#include "scene.h"
 
 #include "opengl_rendering.h"
 #include "animation.cpp"
@@ -47,17 +46,15 @@ static MemoryState memory_state;
 #include "fmod_sound.cpp"
 #include "filehandling.h"
 
-#if ENABLE_ANALYTICS
-#include "GameAnalytics.h"
-
-#include "analytics.h"
-#include "analytics.cpp"
-#endif
 
 #include "shader_loader.cpp"
 #include "render_pipeline.cpp"
 #include "rendering.cpp"
 #include "particles.cpp"
+#include "particle_api.cpp"
+
+#include "scene.h"
+#include "scene.cpp"
 
 #if defined(__linux) || defined(__APPLE__)
 #include "dlfcn.h"
@@ -78,13 +75,15 @@ static void load_game_code(GameCode &game_code, char *game_library_path, char *t
         return;
 
     game_code.update = update_stub;
+    game_code.update_editor = update_editor_stub;
     game_code.last_library_write_time = get_last_write_time(game_library_path);
     game_code.game_code_library = platform.load_dynamic_library(temp_game_library_path);
 
     if (game_code.game_code_library)
     {
         game_code.update = (Update *)platform.load_symbol(game_code.game_code_library, "update");
-        game_code.is_valid = game_code.update != nullptr;
+        game_code.update_editor = (UpdateEditor *)platform.load_symbol(game_code.game_code_library, "update_editor");
+        game_code.is_valid = game_code.update != nullptr && game_code.update_editor != nullptr;
     }
     else
         debug("The game library file could not be loaded\n");
@@ -104,6 +103,7 @@ static void load_game_code(GameCode &game_code, char *game_library_path, char *t
 #endif
 
         game_code.update = update_stub;
+        game_code.update_editor = update_editor_stub;
     }
 }
 
@@ -117,6 +117,7 @@ static void unload_game_code(GameCode *game_code)
 
     game_code->is_valid = false;
     game_code->update = update_stub;
+    game_code->update_editor = update_editor_stub;
 }
 
 static void sleep_ms(i32 ms)
@@ -371,9 +372,11 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     }
     renderer->render.texture_count = 0;
 
-    renderer->spritesheet_animation_count = 0;
-    renderer->animation_controller_count = 0;
-    renderer->meshes = push_array(&renderer->mesh_arena, global_max_meshes, Mesh);
+    // NEW RENDER PIPELINE
+    //renderer.render.render_commands = push_array(&renderer.command_arena, global_max_render_commands, rendering::RenderCommand);
+    //renderer.render.depth_free_commands = push_array(&renderer.command_arena, global_max_depth_free_commands, rendering::RenderCommand);
+    renderer->render.shadow_commands = push_array(&renderer->command_arena, global_max_shadow_commands, rendering::ShadowCommand);
+    renderer->render.queued_commands = push_array(&renderer->command_arena, global_max_render_commands, QueuedRenderCommand);
     renderer->tt_font_infos = push_array(&renderer->font_arena, global_max_fonts, TrueTypeFontInfo);
     
     // NEW RENDER PIPELINE
@@ -390,14 +393,15 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     renderer->render.point_lights = push_array(&renderer->mesh_arena, global_max_point_lights, PointLight);
     
     renderer->render.materials = push_array(&renderer->mesh_arena, global_max_materials, rendering::Material);
-    //renderer->render.material_instances = push_array(&renderer->mesh_arena, global_max_materials, rendering::Material);
-
+    renderer->render.material_instances = push_array(&renderer->mesh_arena, global_max_material_instances, rendering::Material);
+    renderer->render._internal_material_instance_handles = push_array(&renderer->mesh_arena, global_max_material_instances, i32);
+    renderer->render.current_material_instance_index = 0;
+    renderer->render.material_instance_count = 0;
+    
     // Set all material instance values to their defaults
-    for(i32 i = 0; i < MAX_MATERIAL_INSTANCE_ARRAYS; i++)
+    for(i32 i = 0; i < global_max_material_instances; i++)
     {
-        renderer->render._internal_material_instance_array_handles[i] = -1;
-        renderer->render.material_instance_array_counts[i] = 0;
-        renderer->render.material_instance_arrays[i] = nullptr;
+        renderer->render._internal_material_instance_handles[i] = -1;
     }
 
     renderer->render.shaders = push_array(&renderer->mesh_arena, global_max_shaders, rendering::Shader);
@@ -422,6 +426,8 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
 #endif
     
     rendering::set_fallback_shader(renderer, "../engine_assets/standard_shaders/fallback.shd");
+    rendering::set_wireframe_shader(renderer, "../engine_assets/standard_shaders/wireframe.shd");
+    rendering::set_debug_line_shader(renderer, "../engine_assets/standard_shaders/line.shd");
     rendering::set_shadow_map_shader(renderer, "../engine_assets/standard_shaders/shadow_map.shd");
     rendering::set_light_space_matrices(renderer, math::ortho(-25, 25, -25, 25, 1, 20.0f), math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0.0f, 0.0f, 0.0f));
 
@@ -603,22 +609,6 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     renderer->particles.quad_buffer = rendering::register_buffer(renderer, particle_buffer);
 }
 
-#if ENABLE_ANALYTICS
-void process_analytics_events(AnalyticsEventState &analytics_state, WorkQueue *queue)
-{
-    for (u32 i = 0; i < analytics_state.event_count; i++)
-    {
-        AnalyticsEventData *event = &analytics_state.events[i];
-        event->state = &analytics_state;
-        send_analytics_event(queue, event);
-    }
-
-    analytics_state.event_count = 0;
-}
-#endif
-
-
-
 #if defined(_WIN32) && !defined(DEBUG)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #else
@@ -711,7 +701,6 @@ int main(int argc, char **args)
     Renderer *renderer = renderer_alloc;
     *renderer = {};
 
-    scene::SceneManager *scene_manager = scene::create_scene_manager(&platform_state->perm_arena, renderer);
     
     b32 do_save_config = false;
     
@@ -732,6 +721,8 @@ int main(int argc, char **args)
     WorkQueue reload_queue;
     ThreadInfo reload_thread;
     init_renderer(renderer, &reload_queue, &reload_thread);
+    
+    scene::SceneManager *scene_manager = scene::create_scene_manager(&platform_state->perm_arena, renderer);
     
     GameCode game = {};
     game.is_valid = false;
@@ -786,24 +777,6 @@ int main(int argc, char **args)
 
     template_state.templates = push_array(&platform_state->perm_arena, global_max_entity_templates, scene::EntityTemplate);
 
-
-#if ENABLE_ANALYTICS
-#define ANALYTICS_GAME_KEY "3a3552e363e3ca17a17f98d568f25c75"
-#define ANALYTICS_SECRET_KEY "c34eacd91bcd41a33b37b0e8c978c17ee5c18f53"
-    AnalyticsEventState analytics_state = {};
-    gameanalytics::GameAnalytics::setEnabledInfoLog(false);
-    gameanalytics::GameAnalytics::configureBuild("alpha 0.1");
-    gameanalytics::GameAnalytics::initialize(ANALYTICS_GAME_KEY, ANALYTICS_SECRET_KEY);
-    gameanalytics::GameAnalytics::startSession();
-
-    ThreadInfo analytics_info[1] = {};
-    WorkQueue analytics_queue = {};
-    make_queue(&analytics_queue, 1, analytics_info);
-    game_memory.analytics_state = &analytics_state;
-
-    r64 start_frame_for_total_time = get_time();
-#endif
-
     core.renderer = renderer;
     core.input_controller = &input_controller;
     core.timer_controller = &timer_controller;
@@ -827,17 +800,24 @@ int main(int argc, char **args)
         //#endif
         //auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
 
-        game.update(&game_memory);
-
         if(scene_manager->scene_loaded)
         {
+            if(scene_manager->mode == scene::SceneMode::RUNNING)
+            {
+                game.update(&game_memory);
+            }
+            else
+                game.update_editor(&game_memory);
+            
+            update_scene_editor(scene_manager->loaded_scene, &input_controller, delta_time);
+            
             push_scene_for_rendering(scene::get_scene(scene_manager->loaded_scene), renderer);
         }
+        else
+            game.update(&game_memory);
         
         update_particle_systems(renderer, delta_time);
-#if ENABLE_ANALYTICS
-        process_analytics_events(analytics_state, &analytics_queue);
-#endif
+
         tick_animation_controllers(renderer, &sound_system, &input_controller, timer_controller, delta_time);
         tick_timers(timer_controller, delta_time);
         update_sound_commands(&sound_device, &sound_system, delta_time, &do_save_config);
@@ -889,14 +869,6 @@ int main(int argc, char **args)
         game_memory.core.current_time = get_time();
         last_frame = end_counter;
     }
-
-#if ENABLE_ANALYTICS
-    AnalyticsEventData event = {};
-    event.state = &analytics_state;
-    event.type = AnalyticsEventType::SESSION;
-    event.play_time = get_time() - start_frame_for_total_time;
-    gameanalytics::GameAnalytics::endSession();
-#endif
 
     close_log();
     cleanup_sound(&sound_device);
