@@ -1,10 +1,20 @@
-static inline b32 get_mouse_button(MouseCode key, InputController* input_controller)
+static inline b32 get_mouse_button(MouseCode key, InputController* input_controller, b32 force = false)
 {
+    if(input_controller->ignore_mouse && !force)
+    {
+        return false;
+    }
+    
     return input_controller->mouse_button_down[key];
 }
 
-static inline b32 get_mouse_button_down(MouseCode key, InputController* input_controller)
+static inline b32 get_mouse_button_down(MouseCode key, InputController* input_controller, b32 force = false)
 {
+    if(input_controller->ignore_mouse && !force)
+    {
+        return false;
+    }
+    
     return input_controller->mouse_button_just_pressed[key] == KEY_JUST_PRESSED;
 }
 
@@ -176,8 +186,8 @@ static inline r32 get_input_y(InputController* input_controller, Stick stick = S
 #define JOYSTICK_KEY_DOWN(Key) get_joystick_key_down(Key, input_controller)
 #define JOYSTICK_AXIS_X_DOWN(Left,...) get_joystick_axis_x_down(input_controller, Left, ##__VA_ARGS__)
 #define JOYSTICK_AXIS_Y_DOWN(Up, ...) get_joystick_axis_y_down(input_controller,Up , ##__VA_ARGS__)
-#define MOUSE(Key) get_mouse_button(Key, input_controller)
-#define MOUSE_DOWN(Key) get_mouse_button_down(Key, input_controller)
+#define MOUSE(Key, ...) get_mouse_button(Key, input_controller, ##__VA_ARGS__)
+#define MOUSE_DOWN(Key, ...) get_mouse_button_down(Key, input_controller, ##__VA_ARGS__)
 #define MOUSE_UP(Key) get_mouse_button_up(Key, input_controller)
 #define INPUT_X(...) get_input_x(input_controller , ##__VA_ARGS__)
 #define INPUT_Y(...) get_input_y(input_controller , ##__VA_ARGS__)
