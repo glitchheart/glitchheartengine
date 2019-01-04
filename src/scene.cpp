@@ -927,6 +927,7 @@ namespace scene
         
         entity.render_handle = { scene.render_component_count++ };
         scene::RenderComponent &comp = scene.render_components[entity.render_handle.handle];
+        comp.v2.render_pass_count = 0;
         comp.casts_shadows = cast_shadows;
         
         return(comp);
@@ -1815,7 +1816,7 @@ namespace scene
     
     static void _unregister_entity(EntityHandle handle, Scene &scene)
     {
-        if(handle.handle == 0 || handle.handle - 1 >= scene.entity_count || scene._internal_handles[handle.handle - 1] == -1)
+        if(handle.handle == 0 || scene._internal_handles[handle.handle - 1] == -1 && scene._internal_handles[handle.handle - 1] < scene.entity_count)
             return;
         
         i32 removed_handle = handle.handle;
@@ -1851,23 +1852,23 @@ namespace scene
             for(i32 index = real_handle; index < scene.entity_count - 1; index++)
             {
                 scene.entities[index] = scene.entities[index + 1];
-                
-                if(scene.entities[index].transform_handle.handle > transform_handle)
+
+                if(transform_handle != -1 && scene.entities[index].transform_handle.handle > transform_handle)
                 {
                     scene.entities[index].transform_handle.handle--;
                 }
                 
-                if(scene.entities[index].render_handle.handle > render_handle)
+                if(render_handle != -1 && scene.entities[index].render_handle.handle > render_handle)
                 {
                     scene.entities[index].render_handle.handle--;
                 }
                 
-                if(scene.entities[index].particle_system_handle.handle > particle_system_handle)
+                if(particle_system_handle != -1 && scene.entities[index].particle_system_handle.handle > particle_system_handle)
                 {
                     scene.entities[index].particle_system_handle.handle--;
                 }
 
-                if(scene.entities[index].light_handle.handle > light_component_handle)
+                if(light_component_handle != -1 && scene.entities[index].light_handle.handle > light_component_handle)
                 {
                     scene.entities[index].light_handle.handle--;
                 }
