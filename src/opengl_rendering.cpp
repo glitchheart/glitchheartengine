@@ -1584,11 +1584,6 @@ static void set_uniform(rendering::Transform transform, const rendering::RenderP
         break;
         case rendering::UniformMappingType::MODEL:
         {
-            if(transform.dirty)
-            {
-                rendering::recompute_transform(transform);
-            }
-
             set_mat4_uniform(gl_shader.program, location, transform.model);
         }
         break;
