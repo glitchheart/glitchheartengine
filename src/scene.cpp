@@ -633,6 +633,18 @@ namespace scene
         //RenderComponent &render_selected = get_render_comp(gizmo, handle);
         //rendering::set_uniform_value(*handle.manager->renderer, render_selected.v2.material_handle, "color", math::Rgba(1.0f, 1.0f, 0.0f, 1.0f));
     }
+
+    static void set_editor_camera_lock(b32 locked, SceneManager *scene_manager)
+    {
+        scene_manager->editor.lock_camera = locked;
+    }
+
+    static void editor_save(SceneManager *scene_manager)
+    {
+        // @Incomplete: Save scene-file
+        if(scene_manager->callbacks.on_save)
+            scene_manager->callbacks.on_save(scene_manager->loaded_scene);
+    }
     
     static void set_selection_enabled(b32 enabled, SceneManager *scene_manager)
     {
@@ -651,6 +663,46 @@ namespace scene
     static void toggle_selection_enabled(SceneManager *scene_manager)
     {
         set_selection_enabled(!scene_manager->editor.selection_enabled, scene_manager);
+    }
+
+    static void update_editor_camera(Camera &camera, Scene &scene, InputController *input_controller, r64 delta_time)
+    {
+        // Update camera
+        if(KEY(Key_W))
+        {
+            translate_forward(camera, (r32)delta_time * 10.0f);
+        }
+
+        if(KEY(Key_S))
+        {
+            translate_forward(camera, (r32)-delta_time * 10.0f);
+        }
+
+        if(KEY(Key_A))
+        {
+            translate_right(camera, (r32)-delta_time * 10.0f);
+        }
+
+        if(KEY(Key_D))
+        {
+            translate_right(camera, (r32)delta_time * 10.0f);
+        }
+
+        if(KEY_DOWN(Key_LeftAlt))
+            center(camera);
+        else if(KEY_UP(Key_LeftAlt))
+            free_roam(camera);
+    
+        if(MOUSE_DOWN(Mouse_Right))
+            set_mouse_lock(true, *scene.renderer);
+        else if(MOUSE_UP(Mouse_Right))
+            set_mouse_lock(false, *scene.renderer);
+    
+        if(MOUSE(Mouse_Right))
+        {
+            rotate_around_x(camera, (r32)-input_controller->mouse_y_delta * 0.1f);
+            rotate_around_y(camera, (r32)input_controller->mouse_x_delta * 0.1f);
+        }
     }
     
     static void update_scene_editor(SceneHandle handle, InputController *input_controller, r64 delta_time)
@@ -820,42 +872,10 @@ namespace scene
                 manager->gizmos.constraint = TranslationConstraint::NONE;
                 manager->dragging = false;
             }
-            
-            // Update camera
-            if(KEY(Key_W))
-            {
-                translate_forward(camera, (r32)delta_time * 10.0f);
-            }
 
-            if(KEY(Key_S))
+            if(!manager->editor.lock_camera)
             {
-                translate_forward(camera, (r32)-delta_time * 10.0f);
-            }
-
-            if(KEY(Key_A))
-            {
-                translate_right(camera, (r32)-delta_time * 10.0f);
-            }
-
-            if(KEY(Key_D))
-            {
-                translate_right(camera, (r32)delta_time * 10.0f);
-            }
-
-            if(KEY_DOWN(Key_LeftAlt))
-                center(camera);
-            else if(KEY_UP(Key_LeftAlt))
-                free_roam(camera);
-    
-            if(MOUSE_DOWN(Mouse_Right))
-                set_mouse_lock(true, *scene.renderer);
-            else if(MOUSE_UP(Mouse_Right))
-                set_mouse_lock(false, *scene.renderer);
-    
-            if(MOUSE(Mouse_Right))
-            {
-                rotate_around_x(camera, (r32)-input_controller->mouse_y_delta * 0.1f);
-                rotate_around_y(camera, (r32)input_controller->mouse_x_delta * 0.1f);
+                update_editor_camera(camera, scene, input_controller, delta_time);
             }
         }
     }
