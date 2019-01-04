@@ -125,9 +125,7 @@ namespace scene
         {
             scene._internal_handles[index] = -1;
             scene.active_entities[index] = true;
-            scene.transform_components[index].position = math::Vec3(0, 0, 0);
-            scene.transform_components[index].scale = math::Vec3(1, 1, 1);
-            scene.transform_components[index].rotation = math::Vec3(0, 0, 0);
+            scene.transform_components[index].transform = rendering::create_transform(math::Vec3(0, 0, 0), math::Vec3(1, 1, 1), math::Vec3(0.0f));
             scene.transform_components[index].parent_handle = EMPTY_COMP_HANDLE;
             scene.transform_components[index].child_handle = EMPTY_COMP_HANDLE;
         }
@@ -448,9 +446,9 @@ namespace scene
                     scene::RenderComponent &render_comp = scene.render_components[ent.render_handle.handle];
                     
                     math::BoundingBox box;
-                    math::Vec3 real_scale = transform.scale * render_comp.mesh_scale;
-                    box.min = math::Vec3(transform.position.x - real_scale.x * 0.5f, transform.position.y - real_scale.y * 0.5f, transform.position.z - real_scale.z * 0.5f);
-                    box.max = math::Vec3(transform.position.x + real_scale.x * 0.5f, transform.position.y + real_scale.y * 0.5f, transform.position.z + real_scale.z * 0.5f);
+                    math::Vec3 real_scale = transform.transform.scale * render_comp.mesh_scale;
+                    box.min = math::Vec3(transform.transform.position.x - real_scale.x * 0.5f, transform.transform.position.y - real_scale.y * 0.5f, transform.transform.position.z - real_scale.z * 0.5f);
+                    box.max = math::Vec3(transform.transform.position.x + real_scale.x * 0.5f, transform.transform.position.y + real_scale.y * 0.5f, transform.transform.position.z + real_scale.z * 0.5f);
 
                     math::Vec3 intersection_point;
                     if(aabb_ray_intersection(ray, box, &intersection_point))
@@ -495,11 +493,8 @@ namespace scene
         TranslationConstraint c = manager->gizmos.constraint;
         if(manager->gizmos.active)
         {
-            TransformComponent &transform = get_transform_comp(manager->selected_entity, manager->loaded_scene);
-            math::Vec3 position = transform.position;
-            rendering::Transform t;
-            t.position = position;
-            t.scale = math::Vec3(1.0f);
+            TransformComponent &transform_comp = get_transform_comp(manager->selected_entity, manager->loaded_scene);
+            rendering::Transform t = rendering::create_transform(transform_comp.transform.position, math::Vec3(1.0f), transform_comp.transform.orientation);
             math::Vec3 yellow(RGB_FLOAT(189), RGB_FLOAT(183), RGB_FLOAT(107));
             
             // Draw transform manipulators
@@ -609,17 +604,17 @@ namespace scene
             {
             case TranslationConstraint::X:
             {
-                transform.position.x = points[1].x - manager->gizmos.initial_offset.x;
+                rendering::set_position_x(transform.transform, points[1].x - manager->gizmos.initial_offset.x);
             }
             break;
             case TranslationConstraint::Y:
             {
-                transform.position.y = points[1].y - manager->gizmos.initial_offset.y;
+                rendering::set_position_y(transform.transform, points[1].y - manager->gizmos.initial_offset.y);
             }
             break;
             case TranslationConstraint::Z:
             {
-                transform.position.z = points[1].z - manager->gizmos.initial_offset.z;
+                rendering::set_position_z(transform.transform, points[1].z - manager->gizmos.initial_offset.z);
             }
             break;
             case Gizmos::NONE:
@@ -712,11 +707,11 @@ namespace scene
                 TransformComponent &t = get_transform_comp(manager->selected_entity, handle);
                 
                 update_transform(t, camera, manager, input_controller, delta_time);
-                manager->gizmos.current_distance_to_camera = math::distance(camera.position, t.position) * 0.1f;
+                manager->gizmos.current_distance_to_camera = math::distance(camera.position, t.transform.position) * 0.1f;
                 
                 if(KEY_DOWN(Key_F))
                 {
-                    set_target(camera, t.position);
+                    set_target(camera, t.transform.position);
                 }
             }
 
@@ -729,7 +724,7 @@ namespace scene
                     if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
                     {
                         TransformComponent &t = get_transform_comp(manager->selected_entity, handle);
-                        math::Vec3 pos = t.position;
+                        math::Vec3 pos = t.transform.position;
                     
                         TranslationConstraint constraint = TranslationConstraint::NONE;
 
@@ -991,6 +986,106 @@ namespace scene
             }
         }
     }
+
+    static void translate_x(TransformComponent& comp, r32 x)
+    {
+        rendering::translate_x(comp.transform, x);
+    }
+
+    static void translate_y(TransformComponent& comp, r32 y)
+    {
+        rendering::translate_y(comp.transform, y);
+    }
+
+    static void translate_z(TransformComponent& comp, r32 z)
+    {
+        rendering::translate_z(comp.transform, z);
+    }
+
+    static void translate(TransformComponent& comp, math::Vec3 translation)
+    {
+        rendering::translate(comp.transform, translation);
+    }
+
+    static void rotate(TransformComponent& comp, math::Vec3 rotation)
+    {
+        rendering::rotate(comp.transform, rotation);
+    }
+
+    static void rotate(TransformComponent& comp, math::Quat rotation)
+    {
+        rendering::rotate(comp.transform, rotation);
+    }
+
+    static void set_rotation(TransformComponent& comp, math::Vec3 rotation)
+    {
+        rendering::set_rotation(comp.transform, rotation);
+    }
+
+    static void set_rotation(TransformComponent& comp, math::Quat orientation)
+    {
+        rendering::set_rotation(comp.transform, orientation);
+    }
+
+    static void set_rotation_x(TransformComponent& comp, r32 x)
+    {
+        rendering::set_rotation_x(comp.transform, x);
+    }
+
+    static void set_rotation_y(TransformComponent& comp, r32 y)
+    {
+        rendering::set_rotation_y(comp.transform, y);
+    }
+
+    static void set_rotation_z(TransformComponent& comp, r32 z)
+    {
+        rendering::set_rotation_z(comp.transform, z);
+    }
+
+    static void scale(TransformComponent& comp, math::Vec3 scale)
+    {
+        rendering::scale(comp.transform, scale);
+    }
+
+    static void set_scale(TransformComponent& comp, math::Vec3 scale)
+    {
+        rendering::set_scale(comp.transform, scale);
+    }
+
+    static void set_scale_x(TransformComponent& comp, r32 x)
+    {
+        rendering::set_scale_x(comp.transform, x);
+    }
+
+    static void set_scale_y(TransformComponent& comp, r32 y)
+    {
+        rendering::set_scale_y(comp.transform, y);
+    }
+
+    static void set_scale_z(TransformComponent& comp, r32 z)
+    {
+        rendering::set_scale_z(comp.transform, z);
+    }
+
+    static void set_position(TransformComponent& comp, math::Vec3 position)
+    {
+        rendering::set_position(comp.transform, position);
+    }
+
+    static void set_position_x(TransformComponent& comp, r32 x)
+    {
+        rendering::set_position_x(comp.transform, x);
+    }
+
+    static void set_position_y(TransformComponent& comp, r32 y)
+    {
+        rendering::set_position_y(comp.transform, y);
+    }
+
+    static void set_position_z(TransformComponent& comp, r32 z)
+    {
+        rendering::set_position_z(comp.transform, z);
+    }
     
     static TransformComponent& _add_transform_component(Scene &scene, EntityHandle entity_handle)
     {
@@ -998,6 +1093,7 @@ namespace scene
         entity.comp_flags |= COMP_TRANSFORM;
         entity.transform_handle = { scene.transform_component_count++ };
         scene::TransformComponent &comp = scene.transform_components[entity.transform_handle.handle];
+        comp.transform = rendering::create_transform(math::Vec3(0.0f), math::Vec3(0.0f), math::Vec3(0.0f));
         
         return(comp);
     }
@@ -1485,9 +1581,7 @@ namespace scene
         if(templ.comp_flags & COMP_TRANSFORM)
         {
             TransformComponent &transform = _get_transform_comp(handle, scene);
-            transform.position = templ.transform.position;
-            transform.scale = templ.transform.scale;
-            transform.rotation = templ.transform.rotation;
+            transform.transform = rendering::create_transform(templ.transform.position, templ.transform.scale, templ.transform.rotation);
             // @Incomplete: Parent and child handles
         }
         
@@ -1601,9 +1695,8 @@ namespace scene
 
             if(templ.comp_flags & COMP_TRANSFORM)
             {
-                ps->transform.position = ps->attributes.base_position + templ.transform.position;
-                ps->transform.scale = templ.transform.position;
-                ps->transform.rotation = templ.transform.rotation;
+                ps->transform = rendering::create_transform(ps->attributes.base_position + templ.transform.position,
+                                                            templ.transform.scale, templ.transform.rotation);
             }
 
             if(templ.particles.attributes.texture_handle.handle != 0)
@@ -1801,7 +1894,7 @@ namespace scene
     {
         EntityHandle entity = register_entity_from_template_file(path, manager->loaded_scene, true);
         TransformComponent &transform = get_transform_comp(entity, manager->loaded_scene);
-        transform.position = position;
+        rendering::set_position(transform.transform, position);
     }
     
     static void _set_active(EntityHandle handle, b32 active, Scene &scene)
@@ -2014,11 +2107,13 @@ namespace scene
             if (scene.active_entities[ent_index])
             {
                 scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
-            
+
+                if(transform.transform.dirty)
+                {
+                    rendering::recompute_transform(transform.transform);
+                }
                 // Create a copy of the position, rotation and scale since we don't want the parents transform to change the child's transform. Only when rendering.
-                math::Vec3 position = transform.position;
-                math::Vec3 rotation = transform.rotation;
-                math::Vec3 scale = transform.scale;
+                math::Vec3 position = transform.transform.position;
             
                 if(ent.comp_flags & scene::COMP_LIGHT)
                 {
@@ -2067,21 +2162,16 @@ namespace scene
                             command->original_material = instance.source_material;
                             command->count = 0;
                         }
-                    
-                        rendering::Transform t;
-                        t.position = position;
-                        t.rotation = rotation;
-                        t.scale = scale;
 
                         if(render.v2.render_pass_count > 0)
                         {
                             if(render.wireframe_enabled)
                             {
-                                rendering::push_buffer_to_render_pass(renderer, render.v2.buffer_handle, renderer->render.wireframe_material, t, renderer->render.wireframe_shader, render.v2.render_passes[0], rendering::CommandType::NO_DEPTH);
+                                rendering::push_buffer_to_render_pass(renderer, render.v2.buffer_handle, renderer->render.wireframe_material, transform.transform, renderer->render.wireframe_shader, render.v2.render_passes[0], rendering::CommandType::NO_DEPTH);
                             }
                         
                             BatchedCommand &batch_command = command->commands[command->count];
-                            batch_command.transform = t;
+                            batch_command.transform = transform.transform;
                             batch_command.material_handle = render.v2.material_handle;
                             batch_command.casts_shadows = render.casts_shadows;
                             batch_command.pass_count = render.v2.render_pass_count;
@@ -2109,9 +2199,13 @@ namespace scene
                     
                         if(ent.comp_flags & scene::COMP_TRANSFORM)
                         {
-                            system.transform.position += position;
-                            system.transform.scale = scale;
-                            system.transform.rotation = rotation;
+                            if(transform.transform.dirty)
+                            {
+                                system.transform.position += transform.transform.position;
+                                system.transform.scale = transform.transform.scale;
+                                system.transform.orientation = transform.transform.orientation;
+                                rendering::recompute_transform(system.transform);
+                            }
                         }
 
                         if(system.running)
@@ -2171,11 +2265,21 @@ namespace scene
                             if(va.mapping_type != rendering::VertexAttributeMappingType::NONE)
                             {
                                 if(va.mapping_type == rendering::VertexAttributeMappingType::POSITION)
-                                    val = render_command.transform.position;
+                                {
+                                    assert(false);
+                                    // val = render_command.transform.position;
+                                }
                                 else if(va.mapping_type == rendering::VertexAttributeMappingType::ROTATION)
-                                    val = render_command.transform.rotation;
+                                {
+                                    assert(false);
+                                    // val = render_command.transform.rotation;
+                                }
                                 else if(va.mapping_type == rendering::VertexAttributeMappingType::SCALE)
-                                    val = render_command.transform.scale;
+                                {
+                                    assert(false);
+                                    // val = render_command.transform.scale;
+                                }
+                                
                             }
                             rendering::add_instance_buffer_value(va.instance_buffer_handle, val, renderer);
                         }
@@ -2190,24 +2294,7 @@ namespace scene
                             if(va.mapping_type == rendering::VertexAttributeMappingType::MODEL)
                             {
                                 rendering::Transform &transform = render_command.transform;
-                                
-                                math::Mat4 model_matrix(1.0f);
-                                model_matrix = math::scale(model_matrix, transform.scale);
-    
-                                math::Vec3 rotation = transform.rotation;
-                                auto x_axis = rotation.x > 0.0f ? 1.0f : 0.0f;
-                                auto y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
-                                auto z_axis = rotation.z > 0.0f ? 1.0f : 0.0f;
-    
-                                math::Quat orientation = math::Quat();
-                                orientation = math::rotate(orientation, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
-                                orientation = math::rotate(orientation, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
-                                orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
-    
-                                model_matrix = to_matrix(orientation) * model_matrix;
-    
-                                model_matrix = math::translate(model_matrix, transform.position);
-                                val = math::transpose(model_matrix);
+                                val = math::transpose(transform.model);
                             }
                             rendering::add_instance_buffer_value(va.instance_buffer_handle, val, renderer);
                         }

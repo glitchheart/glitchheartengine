@@ -2063,6 +2063,33 @@ namespace math
         result.z = q.z / sin(angle / 2.0f); 
         return result;
     }
+
+    inline Vec3 to_euler_angles(Quat q)
+    {
+        math::Vec3 result(0.0f);
+        // roll (x-axis rotation)
+        r32 sinr_cosp = 2.0f * (q.w * q.x + q.y * q.z);
+        r32 cosr_cosp = 1.0f - 2.0f * (q.x * q.x + q.y * q.y);
+        result.x = atan2(sinr_cosp, cosr_cosp);
+
+        // pitch (y-axis rotation)
+        r32 sinp = 2.0f * (q.w * q.y - q.z * q.x);
+        if (fabs(sinp) >= 1)
+        {
+            result.y = copysign(PI / 2, sinp); // use 90 degrees if out of range
+        }
+        else
+        {
+            result.y = asin(sinp);
+        }
+
+        // yaw (z-axis rotation)
+        r32 siny_cosp = +2.0f * (q.w * q.z + q.x * q.y);
+        r32 cosy_cosp = +1.0f - 2.0f * (q.y * q.y + q.z * q.z);  
+        result.z = atan2(siny_cosp, cosy_cosp);
+
+        return result;
+    }
     
     inline Mat4 scale(Mat4 in, Vec3 scale)
     {
@@ -2139,12 +2166,33 @@ namespace math
     inline Quat rotate(Quat in, r32 a, Vec3 axis)
     {
         Quat result(in);
-        auto q = math::Quat(axis.x, axis.y, axis.z, DEGREE_IN_RADIANS * a);
+        Quat q = math::Quat(axis.x, axis.y, axis.z, DEGREE_IN_RADIANS * a);
         result = in * q;
         result = normalize(result);
         return result;
     }
-    
+
+    inline Quat rotate(Quat in, Quat rotation)
+    {
+        Quat result(in);
+        result = in * rotation;
+        result = normalize(result);
+        return result;
+    }
+
+    inline Quat rotate(Quat in, Vec3 rotation)
+    {
+        r32 x_axis = rotation.x > 0.0f ? 1.0f : 0.0f;
+        r32 y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
+        r32 z_axis = rotation.z > 0.0f ? 1.0f : 0.0f;
+        
+        in = math::rotate(in, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
+        in = math::rotate(in, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
+        in = math::rotate(in, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
+
+        return in;
+    }
+
     // https://gamedev.stackexchange.com/a/50545
     inline Vec3 rotate(Vec3 in, Quat q)
     {

@@ -1033,7 +1033,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
 
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
-    glfwSwapInterval(0);
+    glfwSwapInterval(1);
 
     glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
     glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
@@ -1584,24 +1584,12 @@ static void set_uniform(rendering::Transform transform, const rendering::RenderP
         break;
         case rendering::UniformMappingType::MODEL:
         {
-            math::Mat4 model_matrix(1.0f);
-            model_matrix = math::scale(model_matrix, transform.scale);
+            if(transform.dirty)
+            {
+                rendering::recompute_transform(transform);
+            }
 
-            math::Vec3 rotation = transform.rotation;
-            auto x_axis = rotation.x > 0.0f ? 1.0f : 0.0f;
-            auto y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
-            auto z_axis = rotation.z > 0.0f ? 1.0f : 0.0f;
-
-            math::Quat orientation = math::Quat();
-            orientation = math::rotate(orientation, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
-            orientation = math::rotate(orientation, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
-            orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
-
-            model_matrix = to_matrix(orientation) * model_matrix;
-
-            model_matrix = math::translate(model_matrix, transform.position);
-
-            set_mat4_uniform(gl_shader.program, location, model_matrix);
+            set_mat4_uniform(gl_shader.program, location, transform.model);
         }
         break;
         case rendering::UniformMappingType::VIEW:
@@ -1865,29 +1853,11 @@ static void render_shadow_buffer(rendering::ShadowCommand &shadow_command, Rende
         render_state.current_state.shader_program = gl_shader.program;
     }
 
-    rendering::Transform transform = shadow_command.transform;
-
-    math::Mat4 model_matrix(1.0f);
-    model_matrix = math::scale(model_matrix, transform.scale);
-
-    math::Vec3 rotation = transform.rotation;
-    auto x_axis = rotation.x > 0.0f ? 1.0f : 0.0f;
-    auto y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
-    auto z_axis = rotation.z > 0.0f ? 1.0f : 0.0f;
-
-    math::Quat orientation = math::Quat();
-    orientation = math::rotate(orientation, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
-    orientation = math::rotate(orientation, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
-    orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
-
-    model_matrix = to_matrix(orientation) * model_matrix;
-    model_matrix = math::translate(model_matrix, transform.position);
-
     static GLint lsLoc = glGetUniformLocation(gl_shader.program, "lightSpaceMatrix");
     static GLint mLoc = glGetUniformLocation(gl_shader.program, "model");
 
     set_mat4_uniform(gl_shader.program, lsLoc, renderer->render.light_space_matrix);
-    set_mat4_uniform(gl_shader.program, mLoc, model_matrix);
+    set_mat4_uniform(gl_shader.program, mLoc, shadow_command.transform.model);
 
     if (buffer.ibo)
     {
@@ -2025,7 +1995,8 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
                 glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
             }
 
-            render_buffer(rendering::PrimitiveType::TRIANGLES, command.transform, command.buffer, pass, render_state, renderer, command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
+
+            render_buffer(rendering::PrimitiveType::TRIANGLES, {}, command.buffer, pass, render_state, renderer, command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
             
             if (command.clip)
             {
@@ -2048,7 +2019,7 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
             glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
         }
 
-        render_buffer(rendering::PrimitiveType::TRIANGLES, command.transform, command.buffer, pass, render_state, renderer, command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
+        render_buffer(rendering::PrimitiveType::TRIANGLES, {}, command.buffer, pass, render_state, renderer, command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
 
         if (command.clip)
         {
