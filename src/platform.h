@@ -130,9 +130,9 @@ struct ConfigData
 #define MAX_FILE_NAMES 128
 struct DirectoryData
 {
-    char **file_paths;
-    char **file_names;
-    i32 files_length = 0;
+    char file_paths[128][64];
+    char file_names[128][32];
+    i32 file_count = 0;
 };
 
 enum PlatformMemoryBlockFlags
@@ -179,7 +179,7 @@ enum SeekOptions
     SO_END
 };
 
-#define PLATFORM_GET_ALL_FILES_WITH_EXTENSION(name) void name(MemoryArena* arena, const char* directory_path, const char* extension, DirectoryData* directory_data, b32 with_sub_directories)
+#define PLATFORM_GET_ALL_FILES_WITH_EXTENSION(name) void name(const char* directory_path, const char* extension, DirectoryData *directory_data, b32 with_sub_directories)
 typedef PLATFORM_GET_ALL_FILES_WITH_EXTENSION(PlatformGetAllFilesWithExtension);
 
 #define PLATFORM_GET_ALL_DIRECTORIES(name) char ** name(const char* path)
