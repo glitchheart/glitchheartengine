@@ -353,8 +353,14 @@ namespace rendering
     struct Transform
     {
 		math::Vec3 position;
-		math::Vec3 rotation;
 		math::Vec3 scale;
+
+        math::Quat orientation;
+        math::Vec3 euler_angles;
+
+        math::Mat4 model;
+
+        b32 dirty;
     };
 
     enum class PrimitiveType
@@ -457,10 +463,14 @@ namespace rendering
 
     struct CreateUICommandInfo
     {
-        math::Vec2 position;
-        math::Vec3 rotation;
+        struct
+        {
+            math::Vec2 position;
+            math::Vec3 rotation;
+            math::Vec2 scale;
+        } transform;
+        
         i32 z_layer;
-        math::Vec2 scale;
         
         math::Rgba color;
 
@@ -476,7 +486,6 @@ namespace rendering
     struct UIRenderCommand
     {
         Material material;
-        Transform transform;
 
         math::Rect clip_rect;
         b32 clip;
