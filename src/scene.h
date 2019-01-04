@@ -72,9 +72,7 @@ namespace scene
     
     struct TransformComponent
     {
-        math::Vec3 position;
-        math::Vec3 scale;
-        math::Vec3 rotation;
+        rendering::Transform transform;
 
 		TransformComponentHandle parent_handle;
 		TransformComponentHandle child_handle; // Remember the child's handle to be able to quickly remove the childs parent handle if the parent is removed
