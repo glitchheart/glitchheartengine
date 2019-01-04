@@ -348,6 +348,7 @@ namespace scene
         struct
         {
             b32 selection_enabled;
+            b32 lock_camera;
         } editor;
         
         struct
@@ -367,6 +368,7 @@ namespace scene
         scene_manager->current_internal_index = 0;
         scene_manager->scene_loaded = false;
         scene_manager->editor.selection_enabled = true;
+        scene_manager->editor.lock_camera = false;
         scene_manager->loaded_scene = { -1 };
         scene_manager->scenes = push_array(arena, global_max_scenes, scene::Scene);
         scene_manager->_internal_scene_handles = push_array(arena, global_max_scenes, i32);
