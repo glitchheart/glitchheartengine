@@ -127,7 +127,12 @@ namespace scene
             scene.active_entities[index] = true;
             scene.transform_components[index].transform = rendering::create_transform(math::Vec3(0, 0, 0), math::Vec3(1, 1, 1), math::Vec3(0.0f));
             scene.transform_components[index].parent_handle = EMPTY_COMP_HANDLE;
-            scene.transform_components[index].child_handle = EMPTY_COMP_HANDLE;
+
+            for(i32 i = 0; i < MAX_CHILDREN; i++)
+            {
+                scene.transform_components[index].child_handles[i] = EMPTY_COMP_HANDLE;
+            }
+            
         }
 
         SceneHandle handle;
@@ -2078,6 +2083,108 @@ namespace scene
 
 #define STANDARD_PASS_HANDLE { 1 }
 
+    static Entity& _get_entity(EntityHandle handle, SceneHandle& scene_handle)
+    {
+        Scene& scene = get_scene(scene_handle);
+        assert(handle.handle != 0);
+        i32 internal_handle = scene._internal_handles[handle.handle - 1];
+        assert(internal_handle > -1);
+        
+        Entity& entity = scene.entities[internal_handle];
+        
+        assert(entity.comp_flags & COMP_TRANSFORM);
+
+        return entity;
+    }
+
+    static void recompute_transforms(TransformComponent& root, Scene& scene)
+    {
+        rendering::recompute_transform(root.transform);
+        if(root.parent_handle.handle != -1)
+        {
+            math::Mat4 parent_model = scene.transform_components[root.parent_handle.handle].transform.model;
+            root.transform.model = parent_model * root.transform.model;
+        }
+
+        for(i32 i = 0; i < root.child_count; i++)
+        {
+            TransformComponent& child = scene.transform_components[root.child_handles[i].handle];
+            recompute_transforms(child, scene);
+        }
+    }
+
+    static void add_child(TransformComponentHandle parent_handle, TransformComponentHandle child_handle, SceneHandle& scene_handle)
+    {
+        Scene& scene = get_scene(scene_handle);
+        TransformComponent& parent = scene.transform_components[parent_handle.handle];
+        assert(parent.child_count + 1 < MAX_CHILDREN);
+        parent.child_handles[parent.child_count++] = child_handle;
+        parent.transform.dirty = true;
+        
+        TransformComponent& child = scene.transform_components[child_handle.handle];
+        child.parent_handle = parent_handle;
+    }
+
+    static void add_child(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
+    {
+        Entity& parent = _get_entity(parent_handle, scene);
+        Entity& child = _get_entity(child_handle, scene);
+        add_child(parent.transform_handle, child.transform_handle, scene);
+    }
+
+    static void remove_child(TransformComponentHandle parent_handle, TransformComponentHandle child_handle, SceneHandle& scene_handle)
+    {
+        Scene& scene = get_scene(scene_handle);
+        TransformComponent& parent = scene.transform_components[parent_handle.handle];
+        parent.transform.dirty = true;
+        
+        assert(parent.child_count + 1 < MAX_CHILDREN);
+
+        for(i32 i = 0; i < parent.child_count; i++)
+        {
+            if(parent.child_handles[i].handle == child_handle.handle)
+            {
+                TransformComponent& child = scene.transform_components[child_handle.handle];
+                child.parent_handle = {0};
+                
+                parent.child_handles[i] = parent.child_handles[parent.child_count - 1];
+                parent.child_count--;
+                break;
+            }
+        }
+    }
+
+    static void remove_child(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
+    {
+        Entity& parent = _get_entity(parent_handle, scene);
+        Entity& child = _get_entity(child_handle, scene);
+        remove_child(parent.transform_handle, child.transform_handle, scene);
+    }
+
+    static void add_parent(TransformComponentHandle child_handle, TransformComponentHandle parent_handle, SceneHandle& scene)
+    {
+        add_child(parent_handle, child_handle, scene);
+    }
+
+    static void add_parent(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
+    {
+        Entity& parent = _get_entity(parent_handle, scene);
+        Entity& child = _get_entity(child_handle, scene);
+        add_parent(parent.transform_handle, child.transform_handle, scene);
+    }
+
+    static void remove_parent(TransformComponentHandle child_handle, TransformComponentHandle parent_handle, SceneHandle& scene)
+    {
+        remove_child(parent_handle, child_handle, scene);
+    }
+    
+    static void remove_parent(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
+    {
+        Entity& parent = _get_entity(parent_handle, scene);
+        Entity& child = _get_entity(child_handle, scene);
+        remove_parent(parent.transform_handle, child.transform_handle, scene);
+    }
+    
     static void push_scene_for_rendering(scene::Scene &scene, Renderer *renderer)
     {
         renderer->camera = scene.camera;
@@ -2099,6 +2206,32 @@ namespace scene
 
         i32 particles_to_push[64];
         i32 particles_count = 0;
+
+        for(i32 ent_index = 0; ent_index < scene.entity_count; ent_index++)
+        {
+            const scene::Entity &ent = scene.entities[ent_index];
+
+            if(scene.active_entities[ent_index])
+            {
+                TransformComponent* start_component = &scene.transform_components[ent.transform_handle.handle];
+                
+                if(start_component->transform.dirty)
+                {
+                    while(start_component->parent_handle.handle != -1)
+                    {
+                        TransformComponent& parent = scene.transform_components[start_component->parent_handle.handle];
+                        if(parent.transform.dirty)
+                        {
+                            start_component = &parent;
+                        }
+                    }
+
+                    assert(start_component);
+                    recompute_transforms(*start_component, scene);
+                }
+            }
+        }
+        
     
         for(i32 ent_index = 0; ent_index < scene.entity_count; ent_index++)
         {
@@ -2107,11 +2240,7 @@ namespace scene
             if (scene.active_entities[ent_index])
             {
                 scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
-
-                if(transform.transform.dirty)
-                {
-                    rendering::recompute_transform(transform.transform);
-                }
+                
                 // Create a copy of the position, rotation and scale since we don't want the parents transform to change the child's transform. Only when rendering.
                 math::Vec3 position = transform.transform.position;
             

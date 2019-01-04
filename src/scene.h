@@ -69,13 +69,18 @@ namespace scene
         ParticleSystemComponentHandle particle_system_handle;
         LightComponentHandle light_handle;
     };
+
+    #define MAX_CHILDREN 4
     
     struct TransformComponent
     {
         rendering::Transform transform;
 
 		TransformComponentHandle parent_handle;
-		TransformComponentHandle child_handle; // Remember the child's handle to be able to quickly remove the childs parent handle if the parent is removed
+
+        // Remember the child's handle to be able to quickly remove the childs parent handle if the parent is removed
+		TransformComponentHandle child_handles[4];
+        i32 child_count;
 	};
     
     struct RenderComponent
