@@ -704,6 +704,25 @@ namespace scene
             rotate_around_y(camera, (r32)input_controller->mouse_x_delta * 0.1f);
         }
     }
+
+    static void select_entity(EntityHandle entity, SceneManager *manager)
+    {
+        if(IS_ENTITY_HANDLE_VALID(entity))
+        {
+            // Deselect the previously selected entity
+            if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
+                scene::set_wireframe_enabled(false, manager->selected_entity, manager->loaded_scene);                        
+
+            manager->selected_entity = entity;
+            manager->gizmos.active = true;
+
+            scene::set_wireframe_enabled(true, entity, manager->loaded_scene);
+            manager->callbacks.on_entity_selected(entity, manager->loaded_scene);
+                    
+            //scene::TransformComponent t = scene::get_transform_comp(entity, scene);
+            //set_target(camera, t.position);
+        }
+    }
     
     static void update_scene_editor(SceneHandle handle, InputController *input_controller, r64 delta_time)
     {
@@ -843,21 +862,7 @@ namespace scene
 
                     if(manager->gizmos.constraint == TranslationConstraint::NONE)
                     {
-                        if(IS_ENTITY_HANDLE_VALID(entity))
-                        {
-                            // Deselect the previously selected entity
-                            if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
-                                scene::set_wireframe_enabled(false, manager->selected_entity, handle);                        
-                        
-                            manager->selected_entity = entity;
-                            manager->gizmos.active = true;
-
-                            scene::set_wireframe_enabled(true, entity, handle);
-                            manager->callbacks.on_entity_selected(entity, handle);
-                    
-                            //scene::TransformComponent t = scene::get_transform_comp(entity, scene);
-                            //set_target(camera, t.position);
-                        }
+                        select_entity(entity, manager);
                     }
                 }
             }
