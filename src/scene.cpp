@@ -428,6 +428,26 @@ namespace scene
     {
         manager->gizmos.active = false;
     }
+
+    static EntityHandle get_root_entity(TransformComponent &current_transform, Scene &scene)
+    {
+        if(IS_COMP_HANDLE_VALID(current_transform.parent_handle))
+        {
+            TransformComponent& parent_transform = scene.transform_components[current_transform.parent_handle.handle];
+            return get_root_entity(parent_transform, scene);
+        }
+        else
+        {
+            i32 internal_handle = scene._internal_handles[current_transform.entity.handle - 1];
+            assert(internal_handle > -1);
+            Entity &entity = scene.entities[internal_handle];
+            
+            if(!entity.selection_enabled)
+                return { -1 };
+            else
+                return current_transform.entity;
+        }
+    }
     
     static EntityHandle pick_entity(SceneHandle handle, i32 mouse_x, i32 mouse_y)
     {
@@ -442,14 +462,18 @@ namespace scene
         for(i32 i = 0; i < scene.entity_count; i++)
         {
             const scene::Entity &ent = scene.entities[i];
-            
+
             if (scene.active_entities[i])
             {
                 if (ent.comp_flags & scene::COMP_RENDER)
                 {
                     scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
                     scene::RenderComponent &render_comp = scene.render_components[ent.render_handle.handle];
-                    
+
+                    // Ignore the entity if it is not selectable and it has no parent
+                    if(!ent.selection_enabled && !IS_COMP_HANDLE_VALID(transform.parent_handle))
+                        continue;
+                        
                     math::BoundingBox box;
                     math::Vec3 real_scale = transform.transform.scale * render_comp.mesh_scale;
                     box.min = math::Vec3(transform.transform.position.x - real_scale.x * 0.5f, transform.transform.position.y - real_scale.y * 0.5f, transform.transform.position.z - real_scale.z * 0.5f);
@@ -458,15 +482,25 @@ namespace scene
                     math::Vec3 intersection_point;
                     if(aabb_ray_intersection(ray, box, &intersection_point))
                     {
-                        if(_is_gizmo(ent.handle, handle.manager))
-                            return ent.handle;
-                        
+
                         r32 new_dist = math::distance(scene.camera.position, intersection_point);
                     
                         if(new_dist < dist)
                         {
-                            //printf("Found: %s\n", ent.name);
-                            entity_handle = ent.handle;
+                            // Look for selectable parents
+                            if(!ent.selection_enabled)
+                            {
+                                EntityHandle parent = get_root_entity(transform, scene);
+
+                                // If a selectable parent was found
+                                if(IS_ENTITY_HANDLE_VALID(parent))
+                                    entity_handle = parent;
+                                else
+                                    continue;
+                            }
+                            else
+                                entity_handle = ent.handle;
+                            
                             dist = new_dist;
                         }
                     }
@@ -1123,7 +1157,7 @@ namespace scene
         entity.transform_handle = { scene.transform_component_count++ };
         scene::TransformComponent &comp = scene.transform_components[entity.transform_handle.handle];
         comp.transform = rendering::create_transform(math::Vec3(0.0f), math::Vec3(0.0f), math::Vec3(0.0f));
-        
+        comp.entity = entity_handle;
         return(comp);
     }
 
@@ -1183,6 +1217,7 @@ namespace scene
         
         Entity &entity = scene.entities[scene._internal_handles[new_handle - 1]];
         entity.savable = savable;
+        entity.selection_enabled = true;
         entity.handle = handle;
         entity.comp_flags = comp_flags;
         
@@ -1942,6 +1977,46 @@ namespace scene
     {
         Scene &scene = get_scene(scene_handle);
         _set_active(handle, active, scene);
+    }
+
+    static void set_entity_selection_enabled(EntityHandle entity_handle, b32 enabled, SceneHandle scene_handle)
+    {
+        Scene &scene = get_scene(scene_handle);
+        i32 internal_handle = scene._internal_handles[entity_handle.handle - 1];
+        assert(internal_handle > -1);
+        
+        Entity &entity = scene.entities[internal_handle];
+        entity.selection_enabled = enabled;
+    }
+
+    static void set_entity_tag(const char *tag, EntityHandle entity_handle, SceneHandle scene_handle)
+    {
+        Scene &scene = get_scene(scene_handle);
+        i32 internal_handle = scene._internal_handles[entity_handle.handle - 1];
+        assert(internal_handle > -1);
+        
+        Entity &entity = scene.entities[internal_handle];
+        strcpy(entity.tag, tag);
+    }
+
+    static const char * get_entity_tag(EntityHandle entity_handle, SceneHandle scene_handle)
+    {
+        Scene &scene = get_scene(scene_handle);
+        i32 internal_handle = scene._internal_handles[entity_handle.handle - 1];
+        assert(internal_handle > -1);
+        
+        const Entity &entity = scene.entities[internal_handle];
+        return entity.tag;
+    }
+    
+    static void set_entity_name(const char *name, EntityHandle entity_handle, SceneHandle scene_handle)
+    {
+        Scene &scene = get_scene(scene_handle);
+        i32 internal_handle = scene._internal_handles[entity_handle.handle - 1];
+        assert(internal_handle > -1);
+        
+        Entity &entity = scene.entities[internal_handle];
+        strcpy(entity.name, name);
     }
 
     static const char * get_entity_name(EntityHandle entity_handle, SceneHandle scene_handle)
