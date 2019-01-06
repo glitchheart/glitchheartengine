@@ -718,9 +718,6 @@ namespace scene
 
             scene::set_wireframe_enabled(true, entity, manager->loaded_scene);
             manager->callbacks.on_entity_selected(entity, manager->loaded_scene);
-                    
-            //scene::TransformComponent t = scene::get_transform_comp(entity, scene);
-            //set_target(camera, t.position);
         }
     }
     
@@ -734,12 +731,13 @@ namespace scene
         {
             if(manager->mode == SceneMode::RUNNING)
             {
+                if(manager->callbacks.on_started_edit_mode)
+                    manager->callbacks.on_started_edit_mode(handle);
+                
                 // @Note: Unnecessary?
                 if(manager->callbacks.on_load)
                     manager->callbacks.on_load(handle);
 
-                if(manager->callbacks.on_started_edit_mode)
-                    manager->callbacks.on_started_edit_mode(handle);
                 
                 manager->play_camera = scene.camera;
                 manager->mode = SceneMode::EDITING;
