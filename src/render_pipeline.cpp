@@ -3044,7 +3044,6 @@ namespace rendering
         render_command.material = material_instance_handle;
         render_command.pass.shader_handle = shader_handle;
         RenderPass &pass = renderer->render.passes[render_pass_handle.handle - 1];
-        pass.commands.render_commands[pass.commands.render_command_count++] = render_command;
 
         if(type == CommandType::WITH_DEPTH)
             pass.commands.render_commands[pass.commands.render_command_count++] = render_command;
