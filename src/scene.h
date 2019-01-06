@@ -5,7 +5,7 @@
 #define EMPTY_COMP_HANDLE {-1}
 #define EMPTY_TEMPLATE_HANDLE {-1}
 #define IS_ENTITY_HANDLE_VALID(ent_handle) (ent_handle.handle > 0)
-#define IS_COMP_HANDLE_VALID(comp_handle) comp_handle.handle != -1
+#define IS_COMP_HANDLE_VALID(comp_handle) (comp_handle.handle > -1)
 #define IS_TEMPLATE_HANDLE_VALID(comp_handle) comp_handle.handle != -1
 #define IS_SCENE_HANDLE_VALID(scene_handle) (scene_handle.handle > 0)
 #define SCENES_EQUAL(s1, s2) (s1.handle == s2.handle)
@@ -57,6 +57,9 @@ namespace scene
     struct Entity
     {
         char name[256];
+        char tag[32];
+
+        b32 selection_enabled;
         b32 savable; // Should this be saved in the scene file?
         
         char template_path[256];
@@ -81,6 +84,8 @@ namespace scene
         // Remember the child's handle to be able to quickly remove the childs parent handle if the parent is removed
 		TransformComponentHandle child_handles[4];
         i32 child_count;
+
+        EntityHandle entity;
 	};
     
     struct RenderComponent
@@ -269,6 +274,7 @@ namespace scene
     typedef void (*OnSave)(SceneHandle scene);
     typedef void (*OnEntityUpdated)(EntityHandle entity, SceneHandle scene);
     typedef void (*OnEntitySelected)(EntityHandle entity, SceneHandle scene);
+    typedef void (*OnEntityDeleted)(EntityHandle entity, SceneHandle scene);
 
     enum class SceneMode
     {
@@ -362,6 +368,7 @@ namespace scene
             OnSave on_save;
             OnEntityUpdated on_entity_updated;
             OnEntitySelected on_entity_selected;
+            OnEntityDeleted on_entity_deleted;
         } callbacks;
     };
 
