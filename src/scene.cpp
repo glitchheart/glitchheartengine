@@ -3,6 +3,7 @@
 namespace scene
 {
     static Scene create_scene(Renderer *renderer, EntityTemplateState &template_state, i32 initial_entity_array_size);
+    static SceneHandle create_scene_from_file(const char *scene_file_path, SceneManager *scene_manager, i32 initial_entity_array_size);
     static SceneHandle create_scene(SceneManager *scene_manager, i32 initial_entity_array_size);
     static void free_scene(SceneHandle scene);
     static void load_scene(SceneHandle handle, u64 scene_load_flags);
@@ -73,7 +74,7 @@ namespace scene
             {
                 found_handle = _find_handle_in_range(0, scene_manager->current_internal_index, scene_manager->_internal_scene_handles);
             }
-
+            handle = found_handle;
         }
 
         // Set the current index to look for a free handle
@@ -140,7 +141,23 @@ namespace scene
         handle.manager = scene_manager;
         return handle;
     }
-
+    
+    static SceneHandle create_scene_from_file(const char *scene_file_path, SceneManager *scene_manager, i32 initial_entity_array_size)
+    {
+        SceneHandle handle = create_scene(scene_manager, initial_entity_array_size);
+        FILE *file = fopen(scene_file_path, "r");
+        if(file)
+        {
+            char line_buffer[256];
+            while(fgets(line_buffer, 256, file))
+            {
+                
+            }
+                
+            fclose(file);
+        }
+    }
+    
     struct InstancePair
     {
         rendering::MaterialHandle material_handle;
@@ -241,6 +258,7 @@ namespace scene
     {
         SceneManager *scene_manager = handle.manager;
         i32 internal_handle = scene_manager->_internal_scene_handles[handle.handle - 1];
+        scene_manager->_internal_scene_handles[handle.handle - 1] = -1;
         Scene &scene = scene_manager->scenes[internal_handle];
         
         if(scene.valid)
@@ -272,8 +290,6 @@ namespace scene
             }
 
             free_instance_buffers(scene);
-            
-            scene_manager->_internal_scene_handles[handle.handle - 1] = -1;
             
             if(internal_handle < scene_manager->scene_count - 1)
             {
