@@ -3,8 +3,8 @@
 namespace scene
 {
     static Scene create_scene(Renderer *renderer, EntityTemplateState &template_state, i32 initial_entity_array_size);
-    static SceneHandle create_scene_from_file(const char *scene_file_path, SceneManager *scene_manager, i32 initial_entity_array_size);
-    static SceneHandle create_scene(SceneManager *scene_manager, i32 initial_entity_array_size);
+    static SceneHandle create_scene_from_file(const char *scene_file_path, SceneManager *scene_manager, b32 persistent, i32 initial_entity_array_size);
+    static SceneHandle create_scene(SceneManager *scene_manager, b32 persistent, i32 initial_entity_array_size);
     static void free_scene(SceneHandle scene);
     static void load_scene(SceneHandle handle, u64 scene_load_flags);
     
@@ -87,7 +87,7 @@ namespace scene
         return handle;
     }
 
-    static SceneHandle create_scene(SceneManager *scene_manager, i32 initial_entity_array_size = 1024)
+    static SceneHandle create_scene(SceneManager *scene_manager, b32 persistent, i32 initial_entity_array_size = 1024)
     {
         i32 internal_handle = _find_next_free_internal_handle(scene_manager);
         assert(internal_handle != -1);
@@ -95,6 +95,7 @@ namespace scene
         i32 real_handle = scene_manager->scene_count++;
         scene_manager->_internal_scene_handles[internal_handle] = real_handle;
         Scene &scene = scene_manager->scenes[real_handle];
+        scene.persistent = persistent;
         scene.scene_manager = scene_manager;
         scene.valid = true;
         scene.loaded = false;
@@ -141,21 +142,102 @@ namespace scene
         handle.manager = scene_manager;
         return handle;
     }
-    
-    static SceneHandle create_scene_from_file(const char *scene_file_path, SceneManager *scene_manager, i32 initial_entity_array_size)
+
+    static void save_scene(const char *file_path, SceneHandle scene_handle)
     {
-        SceneHandle handle = create_scene(scene_manager, initial_entity_array_size);
+        Scene &scene = get_scene(scene_handle);
+        FILE *file = fopen(file_path, "w");
+
+        if(file)
+        {
+            for(i32 i = 0; i < scene.entity_count; i++)
+            {
+                Entity &entity = scene.entities[i];
+                if(entity.savable)
+                {
+                    if(i > 0)
+                        fprintf(file, "\n"); // Spacing between object declarations
+                    
+                    TransformComponent &transform = get_transform_comp(entity.handle, scene_handle);
+                    
+                    fprintf(file, "obj\n");
+                    fprintf(file, "template: %s\n", entity.template_path);
+                    fprintf(file, "position: %f %f %f\n", transform.transform.position.x, transform.transform.position.y, transform.transform.position.z);
+                    fprintf(file, "scale: %f %f %f\n", transform.transform.scale.x, transform.transform.scale.y, transform.transform.scale.z);
+                    fprintf(file, "rotation: %f %f %f\n", transform.transform.euler_angles.x, transform.transform.euler_angles.y, transform.transform.euler_angles.z);
+                }
+            }
+            fclose(file);
+        }
+    }
+
+    static void parse_scene_object(FILE *file, SceneHandle scene)
+    {
+        EntityHandle handle = { -1 };
+        
+        char buffer[256];
+        
+        while(fgets(buffer, 256, file))
+        {
+            if(starts_with(buffer, "\n"))
+                break;
+
+            if(starts_with(buffer, "template"))
+            {
+                char template_path[256];
+                sscanf(buffer, "template: %[^\n]", template_path);
+                handle = register_entity_from_template_file(template_path, scene, true);
+            }
+            else if(starts_with(buffer, "position"))
+            {
+                assert(handle.handle != -1);
+                TransformComponent &transform = get_transform_comp(handle, scene);
+
+                math::Vec3 new_position;
+                sscanf(buffer, "position: %f %f %f", &new_position.x, &new_position.y, &new_position.z);
+                rendering::set_position(transform.transform, new_position);
+            }
+            else if(starts_with(buffer, "scale"))
+            {
+                assert(handle.handle != -1);
+                TransformComponent &transform = get_transform_comp(handle, scene);
+
+                math::Vec3 new_scale;
+                sscanf(buffer, "scale: %f %f %f", &new_scale.x, &new_scale.y, &new_scale.z);
+                rendering::set_scale(transform.transform, new_scale);
+            }
+            else if(starts_with(buffer, "rotation"))
+            {
+                assert(handle.handle != -1);
+                TransformComponent &transform = get_transform_comp(handle, scene);
+
+                math::Vec3 new_rotation;
+                sscanf(buffer, "rotation: %f %f %f", &new_rotation.x, &new_rotation.y, &new_rotation.z);
+                rendering::set_rotation(transform.transform, new_rotation);
+            }
+        }
+    }
+    
+    static SceneHandle create_scene_from_file(const char *scene_file_path, SceneManager *scene_manager, b32 persistent, i32 initial_entity_array_size)
+    {
+        SceneHandle handle = create_scene(scene_manager, persistent, initial_entity_array_size);
         FILE *file = fopen(scene_file_path, "r");
+        
         if(file)
         {
             char line_buffer[256];
             while(fgets(line_buffer, 256, file))
             {
-                
+                if(starts_with(line_buffer, "obj"))
+                {
+                    parse_scene_object(file, handle);
+                }
             }
                 
             fclose(file);
         }
+
+        return handle;
     }
     
     struct InstancePair
@@ -794,23 +876,24 @@ namespace scene
             }
             else
             {
+                // Disable wireframes
+                if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
+                    scene::set_wireframe_enabled(false, manager->selected_entity, handle);
+                
                 // When exiting to running mode we should make sure to notify the game about it, to ensure that all
                 // editor-specific entities are cleaned up before the game is running again.
                 if(manager->callbacks.on_exited_edit_mode)
                     manager->callbacks.on_exited_edit_mode(handle);
-                
+
+                // @Incomplete: Instead of saving every time we exit the editor, we should force the user to save inside the game specific editor.
                 // Tell the game to save everything that changed
-                if(manager->callbacks.on_save)
-                    manager->callbacks.on_save(handle);
+                //if(manager->callbacks.on_save)
+                //manager->callbacks.on_save(handle);
 
                 scene.camera = manager->play_camera;
 
                 // Disable gizmos
                 manager->gizmos.active = false;
-
-                // Disable wireframes
-                if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
-                    scene::set_wireframe_enabled(false, manager->selected_entity, handle);
 
                 manager->selected_entity = { -1 };
                 manager->mode = SceneMode::RUNNING;
@@ -938,14 +1021,16 @@ namespace scene
         SceneManager *scene_manager = handle.manager;
         if(scene_manager->scene_loaded)
         {
-            scene::deactivate_particle_systems(handle);
+            scene::deactivate_particle_systems(scene_manager->loaded_scene);
+            scene::Scene &loaded_scene = get_scene(scene_manager->loaded_scene);
             
-            if(load_flags & SceneLoadFlags::FREE_CURRENT_SCENE)
+            if(!loaded_scene.persistent || load_flags & SceneLoadFlags::FREE_CURRENT_SCENE)
             {
                 free_instance_buffers(get_scene(scene_manager->loaded_scene));
-                get_scene(scene_manager->loaded_scene).loaded = false;
+                loaded_scene.loaded = false;
                 free_scene(scene_manager->loaded_scene);
                 scene_manager->loaded_scene = { -1 };
+                scene_manager->scene_loaded = false;
             }
         }
         
@@ -1647,17 +1732,23 @@ namespace scene
 
 #define EMPTY_TRANSFORM { math::Vec3(), math::Vec3(1, 1, 1), math::Vec3(), EMPTY_COMP_HANDLE, EMPTY_COMP_HANDLE };
 
-    static void _set_entity_name(EntityHandle handle, const char *name, Scene& scene)
+    static inline void _set_entity_name(EntityHandle handle, const char *name, Scene& scene)
     {
         Entity &entity = scene.entities[scene._internal_handles[handle.handle - 1]];
         strcpy(entity.name, name);
+    }
+
+    static inline void _set_entity_template_path(EntityHandle handle, const char *template_path, Scene& scene)
+    {
+        Entity &entity = scene.entities[scene._internal_handles[handle.handle - 1]];
+        strcpy(entity.template_path, template_path);
     }
 
     static EntityHandle _register_entity_with_template(EntityTemplate &templ, Scene &scene, b32 savable)
     {
         EntityHandle handle = _register_entity(templ.comp_flags, scene, savable);
         _set_entity_name(handle, templ.name, scene);
-        
+        _set_entity_template_path(handle, templ.file_path, scene);
         if(templ.comp_flags & COMP_TRANSFORM)
         {
             TransformComponent &transform = _get_transform_comp(handle, scene);
@@ -2443,11 +2534,12 @@ namespace scene
                     
                         if(ent.comp_flags & scene::COMP_TRANSFORM)
                         {
+                            system.transform.position += transform.transform.position;
+                            system.transform.scale = transform.transform.scale;
+                            system.transform.orientation = transform.transform.orientation;
+                            
                             if(transform.transform.dirty)
                             {
-                                system.transform.position += transform.transform.position;
-                                system.transform.scale = transform.transform.scale;
-                                system.transform.orientation = transform.transform.orientation;
                                 rendering::recompute_transform(system.transform);
                             }
                         }
