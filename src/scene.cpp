@@ -95,6 +95,9 @@ namespace scene
         i32 real_handle = scene_manager->scene_count++;
         scene_manager->_internal_scene_handles[internal_handle] = real_handle;
         Scene &scene = scene_manager->scenes[real_handle];
+        scene = {};
+        scene.memory_arena = {};
+        
         scene.persistent = persistent;
         scene.scene_manager = scene_manager;
         scene.valid = true;
@@ -885,7 +888,7 @@ namespace scene
                 if(manager->callbacks.on_exited_edit_mode)
                     manager->callbacks.on_exited_edit_mode(handle);
 
-                // @Incomplete: Instead of saving every time we exit the editor, we should force the user to save inside the game specific editor.
+                // @Incomplete: Instead of saving every time we exit the editor, we should control when saving occurs in the game-specific part of the editor
                 // Tell the game to save everything that changed
                 //if(manager->callbacks.on_save)
                 //manager->callbacks.on_save(handle);
