@@ -213,7 +213,7 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
                 {
                     char* file_name = strtok(find_file.cFileName, ".");
                     
-                    sprintf(directory_data->file_paths[directory_data->file_count], "%s%s", directory_path, find_file.cFileName);
+                    sprintf(directory_data->file_paths[directory_data->file_count], "%s%s.%s", directory_path, find_file.cFileName, extension);
                     sprintf(directory_data->file_names[directory_data->file_count], "%s", file_name);
                     directory_data->file_count++;
                 }
