@@ -298,6 +298,13 @@ namespace scene
         Y,
         Z
     };
+
+    enum class TransformType
+    {
+        POSITION,
+        SCALE,
+        ROTATION
+            };
     
     struct Line
     {
@@ -350,6 +357,8 @@ namespace scene
             math::Vec3 y_scale;
             math::Vec3 z_scale;
             r32 current_distance_to_camera;
+
+            TransformType type;
             
             math::Vec3 initial_offset;
             Line current_line;
