@@ -744,17 +744,50 @@ namespace scene
             {
             case TranslationConstraint::X:
             {
-                rendering::set_position_x(transform.transform, points[1].x - manager->gizmos.initial_offset.x);
+                if(manager->gizmos.type == TransformType::POSITION)
+                {
+                    rendering::set_position_x(transform.transform, points[1].x - manager->gizmos.initial_offset.x);
+                }
+                else if(manager->gizmos.type == TransformType::SCALE)
+                {
+                    rendering::set_scale_x(transform.transform, points[1].x - manager->gizmos.initial_offset.x);
+                }
+                else if(manager->gizmos.type == TransformType::ROTATION)
+                {
+                    // @Incomplete
+                }
             }
             break;
             case TranslationConstraint::Y:
             {
-                rendering::set_position_y(transform.transform, points[1].y - manager->gizmos.initial_offset.y);
+                if(manager->gizmos.type == TransformType::POSITION)
+                {
+                    rendering::set_position_y(transform.transform, points[1].y - manager->gizmos.initial_offset.y);
+                }
+                else if(manager->gizmos.type == TransformType::SCALE)
+                {
+                    rendering::set_scale_y(transform.transform, points[1].y - manager->gizmos.initial_offset.y);
+                }
+                else if(manager->gizmos.type == TransformType::ROTATION)
+                {
+                    // @Incomplete
+                }
             }
             break;
             case TranslationConstraint::Z:
             {
-                rendering::set_position_z(transform.transform, points[1].z - manager->gizmos.initial_offset.z);
+                if(manager->gizmos.type == TransformType::POSITION)
+                {
+                    rendering::set_position_z(transform.transform, points[1].z - manager->gizmos.initial_offset.z);
+                }
+                else if(manager->gizmos.type == TransformType::SCALE)
+                {
+                    rendering::set_scale_z(transform.transform, points[1].z - manager->gizmos.initial_offset.z);
+                }
+                else if(manager->gizmos.type == TransformType::ROTATION)
+                {
+                    // @Incomplete
+                }
             }
             break;
             case Gizmos::NONE:
@@ -934,7 +967,9 @@ namespace scene
                     if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
                     {
                         TransformComponent &t = get_transform_comp(manager->selected_entity, handle);
+                        math::Vec3 start = t.transform.scale;
                         math::Vec3 pos = t.transform.position;
+                        manager->gizmos.type = TransformType::SCALE;
                     
                         TranslationConstraint constraint = TranslationConstraint::NONE;
 
@@ -959,7 +994,7 @@ namespace scene
                             current_distance = x_dist;
                             constraint = TranslationConstraint::X;
                             manager->gizmos.current_line = l2;
-                            manager->gizmos.initial_offset = points[1] - pos;
+                            manager->gizmos.initial_offset = points[1] - start;
                         }
 
                         // Check Y axis
@@ -973,7 +1008,7 @@ namespace scene
                             current_distance = y_dist;
                             constraint = TranslationConstraint::Y;
                             manager->gizmos.current_line = l2;
-                            manager->gizmos.initial_offset = points[1] - pos;
+                            manager->gizmos.initial_offset = points[1] - start;
                         }
 
                         // Check Z axis
@@ -986,7 +1021,7 @@ namespace scene
                             current_distance = z_dist;
                             constraint = TranslationConstraint::Z;
                             manager->gizmos.current_line = l2;
-                            manager->gizmos.initial_offset = points[1] - pos;
+                            manager->gizmos.initial_offset = points[1] - start;
                         }
 
                         manager->gizmos.constraint = constraint;
