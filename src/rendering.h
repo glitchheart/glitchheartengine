@@ -512,7 +512,7 @@ struct Renderer
         
 		ParticleSystemInfo *particle_systems;
 		i32 particle_system_count;
-        
+
 		RandomSeries* entropy;
         rendering::BufferHandle quad_buffer;
 	} particles;
