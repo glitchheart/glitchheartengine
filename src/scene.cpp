@@ -968,9 +968,9 @@ namespace scene
                     if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
                     {
                         TransformComponent &t = get_transform_comp(manager->selected_entity, handle);
-                        math::Vec3 start = t.transform.scale;
+                        math::Vec3 start = t.transform.position;
                         math::Vec3 pos = t.transform.position;
-                        manager->gizmos.type = TransformType::SCALE;
+                        manager->gizmos.type = TransformType::POSITION;
                     
                         TranslationConstraint constraint = TranslationConstraint::NONE;
 
