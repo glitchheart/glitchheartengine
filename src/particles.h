@@ -178,8 +178,11 @@ struct ParticleSystemHandle
 
 struct ParticleSystemInfo
 {
-    b32 running;
+    b32 simulating;
+    b32 paused;
+    
     b32 emitting;
+    
     b32 prewarmed;
 
     r64 time_spent;

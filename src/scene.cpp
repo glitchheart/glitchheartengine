@@ -308,6 +308,7 @@ namespace scene
         for(i32 i = 0; i < scene.particle_system_component_count; i++)
         {
             start_particle_system(scene.particle_system_components[i].handle, scene.renderer);
+            pause_particle_system(scene.particle_system_components[i].handle, scene.renderer, false);
         }
     }
     
@@ -2427,16 +2428,16 @@ namespace scene
                     
                         if(ent.comp_flags & scene::COMP_TRANSFORM)
                         {
-                            if(transform.transform.dirty)
-                            {
+                            // if(transform.transform.dirty)
+                            // {
                                 system.transform.position += transform.transform.position;
                                 system.transform.scale = transform.transform.scale;
                                 system.transform.orientation = transform.transform.orientation;
                                 rendering::recompute_transform(system.transform);
-                            }
+                            // }
                         }
 
-                        if(system.running)
+                        if(system.simulating || system.paused)
                         {
                             particles_to_push[particles_count++] = ps.handle.handle;
                         }

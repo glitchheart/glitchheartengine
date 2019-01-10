@@ -363,12 +363,29 @@ r32_4x get_angle_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x 
 // particles that are actually alive.
 void update_particles(Renderer *renderer, ParticleSystemInfo &particle_system, r64 delta_time, i32 *emitted_buf, i32 *emitted_this_frame, i32* next_frame_buf, i32 *next_frame_count)
 {
-	particle_system.particle_count = 0;
+    if(particle_system.paused)
+    {
+        return;
+    }
 
+    particle_system.particle_count = 0;
+	
 	i32 speed_value_count = particle_system.speed_over_lifetime.value_count;
 	i32 color_value_count = particle_system.color_over_lifetime.value_count;
 	i32 size_value_count = particle_system.size_over_lifetime.value_count;
 	i32 angle_value_count = particle_system.angle_over_lifetime.value_count;
+
+    r32* angle_buffer = rendering::get_float_buffer_pointer(particle_system.angle_buffer_handle, renderer);
+    i32* angle_count = rendering::get_float_buffer_count_pointer(particle_system.angle_buffer_handle, renderer);
+        
+    math::Vec3* offset_buffer = rendering::get_float3_buffer_pointer(particle_system.offset_buffer_handle, renderer);
+    i32* offset_count = rendering::get_float3_buffer_count_pointer(particle_system.offset_buffer_handle, renderer);
+        
+    math::Vec2* size_buffer = rendering::get_float2_buffer_pointer(particle_system.size_buffer_handle, renderer);
+    i32* size_count = rendering::get_float2_buffer_count_pointer(particle_system.size_buffer_handle, renderer);
+        
+    math::Rgba* color_buffer = rendering::get_float4_buffer_pointer(particle_system.color_buffer_handle, renderer);
+    i32* color_count = rendering::get_float4_buffer_count_pointer(particle_system.color_buffer_handle, renderer);
 
 	for (i32 alive_index = 0; alive_index < *emitted_this_frame; alive_index++)
 	{
@@ -530,18 +547,6 @@ void update_particles(Renderer *renderer, ParticleSystemInfo &particle_system, r
 		vec2_4x_to_float4(size, s[0], s[1], s[2], s[3]);
 		vec3_4x_to_float4(final_pos, p[0], p[1], p[2], p[3]);
 		vec4_4x_to_float4(color, c[0], c[1], c[2], c[3]);
-
-        r32* angle_buffer = rendering::get_float_buffer_pointer(particle_system.angle_buffer_handle, renderer);
-        i32* angle_count = rendering::get_float_buffer_count_pointer(particle_system.angle_buffer_handle, renderer);
-        
-        math::Vec3* offset_buffer = rendering::get_float3_buffer_pointer(particle_system.offset_buffer_handle, renderer);
-        i32* offset_count = rendering::get_float3_buffer_count_pointer(particle_system.offset_buffer_handle, renderer);
-        
-        math::Vec2* size_buffer = rendering::get_float2_buffer_pointer(particle_system.size_buffer_handle, renderer);
-        i32* size_count = rendering::get_float2_buffer_count_pointer(particle_system.size_buffer_handle, renderer);
-        
-        math::Rgba* color_buffer = rendering::get_float4_buffer_pointer(particle_system.color_buffer_handle, renderer);
-        i32* color_count = rendering::get_float4_buffer_count_pointer(particle_system.color_buffer_handle, renderer);
         
 		for (i32 i = 0; i < particle_system.emitted_for_this_index[main_index]; i++)
 		{
@@ -761,7 +766,7 @@ void update_particle_system(ParticleSystemInfo& particle_system, Renderer *rende
 
 	particle_system.alive0_active = !particle_system.alive0_active;
 
-	if (particle_system.emitting)
+	if (particle_system.emitting && !particle_system.paused)
 	{
 		// @Note(Niels): Needed for over-time values
 
@@ -854,15 +859,18 @@ void update_particle_system(ParticleSystemInfo& particle_system, Renderer *rende
 		}
 	}
 
-	// @Note:(Niels): We now update the particles in the emitted alive buf (which may contain particles from previous frames that are still alive), while passing in the next buffer,
-	// which is now our "write" buffer.
-	update_particles(renderer, particle_system, delta_time, emitted_alive_buf, emitted_alive_count, write_buf, write_buf_count);
+    if(!particle_system.paused)
+    {
+        // @Note:(Niels): We now update the particles in the emitted alive buf (which may contain particles from previous frames that are still alive), while passing in the next buffer,
+        // which is now our "write" buffer.
+        update_particles(renderer, particle_system, delta_time, emitted_alive_buf, emitted_alive_count, write_buf, write_buf_count);
 
-	// @Note(Niels): if all particles are dead and the system is one-shot we should stop the particle_system
-	if (!particle_system.attributes.looping && particle_system.total_emitted > 0 && particle_system.alive0_particle_count == 0 && particle_system.alive1_particle_count == 0)
-	{
-		particle_system.running = false;
-	}
+        // @Note(Niels): if all particles are dead and the system is one-shot we should stop the particle_system
+        if (!particle_system.attributes.looping && particle_system.total_emitted > 0 && particle_system.alive0_particle_count == 0 && particle_system.alive1_particle_count == 0)
+        {
+            particle_system.simulating = false;
+        }
+    }
 }
 
 
@@ -872,7 +880,7 @@ void update_particle_systems(Renderer *renderer, r64 delta_time)
 	{
 		ParticleSystemInfo &particle_system = renderer->particles.particle_systems[particle_system_index];
 
-		if (particle_system.running)
+		if (particle_system.simulating)
 		{
 			update_particle_system(particle_system, renderer, delta_time);
 		}
