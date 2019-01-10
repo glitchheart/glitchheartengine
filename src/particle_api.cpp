@@ -11,7 +11,7 @@ static ParticleSystemInfo* get_particle_system_info(ParticleSystemHandle handle,
 
 static void start_particle_system(ParticleSystemInfo &system)
 {
-    system.running = true;
+    system.simulating = true;
     system.emitting = true;
     system.total_emitted = 0;
     system.particle_count = 0;
@@ -35,7 +35,15 @@ static void stop_particle_system(ParticleSystemHandle handle, Renderer *renderer
     i32 _internal_handle = renderer->particles._internal_handles[handle.handle - 1];
     assert(_internal_handle >= 0 && _internal_handle < renderer->particles.particle_system_count);
     ParticleSystemInfo &system = renderer->particles.particle_systems[_internal_handle];
-    system.running = false;
+    system.simulating = false;
+}
+
+static void pause_particle_system(ParticleSystemHandle handle, Renderer *renderer, b32 paused)
+{
+    i32 _internal_handle = renderer->particles._internal_handles[handle.handle - 1];
+    assert(_internal_handle >= 0 && _internal_handle < renderer->particles.particle_system_count);
+    ParticleSystemInfo &system = renderer->particles.particle_systems[_internal_handle];
+    system.paused = paused;
 }
 
 static void remove_all_particle_systems(Renderer *renderer)
@@ -48,7 +56,7 @@ static b32 particle_system_is_running(ParticleSystemHandle handle, Renderer *ren
     i32 _internal_handle = renderer->particles._internal_handles[handle.handle - 1];
     assert(_internal_handle >= 0 && _internal_handle < renderer->particles.particle_system_count);
     ParticleSystemInfo &system = renderer->particles.particle_systems[_internal_handle];
-    return(system.running);
+    return(system.simulating);
 }
 
 static void set_rate_over_distanace(ParticleSystemInfo &particle_system, r32 rate_over_distance)
@@ -72,6 +80,7 @@ static ParticleSystemAttributes get_default_particle_system_attributes()
     attributes.start_speed_type = StartParameterType::CONSTANT;
     attributes.speed.constant.start_speed = 1.0f;
     attributes.spread = 1.0f;
+    attributes.prewarm = false;
     attributes.particles_per_second = 100;
     attributes.texture_handle.handle = 0;
     
@@ -175,7 +184,6 @@ static void _allocate_particle_system(Renderer *renderer, ParticleSystemInfo& sy
         default:
         break;
         }
-    
     }
 }
 
@@ -214,7 +222,8 @@ static ParticleSystemHandle create_particle_system(Renderer *renderer, i32 max_p
     renderer->particles._internal_handles[unused_handle - 1] = renderer->particles.particle_system_count++;
     
     ParticleSystemInfo &system_info = renderer->particles.particle_systems[renderer->particles._internal_handles[unused_handle - 1]];
-    system_info.running = false;
+    system_info.simulating = false;
+    system_info.paused = true;
     
     system_info.attributes = get_default_particle_system_attributes();
     system_info.time_spent = 0.0;
@@ -250,7 +259,7 @@ static void remove_particle_system(Renderer *renderer, ParticleSystemHandle &han
         renderer->particles._internal_handles[removed_handle - 1] = -1;
 		clear(&renderer->particles.particle_systems[0].arena);
         renderer->particles.particle_systems[0] = {};
-        renderer->particles.particle_systems[0].running = false;
+        renderer->particles.particle_systems[0].simulating = false;
     }
     else
     {
@@ -271,7 +280,7 @@ static void remove_particle_system(Renderer *renderer, ParticleSystemHandle &han
 
         renderer->particles.particle_systems[renderer->particles.particle_system_count - 1] = {};
         
-        renderer->particles.particle_systems[renderer->particles.particle_system_count - 1].running = false;
+        renderer->particles.particle_systems[renderer->particles.particle_system_count - 1].simulating = false;
         
         renderer->particles._internal_handles[removed_handle - 1] = -1;
         
