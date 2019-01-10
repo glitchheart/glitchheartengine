@@ -229,6 +229,7 @@ namespace scene
     {
         b32 valid;
         b32 loaded;
+        b32 persistent; // When true the scene is not freed, when a new scene is loaded
         
         MemoryArena memory_arena;
 
