@@ -18,6 +18,7 @@ namespace scene
     static EntityHandle register_entity_from_template_file(const char *path, SceneHandle scene, b32 savable);
     static void set_active(EntityHandle handle, b32 active, SceneHandle scene);
     static TransformComponent& get_transform_comp(EntityHandle handle, SceneHandle scene);
+    static TransformComponent& get_transform_comp(TransformComponentHandle handle, SceneHandle scene);
     static RenderComponent& get_render_comp(EntityHandle handle, SceneHandle scene);
     static ParticleSystemComponent& get_particle_system_comp(EntityHandle handle, SceneHandle scene);
     static LightComponent &get_light_comp(EntityHandle handle, SceneHandle scene);
@@ -1043,6 +1044,33 @@ namespace scene
         set_selection_enabled(!scene_manager->editor.selection_enabled, scene_manager);
     }
 
+    static Entity& _get_entity(EntityHandle handle, SceneHandle& scene_handle)
+    {
+        Scene& scene = get_scene(scene_handle);
+        assert(handle.handle != 0);
+        i32 internal_handle = scene._internal_handles[handle.handle - 1];
+        assert(internal_handle > -1);
+        
+        Entity& entity = scene.entities[internal_handle];
+        
+        assert(entity.comp_flags & COMP_TRANSFORM);
+
+        return entity;
+    }
+    
+    static void delete_entity(EntityHandle handle, SceneManager *manager)
+    {
+        TransformComponent &transform = get_transform_comp(handle, manager->loaded_scene);
+        
+        for(i32 i = 0; i < transform.child_count; i ++)
+        {
+            TransformComponent &child_transform = get_transform_comp(transform.child_handles[i], manager->loaded_scene);
+            delete_entity(child_transform.entity, manager);
+        }
+        
+        unregister_entity(handle, manager->loaded_scene);
+    }
+
     static void set_transformation_type(TransformationType type, SceneManager *scene_manager)
     {
         scene_manager->gizmos.transformation_type = type;
@@ -1166,6 +1194,7 @@ namespace scene
                 for(i32 i = 0; i < 4; i++)
                 {
                     manager->gizmos.scale_cubes[i] = register_entity_from_template_file("../assets/templates/editor/scale_cube.tmpl", manager->loaded_scene, false);
+                    set_active(manager->gizmos.scale_cubes[i], false, manager->loaded_scene);
                     TransformComponent &transform = get_transform_comp(manager->gizmos.scale_cubes[i], manager->loaded_scene);
                     set_position(transform, math::Vec3(0, 1 + i, 0));
                 }
@@ -1224,6 +1253,17 @@ namespace scene
             if(KEY_DOWN(Key_Escape))
             {
                 deselect_everything(manager);
+            }
+
+            if(KEY_DOWN(Key_Delete))
+            {
+                if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
+                {
+                    delete_entity(manager->selected_entity, manager);
+                    
+                    manager->selected_entity = { -1 };
+                    manager->gizmos.active = false;
+                }
             }
 
             if(MOUSE_DOWN(Mouse_Left))
@@ -1379,7 +1419,7 @@ namespace scene
         scene_manager->scene_loaded = true;
         scene_manager->loaded_scene = handle;
     }
-        
+    
     i32 _unused_entity_handle(Scene &scene)
     {
         for(i32 index = scene.current_internal_handle; index < scene.max_entity_count; index++)
@@ -2366,6 +2406,12 @@ namespace scene
         const Entity &entity = scene.entities[internal_handle];
         return entity.name;
     }
+
+    static TransformComponent & get_transform_comp(TransformComponentHandle handle, SceneHandle scene_handle)
+    {
+        Scene &scene = get_scene(scene_handle);
+        return scene.transform_components[handle.handle];
+    }
     
     // Returns a direct pointer to the TransformComponent of the specified entity
     static TransformComponent& _get_transform_comp(EntityHandle handle, Scene &scene)
@@ -2469,20 +2515,6 @@ namespace scene
 
 
 #define STANDARD_PASS_HANDLE { 1 }
-
-    static Entity& _get_entity(EntityHandle handle, SceneHandle& scene_handle)
-    {
-        Scene& scene = get_scene(scene_handle);
-        assert(handle.handle != 0);
-        i32 internal_handle = scene._internal_handles[handle.handle - 1];
-        assert(internal_handle > -1);
-        
-        Entity& entity = scene.entities[internal_handle];
-        
-        assert(entity.comp_flags & COMP_TRANSFORM);
-
-        return entity;
-    }
 
     static void recompute_transforms(TransformComponent& root, Scene& scene)
     {
