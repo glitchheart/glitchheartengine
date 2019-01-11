@@ -1,9 +1,12 @@
 #ifndef SCENE_H
 #define SCENE_H
 
+#define SCALE_SENSITIVITY 0.01f
+
 #define EMPTY_ENTITY_HANDLE {0}
 #define EMPTY_COMP_HANDLE {-1}
 #define EMPTY_TEMPLATE_HANDLE {-1}
+#define HANDLES_EQUAL(h1, h2) ( h1.handle == h2.handle )
 #define IS_ENTITY_HANDLE_VALID(ent_handle) (ent_handle.handle > 0)
 #define IS_COMP_HANDLE_VALID(comp_handle) (comp_handle.handle > -1)
 #define IS_TEMPLATE_HANDLE_VALID(comp_handle) comp_handle.handle != -1
@@ -299,12 +302,18 @@ namespace scene
         Z
     };
 
-    enum class TransformType
+    enum class TransformationType
     {
         POSITION,
         SCALE,
         ROTATION
-            };
+    };
+
+    enum class ScalingMode
+    {
+        SINGLE_AXIS,
+        ALL_AXIS
+    };
     
     struct Line
     {
@@ -352,22 +361,30 @@ namespace scene
             rendering::MaterialInstanceHandle x_material;
             rendering::MaterialInstanceHandle y_material;
             rendering::MaterialInstanceHandle z_material;
+
+            scene::EntityHandle scale_cubes[4];
             
             math::Vec3 x_scale;
             math::Vec3 y_scale;
             math::Vec3 z_scale;
             r32 current_distance_to_camera;
 
-            TransformType type;
+            TransformationType transformation_type;
+            ScalingMode scaling_mode;
+            math::Vec2 scale_mouse_offset;
             
             math::Vec3 initial_offset;
+            math::Vec3 initial_scale;
+            // @Incomplete: initial_rotation
+            
             Line current_line;
         } gizmos;
-
+        
         struct
         {
             b32 selection_enabled;
             b32 lock_camera;
+            DirectoryData template_files;
         } editor;
         
         struct
