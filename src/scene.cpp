@@ -43,6 +43,158 @@ namespace scene
     i32 _pack_render_components(Entity &entity, Scene &scene);
     i32 _pack_particle_system_components(Entity &entity, Scene &scene);
     static EntityHandle _register_entity_with_template(EntityTemplate &templ, Scene &scene);
+
+
+    static void translate_x(TransformComponent& comp, r32 x)
+    {
+        rendering::translate_x(comp.transform, x);
+    }
+
+    static void translate_y(TransformComponent& comp, r32 y)
+    {
+        rendering::translate_y(comp.transform, y);
+    }
+
+    static void translate_z(TransformComponent& comp, r32 z)
+    {
+        rendering::translate_z(comp.transform, z);
+    }
+
+    static void translate(TransformComponent& comp, math::Vec3 translation)
+    {
+        rendering::translate(comp.transform, translation);
+    }
+
+    static void rotate(TransformComponent& comp, math::Vec3 rotation)
+    {
+        rendering::rotate(comp.transform, rotation);
+    }
+
+    static void rotate(TransformComponent& comp, math::Quat rotation)
+    {
+        rendering::rotate(comp.transform, rotation);
+    }
+
+    static void set_rotation(TransformComponent& comp, math::Vec3 rotation)
+    {
+        rendering::set_rotation(comp.transform, rotation);
+    }
+
+    static void set_rotation(TransformComponent& comp, math::Quat orientation)
+    {
+        rendering::set_rotation(comp.transform, orientation);
+    }
+
+    static void set_rotation_x(TransformComponent& comp, r32 x)
+    {
+        rendering::set_rotation_x(comp.transform, x);
+    }
+
+    static void set_rotation_y(TransformComponent& comp, r32 y)
+    {
+        rendering::set_rotation_y(comp.transform, y);
+    }
+
+    static void set_rotation_z(TransformComponent& comp, r32 z)
+    {
+        rendering::set_rotation_z(comp.transform, z);
+    }
+
+    static void scale(TransformComponent& comp, math::Vec3 scale)
+    {
+        rendering::scale(comp.transform, scale);
+    }
+
+    static void set_scale(TransformComponent& comp, math::Vec3 scale)
+    {
+        rendering::set_scale(comp.transform, scale);
+    }
+
+    static void set_scale_x(TransformComponent& comp, r32 x)
+    {
+        rendering::set_scale_x(comp.transform, x);
+    }
+
+    static void set_scale_y(TransformComponent& comp, r32 y)
+    {
+        rendering::set_scale_y(comp.transform, y);
+    }
+
+    static void set_scale_z(TransformComponent& comp, r32 z)
+    {
+        rendering::set_scale_z(comp.transform, z);
+    }
+
+    static void set_position(TransformComponent& comp, math::Vec3 position)
+    {
+        rendering::set_position(comp.transform, position);
+    }
+
+    static void set_position_x(TransformComponent& comp, r32 x)
+    {
+        rendering::set_position_x(comp.transform, x);
+    }
+
+    static void set_position_y(TransformComponent& comp, r32 y)
+    {
+        rendering::set_position_y(comp.transform, y);
+    }
+
+    static void set_position_z(TransformComponent& comp, r32 z)
+    {
+        rendering::set_position_z(comp.transform, z);
+    }
+
+    
+	static void set_uniform_value(EntityHandle handle, const char* name, r32 value, SceneHandle &scene)
+	{
+        RenderComponent &render = get_render_comp(handle, scene);
+        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
+	}
+
+	static void set_uniform_value(EntityHandle handle, const char* name, math::Vec2 value, SceneHandle &scene)
+	{
+        RenderComponent &render = get_render_comp(handle, scene);
+        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
+	}
+
+	static void set_uniform_value(EntityHandle handle, const char* name, math::Vec3 value, SceneHandle &scene)
+	{
+        RenderComponent &render = get_render_comp(handle, scene);
+        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
+	}
+
+	static void set_uniform_value(EntityHandle handle, const char* name, math::Vec4 value, SceneHandle &scene)
+	{
+        RenderComponent &render = get_render_comp(handle, scene);
+        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
+	}
+
+	static void set_uniform_value(EntityHandle handle, const char* name, i32 value, SceneHandle &scene)
+	{
+        RenderComponent &render = get_render_comp(handle, scene);
+        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
+	}
+
+	static void set_uniform_value(EntityHandle handle, const char* name, math::Mat4 value, SceneHandle &scene)
+	{
+        RenderComponent &render = get_render_comp(handle, scene);
+        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
+	}
+
+	static void set_uniform_value(EntityHandle handle, const char* name, rendering::TextureHandle value, SceneHandle &scene)
+	{
+        RenderComponent &render = get_render_comp(handle, scene);
+        assert(value.handle != 0);
+        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
+	}
+
+    static void set_uniform_value(EntityHandle handle, const char* name, rendering::MSTextureHandle value, SceneHandle &scene)
+	{
+        RenderComponent &render = get_render_comp(handle, scene);
+        assert(value.handle != 0);
+        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
+	}
     
     static i32 _find_handle_in_range(i32 start, i32 end, i32 *handles)
     {
@@ -560,6 +712,23 @@ namespace scene
         r32 dist = 100000; // Just set a crazy max distance
         
         EntityHandle entity_handle = { -1 };
+
+        if(IS_ENTITY_HANDLE_VALID(handle.manager->selected_entity))
+        {
+            TransformComponent &selected_transform = get_transform_comp(handle.manager->selected_entity, handle);
+            
+            math::BoundingBox box;
+            math::Vec3 real_scale = math::Vec3(1, 1, 1) * handle.manager->gizmos.current_distance_to_camera;
+            
+            box.min = math::Vec3(selected_transform.transform.position.x - real_scale.x * 0.5f, selected_transform.transform.position.y - real_scale.y * 0.5f, selected_transform.transform.position.z - real_scale.z * 0.5f);
+            box.max = math::Vec3(selected_transform.transform.position.x + real_scale.x * 0.5f, selected_transform.transform.position.y + real_scale.y * 0.5f, selected_transform.transform.position.z + real_scale.z * 0.5f);
+
+            math::Vec3 intersection_point;
+            if(aabb_ray_intersection(ray, box, &intersection_point))
+            {
+                return handle.manager->gizmos.scale_cubes[3];
+            }
+        }
         
         for(i32 i = 0; i < scene.entity_count; i++)
         {
@@ -634,10 +803,38 @@ namespace scene
         TranslationConstraint c = manager->gizmos.constraint;
         if(manager->gizmos.active)
         {
+            r32 unit = manager->gizmos.current_distance_to_camera;
+            
             TransformComponent &transform_comp = get_transform_comp(manager->selected_entity, manager->loaded_scene);
             rendering::Transform t = rendering::create_transform(transform_comp.transform.position, math::Vec3(1.0f), transform_comp.transform.orientation);
             math::Vec3 yellow(RGB_FLOAT(189), RGB_FLOAT(183), RGB_FLOAT(107));
-            
+
+            if(manager->gizmos.transformation_type == TransformationType::SCALE)
+            {
+                r32 scale_cube_size = 0.2f;
+                
+                set_uniform_value(manager->gizmos.scale_cubes[0], "color", c == TranslationConstraint::X ? yellow : math::Vec3(1.0f, 0.0f, 0.0f), manager->loaded_scene);
+                set_uniform_value(manager->gizmos.scale_cubes[1], "color", c == TranslationConstraint::Y ? yellow : math::Vec3(0.0f, 1.0f, 0.0f), manager->loaded_scene);
+                set_uniform_value(manager->gizmos.scale_cubes[2], "color", c == TranslationConstraint::Z ? yellow : math::Vec3(0.0f, 0.0f, 1.0f), manager->loaded_scene);
+                set_uniform_value(manager->gizmos.scale_cubes[3], "color", manager->gizmos.scaling_mode == ScalingMode::ALL_AXIS ? yellow : math::Vec3(1.0f, 1.0f, 1.0f), manager->loaded_scene);
+                
+                TransformComponent &x_t = get_transform_comp(manager->gizmos.scale_cubes[0], manager->loaded_scene);
+                set_position(x_t, transform_comp.transform.position + math::Vec3(unit, 0, 0));
+                set_scale(x_t, math::Vec3(unit * scale_cube_size, unit * scale_cube_size, unit * scale_cube_size));
+
+                TransformComponent &y_t = get_transform_comp(manager->gizmos.scale_cubes[1], manager->loaded_scene);
+                set_position(y_t, transform_comp.transform.position + math::Vec3(0, unit, 0));
+                set_scale(y_t, math::Vec3(unit * scale_cube_size, unit * scale_cube_size, unit * scale_cube_size));
+
+                TransformComponent &z_t = get_transform_comp(manager->gizmos.scale_cubes[2], manager->loaded_scene);
+                set_position(z_t, transform_comp.transform.position + math::Vec3(0, 0, unit));
+                set_scale(z_t, math::Vec3(unit * scale_cube_size, unit * scale_cube_size, unit * scale_cube_size));
+                
+                TransformComponent &center_t = get_transform_comp(manager->gizmos.scale_cubes[3], manager->loaded_scene);
+                set_position(center_t, transform_comp.transform.position);
+                set_scale(center_t, math::Vec3(unit * scale_cube_size, unit * scale_cube_size, unit * scale_cube_size));
+            }
+                
             // Draw transform manipulators
             math::Vec3 line[6];
             math::Vec3 p1;
@@ -733,68 +930,80 @@ namespace scene
     {
         if(manager->dragging)
         {
-            math::Vec3 points[2];
-            Scene &scene = get_scene(manager->loaded_scene);
-            math::Ray ray = cast_ray(scene, (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
-            
-            Line l1 = line_from_ray(ray);
-            
-            line_vs_line(l1, manager->gizmos.current_line, points);
+            if(manager->gizmos.transformation_type == TransformationType::SCALE && manager->gizmos.scaling_mode == ScalingMode::ALL_AXIS)
+            {
+                math::Vec2 mouse_position = math::Vec2(input_controller->mouse_x, manager->renderer->window_height - input_controller->mouse_y);
+                math::Vec2 mouse_offset = manager->gizmos.scale_mouse_offset - mouse_position;
+                r32 diff = (mouse_offset.x + mouse_offset.y) * SCALE_SENSITIVITY;
                 
-            switch(manager->gizmos.constraint)
-            {
-            case TranslationConstraint::X:
-            {
-                if(manager->gizmos.type == TransformType::POSITION)
-                {
-                    rendering::set_position_x(transform.transform, points[1].x - manager->gizmos.initial_offset.x);
-                }
-                else if(manager->gizmos.type == TransformType::SCALE)
-                {
-                    rendering::set_scale_x(transform.transform, points[1].x - manager->gizmos.initial_offset.x);
-                }
-                else if(manager->gizmos.type == TransformType::ROTATION)
-                {
-                    // @Incomplete
-                }
+                rendering::set_scale(transform.transform, manager->gizmos.initial_scale + math::Vec3(diff, diff, diff));
             }
-            break;
-            case TranslationConstraint::Y:
+            else
             {
-                if(manager->gizmos.type == TransformType::POSITION)
+                math::Vec3 points[2];
+                Scene &scene = get_scene(manager->loaded_scene);
+                math::Ray ray = cast_ray(scene, (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
+            
+                Line l1 = line_from_ray(ray);
+            
+                line_vs_line(l1, manager->gizmos.current_line, points);
+                
+                switch(manager->gizmos.constraint)
                 {
-                    rendering::set_position_y(transform.transform, points[1].y - manager->gizmos.initial_offset.y);
-                }
-                else if(manager->gizmos.type == TransformType::SCALE)
+                case TranslationConstraint::X:
                 {
-                    rendering::set_scale_y(transform.transform, points[1].y - manager->gizmos.initial_offset.y);
+                    if(manager->gizmos.transformation_type == TransformationType::POSITION)
+                    {
+                        rendering::set_position_x(transform.transform, points[1].x - manager->gizmos.initial_offset.x);
+                    }
+                    else if(manager->gizmos.transformation_type == TransformationType::SCALE)
+                    {
+                        rendering::set_scale_x(transform.transform, points[1].x - manager->gizmos.initial_offset.x);
+                    }
+                    else if(manager->gizmos.transformation_type == TransformationType::ROTATION)
+                    {
+                        // @Incomplete
+                    }
                 }
-                else if(manager->gizmos.type == TransformType::ROTATION)
+                break;
+                case TranslationConstraint::Y:
                 {
-                    // @Incomplete
+                    if(manager->gizmos.transformation_type == TransformationType::POSITION)
+                    {
+                        rendering::set_position_y(transform.transform, points[1].y - manager->gizmos.initial_offset.y);
+                    }
+                    else if(manager->gizmos.transformation_type == TransformationType::SCALE)
+                    {
+                        rendering::set_scale_y(transform.transform, points[1].y - manager->gizmos.initial_offset.y);
+                    }
+                    else if(manager->gizmos.transformation_type == TransformationType::ROTATION)
+                    {
+                        // @Incomplete
+                    }
                 }
-            }
-            break;
-            case TranslationConstraint::Z:
-            {
-                if(manager->gizmos.type == TransformType::POSITION)
+                break;
+                case TranslationConstraint::Z:
                 {
-                    rendering::set_position_z(transform.transform, points[1].z - manager->gizmos.initial_offset.z);
+                    if(manager->gizmos.transformation_type == TransformationType::POSITION)
+                    {
+                        rendering::set_position_z(transform.transform, points[1].z - manager->gizmos.initial_offset.z);
+                    }
+                    else if(manager->gizmos.transformation_type == TransformationType::SCALE)
+                    {
+                        rendering::set_scale_z(transform.transform, points[1].z - manager->gizmos.initial_offset.z);
+                    }
+                    else if(manager->gizmos.transformation_type == TransformationType::ROTATION)
+                    {
+                        // @Incomplete
+                    }
                 }
-                else if(manager->gizmos.type == TransformType::SCALE)
-                {
-                    rendering::set_scale_z(transform.transform, points[1].z - manager->gizmos.initial_offset.z);
+                break;
+                case Gizmos::NONE:
+                    return;
                 }
-                else if(manager->gizmos.type == TransformType::ROTATION)
-                {
-                    // @Incomplete
-                }
-            }
-            break;
-            case Gizmos::NONE:
-            return;
             }
         }
+            
     }
 
     static void _select_gizmo(SceneHandle handle, EntityHandle gizmo)
@@ -832,6 +1041,33 @@ namespace scene
     static void toggle_selection_enabled(SceneManager *scene_manager)
     {
         set_selection_enabled(!scene_manager->editor.selection_enabled, scene_manager);
+    }
+
+    static void set_transformation_type(TransformationType type, SceneManager *scene_manager)
+    {
+        scene_manager->gizmos.transformation_type = type;
+        switch(type)
+        {
+        case TransformationType::POSITION:
+        {
+            for(i32 i = 0; i < 4; i++)
+            {
+                set_active(scene_manager->gizmos.scale_cubes[i], false, scene_manager->loaded_scene);
+            }
+        }
+        break;
+        case TransformationType::SCALE:
+        {
+            for(i32 i = 0; i < 4; i++)
+            {
+                set_active(scene_manager->gizmos.scale_cubes[i], true, scene_manager->loaded_scene);
+            }
+        }
+        break;
+        case TransformationType::ROTATION:
+            assert(false);
+            break;
+        }
     }
 
     static void update_editor_camera(Camera &camera, Scene &scene, InputController *input_controller, r64 delta_time)
@@ -874,6 +1110,16 @@ namespace scene
         }
     }
 
+    static void deselect_everything(SceneManager *manager)
+    {
+        if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
+        {
+            scene::set_wireframe_enabled(false, manager->selected_entity, manager->loaded_scene);
+            manager->selected_entity = { -1 };
+            manager->gizmos.active = false;
+        }
+    }
+
     static void select_entity(EntityHandle entity, SceneManager *manager)
     {
         if(IS_ENTITY_HANDLE_VALID(entity))
@@ -890,6 +1136,13 @@ namespace scene
         }
     }
     
+    static void find_all_template_files(SceneManager *scene_manager)
+    {
+        DirectoryData data = {};
+        platform.get_all_files_with_extension("../assets/templates/", "tmpl", &data, true);
+        scene_manager->editor.template_files = data;
+    }
+    
     static void update_scene_editor(SceneHandle handle, InputController *input_controller, r64 delta_time)
     {
         Scene &scene = get_scene(handle);
@@ -900,6 +1153,8 @@ namespace scene
         {
             if(manager->mode == SceneMode::RUNNING)
             {
+                find_all_template_files(manager);
+                
                 if(manager->callbacks.on_started_edit_mode)
                     manager->callbacks.on_started_edit_mode(handle);
                 
@@ -907,6 +1162,13 @@ namespace scene
                 if(manager->callbacks.on_load)
                     manager->callbacks.on_load(handle);
 
+                // Register all debug entities
+                for(i32 i = 0; i < 4; i++)
+                {
+                    manager->gizmos.scale_cubes[i] = register_entity_from_template_file("../assets/templates/editor/scale_cube.tmpl", manager->loaded_scene, false);
+                    TransformComponent &transform = get_transform_comp(manager->gizmos.scale_cubes[i], manager->loaded_scene);
+                    set_position(transform, math::Vec3(0, 1 + i, 0));
+                }
                 
                 manager->play_camera = scene.camera;
                 manager->mode = SceneMode::EDITING;
@@ -959,6 +1221,11 @@ namespace scene
                 }
             }
 
+            if(KEY_DOWN(Key_Escape))
+            {
+                deselect_everything(manager);
+            }
+
             if(MOUSE_DOWN(Mouse_Left))
             {
                 manager->dragging = true;
@@ -968,9 +1235,28 @@ namespace scene
                     if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
                     {
                         TransformComponent &t = get_transform_comp(manager->selected_entity, handle);
-                        math::Vec3 start = t.transform.position;
+
                         math::Vec3 pos = t.transform.position;
-                        manager->gizmos.type = TransformType::POSITION;
+                        math::Vec3 start;
+
+                        switch(manager->gizmos.transformation_type)
+                        {
+                        case TransformationType::POSITION:
+                        {
+                            start = t.transform.position;
+                        }
+                        break;
+                        case TransformationType::SCALE:
+                        {
+                            start = t.transform.scale;
+                        }
+                        break;
+                        case TransformationType::ROTATION:
+                            assert(false);
+                            break;
+                        }
+                        
+                        manager->gizmos.initial_scale = t.transform.scale;
                     
                         TranslationConstraint constraint = TranslationConstraint::NONE;
 
@@ -1027,10 +1313,15 @@ namespace scene
 
                         manager->gizmos.constraint = constraint;
                     }
-                
-                    scene::EntityHandle entity = scene::pick_entity(handle, (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
 
-                    if(manager->gizmos.constraint == TranslationConstraint::NONE)
+                    scene::EntityHandle entity = scene::pick_entity(handle, (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
+                    
+                    if(HANDLES_EQUAL(entity, manager->gizmos.scale_cubes[3]))
+                    {
+                        manager->gizmos.scaling_mode = ScalingMode::ALL_AXIS;
+                        manager->gizmos.scale_mouse_offset = math::Vec2((r32)input_controller->mouse_x, (r32)manager->renderer->window_height - input_controller->mouse_y);
+                    }
+                    else if(manager->gizmos.constraint == TranslationConstraint::NONE)
                     {
                         select_entity(entity, manager);
                     }
@@ -1039,6 +1330,7 @@ namespace scene
             
             if(MOUSE_UP(Mouse_Left))
             {
+                manager->gizmos.scaling_mode = ScalingMode::SINGLE_AXIS;
                 if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
                 {
                     manager->callbacks.on_entity_updated(manager->selected_entity, handle);
@@ -1190,106 +1482,6 @@ namespace scene
         }
     }
 
-    static void translate_x(TransformComponent& comp, r32 x)
-    {
-        rendering::translate_x(comp.transform, x);
-    }
-
-    static void translate_y(TransformComponent& comp, r32 y)
-    {
-        rendering::translate_y(comp.transform, y);
-    }
-
-    static void translate_z(TransformComponent& comp, r32 z)
-    {
-        rendering::translate_z(comp.transform, z);
-    }
-
-    static void translate(TransformComponent& comp, math::Vec3 translation)
-    {
-        rendering::translate(comp.transform, translation);
-    }
-
-    static void rotate(TransformComponent& comp, math::Vec3 rotation)
-    {
-        rendering::rotate(comp.transform, rotation);
-    }
-
-    static void rotate(TransformComponent& comp, math::Quat rotation)
-    {
-        rendering::rotate(comp.transform, rotation);
-    }
-
-    static void set_rotation(TransformComponent& comp, math::Vec3 rotation)
-    {
-        rendering::set_rotation(comp.transform, rotation);
-    }
-
-    static void set_rotation(TransformComponent& comp, math::Quat orientation)
-    {
-        rendering::set_rotation(comp.transform, orientation);
-    }
-
-    static void set_rotation_x(TransformComponent& comp, r32 x)
-    {
-        rendering::set_rotation_x(comp.transform, x);
-    }
-
-    static void set_rotation_y(TransformComponent& comp, r32 y)
-    {
-        rendering::set_rotation_y(comp.transform, y);
-    }
-
-    static void set_rotation_z(TransformComponent& comp, r32 z)
-    {
-        rendering::set_rotation_z(comp.transform, z);
-    }
-
-    static void scale(TransformComponent& comp, math::Vec3 scale)
-    {
-        rendering::scale(comp.transform, scale);
-    }
-
-    static void set_scale(TransformComponent& comp, math::Vec3 scale)
-    {
-        rendering::set_scale(comp.transform, scale);
-    }
-
-    static void set_scale_x(TransformComponent& comp, r32 x)
-    {
-        rendering::set_scale_x(comp.transform, x);
-    }
-
-    static void set_scale_y(TransformComponent& comp, r32 y)
-    {
-        rendering::set_scale_y(comp.transform, y);
-    }
-
-    static void set_scale_z(TransformComponent& comp, r32 z)
-    {
-        rendering::set_scale_z(comp.transform, z);
-    }
-
-    static void set_position(TransformComponent& comp, math::Vec3 position)
-    {
-        rendering::set_position(comp.transform, position);
-    }
-
-    static void set_position_x(TransformComponent& comp, r32 x)
-    {
-        rendering::set_position_x(comp.transform, x);
-    }
-
-    static void set_position_y(TransformComponent& comp, r32 y)
-    {
-        rendering::set_position_y(comp.transform, y);
-    }
-
-    static void set_position_z(TransformComponent& comp, r32 z)
-    {
-        rendering::set_position_z(comp.transform, z);
-    }
-    
     static TransformComponent& _add_transform_component(Scene &scene, EntityHandle entity_handle)
     {
         Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
@@ -1338,7 +1530,7 @@ namespace scene
         entity.light_handle = { scene.light_component_count++ };
         scene::LightComponent &comp = scene.light_components[entity.light_handle.handle];
         
-        return(comp); 
+        return(comp);
     }
     
     static LightComponent & add_light_component(SceneHandle &handle, EntityHandle entity_handle)
@@ -2261,56 +2453,6 @@ namespace scene
         return handle.manager->scenes[real_handle].camera;
     }
     
-	static void set_uniform_value(EntityHandle handle, const char* name, r32 value, SceneHandle &scene)
-	{
-        RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
-	}
-
-	static void set_uniform_value(EntityHandle handle, const char* name, math::Vec2 value, SceneHandle &scene)
-	{
-        RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
-	}
-
-	static void set_uniform_value(EntityHandle handle, const char* name, math::Vec3 value, SceneHandle &scene)
-	{
-        RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
-	}
-
-	static void set_uniform_value(EntityHandle handle, const char* name, math::Vec4 value, SceneHandle &scene)
-	{
-        RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
-	}
-
-	static void set_uniform_value(EntityHandle handle, const char* name, i32 value, SceneHandle &scene)
-	{
-        RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
-	}
-
-	static void set_uniform_value(EntityHandle handle, const char* name, math::Mat4 value, SceneHandle &scene)
-	{
-        RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
-	}
-
-	static void set_uniform_value(EntityHandle handle, const char* name, rendering::TextureHandle value, SceneHandle &scene)
-	{
-        RenderComponent &render = get_render_comp(handle, scene);
-        assert(value.handle != 0);
-        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
-	}
-
-    static void set_uniform_value(EntityHandle handle, const char* name, rendering::MSTextureHandle value, SceneHandle &scene)
-	{
-        RenderComponent &render = get_render_comp(handle, scene);
-        assert(value.handle != 0);
-        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
-	}
-
 #define SET_MAT_ARRAY_VALUE(type) static void set_uniform_array_value(EntityHandle handle, const char *array_name, i32 index, const char *variable_name, type value, SceneHandle &scene) \
     {                                                                   \
         RenderComponent &render = get_render_comp(handle, scene);       \
@@ -2613,7 +2755,7 @@ namespace scene
                     // Just push the buffer as a normal draw call
                     for (i32 pass_index = 0; pass_index < render_command.pass_count; pass_index++)
                     {
-                        rendering::push_buffer_to_render_pass(renderer, queued_command.buffer_handle, first_command.material_handle, render_command.transform, render_command.shader_handles[pass_index], render_command.passes[pass_index], queued_command.ignore_depth ? rendering::CommandType::NO_DEPTH : rendering::CommandType::WITH_DEPTH);
+                        rendering::push_buffer_to_render_pass(renderer, queued_command.buffer_handle, render_command.material_handle, render_command.transform, render_command.shader_handles[pass_index], render_command.passes[pass_index], queued_command.ignore_depth ? rendering::CommandType::NO_DEPTH : rendering::CommandType::WITH_DEPTH);
                     }
                     continue;
                 }
