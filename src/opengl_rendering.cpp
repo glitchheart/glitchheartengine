@@ -1923,9 +1923,6 @@ static void render_shadows(RenderState &render_state, Renderer *renderer, Frameb
 
 static void render_ui_pass(RenderState &render_state, Renderer *renderer)
 {
-    glClear(GL_DEPTH_BUFFER_BIT);
-    glEnable(GL_DEPTH_TEST);
-
     rendering::RenderPass &pass = renderer->render.ui.pass;
 
     Framebuffer &framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
