@@ -1324,6 +1324,7 @@ namespace rendering
                 if(MAX(quad.y1, quad.y0) - MIN(quad.y0, quad.y1) > size.y)
                 {
                     line_data.line_sizes[line_data.line_count - 1].y = quad.y1 - quad.y0;
+                    size.y = quad.y1 - quad.y0;
                 }
         
                 i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
@@ -1337,7 +1338,7 @@ namespace rendering
 
         if(line_data.line_count == 1)
         {
-            line_data.total_height = line_data.line_sizes[0].y;
+            line_data.total_height = size.y;
         }
         else
             line_data.total_height = (line_data.line_count - 1) * line_data.line_spacing;
@@ -1397,7 +1398,7 @@ namespace rendering
     
 // Gets an array of text widths for each character
 // Remember to free
-    static TextLengthInfo get_char_widths_scaled(Renderer *renderer, const char* text, TrueTypeFontInfo &font, MemoryArena* arena)
+    static TextLengthInfo get_char_widths_scaled(Renderer *renderer, const char* text, TrueTypeFontInfo font, MemoryArena* arena)
     {
         TextLengthInfo info = {};
     
@@ -3228,13 +3229,9 @@ namespace rendering
         {
             y -= line_data.total_height;
         }
-        else if (alignment_flags & UIAlignment::BOTTOM)
+        else if ((alignment_flags & UIAlignment::BOTTOM) == 0)
         {
-            y += line_data.total_height;
-        }
-        else
-        {
-            y -= line_data.line_sizes[0].y * 0.5f;
+            y += line_data.total_height / 2.0f;
         }
 
         y = framebuffer.height - y;
