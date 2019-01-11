@@ -1170,6 +1170,18 @@ namespace scene
         platform.get_all_files_with_extension("../assets/templates/", "tmpl", &data, true);
         scene_manager->editor.template_files = data;
     }
+
+    static void editor_setup(SceneManager *manager)
+    {
+        // Register all debug entities
+        for(i32 i = 0; i < 4; i++)
+        {
+            manager->gizmos.scale_cubes[i] = register_entity_from_template_file("../assets/templates/editor/scale_cube.tmpl", manager->loaded_scene, false);
+            set_active(manager->gizmos.scale_cubes[i], false, manager->loaded_scene);
+            TransformComponent &transform = get_transform_comp(manager->gizmos.scale_cubes[i], manager->loaded_scene);
+            set_position(transform, math::Vec3(0, 1 + i, 0));
+        }
+    }
     
     static void update_scene_editor(SceneHandle handle, InputController *input_controller, r64 delta_time)
     {
@@ -1190,15 +1202,6 @@ namespace scene
                 if(manager->callbacks.on_load)
                     manager->callbacks.on_load(handle);
 
-                // Register all debug entities
-                for(i32 i = 0; i < 4; i++)
-                {
-                    manager->gizmos.scale_cubes[i] = register_entity_from_template_file("../assets/templates/editor/scale_cube.tmpl", manager->loaded_scene, false);
-                    set_active(manager->gizmos.scale_cubes[i], false, manager->loaded_scene);
-                    TransformComponent &transform = get_transform_comp(manager->gizmos.scale_cubes[i], manager->loaded_scene);
-                    set_position(transform, math::Vec3(0, 1 + i, 0));
-                }
-                
                 manager->play_camera = scene.camera;
                 manager->mode = SceneMode::EDITING;
             }
@@ -1212,11 +1215,6 @@ namespace scene
                 // editor-specific entities are cleaned up before the game is running again.
                 if(manager->callbacks.on_exited_edit_mode)
                     manager->callbacks.on_exited_edit_mode(handle);
-
-                // @Incomplete: Instead of saving every time we exit the editor, we should control when saving occurs in the game-specific part of the editor
-                // Tell the game to save everything that changed
-                //if(manager->callbacks.on_save)
-                //manager->callbacks.on_save(handle);
 
                 scene.camera = manager->play_camera;
 
@@ -1418,6 +1416,11 @@ namespace scene
         
         scene_manager->scene_loaded = true;
         scene_manager->loaded_scene = handle;
+
+        if(scene_manager->mode == SceneMode::EDITING)
+        {
+            editor_setup(scene_manager);
+        }
     }
     
     i32 _unused_entity_handle(Scene &scene)
