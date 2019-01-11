@@ -1310,6 +1310,9 @@ namespace rendering
         LineData line_data = {};
         line_data.total_height = 0.0f;
         line_data.line_count = 1;
+
+        r32 min_y = 0.0f;
+        r32 max_y = 0.0f;
     
         line_data.line_spacing = (r32)font.size + font.line_gap * font.scale;
     
@@ -1320,7 +1323,17 @@ namespace rendering
                 stbtt_aligned_quad quad;
                 stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
                                     text[i] - font.first_char, &line_data.line_sizes[line_data.line_count - 1].x, &placeholder_y, &quad, 1);
-        
+
+                if(quad.y1 > max_y)
+                {
+                    max_y = quad.y1;
+                }
+
+                if(quad.y0 < min_y)
+                {
+                    min_y = quad.y0;
+                }
+                
                 if(MAX(quad.y1, quad.y0) - MIN(quad.y0, quad.y1) > size.y)
                 {
                     line_data.line_sizes[line_data.line_count - 1].y = quad.y1 - quad.y0;
@@ -1338,7 +1351,7 @@ namespace rendering
 
         if(line_data.line_count == 1)
         {
-            line_data.total_height = size.y;
+            line_data.total_height = max_y - min_y;
         }
         else
             line_data.total_height = (line_data.line_count - 1) * line_data.line_spacing;
@@ -3231,7 +3244,7 @@ namespace rendering
         }
         else if ((alignment_flags & UIAlignment::BOTTOM) == 0)
         {
-            y += line_data.total_height / 2.0f;
+            y -= line_data.total_height / 2.0f;
         }
 
         y = framebuffer.height - y;
