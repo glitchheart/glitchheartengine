@@ -415,7 +415,7 @@ enum TextureFormat
 
 struct ShadowMapMatrices
 {
-	math::Mat4 depth_projection_matrix;
+	math::Mat4 depth_rojection_matrix;
 	math::Mat4 depth_model_matrix;
 	math::Mat4 depth_view_matrix;
 	math::Mat4 depth_bias_matrix;
