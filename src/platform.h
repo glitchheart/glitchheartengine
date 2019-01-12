@@ -308,6 +308,8 @@ struct Core
     scene::SceneManager *scene_manager;
     r64 delta_time;
     r64 current_time;
+
+    ConfigData config_data;
 };
 
 struct GameMemory
@@ -315,7 +317,6 @@ struct GameMemory
     b32 is_initialized;
     b32 should_reload;
     b32 exit_game;
-    ConfigData config_data;
     PlatformApi platform_api;
     Core core;
     struct LogState* log_state;

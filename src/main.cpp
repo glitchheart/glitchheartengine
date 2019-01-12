@@ -162,24 +162,21 @@ static b32 reload_libraries(GameCode *game, char *game_library_path, char *temp_
     return false;
 }
 
-inline void save_config(const char *file_path, ConfigData &old_config_data, RenderState *render_state = nullptr, SoundDevice *sound_device = nullptr)
+void save_config(const char *file_path, Renderer* renderer, SoundDevice *sound_device)
 {
     FILE *file = fopen(file_path, "w");
 
     if (file)
     {
-        // fprintf(file, "title %s\n", old_config_data.title);
-        // fprintf(file, "version %s\n", old_config_data.version);
+        i32 width = core.config_data.screen_width;
+        i32 height = core.config_data.screen_height;
+        WindowMode window_mode = core.config_data.window_mode;
 
-        i32 width = old_config_data.screen_width;
-        i32 height = old_config_data.screen_height;
-        WindowMode window_mode = old_config_data.window_mode;
-
-        if (render_state)
+        if (renderer)
         {
-            width = render_state->window_width;
-            height = render_state->window_height;
-            window_mode = render_state->window_mode;
+            width = renderer->window_width;
+            height = renderer->window_height;
+            window_mode = renderer->window_mode;
         }
 
         fprintf(file, "screen_width %d\n", width);
@@ -206,13 +203,13 @@ inline void save_config(const char *file_path, ConfigData &old_config_data, Rend
 
         fclose(file);
 
-        old_config_data.screen_width = width;
-        old_config_data.screen_height = height;
-        old_config_data.window_mode = window_mode;
-        old_config_data.muted = muted;
-        old_config_data.sfx_volume = sfx_vol;
-        old_config_data.music_volume = music_vol;
-        old_config_data.master_volume = master_vol;
+        core.config_data.screen_width = width;
+        core.config_data.screen_height = height;
+        core.config_data.window_mode = window_mode;
+        core.config_data.muted = muted;
+        core.config_data.sfx_volume = sfx_vol;
+        core.config_data.music_volume = music_vol;
+        core.config_data.master_volume = master_vol;
     }
 }
 
@@ -250,13 +247,10 @@ inline void load_config(const char *file_path, ConfigData *config_data, MemoryAr
     file = fopen(file_path, "r");
     char line_buffer[255];
 
-    *config_data = {};
+    core.config_data = {};
 
     if (!platform.file_exists(file_path))
     {
-        // auto title = "Altered";
-        // snprintf(config_data->title, strlen(title) + 1, "%s", title);
-
         // @Note: We read the version from a .version file
         char version[64];
         char title[128];
@@ -275,7 +269,7 @@ inline void load_config(const char *file_path, ConfigData *config_data, MemoryAr
         config_data->music_volume = 1.0f;
         config_data->master_volume = 1.0f;
 
-        save_config(file_path, *config_data);
+        save_config(file_path);
     }
     else
     {
@@ -678,10 +672,9 @@ int main(int argc, char **args)
     char *temp_game_library_path = "libgame_temp.so";
 #endif
 
-    ConfigData config_data;
-    load_config("../.config", &config_data, &platform_state->perm_arena);
+    load_config("../.config", &core.config_data, &platform_state->perm_arena);
 
-    game_memory.config_data = config_data;
+    core.config_data;
 
     init_keys();
     RenderState *render_state_ptr = push_struct(&platform_state->perm_arena, RenderState);
@@ -715,7 +708,7 @@ int main(int argc, char **args)
     else if constexpr (global_graphics_api == GRAPHICS_OPEN_GL)
     {
         log("Initializing OpenGl");
-        initialize_opengl(render_state, renderer, &config_data, &platform_state->perm_arena, &do_save_config);
+        initialize_opengl(render_state, renderer, &core.config_data, &platform_state->perm_arena, &do_save_config);
     }
 
     WorkQueue reload_queue;
@@ -738,10 +731,10 @@ int main(int argc, char **args)
 
     sound_device.channel_count = 0;
     sound_device.sound_count = 0;
-    sound_device.sfx_volume = config_data.sfx_volume;
-    sound_device.music_volume = config_data.music_volume;
-    sound_device.master_volume = config_data.master_volume;
-    sound_device.muted = config_data.muted;
+    sound_device.sfx_volume = core.config_data.sfx_volume;
+    sound_device.music_volume = core.config_data.music_volume;
+    sound_device.master_volume = core.config_data.master_volume;
+    sound_device.muted = core.config_data.muted;
 
     WorkQueue fmod_queue = {};
     ThreadInfo fmod_thread = {};
@@ -755,10 +748,10 @@ int main(int argc, char **args)
     sound_system.sounds = push_array(&sound_system.arena, global_max_sounds, SoundHandle);
     sound_system.audio_sources = push_array(&sound_system.arena, global_max_audio_sources, AudioSource);
     sound_system.channel_groups = push_array(&sound_system.arena, global_max_channel_groups, ChannelGroup);
-    sound_system.sfx_volume = config_data.sfx_volume;
-    sound_system.music_volume = config_data.music_volume;
-    sound_system.master_volume = config_data.master_volume;
-    sound_system.muted = config_data.muted;
+    sound_system.sfx_volume = core.config_data.sfx_volume;
+    sound_system.music_volume = core.config_data.music_volume;
+    sound_system.master_volume = core.config_data.master_volume;
+    sound_system.muted = core.config_data.muted;
 
     r64 last_second_check = get_time();
     i32 frames = 0;
@@ -822,10 +815,10 @@ int main(int argc, char **args)
         tick_timers(timer_controller, delta_time);
         update_sound_commands(&sound_device, &sound_system, delta_time, &do_save_config);
 
-        render(render_state, renderer, delta_time, &do_save_config);
+        render(render_state, renderer, delta_time);
         if (do_save_config)
         {
-            save_config("../.config", config_data, &render_state, &sound_device);
+            save_config("../.config", renderer, &sound_device);
         }
         do_save_config = false;
 
