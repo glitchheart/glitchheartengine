@@ -2898,129 +2898,137 @@ namespace rendering
 
     static void translate_x(Transform& transform, r32 x)
     {
+        transform.dirty |= x != 0.0f;
         transform.position.x += x;
-        transform.dirty = true;
     }
 
     static void translate_y(Transform& transform, r32 y)
     {
+        transform.dirty |= y != 0.0f;
         transform.position.y += y;
-        transform.dirty = true;
     }
 
     static void translate_z(Transform& transform, r32 z)
     {
+        transform.dirty |= z != 0.0f;
         transform.position.z += z;
-        transform.dirty = true;
     }
 
     static void translate(Transform& transform, math::Vec3 translation)
     {
+        transform.dirty |= translation.x != 0.0f || translation.y != 0.0f || translation.z != 0.0f;
         transform.position += translation;
-        transform.dirty = true;
     }
 
     static void rotate(Transform& transform, math::Vec3 rotation)
     {
+        transform.dirty |= rotation.x != 0.0f || rotation.y != 0.0f || rotation.z != 0.0f;
         transform.orientation = math::rotate(transform.orientation, rotation);
         transform.euler_angles = rotation;
-        transform.dirty = true;
     }
 
     static void rotate(Transform& transform, math::Quat rotation)
     {
+        transform.dirty |= rotation.x != 0.0f || rotation.y != 0.0f || rotation.z != 0.0f || rotation.w != 0.0f;
         transform.orientation = math::rotate(transform.orientation, rotation);
         transform.euler_angles = math::to_euler_angles(transform.orientation);
-        transform.dirty = true;
     }
 
     static void set_rotation(Transform& transform, math::Vec3 rotation)
     {
+        transform.dirty |= transform.euler_angles.x != rotation.x ||
+            transform.euler_angles.y != rotation.y ||
+            transform.euler_angles.z != rotation.z;
         transform.euler_angles = rotation;
         transform.orientation = math::rotate(math::Quat(), rotation);
-        transform.dirty = true;
     }
 
     static void set_rotation(Transform& transform, math::Quat orientation)
     {
+        transform.dirty |= transform.orientation.x != orientation.x ||
+            transform.orientation.y != orientation.y ||
+            transform.orientation.z != orientation.z ||
+            transform.orientation.w != orientation.w;
         transform.orientation = orientation;
         transform.euler_angles = math::to_euler_angles(orientation);
-        transform.dirty = true;
     }
 
     static void set_rotation_x(Transform& transform, r32 x)
     {
+        transform.dirty |= transform.euler_angles.x != x;
         transform.euler_angles.x = x;
         transform.orientation = math::rotate(math::Quat(), transform.euler_angles);
-        transform.dirty = true;
     }
 
     static void set_rotation_y(Transform& transform, r32 y)
     {
+        transform.dirty |= transform.euler_angles.y != y;
         transform.euler_angles.y = y;
         transform.orientation = math::rotate(math::Quat(), transform.euler_angles);
-        transform.dirty = true;
     }
 
     static void set_rotation_z(Transform& transform, r32 z)
     {
+        transform.dirty |= transform.euler_angles.z != z;
         transform.euler_angles.x = z;
         transform.orientation = math::rotate(math::Quat(), transform.euler_angles);
-        transform.dirty = true;
     }
 
     static void scale(Transform& transform, math::Vec3 scale)
     {
+        transform.dirty |= scale.x != 0.0f || scale.y != 0.0f || scale.z != 0.0f;
         transform.scale += scale;
-        transform.dirty = true;
     }
 
     static void set_scale(Transform& transform, math::Vec3 scale)
     {
+        transform.dirty |= transform.scale.x != scale.x ||
+            transform.scale.y != scale.y ||
+            transform.scale.z != scale.z;
+        
         transform.scale = scale;
-        transform.dirty = true;
     }
 
     static void set_scale_x(Transform& transform, r32 x)
     {
+        transform.dirty |= x != transform.scale.x;
         transform.scale.x = x;
-        transform.dirty = true;
     }
 
     static void set_scale_y(Transform& transform, r32 y)
     {
+        transform.dirty |= y != transform.scale.y;
         transform.scale.y = y;
-        transform.dirty = true;
     }
 
     static void set_scale_z(Transform& transform, r32 z)
     {
+        transform.dirty |= z != transform.scale.z;
         transform.scale.z = z;
-        transform.dirty = true;
     }
     
     static void set_position(Transform& transform, math::Vec3 position)
     {
+        transform.dirty |= transform.position.x != position.x || transform.position.y != position.y || transform.position.z != position.z;
         transform.position = position;
-        transform.dirty = true;
     }
 
     static void set_position_x(Transform& transform, r32 x)
     {
+        transform.dirty |= transform.position.x != x;
         transform.position.x = x;
-        transform.dirty = true;
     }
 
     static void set_position_y(Transform& transform, r32 y)
     {
+        transform.dirty |= transform.position.y != y;
         transform.position.y = y;
-        transform.dirty = true;
     }
 
     static void set_position_z(Transform& transform, r32 z)
     {
+        transform.dirty |= transform.position.z != z;
         transform.position.z = z;
-        transform.dirty = true;
     }
     
     static void push_shadow_buffer(Renderer *renderer, BufferHandle buffer_handle, Transform &transform)
