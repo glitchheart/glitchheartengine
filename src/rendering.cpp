@@ -8,27 +8,11 @@ static void add_animation(Renderer* renderer, SpritesheetAnimation animation, co
     renderer->spritesheet_animations[renderer->spritesheet_animation_count++] = animation;
 }
 
-static void set_new_resolution(Renderer *renderer, i32 new_width, i32 new_height)
+static void set_window_mode(Renderer* renderer, i32 resolution_index, WindowMode new_window_mode)
 {
-    renderer->window_width = new_width;
-    renderer->window_height = new_height;
-}
-
-static void set_new_resolution(Renderer *renderer, Resolution new_resolution)
-{
-    set_new_resolution(renderer, new_resolution.width, new_resolution.height);
-}
-
-static void set_new_resolution(Renderer *renderer, i32 resolution_index)
-{
-    auto new_resolution = renderer->available_resolutions[resolution_index];
+    Resolution new_resolution = renderer->available_resolutions[resolution_index];
     renderer->current_resolution_index = resolution_index;
-    set_new_resolution(renderer, new_resolution.width, new_resolution.height);
-}
-
-static void set_new_window_mode(Renderer *renderer, WindowMode new_window_mode)
-{
-    renderer->window_mode = new_window_mode;
+    renderer->api_functions.set_window_mode(renderer->api_functions.render_state, renderer, new_resolution, new_window_mode);
 }
 
 static void set_mouse_lock(b32 locked, Renderer &renderer)

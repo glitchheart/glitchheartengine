@@ -777,7 +777,6 @@ static const GLFWvidmode *create_open_gl_window(RenderState &render_state, Windo
     i32 screen_height = height;
 
     const GLFWvidmode *mode = glfwGetVideoMode(monitor);
-    render_state.window_mode = window_mode;
     render_state.window_title = push_string(&render_state.string_arena, strlen(title) + 1);
     strcpy(render_state.window_title, title);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
@@ -937,6 +936,71 @@ static void direct_update_buffer(rendering::BufferHandle handle, r32 *data, size
     bind_vertex_array(0, *render_state);
 }
 
+static void set_window_mode(RenderState* render_state, Renderer* renderer, Resolution new_resolution, WindowMode new_window_mode)
+{
+    b32 save = false;
+    if(new_window_mode != renderer->window_mode)
+    {
+        save = true;
+        renderer->window_mode = new_window_mode;
+        
+        const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+        if(new_window_mode == FM_BORDERLESS)
+        {
+            glfwSetWindowMonitor(render_state->window, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, mode->refreshRate);
+            render_state->window_width = mode->width;
+            render_state->window_height = mode->height;
+            renderer->window_width = mode->width;
+            renderer->window_height = mode->height;
+
+            for (i32 res_index = 0; res_index < renderer->available_resolutions_count; res_index++)
+            {
+                auto res = renderer->available_resolutions[res_index];
+                if (res.width == renderer->window_width && res.height == renderer->window_height)
+                {
+                    renderer->current_resolution_index = res_index;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            render_state->window_width = new_resolution.width;
+            render_state->window_height = new_resolution.height;
+            renderer->window_width = new_resolution.width;
+            renderer->window_height = new_resolution.height;
+
+            glfwSetWindowMonitor(render_state->window, nullptr, mode->width / 2 - new_resolution.width / 2, mode->height / 2 - new_resolution.height / 2, new_resolution.width, new_resolution.height, 0);
+            glfwSetWindowSize(render_state->window, new_resolution.width, new_resolution.height);
+
+            for (i32 res_index = 0; res_index < renderer->available_resolutions_count; res_index++)
+            {
+                auto res = renderer->available_resolutions[res_index];
+                if (res.width == renderer->window_width && res.height == renderer->window_height)
+                {
+                    renderer->current_resolution_index = res_index;
+                    break;
+                }
+            }
+        }
+    }
+    else if(new_resolution.width != render_state->window_width || new_resolution.height != render_state->window_height)
+    {
+        render_state->window_width = new_resolution.width;
+        render_state->window_height = new_resolution.height;
+        renderer->window_width = new_resolution.width;
+        renderer->window_height = new_resolution.height;
+        
+        glfwSetWindowSize(render_state->window, new_resolution.width, new_resolution.height);
+        save = true;
+    }
+
+    if(save)
+    {
+        save_config("../.config", renderer);
+    }
+}
+
 static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char *title, MemoryArena *perm_arena, b32 *do_save_config)
 {
     renderer->api_functions.render_state = &render_state;
@@ -948,6 +1012,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     renderer->api_functions.update_buffer = &direct_update_buffer;
     renderer->api_functions.set_mouse_lock = &set_mouse_lock;
     renderer->api_functions.set_window_cursor = &set_window_cursor;
+    renderer->api_functions.set_window_mode = &set_window_mode;
         
 
     auto recreate_window = render_state.window != nullptr;
@@ -994,7 +1059,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     }
 
     auto mode = create_open_gl_window(render_state, window_mode, title, screen_width, screen_height);
-    renderer->window_mode = render_state.window_mode;
+    renderer->window_mode = window_mode;
 
     if (mode && renderer->window_mode == FM_BORDERLESS)
     {
@@ -1014,7 +1079,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 
         create_open_gl_window(render_state, window_mode, title, screen_width, screen_height);
-        renderer->window_mode = render_state.window_mode;
+        renderer->window_mode = window_mode;
 
         if (!render_state.window)
         {
@@ -2095,59 +2160,6 @@ static void swap_buffers(RenderState &render_state)
     glfwSwapBuffers(render_state.window);
 }
 
-static void check_window_mode_and_size(RenderState &render_state, Renderer *renderer, b32 *save_config)
-{
-    if (renderer->window_width != render_state.window_width || renderer->window_height != render_state.window_height || renderer->window_mode != render_state.window_mode)
-    {
-        render_state.window_width = renderer->window_width;
-        render_state.window_height = renderer->window_height;
-        *save_config = true;
-
-        if (renderer->window_mode != render_state.window_mode)
-        {
-            const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-            if (renderer->window_mode == FM_BORDERLESS)
-            {
-                glfwSetWindowMonitor(render_state.window, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, mode->refreshRate);
-                renderer->window_width = mode->width;
-                renderer->window_height = mode->height;
-
-                for (i32 res_index = 0; res_index < renderer->available_resolutions_count; res_index++)
-                {
-                    auto res = renderer->available_resolutions[res_index];
-                    if (res.width == renderer->window_width && res.height == renderer->window_height)
-                    {
-                        renderer->current_resolution_index = res_index;
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                glfwSetWindowMonitor(render_state.window, nullptr, mode->width / 2 - renderer->window_width / 2, mode->height / 2 - renderer->window_height / 2, renderer->window_width, renderer->window_height, 0);
-                glfwSetWindowSize(render_state.window, render_state.window_width, render_state.window_height);
-
-                for (i32 res_index = 0; res_index < renderer->available_resolutions_count; res_index++)
-                {
-                    auto res = renderer->available_resolutions[res_index];
-                    if (res.width == renderer->window_width && res.height == renderer->window_height)
-                    {
-                        renderer->current_resolution_index = res_index;
-                        break;
-                    }
-                }
-            }
-
-            render_state.window_mode = renderer->window_mode;
-        }
-        else
-        {
-            glfwSetWindowSize(render_state.window, render_state.window_width, render_state.window_height);
-        }
-    }
-}
-
-
 static void render_post_processing_passes(RenderState &render_state, Renderer *renderer)
 {
     glDisable(GL_DEPTH_TEST);
@@ -2207,9 +2219,8 @@ static void render_post_processing_passes(RenderState &render_state, Renderer *r
     // glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
 }
 
-static void render(RenderState &render_state, Renderer *renderer, r64 delta_time, b32 *save_config)
+static void render(RenderState &render_state, Renderer *renderer, r64 delta_time)
 {
-    check_window_mode_and_size(render_state, renderer, save_config);
     load_new_shaders(render_state, renderer);
     reload_shaders(render_state, renderer);
     

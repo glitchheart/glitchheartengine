@@ -456,6 +456,7 @@ typedef void (*DeleteInstanceBuffer)(Buffer *buffer, RenderState *render_state, 
 typedef void (*DeleteAllInstanceBuffers)(RenderState *render_state, Renderer *renderer);
 typedef void (*UpdateBuffer)(rendering::BufferHandle handle, r32 *data, size_t count, size_t size, RenderState *render_state, Renderer *renderer);
 typedef void (*SetMouseLock)(b32 locked, RenderState *render_state);
+typedef void (*SetWindowMode)(RenderState* render_state, Renderer* renderer, Resolution resolution, WindowMode window_mode);
 
 struct GraphicsAPI
 {
@@ -470,6 +471,8 @@ struct GraphicsAPI
     UpdateBuffer update_buffer;
     
     SetMouseLock set_mouse_lock;
+
+    SetWindowMode set_window_mode;
     
     RenderState *render_state;
 };

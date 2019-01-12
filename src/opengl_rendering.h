@@ -94,8 +94,6 @@ struct RenderState
     r64 frame_delta;
     r64 total_delta;
     
-    WindowMode window_mode;
-
     GLint viewport[4];
     r64 delta_time;
     

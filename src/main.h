@@ -29,6 +29,11 @@ struct MemoryState
     u64 size_allocated;
 };
 
+struct SoundDevice;
+struct Renderer;
+
+void save_config(const char *file_path, Renderer* renderer = nullptr, SoundDevice *sound_device = nullptr);
+
 #endif
 
 
