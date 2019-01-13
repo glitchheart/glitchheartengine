@@ -77,6 +77,7 @@ struct ParticleSystemAttributes
     b32 prewarm;
 
     ParticleSpace particle_space;
+    rendering::BufferHandle buffer;
 
     math::Rgba start_color;
     

@@ -907,12 +907,19 @@ static math::Vec2i get_texture_size(Texture* texture)
     return math::Vec2i(texture->width, texture->height);
 }
 
+static b32 get_mouse_lock(RenderState *render_state)
+{
+    return render_state->mouse_locked;
+}
+
 static void set_mouse_lock(b32 locked, RenderState *render_state)
 {
     if(locked)
         glfwSetInputMode(render_state->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     else
         glfwSetInputMode(render_state->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+    render_state->mouse_locked = locked;
 }
 
 static Buffer &get_internal_buffer(Renderer *renderer, RenderState &render_state, rendering::BufferHandle buffer)
@@ -1011,6 +1018,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     renderer->api_functions.delete_instance_buffer = &delete_instance_buffer;
     renderer->api_functions.update_buffer = &direct_update_buffer;
     renderer->api_functions.set_mouse_lock = &set_mouse_lock;
+    renderer->api_functions.get_mouse_lock = &get_mouse_lock;
     renderer->api_functions.set_window_cursor = &set_window_cursor;
     renderer->api_functions.set_window_mode = &set_window_mode;
         

@@ -24,6 +24,7 @@ namespace scene
     static LightComponent &get_light_comp(EntityHandle handle, SceneHandle scene);
     static Camera & get_scene_camera(SceneHandle handle);
     static EntityHandle pick_entity(i32 mouse_x, i32 mouse_y);
+    static Entity& get_entity(EntityHandle handle, SceneHandle& scene_handle);
     
     // @Deprecated: Scene struct 
     static RenderComponent& _add_render_component(Scene &scene, EntityHandle entity_handle, b32 cast_shadows);
@@ -889,8 +890,12 @@ namespace scene
     static void set_wireframe_enabled(b32 enabled, EntityHandle entity_handle, SceneHandle &handle)
     {
         Scene &scene = get_scene(handle);
-        RenderComponent &render_comp = _get_render_comp(entity_handle, scene);
-        render_comp.wireframe_enabled = enabled;
+        if(get_entity(entity_handle, handle).render_handle.handle != 0)
+        {
+            RenderComponent &render_comp = _get_render_comp(entity_handle, scene);
+            render_comp.wireframe_enabled = enabled;            
+        }
+
     }
 
     static void _register_gizmos(SceneHandle scene)
@@ -1144,7 +1149,7 @@ namespace scene
         set_selection_enabled(!scene_manager->editor.selection_enabled, scene_manager);
     }
 
-    static Entity& _get_entity(EntityHandle handle, SceneHandle& scene_handle)
+    static Entity& get_entity(EntityHandle handle, SceneHandle& scene_handle)
     {
         Scene& scene = get_scene(scene_handle);
         assert(handle.handle != 0);
@@ -1551,6 +1556,34 @@ namespace scene
         
         return -1;
     }
+
+    static u64 has_render_component(EntityHandle entity_handle, SceneHandle& scene)
+    {
+        Entity& entity = get_entity(entity_handle, scene);
+
+        return entity.comp_flags & COMP_RENDER;
+    }
+
+    static u64 has_transform_component(EntityHandle entity_handle, SceneHandle& scene)
+    {
+        Entity& entity = get_entity(entity_handle, scene);
+
+        return entity.comp_flags & COMP_TRANSFORM;
+    }
+
+    static u64 has_particle_component(EntityHandle entity_handle, SceneHandle& scene)
+    {
+        Entity& entity = get_entity(entity_handle, scene);
+
+        return entity.comp_flags & COMP_PARTICLES;
+    }
+
+    static u64 has_light_component(EntityHandle entity_handle, SceneHandle& scene)
+    {
+        Entity& entity = get_entity(entity_handle, scene);
+
+        return entity.comp_flags & COMP_LIGHT;
+    }
     
     static RenderComponent& _add_render_component(Scene &scene, EntityHandle entity_handle, b32 cast_shadows = true)
     {
@@ -1651,7 +1684,7 @@ namespace scene
         entity.particle_system_handle = {scene.particle_system_component_count++};
         scene::ParticleSystemComponent &comp = scene.particle_system_components[entity.particle_system_handle.handle];
         
-        comp.handle = create_particle_system(scene.renderer, max_particles, material);
+        comp.handle = create_particle_system(scene.renderer, max_particles, material, attributes.buffer);
         ParticleSystemInfo* info = get_particle_system_info(comp.handle, scene.renderer);
         assert(info);
         
@@ -1895,6 +1928,13 @@ namespace scene
                         if(starts_with(buffer, "max_particles"))
                         {
                             sscanf(buffer, "max_particles: %d", &templ.particles.max_particles);
+                        }
+                        else if(starts_with(buffer, "obj"))
+                        {
+                            char obj_file[256];
+                            sscanf(buffer, "obj: %s", obj_file);
+
+                            attributes.buffer = rendering::load_obj(scene.renderer, obj_file, &templ.particles.material_handle, nullptr);
                         }
                         else if(starts_with(buffer, "shd"))
                         {
@@ -2657,8 +2697,8 @@ namespace scene
 
     static void add_child(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
     {
-        Entity& parent = _get_entity(parent_handle, scene);
-        Entity& child = _get_entity(child_handle, scene);
+        Entity& parent = get_entity(parent_handle, scene);
+        Entity& child = get_entity(child_handle, scene);
         add_child(parent.transform_handle, child.transform_handle, scene);
     }
 
@@ -2686,8 +2726,8 @@ namespace scene
 
     static void remove_child(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
     {
-        Entity& parent = _get_entity(parent_handle, scene);
-        Entity& child = _get_entity(child_handle, scene);
+        Entity& parent = get_entity(parent_handle, scene);
+        Entity& child = get_entity(child_handle, scene);
         remove_child(parent.transform_handle, child.transform_handle, scene);
     }
 
@@ -2698,8 +2738,8 @@ namespace scene
 
     static void add_parent(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
     {
-        Entity& parent = _get_entity(parent_handle, scene);
-        Entity& child = _get_entity(child_handle, scene);
+        Entity& parent = get_entity(parent_handle, scene);
+        Entity& child = get_entity(child_handle, scene);
         add_parent(parent.transform_handle, child.transform_handle, scene);
     }
 
@@ -2710,8 +2750,8 @@ namespace scene
     
     static void remove_parent(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
     {
-        Entity& parent = _get_entity(parent_handle, scene);
-        Entity& child = _get_entity(child_handle, scene);
+        Entity& parent = get_entity(parent_handle, scene);
+        Entity& child = get_entity(child_handle, scene);
         remove_parent(parent.transform_handle, child.transform_handle, scene);
     }
     
@@ -2984,8 +3024,10 @@ namespace scene
             i32 _internal_handle = renderer->particles._internal_handles[particles_to_push[i] - 1];
             ParticleSystemInfo& system = renderer->particles.particle_systems[_internal_handle];
             rendering::Material& particle_material = get_material_instance(system.material_handle, renderer);
+
+            rendering::BufferHandle buffer = system.attributes.buffer.handle != 0 ? system.attributes.buffer : renderer->particles.quad_buffer;
             
-            rendering::push_instanced_buffer_to_render_pass(renderer, system.particle_count, renderer->particles.quad_buffer, system.material_handle, particle_material.shader, rendering::get_render_pass_handle_for_name(STANDARD_PASS, renderer), rendering::CommandType::WITH_DEPTH);
+            rendering::push_instanced_buffer_to_render_pass(renderer, system.particle_count, buffer, system.material_handle, particle_material.shader, rendering::get_render_pass_handle_for_name(STANDARD_PASS, renderer), rendering::CommandType::WITH_DEPTH);
         }
 
         draw_gizmos(scene.scene_manager);
