@@ -45,6 +45,59 @@ namespace scene
     i32 _pack_particle_system_components(Entity &entity, Scene &scene);
     static EntityHandle _register_entity_with_template(EntityTemplate &templ, Scene &scene);
 
+    static void register_type(const RegisteredEntityType &registered, SceneManager *scene_manager)
+    {
+        scene_manager->registered_types[scene_manager->registered_type_count++] = registered;
+    }
+
+    static void register_member(RegisteredEntityType& registered, size_t offset, char* name, FieldType type)
+    {
+        strcpy(registered.fields[registered.field_count].name, name);
+        registered.fields[registered.field_count].offset = offset;
+        registered.fields[registered.field_count++].type = type;
+    }
+
+    static void load_entity_field(const char *name, const char *data_buffer, void *entity, const RegisteredEntityType &registered)
+    {
+        assert(entity);
+        
+        for(i32 i = 0; i < registered.field_count; i++)
+        {
+            Field field = registered.fields[i];
+            if(strcmp(field.name, name) == 0)
+            {
+                unsigned char *ptr = ((unsigned char *)entity + field.offset);
+
+                switch(field.type)
+                {
+                case FieldType::INT:
+                sscanf(data_buffer, "%d", (i32*)ptr);
+                break;
+                case FieldType::UINT:
+                sscanf(data_buffer, "%d", (u32*)ptr);
+                break;
+                case FieldType::BOOL:
+                sscanf(data_buffer, "%d", (b32*)ptr);
+                break;
+                case FieldType::FLOAT:
+                sscanf(data_buffer, "%f", (r32*)ptr);
+                break;
+                case FieldType::VEC2:
+                sscanf(data_buffer, "%f %f", &((math::Vec2*)ptr)->x, &((math::Vec2*)ptr)->y);
+                break;
+                case FieldType::VEC3:
+                sscanf(data_buffer, "%f %f %f", &((math::Vec3*)ptr)->x, &((math::Vec3*)ptr)->y, &((math::Vec3*)ptr)->z);
+                break;
+                case FieldType::VEC4:
+                sscanf(data_buffer, "%f %f %f %f", &((math::Vec4*)ptr)->x, &((math::Vec4*)ptr)->y, &((math::Vec4*)ptr)->z, &((math::Vec4*)ptr)->w);
+                break;
+                case FieldType::STRING:
+                sscanf(data_buffer, "%[^\n]", (char*)ptr);
+                break;
+                }
+            }
+        }
+    }
 
     static void translate_x(TransformComponent& comp, r32 x)
     {
@@ -296,6 +349,7 @@ namespace scene
         SceneHandle handle;
         handle.handle = internal_handle + 1;
         handle.manager = scene_manager;
+        scene.handle = handle;
         return handle;
     }
 
@@ -317,6 +371,7 @@ namespace scene
                     TransformComponent &transform = get_transform_comp(entity.handle, scene_handle);
                     
                     fprintf(file, "obj\n");
+                    fprintf(file, "type: %d\n", entity.type);
                     fprintf(file, "template: %s\n", entity.template_path);
                     fprintf(file, "position: %f %f %f\n", transform.transform.position.x, transform.transform.position.y, transform.transform.position.z);
                     fprintf(file, "scale: %f %f %f\n", transform.transform.scale.x, transform.transform.scale.y, transform.transform.scale.z);
@@ -327,22 +382,47 @@ namespace scene
         }
     }
 
+    static RegisteredEntityType * get_registered_type(u32 type_id, SceneManager *manager)
+    {
+        for(i32 i = 0; i < manager->registered_type_count; i++)
+        {
+            if(manager->registered_types[i].type_id == type_id)
+                return &manager->registered_types[i];
+        }
+        return nullptr;
+    }
+
     static void parse_scene_object(FILE *file, SceneHandle scene)
     {
         EntityHandle handle = { -1 };
         
         char buffer[256];
+
+        RegisteredEntityType *type_info = nullptr;
+        void *entity = nullptr;
         
         while(fgets(buffer, 256, file))
         {
             if(starts_with(buffer, "\n"))
                 break;
-
+            
             if(starts_with(buffer, "template"))
             {
                 char template_path[256];
                 sscanf(buffer, "template: %[^\n]", template_path);
                 handle = register_entity_from_template_file(template_path, scene, true);
+            }
+            else if(starts_with(buffer, "type"))
+            {
+                u32 type;
+                sscanf(buffer, "type: %d", &type);
+                type_info = get_registered_type(type, scene.manager);
+                
+                if(type_info)
+                {
+                    if(scene.manager->callbacks.on_load_entity_of_type)
+                        entity = scene.manager->callbacks.on_load_entity_of_type(handle, type_info->type_id, scene);
+                }
             }
             else if(starts_with(buffer, "position"))
             {
@@ -370,6 +450,26 @@ namespace scene
                 math::Vec3 new_rotation;
                 sscanf(buffer, "rotation: %f %f %f", &new_rotation.x, &new_rotation.y, &new_rotation.z);
                 rendering::set_rotation(transform.transform, new_rotation);
+            }
+            else
+            {
+                assert(type_info && entity);
+                
+                char name[32];
+                u32 end = 0;
+                
+                for(end = 0; end < strlen(buffer); end++)
+                {
+                    if(buffer[end] == ':')
+                        break;
+                    
+                    name[end] = buffer[end];
+                }
+                name[end + 1] = '\0';
+                
+                char *val = buffer + strlen(name) + 1;
+                
+                load_entity_field(name, val, entity, *type_info);
             }
         }
     }
@@ -1615,7 +1715,7 @@ namespace scene
         {
             _add_light_component(scene, handle);
         }
-        
+
         return(handle);
     }
 
@@ -2018,11 +2118,19 @@ namespace scene
         strcpy(entity.template_path, template_path);
     }
 
+    static inline void _set_entity_type(EntityHandle handle, u32 type, Scene &scene)
+    {
+        Entity &entity = scene.entities[scene._internal_handles[handle.handle - 1]];
+        entity.type = type;
+    }
+
     static EntityHandle _register_entity_with_template(EntityTemplate &templ, Scene &scene, b32 savable)
     {
         EntityHandle handle = _register_entity(templ.comp_flags, scene, savable);
         _set_entity_name(handle, templ.name, scene);
         _set_entity_template_path(handle, templ.file_path, scene);
+        _set_entity_type(handle, templ.type, scene);
+        
         if(templ.comp_flags & COMP_TRANSFORM)
         {
             TransformComponent &transform = _get_transform_comp(handle, scene);
@@ -2882,5 +2990,4 @@ namespace scene
 
         draw_gizmos(scene.scene_manager);
     }
-    
 }

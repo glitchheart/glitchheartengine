@@ -61,6 +61,8 @@ namespace scene
     {
         char name[256];
         char tag[32];
+        
+        u32 type; // The entity type can be used to map the saved entities to game-specific logic
 
         b32 selection_enabled;
         b32 savable; // Should this be saved in the scene file?
@@ -138,9 +140,54 @@ namespace scene
         i32 handle;
     };
 	
+    enum FieldType
+    {
+        INT,
+        UINT,
+        BOOL,
+        FLOAT,
+        VEC2,
+        VEC3,
+        VEC4,
+        STRING
+    };
+    
+    struct Field
+    {
+        FieldType type;
+        char name[32];
+        size_t offset;
+
+        union
+        {
+            i32 int_val;
+            u32 uint_val;
+            b32 bool_val;
+            r32 float_val;
+            math::Vec2 vec2_val;
+            math::Vec3 vec3_val;
+            math::Vec4 vec4_val;
+            char str_val[32];
+        };
+
+        Field() {}
+    };
+
+    struct RegisteredEntityType
+    {
+        u32 type_id;
+        Field fields[32];
+        i32 field_count;
+    };
+
     struct EntityTemplate
     {
         char name[256];
+
+        u32 type;
+
+        RegisteredEntityType type_info;
+        
         char file_path[256];
         u64 comp_flags;
         
@@ -227,13 +274,21 @@ namespace scene
         i32 max_count;
     };
 
+    struct SceneHandle
+    {
+        i32 handle;
+        SceneManager *manager;
+    };
+
     #define GIZMO_TOLERANCE 0.07f
     struct Scene
     {
+        SceneHandle handle;
+        
         b32 valid;
         b32 loaded;
         b32 persistent; // When true the scene is not freed, when a new scene is loaded
-        
+
         MemoryArena memory_arena;
 
         Camera camera;
@@ -266,12 +321,6 @@ namespace scene
         Renderer* renderer;
     };
 
-    struct SceneHandle
-    {
-        i32 handle;
-        SceneManager *manager;
-    };
-
     typedef void (*OnStartedEditMode)(SceneHandle scene);
     typedef void (*OnExitedEditMode)(SceneHandle scene);
     typedef void (*OnLoad)(SceneHandle scene);
@@ -279,6 +328,8 @@ namespace scene
     typedef void (*OnEntityUpdated)(EntityHandle entity, SceneHandle scene);
     typedef void (*OnEntitySelected)(EntityHandle entity, SceneHandle scene);
     typedef void (*OnEntityDeleted)(EntityHandle entity, SceneHandle scene);
+    typedef void (*OnEntityRegisteredWithType)(EntityHandle entity, u32 type, SceneHandle scene);
+    typedef void* (*OnLoadEntityOfType)(EntityHandle entity, u32 type, SceneHandle scene);
 
     enum class SceneMode
     {
@@ -327,6 +378,9 @@ namespace scene
         EntityTemplateState template_state;
         MemoryArena arena;
 
+        RegisteredEntityType registered_types[64];
+        i32 registered_type_count;
+        
         b32 scene_loaded;
         SceneHandle loaded_scene;
         Scene *scenes;
@@ -396,6 +450,8 @@ namespace scene
             OnEntityUpdated on_entity_updated;
             OnEntitySelected on_entity_selected;
             OnEntityDeleted on_entity_deleted;
+            OnEntityRegisteredWithType on_entity_registered_with_type;
+            OnLoadEntityOfType on_load_entity_of_type;
         } callbacks;
     };
 
