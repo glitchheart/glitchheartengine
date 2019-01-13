@@ -2182,9 +2182,9 @@ namespace math
 
     inline Quat rotate(Quat in, Vec3 rotation)
     {
-        r32 x_axis = rotation.x > 0.0f ? 1.0f : 0.0f;
-        r32 y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
-        r32 z_axis = rotation.z > 0.0f ? 1.0f : 0.0f;
+        r32 x_axis = ABS(rotation.x) > 0.0f ? 1.0f : 0.0f;
+        r32 y_axis = ABS(rotation.y) > 0.0f ? 1.0f : 0.0f;
+        r32 z_axis = ABS(rotation.z) > 0.0f ? 1.0f : 0.0f;
         
         in = math::rotate(in, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
         in = math::rotate(in, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
