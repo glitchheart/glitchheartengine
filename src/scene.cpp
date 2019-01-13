@@ -465,7 +465,7 @@ namespace scene
                     
                     name[end] = buffer[end];
                 }
-                name[end + 1] = '\0';
+                name[end] = '\0';
                 
                 char *val = buffer + strlen(name) + 1;
                 
