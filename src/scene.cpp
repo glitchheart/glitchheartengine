@@ -25,7 +25,7 @@ namespace scene
     static Camera & get_scene_camera(SceneHandle handle);
     static EntityHandle pick_entity(i32 mouse_x, i32 mouse_y);
     
-    // @Deprecated: Scene struct 
+    // @Deprecated
     static RenderComponent& _add_render_component(Scene &scene, EntityHandle entity_handle, b32 cast_shadows);
     static TransformComponent& _add_transform_component(Scene &scene, EntityHandle entity_handle);
     static ParticleSystemComponent& _add_particle_system_component(Scene &scene, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles, rendering::MaterialHandle material);
@@ -453,7 +453,11 @@ namespace scene
             }
             else
             {
-                assert(type_info && entity);
+                if(!type_info || !entity)
+                {
+                    debug("entity type not found\n");
+                    return;
+                }
                 
                 char name[32];
                 u32 end = 0;
@@ -2443,11 +2447,12 @@ namespace scene
         _unregister_entity(entity, scene);
     }
 
-    static void place_entity_from_template(math::Vec3 position, const char* path, SceneManager *manager)
+    static EntityHandle place_entity_from_template(math::Vec3 position, const char* path, SceneHandle scene)
     {
-        EntityHandle entity = register_entity_from_template_file(path, manager->loaded_scene, true);
-        TransformComponent &transform = get_transform_comp(entity, manager->loaded_scene);
+        EntityHandle entity = register_entity_from_template_file(path, scene, true);
+        TransformComponent &transform = get_transform_comp(entity, scene);
         rendering::set_position(transform.transform, position);
+        return entity;
     }
     
     static void _set_active(EntityHandle handle, b32 active, Scene &scene)
