@@ -91,6 +91,7 @@ namespace scene
                 sscanf(data_buffer, "%f %f %f", &((math::Vec3*)ptr)->x, &((math::Vec3*)ptr)->y, &((math::Vec3*)ptr)->z);
                 break;
                 case FieldType::VEC4:
+                case FieldType::COLOR:
                 sscanf(data_buffer, "%f %f %f %f", &((math::Vec4*)ptr)->x, &((math::Vec4*)ptr)->y, &((math::Vec4*)ptr)->z, &((math::Vec4*)ptr)->w);
                 break;
                 case FieldType::STRING:
@@ -424,6 +425,7 @@ namespace scene
                             }
                             break;
                             case FieldType::VEC4:
+                            case FieldType::COLOR:
                             {
                                 math::Vec4* vec = (math::Vec4*)(ptr);
                                 fprintf(file, "%f %f %f %f\n", vec->x, vec->y, vec->z, vec->w);

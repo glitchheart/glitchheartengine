@@ -155,7 +155,8 @@ namespace scene
         VEC2,
         VEC3,
         VEC4,
-        STRING
+        STRING,
+        COLOR
     };
     
     struct Field
