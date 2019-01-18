@@ -56,6 +56,11 @@ namespace scene
         COMP_PARTICLES = 1 << 2,
         COMP_LIGHT = 1 << 3
     };
+
+    struct EntityData
+    {
+        EntityHandle handle;
+    };
     
     struct Entity
     {
@@ -63,6 +68,7 @@ namespace scene
         char tag[32];
         
         u32 type; // The entity type can be used to map the saved entities to game-specific logic
+        EntityData* entity_data;
 
         b32 selection_enabled;
         b32 savable; // Should this be saved in the scene file?
@@ -76,11 +82,6 @@ namespace scene
         RenderComponentHandle render_handle;
         ParticleSystemComponentHandle particle_system_handle;
         LightComponentHandle light_handle;
-    };
-
-    struct EntityData
-    {
-        EntityHandle handle;
     };
 
     #define MAX_CHILDREN 4
@@ -162,20 +163,6 @@ namespace scene
         FieldType type;
         char name[32];
         size_t offset;
-
-        union
-        {
-            i32 int_val;
-            u32 uint_val;
-            b32 bool_val;
-            r32 float_val;
-            math::Vec2 vec2_val;
-            math::Vec3 vec3_val;
-            math::Vec4 vec4_val;
-            char str_val[32];
-        };
-
-        Field() {}
     };
 
     struct RegisteredEntityType
