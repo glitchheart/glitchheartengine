@@ -133,6 +133,7 @@ namespace rendering
 		PROJECTION,
 
         CAMERA_POSITION,
+        VIEWPORT_SIZE,
         
         POINT_LIGHTS,
         DIRECTIONAL_LIGHTS,

@@ -1791,14 +1791,14 @@ namespace rendering
         RegisterBufferInfo info = create_register_buffer_info();
         info.usage = BufferUsage::DYNAMIC;
         add_vertex_attrib(ValueType::FLOAT3, info);
-        r32 vertices[6] = { 0, 0, 0, 0, 0, 0};
+        r32 vertices[12] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-        info.data.vertex_count = 2;
+        info.data.vertex_count = 4;
         info.data.vertex_buffer_size = info.data.vertex_count * vertex_size * (i32)sizeof(r32);
 
         info.data.vertex_buffer = push_size(&renderer->buffer_arena, info.data.vertex_buffer_size, r32);
 
-        for (i32 i = 0; i < 6; i++)
+        for (i32 i = 0; i < 12; i++)
         {
             info.data.vertex_buffer[i] = vertices[i];
         }
