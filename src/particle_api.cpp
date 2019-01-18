@@ -83,6 +83,7 @@ static ParticleSystemAttributes get_default_particle_system_attributes()
     attributes.prewarm = false;
     attributes.particles_per_second = 100;
     attributes.texture_handle.handle = 0;
+    attributes.buffer.handle = 0;
     
     attributes.emission_module.rate_over_distance = 0.0f;
     attributes.emission_module.burst_over_lifetime.value_count = 0;
@@ -212,7 +213,7 @@ i32 _find_unused_particle_system(Renderer *renderer)
     return -1;
 }
 
-static ParticleSystemHandle create_particle_system(Renderer *renderer, i32 max_particles, rendering::MaterialHandle material)
+static ParticleSystemHandle create_particle_system(Renderer *renderer, i32 max_particles, rendering::MaterialHandle material, rendering::BufferHandle buffer = {0})
 {
     assert(material.handle != 0);
     
@@ -226,6 +227,7 @@ static ParticleSystemHandle create_particle_system(Renderer *renderer, i32 max_p
     system_info.paused = true;
     
     system_info.attributes = get_default_particle_system_attributes();
+    system_info.attributes.buffer = buffer;
     system_info.time_spent = 0.0;
     system_info.transform = {};
     

@@ -3211,13 +3211,15 @@ namespace rendering
             scaled_clip_rect.height = (clip_rect.height / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
         }
 
-        if(isnan(scaled_clip_rect.x) || scaled_clip_rect.x < 0.0f)
+        if(scaled_clip_rect.x < 0.0f)
         {
+            scaled_clip_rect.width = scaled_clip_rect.width + scaled_clip_rect.x;
             scaled_clip_rect.x = 0.0f;
         }
 
-        if(isnan(scaled_clip_rect.y) || scaled_clip_rect.y < 0.0f)
+        if(scaled_clip_rect.y < 0.0f)
         {
+            scaled_clip_rect.height = scaled_clip_rect.height + scaled_clip_rect.y;
             scaled_clip_rect.y = 0.0f;
         }
 
