@@ -119,7 +119,7 @@ void message_callback(GLenum source,
             break;
         }
 
-        log_error("OpenGL error: %s type = 0x%x, severity = 0x%x, message = %s, source = %s, id = %ud, length %ud=",
+        printf("OpenGL error: %s type = 0x%x, severity = 0x%x, message = %s, source = %s, id = %ud, length %ud=\n",
                   (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
                   type, severity, message, src_str, id, length);
     }
@@ -928,8 +928,8 @@ static void direct_update_buffer(rendering::BufferHandle handle, r32 *data, size
 
     bind_vertex_array(buffer.vao, *render_state);
     glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
-    //buffer.vertex_count = (i32)count;
-    //buffer.vertex_buffer_size = (i32)size;
+    buffer.vertex_count = (i32)count;
+    buffer.vertex_buffer_size = (i32)size;
 
     glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW);
 
@@ -1647,6 +1647,11 @@ static void set_uniform(rendering::Transform transform, const rendering::RenderP
             set_vec3_uniform(gl_shader.program, location, renderer->render.shadow_view_position);
         }
         break;
+        case rendering::UniformMappingType::VIEWPORT_SIZE:
+        {
+            set_vec2_uniform(gl_shader.program, location, math::Vec2(renderer->framebuffer_width, renderer->framebuffer_height));
+        }
+        break;
         case rendering::UniformMappingType::MODEL:
         {
             set_mat4_uniform(gl_shader.program, location, transform.model);
@@ -1893,7 +1898,7 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
             if(primitive_type == rendering::PrimitiveType::TRIANGLES)
                 glDrawArrays(GL_TRIANGLES, 0, buffer.vertex_count / 3);
             else if(primitive_type == rendering::PrimitiveType::LINES)
-                glDrawArrays(GL_LINES, 0, buffer.vertex_count);
+                glDrawArrays(GL_LINES_ADJACENCY, 0, buffer.vertex_count);
         }
     }
 }

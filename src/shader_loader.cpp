@@ -210,6 +210,10 @@ namespace rendering
         {
             type = UniformMappingType::SHADOW_VIEW_POSITION;
         }
+        else if (starts_with(mapped_buffer, "VIEWPORT_SIZE"))
+        {
+            type = UniformMappingType::VIEWPORT_SIZE;
+        }
         else if (starts_with(mapped_buffer, "MODEL"))
         {
             type = UniformMappingType::MODEL;
@@ -225,7 +229,7 @@ namespace rendering
         else if (starts_with(mapped_buffer, "CAMERA_POSITION"))
         {
             type = UniformMappingType::CAMERA_POSITION;
-        }
+        }        
         else if (starts_with(mapped_buffer, "DIRECTIONAL_LIGHTS"))
         {
             type = UniformMappingType::DIRECTIONAL_LIGHTS;
