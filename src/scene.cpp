@@ -91,6 +91,7 @@ namespace scene
                 sscanf(data_buffer, "%f %f %f", &((math::Vec3*)ptr)->x, &((math::Vec3*)ptr)->y, &((math::Vec3*)ptr)->z);
                 break;
                 case FieldType::VEC4:
+                case FieldType::COLOR:
                 sscanf(data_buffer, "%f %f %f %f", &((math::Vec4*)ptr)->x, &((math::Vec4*)ptr)->y, &((math::Vec4*)ptr)->z, &((math::Vec4*)ptr)->w);
                 break;
                 case FieldType::STRING:
@@ -424,6 +425,7 @@ namespace scene
                             }
                             break;
                             case FieldType::VEC4:
+                            case FieldType::COLOR:
                             {
                                 math::Vec4* vec = (math::Vec4*)(ptr);
                                 fprintf(file, "%f %f %f %f\n", vec->x, vec->y, vec->z, vec->w);
@@ -468,8 +470,12 @@ namespace scene
         {
             if(starts_with(buffer, "\n"))
                 break;
-            
-            if(starts_with(buffer, "template"))
+
+            if(starts_with(buffer, "empty"))
+            {
+                handle = register_entity(COMP_TRANSFORM, scene, false);
+            }
+            else if(starts_with(buffer, "template"))
             {
                 char template_path[256];
                 sscanf(buffer, "template: %[^\n]", template_path);
@@ -486,10 +492,13 @@ namespace scene
                     if(scene.manager->callbacks.on_load_entity_of_type)
                     {
                         entity_data = scene.manager->callbacks.on_load_entity_of_type(handle, type_info->type_id, scene);
-                        entity_data->handle = handle;
-                        Entity& entity = get_entity(handle, scene);
-                        entity.entity_data = entity_data;
-                        entity.type = type;
+                        if(entity_data)
+                        {
+                            entity_data->handle = handle;
+                            Entity& entity = get_entity(handle, scene);
+                            entity.entity_data = entity_data;
+                            entity.type = type;
+                        }
                     }
                 }
             }
@@ -543,7 +552,7 @@ namespace scene
                 }
                 name[end] = '\0';
                 
-                char *val = buffer + strlen(name) + 1;
+                char *val = buffer + strlen(name) + 2;
                 
                 load_entity_field(name, val, entity_data, *type_info);
             }
