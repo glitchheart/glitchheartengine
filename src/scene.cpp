@@ -59,7 +59,7 @@ namespace scene
         registered.fields[registered.field_count++].type = type;
     }
 
-    static void load_entity_field(const char *name, const char *data_buffer, void *entity, const RegisteredEntityType &registered)
+    static void load_entity_field(const char *name, const char *data_buffer, EntityData *entity, const RegisteredEntityType &registered)
     {
         assert(entity);
         
@@ -373,8 +373,8 @@ namespace scene
                     TransformComponent &transform = get_transform_comp(entity.handle, scene_handle);
                     
                     fprintf(file, "obj\n");
-                    fprintf(file, "type: %d\n", entity.type);
                     fprintf(file, "template: %s\n", entity.template_path);
+                    fprintf(file, "type: %d\n", entity.type);
                     fprintf(file, "position: %f %f %f\n", transform.transform.position.x, transform.transform.position.y, transform.transform.position.z);
                     fprintf(file, "scale: %f %f %f\n", transform.transform.scale.x, transform.transform.scale.y, transform.transform.scale.z);
                     fprintf(file, "rotation: %f %f %f\n", transform.transform.euler_angles.x, transform.transform.euler_angles.y, transform.transform.euler_angles.z);
@@ -383,50 +383,55 @@ namespace scene
 
                     if(type_info)
                     {
+                        EntityData* data = entity.entity_data;
                         for(i32 i = 0; i < type_info->field_count; i++)
                         {
                             Field& field = type_info->fields[i];
                             fprintf(file, "%s: ", field.name);
+                            unsigned char *ptr = ((unsigned char *)data + field.offset);
                             switch(field.type)
                             {
                             case FieldType::INT:
                             {
-                                fprintf(file, "%d\n", field.int_val);
+                                fprintf(file, "%d\n", *(i32*)(ptr));
                             }
                             break;
                             case FieldType::UINT:
                             {
-                                fprintf(file, "%d\n", field.uint_val);
+                                fprintf(file, "%d\n", *(u32*)(ptr));
                             }
                             break;
                             case FieldType::BOOL:
                             {
-                                fprintf(file, "%d\n", field.bool_val);
+                                fprintf(file, "%d\n", *(b32*)(ptr));
                             }
                             break;
                             case FieldType::FLOAT:
                             {
-                                fprintf(file, "%f\n", field.float_val);
+                                fprintf(file, "%f\n", *(r32*)(ptr));
                             }
                             break;
                             case FieldType::VEC2:
                             {
-                                fprintf(file, "%f %f\n", field.vec2_val.x, field.vec2_val.y);
+                                math::Vec2* vec = (math::Vec2*)(ptr);
+                                fprintf(file, "%f %f\n", vec->x, vec->y);
                             }
                             break;
                             case FieldType::VEC3:
                             {
-                                fprintf(file, "%f %f %f\n", field.vec3_val.x, field.vec3_val.y, field.vec3_val.z);
+                                math::Vec3* vec = (math::Vec3*)(ptr);
+                                fprintf(file, "%f %f %f\n", vec->x, vec->y, vec->z);
                             }
                             break;
                             case FieldType::VEC4:
                             {
-                                fprintf(file, "%f %f %f\n", field.vec4_val.x, field.vec4_val.y, field.vec4_val.z);
+                                math::Vec4* vec = (math::Vec4*)(ptr);
+                                fprintf(file, "%f %f %f %f\n", vec->x, vec->y, vec->z, vec->w);
                             }
                             break;
                             case FieldType::STRING:
                             {
-                                fprintf(file, "%s\n", field.str_val);
+                                fprintf(file, "%s\n", (char*)(ptr));
                             }
                             break;
                             default:
@@ -483,6 +488,7 @@ namespace scene
                         entity_data = scene.manager->callbacks.on_load_entity_of_type(handle, type_info->type_id, scene);
                         entity_data->handle = handle;
                         Entity& entity = get_entity(handle, scene);
+                        entity.entity_data = entity_data;
                         entity.type = type;
                     }
                 }
@@ -2587,9 +2593,9 @@ namespace scene
         _unregister_entity(entity, scene);
     }
 
-    static EntityHandle place_entity_from_template(math::Vec3 position, const char* path, SceneHandle scene)
+    static EntityHandle place_entity_from_template(math::Vec3 position, const char* path, SceneHandle scene, b32 savable = true)
     {
-        EntityHandle entity = register_entity_from_template_file(path, scene, true);
+        EntityHandle entity = register_entity_from_template_file(path, scene, savable);
         TransformComponent &transform = get_transform_comp(entity, scene);
         rendering::set_position(transform.transform, position);
         return entity;
@@ -2795,9 +2801,14 @@ namespace scene
         assert(parent.child_count + 1 < MAX_CHILDREN);
         parent.child_handles[parent.child_count++] = child_handle;
         parent.transform.dirty = true;
-        
+
         TransformComponent& child = scene.transform_components[child_handle.handle];
         child.parent_handle = parent_handle;
+
+        child.transform.position -= parent.transform.position;
+        child.transform.euler_angles -= parent.transform.euler_angles;
+        child.transform.scale /= parent.transform.scale;
+        child.transform.dirty = true;
     }
 
     static void add_child(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
@@ -2821,6 +2832,11 @@ namespace scene
             {
                 TransformComponent& child = scene.transform_components[child_handle.handle];
                 child.parent_handle = {0};
+
+                child.transform.position += parent.transform.position;
+                child.transform.euler_angles += parent.transform.euler_angles;
+                child.transform.scale *= parent.transform.scale;
+                child.transform.dirty = true;
                 
                 parent.child_handles[i] = parent.child_handles[parent.child_count - 1];
                 parent.child_count--;
