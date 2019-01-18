@@ -5,7 +5,7 @@ namespace rendering
 {
     
 #define MAX_INSTANCE_BUFFERS 256
-#define Z_LAYERS 51
+#define Z_LAYERS 251
     
     struct ShaderHandle
     {

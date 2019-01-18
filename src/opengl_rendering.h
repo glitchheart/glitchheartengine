@@ -98,6 +98,7 @@ struct RenderState
     r64 delta_time;
     
     b32 should_close;
+    b32 mouse_locked;
     r64 fps;
 
     struct
