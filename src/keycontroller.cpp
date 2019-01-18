@@ -4,7 +4,7 @@ static inline b32 get_mouse_button(MouseCode key, InputController* input_control
     {
         return false;
     }
-    
+
     return input_controller->mouse_button_down[key];
 }
 
@@ -14,7 +14,7 @@ static inline b32 get_mouse_button_down(MouseCode key, InputController* input_co
     {
         return false;
     }
-    
+
     return input_controller->mouse_button_just_pressed[key] == KEY_JUST_PRESSED;
 }
 

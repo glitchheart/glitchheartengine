@@ -643,8 +643,8 @@ namespace rendering
                 i32 **ui_z_layers;
                 i32 *ui_z_layer_counts;
 
-                rendering::UIRenderCommand* transparent_commands;
-                i32 transparent_command_count;
+                /* rendering::UIRenderCommand* transparent_commands; */
+                /* i32 transparent_command_count; */
 
                 //@Cleanup: An extra 8 + 8 + 8 bytes?
                 rendering::CharacterData **coords;

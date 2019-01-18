@@ -622,8 +622,8 @@ namespace rendering
         strncpy(pass.name, "UI Pass", strlen("UI Pass") + 1);
         pass.ui.render_commands = push_array(&renderer->render.render_pass_arena, global_max_ui_commands, UIRenderCommand);
         pass.ui.render_command_count = 0;
-        pass.ui.transparent_commands = push_array(&renderer->render.render_pass_arena, global_max_ui_commands, UIRenderCommand);
-        pass.ui.transparent_command_count = 0;
+        // pass.ui.transparent_commands = push_array(&renderer->render.render_pass_arena, global_max_ui_commands, UIRenderCommand);
+        // pass.ui.transparent_command_count = 0;
         pass.ui.coords = push_array(&renderer->render.render_pass_arena, global_max_ui_commands, CharacterData*);
 
         for(i32 i = 0; i < global_max_ui_commands; i++)
@@ -3419,18 +3419,18 @@ namespace rendering
         render_command.clip = info.clip;
         RenderPass &pass = renderer->render.ui.pass;
         
-        if(transparent)
-        {
-            pass.ui.transparent_commands[pass.ui.transparent_command_count++] = render_command;
-        }
-        else
-        {
+        // if(transparent)
+        // {
+        //     pass.ui.transparent_commands[pass.ui.transparent_command_count++] = render_command;
+        // }
+        // else
+        // {
             assert(info.z_layer < Z_LAYERS);
             i32 *z_layer = pass.ui.ui_z_layers[info.z_layer];
             i32 z_index = pass.ui.ui_z_layer_counts[info.z_layer]++;
             z_layer[z_index] = pass.ui.render_command_count;
             pass.ui.render_commands[pass.ui.render_command_count++] = render_command;
-        }
+        // }
         
     }
 

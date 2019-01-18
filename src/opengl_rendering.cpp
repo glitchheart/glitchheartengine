@@ -2078,24 +2078,24 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
         pass.ui.text_z_layer_counts[i] = 0;
     }
 
-    for (i32 i = 0; i < pass.ui.transparent_command_count; i++)
-    {
-        rendering::UIRenderCommand &command = pass.ui.transparent_commands[i];
+    // for (i32 i = 0; i < pass.ui.transparent_command_count; i++)
+    // {
+    //     rendering::UIRenderCommand &command = pass.ui.transparent_commands[i];
 
-        if (command.clip)
-        {
-            glEnable(GL_SCISSOR_TEST);
-            math::Rect clip_rect = command.clip_rect;
-            glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
-        }
+    //     if (command.clip)
+    //     {
+    //         glEnable(GL_SCISSOR_TEST);
+    //         math::Rect clip_rect = command.clip_rect;
+    //         glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
+    //     }
 
-        render_buffer(rendering::PrimitiveType::TRIANGLES, {}, command.buffer, pass, render_state, renderer, command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
+    //     render_buffer(rendering::PrimitiveType::TRIANGLES, {}, command.buffer, pass, render_state, renderer, command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
 
-        if (command.clip)
-        {
-            glDisable(GL_SCISSOR_TEST);
-        }
-    }
+    //     if (command.clip)
+    //     {
+    //         glDisable(GL_SCISSOR_TEST);
+    //     }
+    // }
     
 
 
@@ -2103,7 +2103,7 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
     glDisable(GL_DEPTH_TEST);
 
     pass.ui.text_command_count = 0;
-    pass.ui.transparent_command_count = 0;
+    // pass.ui.transparent_command_count = 0;
     pass.ui.render_command_count = 0;
 }
 
