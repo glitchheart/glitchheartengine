@@ -25,6 +25,7 @@ namespace scene
     static Camera & get_scene_camera(SceneHandle handle);
     static EntityHandle pick_entity(i32 mouse_x, i32 mouse_y);
     static Entity& get_entity(EntityHandle handle, SceneHandle& scene_handle);
+    static RegisteredEntityType * get_registered_type(u32 type_id, SceneManager *manager);
     
     // @Deprecated
     static RenderComponent& _add_render_component(Scene &scene, EntityHandle entity_handle, b32 cast_shadows);
@@ -377,6 +378,62 @@ namespace scene
                     fprintf(file, "position: %f %f %f\n", transform.transform.position.x, transform.transform.position.y, transform.transform.position.z);
                     fprintf(file, "scale: %f %f %f\n", transform.transform.scale.x, transform.transform.scale.y, transform.transform.scale.z);
                     fprintf(file, "rotation: %f %f %f\n", transform.transform.euler_angles.x, transform.transform.euler_angles.y, transform.transform.euler_angles.z);
+
+                    RegisteredEntityType* type_info = get_registered_type(entity.type, scene_handle.manager);
+
+                    if(type_info)
+                    {
+                        for(i32 i = 0; i < type_info->field_count; i++)
+                        {
+                            Field& field = type_info->fields[i];
+                            fprintf(file, "%s: ", field.name);
+                            switch(field.type)
+                            {
+                            case FieldType::INT:
+                            {
+                                fprintf(file, "%d\n", field.int_val);
+                            }
+                            break;
+                            case FieldType::UINT:
+                            {
+                                fprintf(file, "%d\n", field.uint_val);
+                            }
+                            break;
+                            case FieldType::BOOL:
+                            {
+                                fprintf(file, "%d\n", field.bool_val);
+                            }
+                            break;
+                            case FieldType::FLOAT:
+                            {
+                                fprintf(file, "%f\n", field.float_val);
+                            }
+                            break;
+                            case FieldType::VEC2:
+                            {
+                                fprintf(file, "%f %f\n", field.vec2_val.x, field.vec2_val.y);
+                            }
+                            break;
+                            case FieldType::VEC3:
+                            {
+                                fprintf(file, "%f %f %f\n", field.vec3_val.x, field.vec3_val.y, field.vec3_val.z);
+                            }
+                            break;
+                            case FieldType::VEC4:
+                            {
+                                fprintf(file, "%f %f %f\n", field.vec4_val.x, field.vec4_val.y, field.vec4_val.z);
+                            }
+                            break;
+                            case FieldType::STRING:
+                            {
+                                fprintf(file, "%s\n", field.str_val);
+                            }
+                            break;
+                            default:
+                            break;
+                            }
+                        }
+                    }
                 }
             }
             fclose(file);
@@ -400,7 +457,7 @@ namespace scene
         char buffer[256];
 
         RegisteredEntityType *type_info = nullptr;
-        void *entity = nullptr;
+        EntityData* entity_data = nullptr;
         
         while(fgets(buffer, 256, file))
         {
@@ -422,7 +479,12 @@ namespace scene
                 if(type_info)
                 {
                     if(scene.manager->callbacks.on_load_entity_of_type)
-                        entity = scene.manager->callbacks.on_load_entity_of_type(handle, type_info->type_id, scene);
+                    {
+                        entity_data = scene.manager->callbacks.on_load_entity_of_type(handle, type_info->type_id, scene);
+                        entity_data->handle = handle;
+                        Entity& entity = get_entity(handle, scene);
+                        entity.type = type;
+                    }
                 }
             }
             else if(starts_with(buffer, "position"))
@@ -452,12 +514,15 @@ namespace scene
                 sscanf(buffer, "rotation: %f %f %f", &new_rotation.x, &new_rotation.y, &new_rotation.z);
                 rendering::set_rotation(transform.transform, new_rotation);
             }
+            else if(starts_with(buffer, "id"))
+            {
+            }
             else
             {
-                if(!type_info || !entity)
+                if(!type_info || !entity_data)
                 {
                     debug("entity type not found\n");
-                    return;
+                    continue;
                 }
                 
                 char name[32];
@@ -474,7 +539,7 @@ namespace scene
                 
                 char *val = buffer + strlen(name) + 1;
                 
-                load_entity_field(name, val, entity, *type_info);
+                load_entity_field(name, val, entity_data, *type_info);
             }
         }
     }
@@ -959,7 +1024,7 @@ namespace scene
             line[2] = v3;
             line[3] = v4;
 
-            i32 count = 4;
+            size_t count = 4;
 
             r32 line_thickness = 5.0f;
             r32 miter_limit = 0.1f;
@@ -1564,6 +1629,8 @@ namespace scene
         {
             editor_setup(scene_manager);
         }
+
+        scene_manager->callbacks.on_scene_loaded(handle);
     }
     
     i32 _unused_entity_handle(Scene &scene)
@@ -2207,7 +2274,6 @@ namespace scene
         EntityHandle handle = _register_entity(templ.comp_flags, scene, savable);
         _set_entity_name(handle, templ.name, scene);
         _set_entity_template_path(handle, templ.file_path, scene);
-        _set_entity_type(handle, templ.type, scene);
         
         if(templ.comp_flags & COMP_TRANSFORM)
         {
