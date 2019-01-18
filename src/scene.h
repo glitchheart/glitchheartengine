@@ -78,6 +78,11 @@ namespace scene
         LightComponentHandle light_handle;
     };
 
+    struct EntityData
+    {
+        EntityHandle handle;
+    };
+
     #define MAX_CHILDREN 4
     
     struct TransformComponent
@@ -184,10 +189,6 @@ namespace scene
     {
         char name[256];
 
-        u32 type;
-
-        RegisteredEntityType type_info;
-        
         char file_path[256];
         u64 comp_flags;
         
@@ -325,11 +326,12 @@ namespace scene
     typedef void (*OnExitedEditMode)(SceneHandle scene);
     typedef void (*OnLoad)(SceneHandle scene);
     typedef void (*OnSave)(SceneHandle scene);
+    typedef void (*OnSceneLoaded)(SceneHandle scene);
     typedef void (*OnEntityUpdated)(EntityHandle entity, SceneHandle scene);
     typedef void (*OnEntitySelected)(EntityHandle entity, SceneHandle scene);
     typedef void (*OnEntityDeleted)(EntityHandle entity, SceneHandle scene);
     typedef void (*OnEntityRegisteredWithType)(EntityHandle entity, u32 type, SceneHandle scene);
-    typedef void* (*OnLoadEntityOfType)(EntityHandle entity, u32 type, SceneHandle scene);
+    typedef EntityData* (*OnLoadEntityOfType)(EntityHandle entity, u32 type, SceneHandle scene);
 
     enum class SceneMode
     {
@@ -447,6 +449,7 @@ namespace scene
             OnExitedEditMode on_exited_edit_mode;
             OnLoad on_load;
             OnSave on_save;
+            OnSceneLoaded on_scene_loaded;
             OnEntityUpdated on_entity_updated;
             OnEntitySelected on_entity_selected;
             OnEntityDeleted on_entity_deleted;
