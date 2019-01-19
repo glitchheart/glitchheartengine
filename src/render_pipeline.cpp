@@ -1809,72 +1809,117 @@ namespace rendering
         return {register_buffer(renderer, info).handle}; 
     }
 
-    static r32 *generate_grid_buffer(Renderer *renderer, i32 width, i32 height, r32 unit_size)
+    static void direct_update_buffer(Renderer *renderer, BufferHandle handle, r32 *data, size_t count, size_t size)
     {
-        r32 *grid_vertices = nullptr;
+        renderer->api_functions.update_buffer(handle, data, count, size, renderer->api_functions.render_state, renderer);
+    }
+
+    static void update_line_buffer(Renderer* renderer, BufferHandle buffer, math::Vec3* vertices, size_t n)
+    {
+        math::Vec3* lines = nullptr;
+
+        math::Vec3 adj_0 = 2.0f * vertices[0] - vertices[1];
+        buf_push(lines, adj_0);
+        buf_push(lines, vertices[0]);
+        buf_push(lines, vertices[1]);
+        buf_push(lines, vertices[2]);
+        buf_push(lines, vertices[3]);
+
+        math::Vec3 adj_n = 2.0f * vertices[n-1] - vertices[n-2];
+
+        buf_push(vertices, adj_n);
+        // n++;
+        n = buf_len(vertices) - 1;
+
+        for(size_t i = 1; i < n; i++)
+        {
+            buf_push(lines, vertices[i - 1]);
+            buf_push(lines, vertices[i]);
+            buf_push(lines, vertices[i + 1]);
+            buf_push(lines, vertices[i + 2]);
+        }
+        
+        direct_update_buffer(renderer, buffer, (r32*)lines, n * 4, sizeof(math::Vec3) * n * 4);
+    }
+
+    static math::Vec3* generate_grid_buffer(Renderer* renderer, i32 width, i32 height, r32 unit_size)
+    {
+        math::Vec3* points = nullptr;
         r32 real_grid_width = width * unit_size;
         r32 real_grid_height = height * unit_size;
         r32 half_size = 0.5f * unit_size;
 
-        // Bottom left -> Top left
-        buf_push(grid_vertices, -real_grid_width * 0.5f - half_size);
-        buf_push(grid_vertices, 0.0f);
-        buf_push(grid_vertices, -real_grid_height * 0.5f - half_size);
-        buf_push(grid_vertices, -real_grid_width * 0.5f - half_size);
-        buf_push(grid_vertices, 0.0f);
-        buf_push(grid_vertices, real_grid_height * 0.5f - half_size);
-
-        // Top left -> Top right
-        buf_push(grid_vertices, -real_grid_width * 0.5f - half_size);
-        buf_push(grid_vertices, 0.0f);
-        buf_push(grid_vertices, real_grid_height * 0.5f - half_size);
-        buf_push(grid_vertices, real_grid_width * 0.5f - half_size);
-        buf_push(grid_vertices, 0.0f);
-        buf_push(grid_vertices, real_grid_height * 0.5f - half_size);
+        math::Vec3 bottom_right;
+        bottom_right.x = real_grid_width * 0.5f - half_size;
+        bottom_right.y = 0.0f;
+        bottom_right.z = -real_grid_height * 0.5f - half_size;
         
-        // Top right -> bottom right
-        buf_push(grid_vertices, real_grid_width * 0.5f - half_size);
-        buf_push(grid_vertices, 0.0f);
-        buf_push(grid_vertices, real_grid_height * 0.5f - half_size);
-        buf_push(grid_vertices, real_grid_width * 0.5f - half_size);
-        buf_push(grid_vertices, 0.0f);
-        buf_push(grid_vertices, -real_grid_height * 0.5f - half_size);
+        math::Vec3 bottom_left;
+        bottom_left.x = -real_grid_width * 0.5f - half_size;
+        bottom_left.y = 0.0f;
+        bottom_left.z = -real_grid_height * 0.5f - half_size;
 
-        // Bottom left -> Bottom right
-        buf_push(grid_vertices, -real_grid_width * 0.5f - half_size);
-        buf_push(grid_vertices, 0.0f);
-        buf_push(grid_vertices, -real_grid_height * 0.5f - half_size);
-        buf_push(grid_vertices, real_grid_width * 0.5f - half_size);
-        buf_push(grid_vertices, 0.0f);
-        buf_push(grid_vertices, -real_grid_height * 0.5f - half_size);
-                     
-        for(i32 i = 1; i < MAX(width, height); i++)
+        math::Vec3 top_left;
+        top_left.x = -real_grid_width * 0.5f - half_size;
+        top_left.y = 0.0f;
+        top_left.z = real_grid_height * 0.5f - half_size;
+
+        math::Vec3 top_right;
+        top_right.x = real_grid_width * 0.5f - half_size;
+        top_right.y = 0.0f;
+        top_right.z = real_grid_height * 0.5f - half_size;
+
+        buf_push(points, bottom_left);
+        buf_push(points, top_left);
+        buf_push(points, top_right);
+        buf_push(points, bottom_right);
+        buf_push(points, bottom_left);
+        buf_push(points, bottom_right);
+
+        for(i32 i = 1; i < height; i++)
         {
             if(i < width)
             {
-                buf_push(grid_vertices, -real_grid_width * 0.5f + i - half_size);
-                buf_push(grid_vertices, 0.0f);
-                buf_push(grid_vertices, -real_grid_height * 0.5f - half_size);
-            
-                buf_push(grid_vertices, -real_grid_width * 0.5f + i - half_size);
-                buf_push(grid_vertices, 0.0f);
-                buf_push(grid_vertices, real_grid_height * 0.5f - half_size);    
-            }
-            
-            if(i < height)
-            {
-                buf_push(grid_vertices, -real_grid_width * 0.5f - half_size);
-                buf_push(grid_vertices, 0.0f);
-                buf_push(grid_vertices, -real_grid_height * 0.5f + i - half_size);
-                buf_push(grid_vertices, real_grid_width * 0.5f - half_size);
-                buf_push(grid_vertices, 0.0f);
-                buf_push(grid_vertices, -real_grid_height * 0.5f + i - half_size);
+                math::Vec3 origin;
+                origin.x = -real_grid_width * 0.5f + i - half_size;
+                origin.y = 0.0f;
+                origin.z = -real_grid_height * 0.5f - half_size;
+
+                math::Vec3 end;
+                end.x = -real_grid_width * 0.5f + i - half_size;
+                end.y = 0.0f;
+                end.z = real_grid_height * 0.5f - half_size;
+
+                buf_push(points, origin);
+                buf_push(points, end);
+                buf_push(points, origin);
             }
         }
 
-        return grid_vertices;
+        buf_push(points, bottom_left);
+
+        for(i32 i = 1; i < height; i++)
+        {
+            if(i < height)
+            {
+                math::Vec3 origin;
+                origin.x = -real_grid_width * 0.5f - half_size;
+                origin.y = 0.0f;
+                origin.z = -real_grid_height * 0.5f + i - half_size;
+
+                math::Vec3 end;
+                end.x = real_grid_width * 0.5f - half_size;
+                end.y = 0.0f;
+                end.z = -real_grid_height * 0.5f + i - half_size;
+
+                buf_push(points, origin);
+                buf_push(points, end);
+                buf_push(points, origin);
+            }
+        }
+        return points;
     }
-    
+
     static BufferHandle create_vertex_buffer(Renderer *renderer, r32 *vertices, i32 size, i32 vertex_count)
     {
         assert(renderer->render.buffer_count + 1 < global_max_custom_buffers);
@@ -3454,11 +3499,6 @@ namespace rendering
         UpdateBufferInfo update_info = create_update_buffer_info(renderer, handle);
         update_info.update_data = new_data;
         update_buffer(renderer, update_info);
-    }
-
-    static void direct_update_buffer(Renderer *renderer, BufferHandle handle, r32 *data, size_t count, size_t size)
-    {
-        renderer->api_functions.update_buffer(handle, data, count, size, renderer->api_functions.render_state, renderer);
     }
 
     static CreateUICommandInfo create_ui_command_info()
