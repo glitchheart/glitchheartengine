@@ -273,6 +273,8 @@ namespace scene
     struct Scene
     {
         SceneHandle handle;
+
+        char file_path[256];
         
         b32 valid;
         b32 loaded;
