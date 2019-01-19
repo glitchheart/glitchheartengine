@@ -5,8 +5,9 @@ namespace scene
     static Scene create_scene(Renderer *renderer, EntityTemplateState &template_state, i32 initial_entity_array_size);
     static SceneHandle create_scene_from_file(const char *scene_file_path, SceneManager *scene_manager, b32 persistent, i32 initial_entity_array_size);
     static SceneHandle create_scene(SceneManager *scene_manager, b32 persistent, i32 initial_entity_array_size);
-    static void free_scene(SceneHandle scene);
-    static void load_scene(SceneHandle handle, u64 scene_load_flags);
+    
+    static void free_scene(SceneHandle scene, b32 invalidate_handle = true);
+    static void load_scene(SceneHandle handle, u64 scene_load_flags = 0);
     
     // Scene handle
     static RenderComponent& add_render_component(SceneHandle scene, EntityHandle entity_handle, b32 cast_shadows);
@@ -296,15 +297,11 @@ namespace scene
         return handle;
     }
 
-    static SceneHandle create_scene(SceneManager *scene_manager, b32 persistent, i32 initial_entity_array_size = 1024)
+    static void _setup_scene(SceneHandle handle, SceneManager *scene_manager, b32 persistent, i32 initial_entity_array_size)
     {
-        i32 internal_handle = _find_next_free_internal_handle(scene_manager);
-        assert(internal_handle != -1);
-
-        i32 real_handle = scene_manager->scene_count++;
-        scene_manager->_internal_scene_handles[internal_handle] = real_handle;
-        Scene &scene = scene_manager->scenes[real_handle];
+        Scene &scene = get_scene(handle);
         scene = {};
+        scene.handle = handle;
         scene.memory_arena = {};
         
         scene.persistent = persistent;
@@ -348,11 +345,22 @@ namespace scene
             }
             
         }
+    }
+    
+    static SceneHandle create_scene(SceneManager *scene_manager, b32 persistent, i32 initial_entity_array_size = 1024)
+    {
+        i32 internal_handle = _find_next_free_internal_handle(scene_manager);
+        assert(internal_handle != -1);
+
+        i32 real_handle = scene_manager->scene_count++;
+        scene_manager->_internal_scene_handles[internal_handle] = real_handle;
 
         SceneHandle handle;
         handle.handle = internal_handle + 1;
         handle.manager = scene_manager;
-        scene.handle = handle;
+        
+        _setup_scene(handle, scene_manager, persistent, initial_entity_array_size);
+        
         return handle;
     }
 
@@ -559,9 +567,12 @@ namespace scene
         }
     }
     
-    static SceneHandle create_scene_from_file(const char *scene_file_path, SceneManager *scene_manager, b32 persistent, i32 initial_entity_array_size)
+    static void _create_scene_from_file(const char *scene_file_path, SceneManager *scene_manager, SceneHandle handle)
     {
-        SceneHandle handle = create_scene(scene_manager, persistent, initial_entity_array_size);
+
+        Scene &scene = get_scene(handle);
+        strcpy(scene.file_path, scene_file_path);
+        
         FILE *file = fopen(scene_file_path, "r");
         
         if(file)
@@ -577,8 +588,28 @@ namespace scene
                 
             fclose(file);
         }
-
+    }
+    
+    static SceneHandle create_scene_from_file(const char *scene_file_path, SceneManager *scene_manager, b32 persistent, i32 initial_entity_array_size)
+    {
+        SceneHandle handle = create_scene(scene_manager, persistent, initial_entity_array_size);
+        _create_scene_from_file(scene_file_path, scene_manager, handle);
         return handle;
+    }
+
+    static void reload_scene(SceneHandle handle)
+    {
+        Scene &scene = get_scene(handle);
+        
+        b32 persistent = scene.persistent;
+        i32 max_entity_count = scene.max_entity_count;
+        char scene_file_path[256];
+        strcpy(scene_file_path, scene.file_path);
+        
+        scene::free_scene(handle, false);
+        _setup_scene(handle, handle.manager, persistent, max_entity_count);
+        _create_scene_from_file(scene_file_path, handle.manager, handle);
+        load_scene(handle);
     }
     
     struct InstancePair
@@ -677,11 +708,11 @@ namespace scene
         scene.instance_buffer_data_count = 0;
     }
 
-    static void free_scene(SceneHandle handle)
+    static void free_scene(SceneHandle handle, b32 invalidate_handle)
     {
         SceneManager *scene_manager = handle.manager;
         i32 internal_handle = scene_manager->_internal_scene_handles[handle.handle - 1];
-        scene_manager->_internal_scene_handles[handle.handle - 1] = -1;
+
         Scene &scene = scene_manager->scenes[internal_handle];
         
         if(scene.valid)
@@ -713,21 +744,26 @@ namespace scene
             }
 
             free_instance_buffers(scene);
-            
-            if(internal_handle < scene_manager->scene_count - 1)
+
+            if(invalidate_handle)
             {
-                scene_manager->scenes[internal_handle] = scene_manager->scenes[scene_manager->scene_count - 1];
-                for(i32 i = 0; i < global_max_scenes; i++)
+                scene_manager->_internal_scene_handles[handle.handle - 1] = -1;
+                if(internal_handle < scene_manager->scene_count - 1)
                 {
-                    if(scene_manager->_internal_scene_handles[i] == scene_manager->scene_count - 1)
+                    scene_manager->scenes[internal_handle] = scene_manager->scenes[scene_manager->scene_count - 1];
+                    for(i32 i = 0; i < global_max_scenes; i++)
                     {
-                        scene_manager->_internal_scene_handles[i] = internal_handle;
-                        break;
+                        if(scene_manager->_internal_scene_handles[i] == scene_manager->scene_count - 1)
+                        {
+                            scene_manager->_internal_scene_handles[i] = internal_handle;
+                            break;
+                        }
                     }
                 }
+            
+                scene_manager->scene_count--;
             }
             
-            scene_manager->scene_count--;
             scene_manager->scene_loaded = false;
         }
     }
@@ -974,12 +1010,11 @@ namespace scene
     static void set_wireframe_enabled(b32 enabled, EntityHandle entity_handle, SceneHandle &handle)
     {
         Scene &scene = get_scene(handle);
-        if(get_entity(entity_handle, handle).render_handle.handle != 0)
+        if(get_entity(entity_handle, handle).render_handle.handle >= 0)
         {
             RenderComponent &render_comp = _get_render_comp(entity_handle, scene);
             render_comp.wireframe_enabled = enabled;            
         }
-
     }
 
     static void _register_gizmos(SceneHandle scene)
@@ -1323,6 +1358,9 @@ namespace scene
 
     static void update_editor_camera(Camera &camera, Scene &scene, InputController *input_controller, r64 delta_time)
     {
+        if(KEY(Key_LeftCtrl))
+            return;
+        
         // Update camera
         if(KEY(Key_W))
         {
@@ -1608,7 +1646,7 @@ namespace scene
         }
     }
     
-    static void load_scene(SceneHandle handle, u64 load_flags = 0)
+    static void load_scene(SceneHandle handle, u64 load_flags)
     {
         SceneManager *scene_manager = handle.manager;
         if(scene_manager->scene_loaded)
@@ -1629,23 +1667,23 @@ namespace scene
         Scene &scene = get_scene(handle);
         assert(scene.valid);
 
+        scene_manager->loaded_scene = handle;
+        
         if(!scene.loaded)
         {
             allocate_instance_buffers(scene);
             scene.loaded = true;
+            scene_manager->callbacks.on_scene_loaded(handle);
         }
 
         activate_particle_systems(handle);
         
         scene_manager->scene_loaded = true;
-        scene_manager->loaded_scene = handle;
 
         if(scene_manager->mode == SceneMode::EDITING)
         {
             editor_setup(scene_manager);
         }
-
-        scene_manager->callbacks.on_scene_loaded(handle);
     }
     
     i32 _unused_entity_handle(Scene &scene)
