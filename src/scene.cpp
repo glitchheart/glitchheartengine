@@ -2962,6 +2962,10 @@ namespace scene
                         {
                             start_component = &parent;
                         }
+                        else
+                        {
+                            break;
+                        }
                     }
 
                     assert(start_component);
