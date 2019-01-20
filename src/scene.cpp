@@ -481,7 +481,7 @@ namespace scene
 
             if(starts_with(buffer, "empty"))
             {
-                handle = register_entity(COMP_TRANSFORM, scene, false);
+                handle = register_entity(COMP_TRANSFORM, scene, true);
             }
             else if(starts_with(buffer, "template"))
             {
@@ -504,8 +504,10 @@ namespace scene
                         {
                             entity_data->handle = handle;
                             Entity& entity = get_entity(handle, scene);
+                            entity.savable = true;
                             entity.entity_data = entity_data;
                             entity.type = type;
+                            entity.type_info = *type_info;
                         }
                     }
                 }
@@ -1007,10 +1009,38 @@ namespace scene
         return entity_handle;
     }
 
+    static b32 has_render_component(EntityHandle entity_handle, SceneHandle& scene)
+    {
+        Entity& entity = get_entity(entity_handle, scene);
+
+        return (b32)(entity.comp_flags & COMP_RENDER);
+    }
+
+    static b32 has_transform_component(EntityHandle entity_handle, SceneHandle& scene)
+    {
+        Entity& entity = get_entity(entity_handle, scene);
+
+        return (b32)(entity.comp_flags & COMP_TRANSFORM);
+    }
+
+    static b32 has_particle_component(EntityHandle entity_handle, SceneHandle& scene)
+    {
+        Entity& entity = get_entity(entity_handle, scene);
+
+        return (b32)(entity.comp_flags & COMP_PARTICLES);
+    }
+
+    static b32 has_light_component(EntityHandle entity_handle, SceneHandle& scene)
+    {
+        Entity& entity = get_entity(entity_handle, scene);
+
+        return (b32)(entity.comp_flags & COMP_LIGHT);
+    }
+    
     static void set_wireframe_enabled(b32 enabled, EntityHandle entity_handle, SceneHandle &handle)
     {
         Scene &scene = get_scene(handle);
-        if(get_entity(entity_handle, handle).render_handle.handle >= 0)
+        if(has_render_component(entity_handle, handle))
         {
             RenderComponent &render_comp = _get_render_comp(entity_handle, scene);
             render_comp.wireframe_enabled = enabled;            
@@ -1387,16 +1417,18 @@ namespace scene
         else if(KEY_UP(Key_LeftAlt))
             free_roam(camera);
     
-        if(MOUSE_DOWN(Mouse_Right))
-            set_mouse_lock(true, *scene.renderer);
-        else if(MOUSE_UP(Mouse_Right))
-            set_mouse_lock(false, *scene.renderer);
-    
         if(MOUSE(Mouse_Right))
         {
             rotate_around_x(camera, (r32)-input_controller->mouse_y_delta * 0.1f);
             rotate_around_y(camera, (r32)input_controller->mouse_x_delta * 0.1f);
         }
+
+        if(MOUSE_DOWN(Mouse_Right))
+        {
+            set_mouse_lock(true, *scene.renderer);
+        }
+        else if(MOUSE_UP(Mouse_Right))
+             set_mouse_lock(false, *scene.renderer);
     }
 
     static void deselect_everything(SceneManager *manager)
@@ -1454,6 +1486,8 @@ namespace scene
         {
             if(manager->mode == SceneMode::RUNNING)
             {
+                manager->mode = SceneMode::EDITING;
+                
                 find_all_template_files(manager);
                 
                 if(manager->callbacks.on_started_edit_mode)
@@ -1464,7 +1498,6 @@ namespace scene
                     manager->callbacks.on_load(handle);
 
                 manager->play_camera = scene.camera;
-                manager->mode = SceneMode::EDITING;
             }
             else
             {
@@ -1713,34 +1746,6 @@ namespace scene
         assert(false);
         
         return -1;
-    }
-
-    static u64 has_render_component(EntityHandle entity_handle, SceneHandle& scene)
-    {
-        Entity& entity = get_entity(entity_handle, scene);
-
-        return entity.comp_flags & COMP_RENDER;
-    }
-
-    static u64 has_transform_component(EntityHandle entity_handle, SceneHandle& scene)
-    {
-        Entity& entity = get_entity(entity_handle, scene);
-
-        return entity.comp_flags & COMP_TRANSFORM;
-    }
-
-    static u64 has_particle_component(EntityHandle entity_handle, SceneHandle& scene)
-    {
-        Entity& entity = get_entity(entity_handle, scene);
-
-        return entity.comp_flags & COMP_PARTICLES;
-    }
-
-    static u64 has_light_component(EntityHandle entity_handle, SceneHandle& scene)
-    {
-        Entity& entity = get_entity(entity_handle, scene);
-
-        return entity.comp_flags & COMP_LIGHT;
     }
     
     static RenderComponent& _add_render_component(Scene &scene, EntityHandle entity_handle, b32 cast_shadows = true)

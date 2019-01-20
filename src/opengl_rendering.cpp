@@ -536,13 +536,72 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
     }
 }
 
+static void create_framebuffer_depth_texture_attachment(rendering::FramebufferInfo &info, Framebuffer &framebuffer, i32 width, i32 height, Renderer *renderer)
+{
+    if(info.depth_attachment.flags & rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED)
+    {
+        Texture* texture = renderer->render.textures[renderer->render.texture_count++];
+        i32 handle = renderer->render.texture_count;
+    
+        glGenTextures(1, &texture->handle);
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture->handle);
+        
+        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, info.depth_attachment.samples, GL_DEPTH_COMPONENT, width, height, GL_TRUE);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        
+        float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, texture->handle, NULL);
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+
+        texture->width = width;
+        texture->height = height;
+        framebuffer.depth_buffer_handle = handle;
+        info.depth_attachment.texture = {handle};
+    }
+    else
+    {
+        Texture* texture = renderer->render.textures[renderer->render.texture_count++];
+        i32 handle = renderer->render.texture_count;
+    
+        glGenTextures(1, &texture->handle);
+        glBindTexture(GL_TEXTURE_2D, texture->handle);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+
+        // Prevent shadows outside of the shadow map
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+        float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, texture->handle, 0);
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+
+        texture->width = width;
+        texture->height = height;
+        framebuffer.depth_buffer_handle = handle;
+        info.depth_attachment.texture = {handle};
+    }
+    
+}
+
 static void create_framebuffer_render_buffer_attachment(rendering::FramebufferInfo &info, Framebuffer &framebuffer, i32 width, i32 height)
 {
     if (framebuffer.depth_buffer_handle != 0)
     {
         glDeleteRenderbuffers(1, &framebuffer.depth_buffer_handle);
     }
-
+    
     glGenRenderbuffers(1, &framebuffer.depth_buffer_handle);
     glBindRenderbuffer(GL_RENDERBUFFER, framebuffer.depth_buffer_handle);
 
@@ -614,7 +673,12 @@ static void create_new_framebuffer(rendering::FramebufferInfo &info, Framebuffer
         create_framebuffer_color_attachment(render_state, renderer, info, framebuffer, info.width, info.height);
 
     if (info.depth_attachment.enabled)
-        create_framebuffer_render_buffer_attachment(info, framebuffer, info.width, info.height);
+    {
+        if(info.depth_attachment.flags & rendering::DepthAttachmentFlags::DEPTH_TEXTURE)
+            create_framebuffer_depth_texture_attachment(info, framebuffer, info.width, info.height, renderer);
+        else
+            create_framebuffer_render_buffer_attachment(info, framebuffer, info.width, info.height);
+    }
 
     glDrawBuffers(color_buffer_count, attachments);
 
@@ -915,7 +979,9 @@ static b32 get_mouse_lock(RenderState *render_state)
 static void set_mouse_lock(b32 locked, RenderState *render_state)
 {
     if(locked)
+    {
         glfwSetInputMode(render_state->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }
     else
         glfwSetInputMode(render_state->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 

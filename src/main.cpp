@@ -1,3 +1,4 @@
+
 #include "shared.h"
 
 #if DEBUG
@@ -433,12 +434,15 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     rendering::FramebufferInfo final_info = rendering::generate_framebuffer_info();
     final_info.width = renderer->framebuffer_width;
     final_info.height = renderer->framebuffer_height;
-    rendering::add_color_attachment(rendering::ColorAttachmentType::RENDER_BUFFER, 0, final_info);
-    rendering::add_depth_attachment(0, final_info);
+    rendering::add_color_attachment(rendering::ColorAttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::CLAMP_TO_EDGE | rendering::ColorAttachmentFlags::MULTISAMPLED, final_info, 8);
+    rendering::add_depth_attachment(rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, final_info, 8);
     
     rendering::FramebufferHandle final_framebuffer = rendering::create_framebuffer(final_info, renderer);
     rendering::set_final_framebuffer(renderer, final_framebuffer);
 
+    rendering::RenderPassHandle standard = rendering::create_render_pass(STANDARD_PASS, final_framebuffer, renderer);
+
+    // UI
     renderer->render.ui.top_left_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::LEFT, true);
     renderer->render.ui.top_right_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::RIGHT, true);
     renderer->render.ui.bottom_left_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::BOTTOM | rendering::UIAlignment::LEFT, true);
@@ -466,75 +470,65 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
 
     renderer->render.ui.font_buffer = rendering::register_buffer(renderer, font_info);
 
-    // Add a hdr framebuffer as the standard pass framebuffer
-    rendering::FramebufferInfo info = rendering::generate_framebuffer_info();
-    info.width = renderer->framebuffer_width;
-    info.height = renderer->framebuffer_height;
-    rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, info, 0);
-    rendering::add_depth_attachment(rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, info, 0);
-    
-    rendering::FramebufferHandle framebuffer = rendering::create_framebuffer(info, renderer);
-    rendering::RenderPassHandle standard = rendering::create_render_pass(STANDARD_PASS, framebuffer, renderer);
+    // //HDR PP
+    // rendering::FramebufferInfo hdr_info = rendering::generate_framebuffer_info();
+    // hdr_info.width = renderer->framebuffer_width;
+    // hdr_info.height = renderer->framebuffer_height;
 
-    //HDR PP
-    rendering::FramebufferInfo hdr_info = rendering::generate_framebuffer_info();
-    hdr_info.width = renderer->framebuffer_width;
-    hdr_info.height = renderer->framebuffer_height;
+    // rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, hdr_info, 0);
+    // rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, hdr_info, 0);
 
-    rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, hdr_info, 0);
-    rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, hdr_info, 0);
+    // rendering::FramebufferHandle hdr_fbo = rendering::create_framebuffer(hdr_info, renderer);
 
-    rendering::FramebufferHandle hdr_fbo = rendering::create_framebuffer(hdr_info, renderer);
+    // rendering::ShaderHandle hdr_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/new_hdr.shd");
 
-    rendering::ShaderHandle hdr_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/new_hdr.shd");
-
-    rendering::PostProcessingRenderPassHandle hdr_pass = rendering::create_post_processing_render_pass("HDR Pass", hdr_fbo, renderer, hdr_shader);
-    // rendering::PostProcessingRenderPassHandle hdr_pass = rendering::create_post_processing_render_pass("HDR Pass", final_framebuffer, renderer, hdr_shader);
-    rendering::set_uniform_value(renderer, hdr_pass, "scene", rendering::get_texture_from_framebuffer(0, framebuffer, renderer));
-    rendering::set_uniform_value(renderer, hdr_pass, "width", (i32)hdr_info.width);
-    rendering::set_uniform_value(renderer, hdr_pass, "height", (i32)hdr_info.height);
-    rendering::set_uniform_value(renderer, hdr_pass, "exposure", 1.8f); // @Incomplete: Hardcoded
+    // rendering::PostProcessingRenderPassHandle hdr_pass = rendering::create_post_processing_render_pass("HDR Pass", hdr_fbo, renderer, hdr_shader);
+    // // rendering::PostProcessingRenderPassHandle hdr_pass = rendering::create_post_processing_render_pass("HDR Pass", final_framebuffer, renderer, hdr_shader);
+    // rendering::set_uniform_value(renderer, hdr_pass, "scene", rendering::get_texture_from_framebuffer(0, framebuffer, renderer));
+    // rendering::set_uniform_value(renderer, hdr_pass, "width", (i32)hdr_info.width);
+    // rendering::set_uniform_value(renderer, hdr_pass, "height", (i32)hdr_info.height);
+    // rendering::set_uniform_value(renderer, hdr_pass, "exposure", 1.8f); // @Incomplete: Hardcoded
 
     //Pass through post processing
 
     //BLOOM
-    rendering::FramebufferInfo bloom_info = rendering::generate_framebuffer_info();
-    bloom_info.width = renderer->framebuffer_width;
-    bloom_info.height = renderer->framebuffer_height;
+    // rendering::FramebufferInfo bloom_info = rendering::generate_framebuffer_info();
+    // bloom_info.width = renderer->framebuffer_width;
+    // bloom_info.height = renderer->framebuffer_height;
 
-    rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, bloom_info, 0)
-;
-    rendering::ShaderHandle blur_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/blur.shd");
-    rendering::ShaderHandle bloom_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/bloom.shd");
+//     rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, bloom_info, 0)
+// ;
+//     rendering::ShaderHandle blur_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/blur.shd");
+//     rendering::ShaderHandle bloom_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/bloom.shd");
 
-    rendering::TextureHandle src_tex = rendering::get_texture_from_framebuffer(1, hdr_fbo, renderer);
-    b32 horizontal = true;
+//     rendering::TextureHandle src_tex = rendering::get_texture_from_framebuffer(1, hdr_fbo, renderer);
+//     b32 horizontal = true;
 
-    rendering::FramebufferHandle blur_fbo[2] = {rendering::create_framebuffer(bloom_info, renderer), rendering::create_framebuffer(bloom_info, renderer)};
+//     rendering::FramebufferHandle blur_fbo[2] = {rendering::create_framebuffer(bloom_info, renderer), rendering::create_framebuffer(bloom_info, renderer)};
 
-    renderer->render.bloom.active = true;
-    renderer->render.bloom.exposure = 1.8f;
-    renderer->render.bloom.amount = 5;
+//     renderer->render.bloom.active = true;
+//     renderer->render.bloom.exposure = 1.8f;
+//     renderer->render.bloom.amount = 5;
     
-    for(i32 i = 0; i < renderer->render.bloom.amount; i++)
-    {
-        // @Incomplete: Duplicate names for passes?
-        rendering::PostProcessingRenderPassHandle blur = rendering::create_post_processing_render_pass("Bloom_Blur", blur_fbo[horizontal], renderer, blur_shader);
+//     for(i32 i = 0; i < renderer->render.bloom.amount; i++)
+//     {
+//         // @Incomplete: Duplicate names for passes?
+//         rendering::PostProcessingRenderPassHandle blur = rendering::create_post_processing_render_pass("Bloom_Blur", blur_fbo[horizontal], renderer, blur_shader);
 
-        rendering::set_uniform_value(renderer, blur, "image", src_tex);
-        rendering::set_uniform_value(renderer, blur, "horizontal", horizontal);
+//         rendering::set_uniform_value(renderer, blur, "image", src_tex);
+//         rendering::set_uniform_value(renderer, blur, "horizontal", horizontal);
 
-        src_tex = rendering::get_texture_from_framebuffer(0, blur_fbo[horizontal], renderer);
-        horizontal = !horizontal;
-    }
+//         src_tex = rendering::get_texture_from_framebuffer(0, blur_fbo[horizontal], renderer);
+//         horizontal = !horizontal;
+//     }
 
-    rendering::PostProcessingRenderPassHandle bloom = rendering::create_post_processing_render_pass("Bloom", final_framebuffer, renderer, bloom_shader);
+//     rendering::PostProcessingRenderPassHandle bloom = rendering::create_post_processing_render_pass("Bloom", final_framebuffer, renderer, bloom_shader);
 
-    rendering::set_uniform_value(renderer, bloom, "scene", rendering::get_texture_from_framebuffer(0, hdr_fbo, renderer));
-    rendering::set_uniform_value(renderer, bloom, "blur", src_tex);
+//     rendering::set_uniform_value(renderer, bloom, "scene", rendering::get_texture_from_framebuffer(0, hdr_fbo, renderer));
+//     rendering::set_uniform_value(renderer, bloom, "blur", src_tex);
 
-    rendering::set_uniform_value(renderer, bloom, "bloom", renderer->render.bloom.active);
-    rendering::set_uniform_value(renderer, bloom, "exposure", renderer->render.bloom.exposure);
+//     rendering::set_uniform_value(renderer, bloom, "bloom", renderer->render.bloom.active);
+//     rendering::set_uniform_value(renderer, bloom, "exposure", renderer->render.bloom.exposure);
 
     //END BLOOM
 
@@ -787,12 +781,19 @@ int main(int argc, char **args)
             glfwSetWindowShouldClose(render_state.window, GLFW_TRUE);
         }
         
-        show_mouse_cursor(render_state, renderer->show_mouse_cursor);
+        //show_mouse_cursor(render_state, renderer->show_mouse_cursor);
 
         reload_libraries(&game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
         //#endif
         //auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
 
+        poll_events();
+        
+        if (controller_present())
+        {
+            controller_keys(GLFW_JOYSTICK_1);
+        }
+        
         if(scene_manager->scene_loaded)
         {
             if(scene_manager->mode == scene::SceneMode::RUNNING)
@@ -825,13 +826,7 @@ int main(int argc, char **args)
         set_controller_invalid_keys();
         set_invalid_keys();
         set_mouse_invalid_keys();
-
-        poll_events();
-
-        if (controller_present())
-        {
-            controller_keys(GLFW_JOYSTICK_1);
-        }
+        
 
         update_log();
         

@@ -526,7 +526,8 @@ namespace rendering
 
     enum DepthAttachmentFlags
     {
-        DEPTH_MULTISAMPLED = 1 << 0
+        DEPTH_MULTISAMPLED = 1 << 0,
+        DEPTH_TEXTURE = 1 << 1
     };
 
     enum class ColorAttachmentType
@@ -571,6 +572,7 @@ namespace rendering
             b32 enabled;
             u64 flags;
             u32 samples;
+            TextureHandle texture;
         } depth_attachment;
 
         struct
