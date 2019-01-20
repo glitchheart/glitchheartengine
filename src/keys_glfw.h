@@ -286,8 +286,17 @@ static void controller_keys(i32 joystick)
 
 static void cursor_position_callback(GLFWwindow *window, double x_pos, double y_pos)
 {
+    
+    glfwGetCursorPos(window, &x_pos, &y_pos);
+        
     input_controller.mouse_x_delta = x_pos - input_controller.mouse_x;
     input_controller.mouse_y_delta = y_pos - input_controller.mouse_y;
+    
+    if(input_controller.mouse_x_delta > 100)
+        input_controller.mouse_x_delta = 0.0;
+    if(input_controller.mouse_y_delta > 100)
+        input_controller.mouse_y_delta = 0.0;
+    
     input_controller.mouse_x = x_pos;
     input_controller.mouse_y = y_pos;
 }

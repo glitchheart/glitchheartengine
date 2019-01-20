@@ -62,12 +62,40 @@ namespace scene
         EntityHandle handle;
     };
     
+    enum FieldType
+    {
+        INT,
+        UINT,
+        BOOL,
+        FLOAT,
+        VEC2,
+        VEC3,
+        VEC4,
+        STRING,
+        COLOR
+    };
+    
+    struct Field
+    {
+        FieldType type;
+        char name[32];
+        size_t offset;
+    };
+
+    struct RegisteredEntityType
+    {
+        u32 type_id;
+        Field fields[32];
+        i32 field_count;
+    };
+    
     struct Entity
     {
         char name[256];
         char tag[32];
         
         u32 type; // The entity type can be used to map the saved entities to game-specific logic
+        RegisteredEntityType type_info;
         EntityData* entity_data;
 
         b32 selection_enabled;
@@ -146,33 +174,6 @@ namespace scene
         i32 handle;
     };
 	
-    enum FieldType
-    {
-        INT,
-        UINT,
-        BOOL,
-        FLOAT,
-        VEC2,
-        VEC3,
-        VEC4,
-        STRING,
-        COLOR
-    };
-    
-    struct Field
-    {
-        FieldType type;
-        char name[32];
-        size_t offset;
-    };
-
-    struct RegisteredEntityType
-    {
-        u32 type_id;
-        Field fields[32];
-        i32 field_count;
-    };
-
     struct EntityTemplate
     {
         char name[256];

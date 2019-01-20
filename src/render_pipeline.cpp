@@ -870,6 +870,12 @@ namespace rendering
         return { -1 };
     }
 
+     static TextureHandle get_depth_texture_from_framebuffer(FramebufferHandle framebuffer, Renderer *renderer)
+    {
+        FramebufferInfo &info = renderer->render.framebuffers[framebuffer.handle - 1];
+        return info.depth_attachment.texture;
+    }
+
     static MSTextureHandle get_ms_texture_from_framebuffer(i32 texture_index, FramebufferHandle framebuffer, Renderer *renderer)
     {
         FramebufferInfo &info = renderer->render.framebuffers[framebuffer.handle - 1];
