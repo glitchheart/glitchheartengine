@@ -557,8 +557,6 @@ static void create_framebuffer_depth_texture_attachment(rendering::FramebufferIn
         glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, texture->handle, NULL);
-        glDrawBuffer(GL_NONE);
-        glReadBuffer(GL_NONE);
 
         texture->width = width;
         texture->height = height;
@@ -584,8 +582,6 @@ static void create_framebuffer_depth_texture_attachment(rendering::FramebufferIn
         glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, texture->handle, 0);
-        glDrawBuffer(GL_NONE);
-        glReadBuffer(GL_NONE);
 
         texture->width = width;
         texture->height = height;
