@@ -571,6 +571,7 @@ void update_particles(Renderer *renderer, ParticleSystemInfo &particle_system, r
             (*size_count)++;
             (*color_count)++;        
 		}
+        assert(particle_system.particle_count < particle_system.max_particles);
 	}
 
 	*emitted_this_frame = 0;

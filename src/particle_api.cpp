@@ -383,7 +383,7 @@ static void remove_angle_key(ParticleSystemInfo &particle_system, r64 key_time)
     }
 }
 
-static void add_color_key(ParticleSystemInfo &particle_system, r64 key_time, math::Rgba value)
+static i32 add_color_key(ParticleSystemInfo &particle_system, r64 key_time, math::Rgba value)
 {
     if(particle_system.color_over_lifetime.value_count == 0)
     {
@@ -396,6 +396,7 @@ static void add_color_key(ParticleSystemInfo &particle_system, r64 key_time, mat
     auto &keys = particle_system.color_over_lifetime.keys;
     
     b32 replaced = false;
+    i32 new_index = -1;
     
     for(i32 i = 0; i < particle_system.color_over_lifetime.value_count; i++)
     {
@@ -405,6 +406,7 @@ static void add_color_key(ParticleSystemInfo &particle_system, r64 key_time, mat
             memmove(&values[i + 1], &values[i], sizeof(math::Rgba) * (particle_system.color_over_lifetime.value_count - i));
             keys[i] = key_time;
             values[i] = value;
+            new_index = i;
             replaced = true;
             break;
         }
@@ -414,9 +416,12 @@ static void add_color_key(ParticleSystemInfo &particle_system, r64 key_time, mat
     {
         values[particle_system.color_over_lifetime.value_count] = value;
         keys[particle_system.color_over_lifetime.value_count] = key_time;
+        new_index = particle_system.color_over_lifetime.value_count;
     }
     
     particle_system.color_over_lifetime.value_count++;
+
+    return new_index;
 }
 
 static void remove_color_key(ParticleSystemInfo &particle_system, r64 key_time)
@@ -477,7 +482,7 @@ static void remove_size_key(ParticleSystemInfo &particle_system, r64 key_time)
 {
     auto& values = particle_system.size_over_lifetime.values;
     auto& keys = particle_system.size_over_lifetime.keys;
-    
+
     for(i32 i = 0; i < particle_system.size_over_lifetime.value_count; i++)
     {
         if(keys[i] == key_time)
