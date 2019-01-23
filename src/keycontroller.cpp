@@ -23,36 +23,48 @@ static inline b32 get_mouse_button_up(MouseCode key, InputController* input_cont
     return input_controller->mouse_buttons_up[key];
 }
 
-static inline b32 get_key(KeyCode key, InputController* input_controller)
+static inline b32 get_key(KeyCode key, InputController* input_controller, b32 force = false)
 {
     if(key == Key_MouseLeft)
         return get_mouse_button(Mouse_Left, input_controller);
     if(key == Key_MouseRight)
         return get_mouse_button(Mouse_Right, input_controller);
+
+    if(input_controller->ignore_key[key] && !force)
+    {
+        return false;
+    }
+    
     return input_controller->keys_down[key];
 }
 
-static inline b32 get_key_down(KeyCode key, InputController* input_controller)
+static inline b32 get_key_down(KeyCode key, InputController* input_controller, b32 force = false)
 {
     if(key == Key_MouseLeft)
         return get_mouse_button_down(Mouse_Left, input_controller);
     if(key == Key_MouseRight)
         return get_mouse_button_down(Mouse_Right, input_controller);
+    if(input_controller->ignore_key[key] && !force)
+    {
+        return false;
+    }
+    
     return input_controller->keys_just_pressed[key] == KEY_JUST_PRESSED;
 }
 
-static inline b32 get_key_down(KeyCode key, InputController& input_controller)
+static inline b32 get_key_down(KeyCode key, InputController& input_controller, b32 force = false)
 {
-    if(key == Key_MouseLeft)
-        return get_mouse_button_down(Mouse_Left, &input_controller);
-    if(key == Key_MouseRight)
-        return get_mouse_button_down(Mouse_Right, &input_controller);
-    return input_controller.keys_just_pressed[key] == KEY_JUST_PRESSED;
+    return get_key_down(key, &input_controller, force);
 }
 
 static inline b32 get_key_up(KeyCode key, InputController* input_controller)
 {
     return input_controller->keys_up[key];
+}
+
+static inline void eat_key(KeyCode key, InputController* input_controller)
+{
+    input_controller->ignore_key[key] = true;
 }
 
 static inline b32 get_joystick_key(ControllerCode key, InputController* input_controller)
@@ -179,20 +191,21 @@ static inline r32 get_input_y(InputController* input_controller, Stick stick = S
     return input_y;
 }
 
-#define KEY(Key) get_key(Key, input_controller)
-#define KEY_DOWN(Key) get_key_down(Key, input_controller)
-#define KEY_UP(Key) get_key_up(Key, input_controller)
-#define JOYSTICK_KEY(Key) get_joystick_key(Key, input_controller)
-#define JOYSTICK_KEY_DOWN(Key) get_joystick_key_down(Key, input_controller)
+#define KEY(key, ...) get_key(key, input_controller, ##__VA_ARGS__)
+#define KEY_DOWN(key, ...) get_key_down(key, input_controller, ##__VA_ARGS__)
+#define KEY_UP(key, ...) get_key_up(key, input_controller, ##__VA_ARGS__)
+#define JOYSTICK_KEY(key) get_joystick_key(key, input_controller)
+#define JOYSTICK_KEY_DOWN(key) get_joystick_key_down(key, input_controller)
 #define JOYSTICK_AXIS_X_DOWN(Left,...) get_joystick_axis_x_down(input_controller, Left, ##__VA_ARGS__)
 #define JOYSTICK_AXIS_Y_DOWN(Up, ...) get_joystick_axis_y_down(input_controller,Up , ##__VA_ARGS__)
-#define MOUSE(Key, ...) get_mouse_button(Key, input_controller, ##__VA_ARGS__)
-#define MOUSE_DOWN(Key, ...) get_mouse_button_down(Key, input_controller, ##__VA_ARGS__)
-#define MOUSE_UP(Key) get_mouse_button_up(Key, input_controller)
+#define MOUSE(key, ...) get_mouse_button(key, input_controller, ##__VA_ARGS__)
+#define MOUSE_DOWN(key, ...) get_mouse_button_down(key, input_controller, ##__VA_ARGS__)
+#define MOUSE_UP(key) get_mouse_button_up(key, input_controller)
 #define INPUT_X(...) get_input_x(input_controller , ##__VA_ARGS__)
 #define INPUT_Y(...) get_input_y(input_controller , ##__VA_ARGS__)
-#define CUSTOM_KEY_DOWN(Key) is_custom_key_down(input_controller, Key)
-#define CUSTOM_KEY(Key) is_custom_key_pressed(input_controller, Key)
+#define CUSTOM_KEY_DOWN(key) is_custom_key_down(input_controller, key)
+#define CUSTOM_KEY(key) is_custom_key_pressed(input_controller, key)
+#define EAT_KEY(key) eat_key(key, input_controller);
 
 // Use this to add key mappings in your game. The CustomKey int is the keys identifier for your game and when checking for key events later this will be used to automatically check with the correct mapped keyboard- or controller-keys
 static void add_custom_mapping(InputController* input_controller, i32 custom_key, KeyCode keyboard_key, i32 ps4_key, i32 xbox_key)
