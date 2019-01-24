@@ -18,6 +18,7 @@ namespace scene
     static EntityTemplate _load_template(const char *path, SceneHandle scene);
     static EntityHandle register_entity_from_template_file(const char *path, SceneHandle scene, b32 savable);
     static void set_active(EntityHandle handle, b32 active, SceneHandle scene);
+    static void set_hide_in_ui(EntityHandle handle, b32 hide, SceneHandle scene_handle);
     static TransformComponent& get_transform_comp(EntityHandle handle, SceneHandle scene);
     static TransformComponent& get_transform_comp(TransformComponentHandle handle, SceneHandle scene);
     static RenderComponent& get_render_comp(EntityHandle handle, SceneHandle scene);
@@ -1456,7 +1457,7 @@ namespace scene
 
     static void select_entity(EntityHandle entity, SceneManager *manager)
     {
-        if(IS_ENTITY_HANDLE_VALID(entity))
+        if(IS_ENTITY_HANDLE_VALID(entity) && !HANDLES_EQUAL(entity, manager->selected_entity))
         {
             // Deselect the previously selected entity
             if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
@@ -1486,6 +1487,7 @@ namespace scene
             set_active(manager->gizmos.scale_cubes[i], false, manager->loaded_scene);
             TransformComponent &transform = get_transform_comp(manager->gizmos.scale_cubes[i], manager->loaded_scene);
             set_position(transform, math::Vec3(0, 1 + i, 0));
+            set_hide_in_ui(manager->gizmos.scale_cubes[i], true, manager->loaded_scene);
         }
     }
     
@@ -2691,6 +2693,12 @@ namespace scene
         _set_active(handle, active, scene);
     }
 
+    static void set_hide_in_ui(EntityHandle handle, b32 hide, SceneHandle scene_handle)
+    {
+        Entity& entity = get_entity(handle, scene_handle);
+        entity.hide_in_ui = hide;
+    }
+
     static void set_entity_selection_enabled(EntityHandle entity_handle, b32 enabled, SceneHandle scene_handle)
     {
         Scene &scene = get_scene(scene_handle);
@@ -3019,7 +3027,13 @@ namespace scene
                     switch(light_comp.type)
                     {
                     case scene::LightType::DIRECTIONAL:
-                    renderer->render.directional_lights[renderer->render.dir_light_count++] = light_comp.dir_light;
+                    {
+                        renderer->render.directional_lights[renderer->render.dir_light_count++] = light_comp.dir_light;
+                        math::Vec3 view_pos = -light_comp.dir_light.direction * 10.0f;
+                        
+                        rendering::set_light_space_matrices(renderer, math::ortho(-10, 10, -10, 10, 1, 20.0f), view_pos, math::Vec3(0.0f));
+                    }
+                    
                     break;
                     case scene::LightType::POINT:
                     light_comp.point_light.position = position;
@@ -3028,6 +3042,8 @@ namespace scene
                     default:
                     assert(false);
                     }
+
+
                 }
 
                 if (ent.comp_flags & scene::COMP_RENDER)

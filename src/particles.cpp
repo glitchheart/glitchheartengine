@@ -412,6 +412,10 @@ void update_particles(Renderer *renderer, ParticleSystemInfo &particle_system, r
 			if (particle_system.particles.life[main_index].e[i] < 0.0)
 			{
 				// @Incomplete: Is it possible to lane swap with SIMD?
+                // @Cleanup: One way to fix this is to have a lookup table for the 4 possible emitted particles.
+                // So instead of i being the index of the particles, i should be an index into an array that gives the
+                // actual index used. Then we don't ever have to swap, and only have to find a "free" spot when we emit a new particle
+                // from the system.
 				particle_system.particles.life[main_index].e[i] = particle_system.particles.life[main_index].e[emitted_for_index - 1];
 
 				particle_system.particles.position[main_index].x.e[i] = particle_system.particles.position[main_index].x.e[(emitted_for_index - 1)];
