@@ -713,6 +713,10 @@ namespace scene
     static void free_scene(SceneHandle handle, b32 invalidate_handle)
     {
         SceneManager *scene_manager = handle.manager;
+        
+        if(scene_manager->callbacks.on_scene_will_be_freed)
+            scene_manager->callbacks.on_scene_will_be_freed(handle);
+        
         i32 internal_handle = scene_manager->_internal_scene_handles[handle.handle - 1];
 
         Scene &scene = scene_manager->scenes[internal_handle];
@@ -1682,6 +1686,7 @@ namespace scene
     static void load_scene(SceneHandle handle, u64 load_flags)
     {
         SceneManager *scene_manager = handle.manager;
+        
         if(scene_manager->scene_loaded)
         {
             scene::deactivate_particle_systems(scene_manager->loaded_scene);
@@ -1701,14 +1706,16 @@ namespace scene
         assert(scene.valid);
 
         scene_manager->loaded_scene = handle;
-        
+
         if(!scene.loaded)
         {
             allocate_instance_buffers(scene);
             scene.loaded = true;
-            scene_manager->callbacks.on_scene_loaded(handle);
+            
+            if(scene_manager->callbacks.on_scene_loaded)
+                scene_manager->callbacks.on_scene_loaded(handle);
         }
-
+        
         activate_particle_systems(handle);
         
         scene_manager->scene_loaded = true;
