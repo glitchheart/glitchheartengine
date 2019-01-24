@@ -317,6 +317,7 @@ namespace scene
     typedef void (*OnExitedEditMode)(SceneHandle scene);
     typedef void (*OnLoad)(SceneHandle scene);
     typedef void (*OnSave)(SceneHandle scene);
+    typedef void (*OnSceneWillBeFreed)(SceneHandle scene);
     typedef void (*OnSceneLoaded)(SceneHandle scene);
     typedef void (*OnEntityUpdated)(EntityHandle entity, SceneHandle scene);
     typedef void (*OnEntitySelected)(EntityHandle entity, SceneHandle scene);
@@ -440,6 +441,7 @@ namespace scene
             OnExitedEditMode on_exited_edit_mode;
             OnLoad on_load;
             OnSave on_save;
+            OnSceneWillBeFreed on_scene_will_be_freed;
             OnSceneLoaded on_scene_loaded;
             OnEntityUpdated on_entity_updated;
             OnEntitySelected on_entity_selected;
