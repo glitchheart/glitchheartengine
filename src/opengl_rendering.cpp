@@ -1,4 +1,3 @@
-
 static void bind_vertex_array(GLuint vao, RenderState &render_state)
 {
     if (vao != render_state.current_state.vao)
@@ -809,6 +808,10 @@ static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
     render_state->frame_delta = 0.0f;
 
     render_state->gl_buffers = push_array(render_state->perm_arena, global_max_custom_buffers, Buffer);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendEquation(GL_FUNC_ADD);
 }
 
 static void load_new_shaders(RenderState &render_state, Renderer *renderer)
@@ -926,10 +929,6 @@ static void load_texture(Texture* texture, TextureFiltering filtering, TextureWr
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     }
     
-    //enable alpha for textures
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
     GLenum gl_format = GL_RGBA;
 
     switch (format)

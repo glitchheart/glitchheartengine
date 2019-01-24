@@ -373,8 +373,8 @@ struct QueuedRenderCommand
 
 enum CommandBlendMode
 {
-    CBM_ONE,
-    CBM_ONE_MINUS_SRC_ALPHA
+    ONE,
+    ONE_MINUS_SRC_ALPHA
 };
 
 enum FadingMode

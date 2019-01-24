@@ -100,6 +100,7 @@ namespace scene
 
         b32 selection_enabled;
         b32 savable; // Should this be saved in the scene file?
+        b32 hide_in_ui;
         
         char template_path[256];
         

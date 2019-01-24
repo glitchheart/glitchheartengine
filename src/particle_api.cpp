@@ -329,7 +329,7 @@ static void add_burst_over_time_key(ParticleSystemInfo &particle_system, r64 key
     particle_system.attributes.emission_module.burst_over_lifetime.value_count++;
 }
 
-static void add_angle_key(ParticleSystemInfo &particle_system, r64 key_time, r32 value)
+static i32 add_angle_key(ParticleSystemInfo &particle_system, r64 key_time, r32 value)
 {
     if(particle_system.angle_over_lifetime.value_count == 0)
     {
@@ -342,6 +342,7 @@ static void add_angle_key(ParticleSystemInfo &particle_system, r64 key_time, r32
     auto &keys = particle_system.angle_over_lifetime.keys;
     
     b32 replaced = false;
+    i32 new_index = -1;
     
     for(i32 i = 0; i < particle_system.angle_over_lifetime.value_count; i++)
     {
@@ -351,6 +352,7 @@ static void add_angle_key(ParticleSystemInfo &particle_system, r64 key_time, r32
             memmove(&values[i + 1], &values[i], sizeof(r32) * (particle_system.angle_over_lifetime.value_count - i));
             keys[i] = key_time;
             values[i] = value;
+            new_index = i;
             replaced = true;
             break;
         }
@@ -363,6 +365,8 @@ static void add_angle_key(ParticleSystemInfo &particle_system, r64 key_time, r32
     }
     
     particle_system.angle_over_lifetime.value_count++;
+
+    return new_index;
 }
 
 
@@ -441,7 +445,7 @@ static void remove_color_key(ParticleSystemInfo &particle_system, r64 key_time)
     }
 }
 
-static void add_size_key(ParticleSystemInfo &particle_system, r64 key_time, math::Vec2 value)
+static i32 add_size_key(ParticleSystemInfo &particle_system, r64 key_time, math::Vec2 value)
 {
     if(particle_system.size_over_lifetime.value_count == 0)
     {
@@ -454,6 +458,7 @@ static void add_size_key(ParticleSystemInfo &particle_system, r64 key_time, math
     auto &keys = particle_system.size_over_lifetime.keys;
     
     b32 replaced = false;
+    i32 new_index = -1;
     
     for(i32 i = 0; i < particle_system.size_over_lifetime.value_count; i++)
     {
@@ -464,6 +469,7 @@ static void add_size_key(ParticleSystemInfo &particle_system, r64 key_time, math
             keys[i] = key_time;
             values[i] = value;
             replaced = true;
+            new_index = i;
             break;
         }
     }
@@ -475,6 +481,8 @@ static void add_size_key(ParticleSystemInfo &particle_system, r64 key_time, math
     }
     
     particle_system.size_over_lifetime.value_count++;
+
+    return new_index;
 }
 
 
@@ -495,7 +503,7 @@ static void remove_size_key(ParticleSystemInfo &particle_system, r64 key_time)
     }
 }
 
-static void add_speed_key(ParticleSystemInfo &particle_system, r64 key_time, r32 value)
+static i32 add_speed_key(ParticleSystemInfo &particle_system, r64 key_time, r32 value)
 {
     if(particle_system.speed_over_lifetime.value_count == 0)
     {
@@ -508,6 +516,7 @@ static void add_speed_key(ParticleSystemInfo &particle_system, r64 key_time, r32
     auto &keys = particle_system.speed_over_lifetime.keys;
     
     b32 replaced = false;
+    i32 new_index = -1;
     
     for(i32 i = 0; i < particle_system.speed_over_lifetime.value_count; i++)
     {
@@ -517,6 +526,7 @@ static void add_speed_key(ParticleSystemInfo &particle_system, r64 key_time, r32
             memmove(&keys[i + 1], &keys[i], sizeof(r64) * (particle_system.speed_over_lifetime.value_count - i));
             keys[i] = key_time;
             values[i] = value;
+            new_index = i;
             replaced = true;
             break;
         }
@@ -530,6 +540,8 @@ static void add_speed_key(ParticleSystemInfo &particle_system, r64 key_time, r32
     
     
     particle_system.speed_over_lifetime.value_count++;
+
+    return new_index;
 }
 
 
