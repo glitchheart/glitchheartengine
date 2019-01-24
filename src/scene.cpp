@@ -382,7 +382,16 @@ namespace scene
                     TransformComponent &transform = get_transform_comp(entity.handle, scene_handle);
                     
                     fprintf(file, "obj\n");
-                    fprintf(file, "template: %s\n", entity.template_path);
+
+                    if(strlen(entity.template_path) == 0)
+                    {
+                        fprintf(file, "empty\n");
+                    }
+                    else
+                    {
+                        fprintf(file, "template: %s\n", entity.template_path);
+                    }
+                    
                     fprintf(file, "type: %d\n", entity.type);
                     fprintf(file, "position: %f %f %f\n", transform.transform.position.x, transform.transform.position.y, transform.transform.position.z);
                     fprintf(file, "scale: %f %f %f\n", transform.transform.scale.x, transform.transform.scale.y, transform.transform.scale.z);
