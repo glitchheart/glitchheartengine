@@ -326,6 +326,8 @@ struct InputController
     r64 mouse_y_delta;
     r64 scroll_x;
     r64 scroll_y;
+    b32 ignore_mouse;
+    b32 ignore_key[NUM_KEYS];
 
     InputType current_input_type;
     

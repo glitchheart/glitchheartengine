@@ -167,7 +167,6 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
 {
     WIN32_FIND_DATA find_file;
     HANDLE h_find = NULL;
-    
     char path[2048];
     
     //Process directories
@@ -185,7 +184,7 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
                 {
                     char sub_path[2048];
                     sprintf(sub_path, "%s%s/", directory_path, find_file.cFileName);
-                    win32_find_files_with_extensions(arena, sub_path, extension, directory_data, with_sub_directories);
+                    win32_find_files_with_extensions(sub_path, extension, directory_data, with_sub_directories);
                 }
                 
             }
@@ -205,7 +204,6 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
     h_find = FindFirstFile(path, &find_file);
     if(h_find != INVALID_HANDLE_VALUE)
     {
-        auto temp_mem = begin_temporary_memory(arena);
         do
         {
             if(!(find_file.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
@@ -213,17 +211,15 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
                 if(strcmp(find_file.cFileName, ".") != 0
                    && strcmp(find_file.cFileName, "..") != 0)
                 {
-                    char* concat_str = concat(directory_path, find_file.cFileName, arena);
                     char* file_name = strtok(find_file.cFileName, ".");
                     
-                    strcpy(directory_data->file_paths[directory_data->files_length], concat_str);
-                    strcpy(directory_data->file_names[directory_data->files_length], file_name);
-                    directory_data->files_length++;
+                    sprintf(directory_data->file_paths[directory_data->file_count], "%s%s.%s", directory_path, find_file.cFileName, extension);
+                    sprintf(directory_data->file_names[directory_data->file_count], "%s", file_name);
+                    directory_data->file_count++;
                 }
             }
         } while (FindNextFile(h_find, &find_file));
         FindClose(h_find);
-        end_temporary_memory(temp_mem);
     }
     else
     {

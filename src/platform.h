@@ -56,7 +56,11 @@
 #include <stb/stb_image_write.h>
 
 #include <stdint.h>
+#ifdef __linux
+#include <ctype.h>
+#else
 #include <cctype>
+#endif
 
 #define u16max 65535
 #define i32min ((i32)0x80000000)
@@ -126,9 +130,9 @@ struct ConfigData
 #define MAX_FILE_NAMES 128
 struct DirectoryData
 {
-    char **file_paths;
-    char **file_names;
-    i32 files_length = 0;
+    char file_paths[128][64];
+    char file_names[128][32];
+    i32 file_count = 0;
 };
 
 enum PlatformMemoryBlockFlags
@@ -175,7 +179,7 @@ enum SeekOptions
     SO_END
 };
 
-#define PLATFORM_GET_ALL_FILES_WITH_EXTENSION(name) void name(MemoryArena* arena, const char* directory_path, const char* extension, DirectoryData* directory_data, b32 with_sub_directories)
+#define PLATFORM_GET_ALL_FILES_WITH_EXTENSION(name) void name(const char* directory_path, const char* extension, DirectoryData *directory_data, b32 with_sub_directories)
 typedef PLATFORM_GET_ALL_FILES_WITH_EXTENSION(PlatformGetAllFilesWithExtension);
 
 #define PLATFORM_GET_ALL_DIRECTORIES(name) char ** name(const char* path)
@@ -283,39 +287,57 @@ struct PlatformApi
 extern PlatformApi platform;
 
 struct MemoryArena;
-struct DebugState;
 struct InputController;
 struct SoundSystem;
-struct RenderState;
 struct Renderer;
+struct RenderState;
 
 namespace scene
 {
-    struct EntityTemplateState;
+    struct SceneManager;
 }
 
 struct TimerController;
+
+struct Core
+{
+    Renderer* renderer;
+    InputController* input_controller;
+    TimerController* timer_controller;
+    SoundSystem* sound_system;
+    scene::SceneManager *scene_manager;
+    r64 delta_time;
+    r64 current_time;
+
+    ConfigData config_data;
+};
 
 struct GameMemory
 {
     b32 is_initialized;
     b32 should_reload;
     b32 exit_game;
-    ConfigData config_data;
     PlatformApi platform_api;
+    Core core;
     struct LogState* log_state;
     struct MemoryArena* temp_arena;
+#if ENABLE_ANALYTICS
     struct AnalyticsEventState *analytics_state;
-    struct GameState* game_state;
-    
-#if DEBUG
-    DebugState* debug_state;
 #endif
+    struct GameState* game_state;
 };
 
-#define UPDATE(name)void name(r64 delta_time, GameMemory* game_memory, Renderer& renderer, scene::EntityTemplateState &template_state, InputController* input_controller, SoundSystem* sound_system, TimerController& timer_controller)
+#define UPDATE(name) void name(GameMemory* game_memory)
+
 typedef UPDATE(Update);
 UPDATE(update_stub)
+{
+}
+
+#define UPDATE_EDITOR(name) void name(GameMemory* game_memory)
+
+typedef UPDATE_EDITOR(UpdateEditor);
+UPDATE_EDITOR(update_editor_stub)
 {
 }
 

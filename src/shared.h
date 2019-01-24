@@ -3,9 +3,18 @@
 
 struct MemoryArena;
 
+#define HANDLE(name) struct name ## Handle { i32 handle; };
+
+#ifndef __linux
+#define ENABLE_ANALYTICS 0
+#else
+#define ENABLE_ANALYTICS 0
+#endif
+
 #include "types.h"
 
 #include "platform.h"
+
 #include "engine_memory.h"
 #include "simd.h"
 #include "random.h"
@@ -15,6 +24,9 @@ struct MemoryArena;
 #include "log.h"
 
 #include "animation.h"
+#include "camera.h"
+#include "render_pipeline.h"
+#include "shader_loader.h"
 #include "rendering.h"
 #include "particles.h"
 
@@ -22,7 +34,6 @@ struct MemoryArena;
 
 #include "sound.h"
 #include "keycontroller.h"
-
 
 #define RGB_FLOAT(integer) 1.0f / 255.0f * integer
 #define RGB_VEC4(r, g, b) math::Rgba(RGB_FLOAT(r), RGB_FLOAT(g), RGB_FLOAT(b), 1.0f)
@@ -49,6 +60,24 @@ inline char* str_sep(char** s, const char* delim)
     return start;
 }
 
+static char* read_file_into_buffer(MemoryArena* arena, FILE* file, size_t *out_size = nullptr)
+{
+	fseek(file, 0, SEEK_END);
+	size_t size = (size_t)ftell(file);
+	fseek(file, 0, SEEK_SET);
+
+	if(out_size)
+	{
+		*out_size = size;
+	}
+	    
+	char* source = push_string(arena, size);
+	fread(source, size, 1, file);
+
+	return source;
+}
+
+// @Incomplete: This doesn't even work without a memory arena
 inline char* concat(const char *s1, const char *s2, MemoryArena* arena)
 {
     char* result = nullptr;
@@ -68,6 +97,29 @@ inline b32 starts_with(const char *a, const char *b)
 {
     if(strncmp(a, b, strlen(b)) == 0) return 1;
     return 0;
+}
+
+static char* read_line(char* out, size_t size, char** in)
+{
+    if(**in == '\0') return nullptr;
+    size_t i;
+
+    for(i = 0; i < size; ++i, ++(*in))
+    {
+	out[i] = **in;
+	if(**in == '\0')
+	    break;
+	if(**in == '\n')
+	{
+	    out[i + 1] = '\0';
+	    ++(*in);
+	    break;
+	}
+    }
+
+    if(i == size - 1)
+	out[i] = '\0';
+    return out;
 }
 
 inline char* get_file_name_from_path(char* path, MemoryArena* arena, char* extension = nullptr)

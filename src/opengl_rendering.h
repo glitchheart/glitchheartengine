@@ -3,121 +3,24 @@
 
 #include <GLFW/glfw3.h>
 
-#define SHADERPAIR(name) {SHADER_ ## name, "Shader_" "" #name}
-
-const static struct
+struct ShaderGL
 {
-    ShaderType val;
-    char* str;
-    
-} shader_conversion [] =
-{
-    SHADERPAIR(MESH),
-    SHADERPAIR(MESH_INSTANCED),
-    SHADERPAIR(DEPTH),
-    SHADERPAIR(DEPTH_INSTANCED),
-    SHADERPAIR(QUAD),
-    SHADERPAIR(TEXTURE_QUAD),
-    SHADERPAIR(STANDARD_FONT),
-    SHADERPAIR(3D_TEXT),
-    SHADERPAIR(SPRITESHEET),
-    SHADERPAIR(FRAME_BUFFER),
-    SHADERPAIR(SIMPLE_MODEL),
-    SHADERPAIR(LINE),
-    SHADERPAIR(PARTICLES),
-    SHADERPAIR(ROUNDED_QUAD)
-};
+	GLuint program;
+	
+	GLuint vert_program;
+    GLuint geo_program;
+	GLuint frag_program;
 
-char* shader_enum_to_str(ShaderType shader)
-{
-    for(i32 index = 0; index < SHADER_COUNT; index++)
-    {
-        if(shader == shader_conversion[index].val)
-        {
-            return shader_conversion[index].str;
-        }
-    }
-    assert(false);
-    return nullptr;
-}
-
-static char* shader_paths[SHADER_COUNT] =
-{
-    "../engine_assets/shaders/meshshader",
-    "../engine_assets/shaders/meshshaderinstanced",
-    "../engine_assets/shaders/depthshader",
-    "../engine_assets/shaders/depthshaderinstanced",
-    "../engine_assets/shaders/quadshader",
-    "../engine_assets/shaders/texturequadshader",
-    "../engine_assets/shaders/standardfontshader",
-    "../engine_assets/shaders/3dtextshader",
-    "../engine_assets/shaders/spritesheetanimationshader",
-    "../engine_assets/shaders/framebuffershader",
-    "../engine_assets/shaders/simple_model_shader",
-    "../engine_assets/shaders/lineshader",
-    "../engine_assets/shaders/particleshader",
-    "../engine_assets/shaders/roundedquadshader",
-};
-
-struct Shader
-{
-    ShaderType type;
-    b32 loaded;
-    GLuint program;
-    GLuint vertex_shader;
-    GLuint fragment_shader;
-    GLuint geometry_shader; // Optional
-
-    struct
-    {
-        // Matrices
-        GLint projection_matrix;
-
-        // Color
-        GLint diffuse_color;
-        
-        union
-        {
-            struct
-            {
-                GLint alpha_color;
-                GLint z;
-            
-            } font;
-        };
-    } uniform_locations;
-};
-
-enum RenderMode
-{
-    RENDER_FILL, RENDER_OUTLINE
+    GLint uniform_locations[1024];
+    i32 location_count;
 };
 
 struct Texture 
 {
-    GLuint texture_handle;
-};
+    GLuint handle;
 
-// stb_truetype
-struct GLFontBuffer
-{
-    GLuint texture;
-    GLuint vao;
-    GLuint vbo;
-    
-    struct
-    {
-        i32 width;
-        i32 height;
-    } resolution_loaded_for;
-};
-
-struct CharacterData
-{
-    r32 x;
-    r32 y;
-    r32 tx;
-    r32 ty;
+    i32 width;
+    i32 height;
 };
 
 struct Buffer
@@ -126,21 +29,28 @@ struct Buffer
     GLuint vbo;
     GLuint ibo;
     GLint vertex_buffer_size;
+    GLint vertex_count;
     GLint index_buffer_size;
     GLint index_buffer_count;
 };
 
 struct Framebuffer
 {
+    u32 width;
+    u32 height;
+    
     GLuint buffer_handle;
     GLuint tex0_loc;
-    GLuint tex_color_buffer_handle;
+    GLuint tex_color_buffer_handles[4];
+    i32 tex_color_buffer_count;
     GLuint depth_buffer_handle;
     GLuint vao;
     GLuint vbo;
     GLuint ebo;
     
     b32 multisampled;
+    i32 samples;
+    b32 hdr;
     
     b32 has_shadow_map;
     
@@ -155,15 +65,20 @@ struct Framebuffer
 
 struct RenderState
 {
-    CharacterData *character_buffer;
+    struct
+    {
+        GLuint shader_program;
+        GLuint vao;
+    } current_state;
+
     GLFWwindow *window;
+
     i32 window_width;
     i32 window_height;
     i32 framebuffer_width;
     i32 framebuffer_height;
     i32 dpi_scale;
     r32 density_factor;
-    i32 pixels_per_unit;
     
     i32 refresh_rate;
     
@@ -179,29 +94,23 @@ struct RenderState
     r64 frame_delta;
     r64 total_delta;
     
-    WindowMode window_mode;
-    
-    GLfloat scale_x;
-    GLfloat scale_y;
     GLint viewport[4];
     r64 delta_time;
     
     b32 should_close;
+    b32 mouse_locked;
     r64 fps;
-    
-    Framebuffer framebuffer;
+
+    struct
+    {
+#define MAX_FRAMEBUFFERS 16
+        Framebuffer framebuffers[MAX_FRAMEBUFFERS];
+        i32 framebuffer_count;
+    } v2;
+
     Framebuffer shadow_map_buffer;
-    // Lighting data
-    SpotlightData spotlight_data;
-    DirectionalLightData directional_light_data;
-    PointLightData point_light_data;
-    
     
     u32 framebuffer_quad_vertices_size = 16 * sizeof(GLfloat);
-    u32 texture_quad_vertices_size = 16 * sizeof(GLfloat);
-    u32 rounded_quad_vertices_size = 16 * sizeof(GLfloat);
-    u32 quad_vertices_size = 16 * sizeof(GLfloat);
-    u32 billboard_vertices_size = 20 * sizeof(GLfloat);
     GLuint bound_vertex_buffer;
     GLuint bound_texture;
     
@@ -212,136 +121,38 @@ struct RenderState
         1.0f, -1.0f, 1.0f, 0.0f, 
         -1.0f, -1.0f, 0, 0.0f
     };
-    
-    GLfloat quad_vertices[16] =
-    {
-        0.0f, 0.0f, 0.0f, 1.0f,
-        1.0f, 0.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f, 0.0f,
-        0.0f, 1.0f, 0.0f, 0.0f
-    };
-    
-    /* GLfloat billboard_vertices[20] = */
-    /* { */
-    /*     0.0f, 1.0f, 0.0f, 0.0f, 0.0f, */
-    /*     1.0f, 1.0f, 0.0f, 1.0f, 0.0f, */
-    /*     1.0f, 0.0f, 0.0f, 1.0f, 1.0f, */
-    /*     0.0f, 0.0f, 0.0f, 0.0f, 1.0f */
-    /* }; */
 
-    GLfloat billboard_vertices[20] =
-    {
-        -0.5f, 0.5f, 0.0f, 0.0f, 0.0f,
-        0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
-        0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
-        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f
-    };
-
-    
-    GLfloat texture_quad_vertices[16] =
-    {
-        0.0f, 1.0f, 0.0f, 0.0f,
-        1.0f, 1.0f, 1.0f, 0.0f,
-        1.0f, 0.0f, 1.0f, 1.0f,
-        0.0f, 0.0f, 0.0f, 1.0f
-    };
-    
-    GLfloat rounded_quad_vertices[16] =
-    {
-        0.0f, 1.0f, 0.0f, 0.0f,
-        1.0f, 1.0f, 1.0f, 0.0f,
-        1.0f, 0.0f, 1.0f, 1.0f,
-        0.0f, 0.0f, 0.0f, 1.0f
-    };
-    
     GLuint quad_indices[6] =
     {
         0, 1, 2, 0, 2, 3
     };
     
-    GLuint texture_quad_vbo;
-    GLuint texture_quad_index_buffer;
-    
-    GLuint rounded_quad_vao;
-    GLuint rounded_quad_vbo;
-    GLuint rounded_quad_index_buffer;
     GLuint quad_index_buffer;
+
+	Buffer *gl_buffers;
+	i32 gl_buffer_count;
     
-    GLuint billboard_vao;
-    GLuint billboard_vbo;
-    GLuint billboard_ibo;
+    GLuint framebuffer_quad_vao;
+    GLuint framebuffer_quad_vbo;
     
-    GLuint line_vbo;
-    GLuint line_vao;
-    GLuint line_ebo;
-    
-#define LINE_INDICES 6
-    
-    GLuint line_indices[LINE_INDICES] = 
-    {
-        0, 1, 2,
-        1, 2, 3
-    };
-    
-    Buffer *buffers;
-    i32 buffer_count;
-    
-    GLuint quad_vao;
-    GLuint texture_quad_vao;
-    GLuint quad_vbo;
-    
-    union 
-    {
-        Shader shaders[SHADER_COUNT];
-        struct
-        {
-            Shader mesh_shader;
-            Shader mesh_instanced_shader;
-            Shader depth_shader;
-            Shader depth_instanced_shader;
-            Shader quad_shader;
-            Shader texture_quad_shader;
-            Shader standard_font_shader;
-            Shader text_3d_shader;
-            Shader spritesheet_shader;
-            Shader frame_buffer_shader;
-            Shader simple_model_shader;
-            Shader line_shader;
-            Shader particle_shader;
-            Shader rounded_quad_shader;
-        };
-    };
-    
-    Shader extra_shaders[150];
-    i32 extra_shader_index;
-    
-    i32 current_extra_shader;
-    ShaderAttribute* shader_attributes;
-    i32 shader_attribute_count;
-    
-    Texture texture_array[150];
-    i32 texture_index;
-    
-    GLFontBuffer gl_fonts[64];
-    i32 font_count;
+	ShaderGL *gl_shaders;
+	i32 gl_shader_count;
     
     GLFWcursor* cursors[6];
-    
-    struct
-    {
-        math::Rgba specular_color;
-        math::Rgba diffuse_color;
-        math::Rgba ambient_color;
-        math::Vec3 position;
-    } sun_light;
     
     RenderState() {}
     
     MemoryArena* perm_arena; // TODO: Make this into a framebuffer arena maybe?
     MemoryArena framebuffer_arena;
-    MemoryArena font_arena;
     MemoryArena string_arena;
-    //MemoryArena perm_arena;
 };
+
+struct RenderingState
+{
+    RenderState *render_state;
+    Renderer *renderer;
+};
+
+RenderingState rendering_state;
 
 #endif

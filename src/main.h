@@ -18,6 +18,7 @@ struct GameCode
     time_t last_library_write_time;
     
     Update *update;
+    UpdateEditor *update_editor;
     
     b32 is_valid;
 };
@@ -27,6 +28,11 @@ struct MemoryState
     i32 blocks;
     u64 size_allocated;
 };
+
+struct SoundDevice;
+struct Renderer;
+
+void save_config(const char *file_path, Renderer* renderer = nullptr, SoundDevice *sound_device = nullptr);
 
 #endif
 
