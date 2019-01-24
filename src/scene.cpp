@@ -1842,7 +1842,11 @@ namespace scene
         Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
         entity.comp_flags |= COMP_TRANSFORM;
         entity.transform_handle = { scene.transform_component_count++ };
+
         scene::TransformComponent &comp = scene.transform_components[entity.transform_handle.handle];
+        comp.parent_handle = { -1 };
+        comp.child_count = 0;
+        
         comp.transform = rendering::create_transform(math::Vec3(0.0f), math::Vec3(0.0f), math::Vec3(0.0f));
         comp.entity = entity_handle;
         return(comp);
@@ -2881,6 +2885,7 @@ namespace scene
 
     static void add_child(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
     {
+        assert(parent_handle.handle != child_handle.handle);
         Entity& parent = get_entity(parent_handle, scene);
         Entity& child = get_entity(child_handle, scene);
         add_child(parent.transform_handle, child.transform_handle, scene);
