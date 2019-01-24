@@ -1494,7 +1494,8 @@ namespace scene
         Scene &scene = get_scene(handle);
         
         SceneManager *manager = handle.manager;
-        
+
+#if DEBUG
         if(KEY_DOWN(Key_E) && KEY(Key_LeftCtrl))
         {
             if(manager->mode == SceneMode::RUNNING)
@@ -1532,7 +1533,8 @@ namespace scene
                 manager->mode = SceneMode::RUNNING;
             }
         }
-
+#endif
+        
         if(manager->mode == SceneMode::EDITING)
         {
             //manager->dragging = MOUSE(Mouse_Left);
