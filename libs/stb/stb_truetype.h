@@ -3742,7 +3742,8 @@ static void stbrp_pack_rects(stbrp_context *con, stbrp_rect *rects, int num_rect
 {
    int i;
    for (i=0; i < num_rects; ++i) {
-      if (con->x + rects[i].w > con->width) {
+ 
+	   if (con->x + rects[i].w > con->width) {
          con->x = 0;
          con->y = con->bottom_y;
       }

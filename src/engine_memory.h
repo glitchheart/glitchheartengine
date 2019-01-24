@@ -63,7 +63,7 @@ inline PushParams default_with_alignment(u32 alignment)
     return params;
 }
 
-#define zero_struct(instance) zero_size(sizeof(instance), &(instance)
+#define zero_struct(instance) zero_size(sizeof(instance), &(instance))
 #define zero_array(count, pointer) zero_size(count * sizeof(pointer[0]), pointer)
 inline void zero_size(umm size, void *ptr)
 {
@@ -204,6 +204,56 @@ static void clear(MemoryArena *arena)
     {
         free_last_block(arena);
     }
+}
+
+static void move_arena(MemoryArena* src, MemoryArena* dst)
+{
+    assert(src->temp_count == 0);
+    
+    PlatformMemoryBlock* cur_src_block = src->current_block;
+    
+    i32 blocks = 0;
+    
+    while(cur_src_block)
+    {
+        blocks++;
+        if(!cur_src_block->prev)
+        {
+            break;
+        }
+        
+        cur_src_block = cur_src_block->prev;
+    }
+    
+    PlatformMemoryBlock* last_dst_block = nullptr;
+    
+    for(i32 i = 0; i < blocks; i++)
+    {
+        dst->current_block = cur_src_block;
+        dst->current_block->flags = cur_src_block->flags;
+        dst->current_block->size = cur_src_block->size;
+        dst->current_block->used = cur_src_block->used;
+        dst->current_block->prev = last_dst_block;
+        dst->current_block->base = cur_src_block->base;
+        
+        if(last_dst_block)
+        {
+            last_dst_block->next = dst->current_block;
+        }
+        last_dst_block = dst->current_block;
+
+        if(cur_src_block->next)
+        {
+            cur_src_block->next->prev = nullptr;
+        }
+        cur_src_block = cur_src_block->next;
+    }
+
+    src->current_block = nullptr;
+    
+    dst->allocation_flags = src->allocation_flags;
+    dst->minimum_block_size = src->minimum_block_size;
+    dst->temp_count = src->temp_count;
 }
 
 static void copy_arena(MemoryArena* src, MemoryArena* dst)

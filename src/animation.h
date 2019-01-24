@@ -17,7 +17,7 @@ struct AnimationLinkCondition
     b32 expected_value;
 };
 
-#define ANIMATION_CALLBACK(name) void name(void* state, void* data, Renderer& renderer, SoundSystem* sound_system, InputController* input_controller, TimerController& timer_controller)
+#define ANIMATION_CALLBACK(name) void name(void* state, void* data, Renderer *renderer, SoundSystem* sound_system, InputController* input_controller, TimerController& timer_controller)
 
 typedef ANIMATION_CALLBACK(animation_callback);
 

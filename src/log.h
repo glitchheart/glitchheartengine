@@ -23,10 +23,10 @@ enum LogType
 
 static void _log(LogType log_type, i32 line_num, const char* file, const char* message, ...)
 {
-    char message_buffer[256];
+    char message_buffer[4096];
     va_list args;
     va_start(args, message);
-    vsprintf(message_buffer, message, args); // @Robustness: This could lead to buffer overflow. vsnprintf should be safer?
+    vsnprintf(message_buffer, 4096, message, args); // @Robustness: This could lead to buffer overflow. vsnprintf should be safer?
     va_end(args);
     
     assert(log_state->log_count < MAX_LOG_MESSAGES);

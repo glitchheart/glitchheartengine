@@ -1,0 +1,30 @@
+#vert
+#version 330 core
+
+#include <mvp.shd>
+
+layout(location = 0) in vec3 vertex;
+layout(location = 1) in vec3 normal;
+layout(location = 2) in vec2 uv;
+
+out vec2 uv0;
+
+void main()
+{
+    uv0 = uv;
+    gl_Position = projection * view * model * vec4(vertex, 1.0);
+}
+
+#frag
+#version 330 core
+
+uniform vec4 col0 : DIFFUSE_COLOR;
+uniform sampler2D tex0 : DIFFUSE_TEX;
+    
+in vec2 uv0;
+out vec4 outColor;
+
+void main()
+{
+    outColor = col0 * texture(tex0, uv0);
+}

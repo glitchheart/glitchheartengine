@@ -1,7 +1,12 @@
 #ifndef MATH_H
 #define MATH_H
 
+#ifdef __linux
+#include <math.h>
+#else
 #include <cmath>
+#endif
+
 
 namespace math
 {
@@ -20,23 +25,23 @@ namespace math
     {
         return MAX(minimum, MIN(value,maximum));
     }
-    
-    
+
     union Vec2
     {
-        struct
-        {
-            r32 x;
-            r32 y;
-        };
-        struct
-        {
-            r32 u;
-            r32 v;
-        };
-        r32 e[2];
-        Vec2(r32 x, r32 y) : x(x), y(y){}
-        Vec2() : x(0.0f), y(0.0f) {}
+	struct
+	{
+	    r32 x;
+	    r32 y;
+	};
+	struct
+	{
+	    r32 u;
+	    r32 v;
+	};
+	r32 e[2];
+        
+    Vec2(r32 x, r32 y) : x(x), y(y) {}
+	Vec2() : x(0.0f), y(0.0f) {}
         Vec2(r32 i) : e{i,i} {}
         Vec2(r32 i[2]) : e{i[0],i[1]} {}
         Vec2(const Vec2& o) = default;
@@ -182,8 +187,6 @@ namespace math
                 };
             };
             r32 z;
-            
-            
         };
         struct 
         {
@@ -195,7 +198,6 @@ namespace math
                     r32 r, g;
                 };
             };
-            
             r32 b;
         };
         
@@ -204,7 +206,7 @@ namespace math
         Vec3() : x(0.0f), y(0.0f), z(0.0f) {}
         Vec3(r32 i) : e{i,i,i} {}
         Vec3(r32 i[3]) : e{i[0],i[1], i[2]} {}
-        Vec3(const Vec3& o) : e{o.x, o.y, o.z} {}
+        Vec3(const Vec3& o) = default;
         Vec3(r64 x, r64 y, r64 z) : x((r32)x), y((r32)y), z((r32)z) {}
         Vec3(r64 x, i32 y, r64 z) : x((r32)x), y((r32)y), z((r32)z) {}
         Vec3(i32 x, i32 y, i32 z) : x((r32)x), y((r32)y), z((r32)z) {}
@@ -219,8 +221,6 @@ namespace math
         Vec3(r64 x, r32 y, r32 z) : x((r32)x), y(y), z(z) {}
         Vec3(Vec2 v, r32 z) : x(v.x), y(v.y), z(z) {}
         
-        // Vec3(Vec3i v) : x(v.x), y(v.y), z(v.z) {}
-        
         Vec3& operator=(const Vec3& v) = default;
         
         r32& operator[](i32 i)
@@ -228,9 +228,12 @@ namespace math
             return this->e[i];
         }
         
-        inline Vec3 operator= (Vec2 o)
+        inline Vec3& operator= (Vec2 o)
         {
-            return Vec3(o.x, o.y, 0);
+            x = o.x;
+            y = o.y;
+            z = 0.0f;
+            return *this;
         }
         
         inline Vec3 operator-()
@@ -409,7 +412,7 @@ namespace math
         Vec4() : x(0.0f), y(0.0f), z(0.0f), w(0.0f) {}
         Vec4(r32 i) : e{i,i,i,i} {}
         Vec4(r32 i[4]) : e{i[0], i[1], i[2], i[3]} {}
-        Vec4(const Vec4& o) : x(o.x), y(o.y), z(o.z), w(o.w) {}
+        Vec4(const Vec4& o) = default;
         
         Vec4(i32 x, i32 y, i32 z, i32 w) : 
         x((r32)x), y((r32)y), z((r32)z), w((r32)w) {}
@@ -1103,14 +1106,11 @@ namespace math
         
         Mat4(r32 i) : v {{i,0,0,0},{0,i,0,0},{0,0,i,0},{0,0,0,i}} {}
         
-        Mat4(const Mat4& o) : v{ {o.v[0][0],o.v[0][1],o.v[0][2],o.v[0][3]}, 
-            {o.v[1][0],o.v[1][1],o.v[1][2],o.v[1][3]}, 
-            {o.v[2][0],o.v[2][1],o.v[2][2],o.v[2][3]}, 
-            {o.v[3][0],o.v[3][1],o.v[3][2],o.v[3][3]}} {}
+        Mat4(const Mat4& o) = default;
         
         
         Mat4& operator=(const Mat4& m) = default;
-        
+
         Mat4 operator*(Mat4 other)
         {
             Mat4 result(*this);
@@ -1308,6 +1308,7 @@ namespace math
     Vec3 ceil(Vec3 v);
     r32 ceilf(r32 v);
     r32 sin(r32 v);
+    r32 asin(r32 v);
     r32 cos(r32 v);
     r32 acos(r32 v);
     r32 absolute(r32 v);
@@ -1327,6 +1328,7 @@ namespace math
     Vec3 normalize(Vec3 v);
     Vec4 normalize(Vec4 v);
     Quat normalize(Quat q);
+    r32 norm(Vec3 v);
     Mat4 scale(Mat4 in, Vec3 scale);
     Mat4 translate(Mat4 in, Vec3 translate);
     Mat4 x_rotate(r32 angle);
@@ -1412,6 +1414,11 @@ namespace math
     inline Quat normalize(Quat q)
     {
         return q / magnitude(q);
+    }
+
+    inline r32 norm(Vec3 v)
+    {
+        return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
     }
     
     //@Incomplete JBlow, CaseyM, ShawnM say don't use this
@@ -1510,6 +1517,17 @@ namespace math
         return out;
     }
     
+    b32 mat4_equals(const Mat4 &first, const Mat4 &second)
+    {
+        for(i32 index = 0; index < 16; index++)
+        {
+            if(first.q[index] != second.q[index])
+                return false;
+        }
+            
+        return true;
+    }
+        
     inline Mat4 transpose(Mat4 in)
     {
         Mat4 result(in);
@@ -1563,7 +1581,7 @@ namespace math
     
     inline Vec3 operator*(Mat4 m, const Vec3& v)
     {
-        Vec3 r = transform(m,Vec4(v,1.0f)).xyz;
+        Vec3 r = transform(m,Vec4(v,0.0f)).xyz;
         return r;
     }
     
@@ -1599,9 +1617,9 @@ namespace math
     inline Vec3 operator*(const Vec3& v, const Mat4& m)
     {
         Vec3 result(0.0f);
-        result.x = m.a * v.x + m.b * v.y + m.c * v.z + m.d * 1.0f;
-        result.y = m.e * v.x + m.f * v.y + m.g * v.z + m.h * 1.0f;
-        result.z = m.i * v.x + m.j * v.y + m.k * v.z + m.l * 1.0f;
+        result.x = m.a * v.x + m.b * v.y + m.c * v.z;// + m.d * 1.0f;
+        result.y = m.e * v.x + m.f * v.y + m.g * v.z;// + m.h * 1.0f;
+        result.z = m.i * v.x + m.j * v.y + m.k * v.z;// + m.l * 1.0f;
         return result;
     }
     
@@ -1785,27 +1803,27 @@ namespace math
     
     inline r32 dot(Vec2 v1, Vec2 v2)
     {
-        return v1.x * v2.x + v1.y + v2.y;
+        return v1.x * v2.x + v1.y * v2.y;
     }
     
     inline r32 dot(Vec3 v1, Vec3 v2)
     {
-        return v1.x * v2.x + v1.y + v2.y + v1.z * v2.z;
+        return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
     }
     
     inline r32 dot(Vec4 v1, Vec4 v2)
     {
-        return v1.x * v2.x + v1.y + v2.y + v1.z * v2.z + v1.w * v2.w;
+        return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z + v1.w * v2.w;
     }
     
     inline i32 dot(Vec2i v1, Vec2i v2)
     {
-        return v1.x * v2.x + v1.y + v2.y;
+        return v1.x * v2.x + v1.y * v2.y;
     }
-    
+    \
     inline i32 dot(Vec3i v1, Vec3i v2)
     {
-        return v1.x * v2.x + v1.y + v2.y + v1.z + v2.z;
+        return v1.x * v2.x + v1.y * v2.y + v1.z + v2.z;
     }
     
     inline r32 distance(Vec2 v1, Vec2 v2)
@@ -1841,7 +1859,7 @@ namespace math
     
     inline i32 floor(r32 v)
     {
-        return (i32)std::floor(v);
+        return (i32)::floor(v);
     }
     
     
@@ -1864,12 +1882,12 @@ namespace math
     
     inline i32 ceil(r32 v)
     {
-        return (i32)std::ceil(v);
+        return (i32)::ceil(v);
     }
     
     inline r32 ceilf(r32 v)
     {
-        return std::ceil(v);
+        return (r32)::ceil(v);
     }
     
     inline Vec2 ceil(Vec2 v)
@@ -1934,22 +1952,27 @@ namespace math
     
     inline r32 pow(r32 v, i32 e)
     {
-        return (r32)std::pow(v, e);
+        return (r32)::pow(v, e);
     }
     
     inline r32 sin(r32 v)
     {
-        return (r32)std::sin(v);
+        return (r32)::sin(v);
+    }
+
+    inline r32 asin(r32 v)
+    {
+        return (r32)::asin(v);
     }
     
     inline r32 cos(r32 v)
     {
-        return (r32)std::cos(v);
+        return (r32)::cos(v);
     }
     
     inline r32 acos(r32 v)
     {
-        return (r32)std::acos(v);
+        return (r32)::acos(v);
     }
     
     inline i32 multiple_of_number(i32 n, i32 mul)
@@ -1960,6 +1983,14 @@ namespace math
     inline u32 multiple_of_number_uint(u32 n, u32 mul)
     {
         return mul * (ceil(((r32)n / (r32)mul)));
+    }
+
+    inline i32 next_power_of_two(i32 n)
+    {
+        i32 result = 0;
+
+        result = (i32)pow(2, ceil((r32)log(n)/(r32)log(2)));
+        return result;
     }
     
     inline r32 length(Vec2 v)
@@ -2030,6 +2061,33 @@ namespace math
         result.x = q.x / sin(angle / 2.0f);
         result.y = q.y / sin(angle / 2.0f); 
         result.z = q.z / sin(angle / 2.0f); 
+        return result;
+    }
+
+    inline Vec3 to_euler_angles(Quat q)
+    {
+        math::Vec3 result(0.0f);
+        // roll (x-axis rotation)
+        r32 sinr_cosp = 2.0f * (q.w * q.x + q.y * q.z);
+        r32 cosr_cosp = 1.0f - 2.0f * (q.x * q.x + q.y * q.y);
+        result.x = atan2(sinr_cosp, cosr_cosp);
+
+        // pitch (y-axis rotation)
+        r32 sinp = 2.0f * (q.w * q.y - q.z * q.x);
+        if (fabs(sinp) >= 1)
+        {
+            result.y = copysign(PI / 2, sinp); // use 90 degrees if out of range
+        }
+        else
+        {
+            result.y = asin(sinp);
+        }
+
+        // yaw (z-axis rotation)
+        r32 siny_cosp = +2.0f * (q.w * q.z + q.x * q.y);
+        r32 cosy_cosp = +1.0f - 2.0f * (q.y * q.y + q.z * q.z);  
+        result.z = atan2(siny_cosp, cosy_cosp);
+
         return result;
     }
     
@@ -2108,12 +2166,33 @@ namespace math
     inline Quat rotate(Quat in, r32 a, Vec3 axis)
     {
         Quat result(in);
-        auto q = math::Quat(axis.x, axis.y, axis.z, DEGREE_IN_RADIANS * a);
+        Quat q = math::Quat(axis.x, axis.y, axis.z, DEGREE_IN_RADIANS * a);
         result = in * q;
         result = normalize(result);
         return result;
     }
-    
+
+    inline Quat rotate(Quat in, Quat rotation)
+    {
+        Quat result(in);
+        result = in * rotation;
+        result = normalize(result);
+        return result;
+    }
+
+    inline Quat rotate(Quat in, Vec3 rotation)
+    {
+        r32 x_axis = ABS(rotation.x) > 0.0f ? 1.0f : 0.0f;
+        r32 y_axis = ABS(rotation.y) > 0.0f ? 1.0f : 0.0f;
+        r32 z_axis = ABS(rotation.z) > 0.0f ? 1.0f : 0.0f;
+        
+        in = math::rotate(in, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
+        in = math::rotate(in, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
+        in = math::rotate(in, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
+
+        return in;
+    }
+
     // https://gamedev.stackexchange.com/a/50545
     inline Vec3 rotate(Vec3 in, Quat q)
     {
@@ -2412,7 +2491,7 @@ namespace math
     
     inline Vec2 rotate_by_angle(Vec2 in, r32 angle)
     {
-        math::Vec2 result;
+        math::Vec2 result(0.0f);
         result.x = in.x * cos(angle) - in.y * sin(angle);
         result.y = in.x * sin(angle) + in.y * cos(angle);
         return result;
@@ -2459,8 +2538,8 @@ namespace math
     struct Ray
     {
         Vec3 origin;
-        Vec3 target;
-        Vec3 ray;
+        Vec3 end;
+        Vec3 direction;
     };
     
     struct BoundingBox
@@ -2469,15 +2548,16 @@ namespace math
         Vec3 max;
     };
     
-    inline b32 aabb_ray_intersection(Ray r, BoundingBox b)
+    inline b32 aabb_ray_intersection(Ray r, BoundingBox b, math::Vec3* intersection_point)
     {
+        r32 t = 0;
         math::Vec3 lb = b.min;
         math::Vec3 rt = b.max;
         // r.dir is unit direction vector of ray
         math::Vec3 dirfrac;
-        dirfrac.x = 1.0f / r.ray.x;
-        dirfrac.y = 1.0f / r.ray.y;
-        dirfrac.z = 1.0f / r.ray.z;
+        dirfrac.x = 1.0f / r.direction.x;
+        dirfrac.y = 1.0f / r.direction.y;
+        dirfrac.z = 1.0f / r.direction.z;
         
         // lb is the corner of AABB with minimal coordinates - left bottom, rt is maximal corner
         // r.org is origin of ray
@@ -2494,24 +2574,25 @@ namespace math
         // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
         if (tmax < 0)
         {
-            //t = tmax;
+            t = tmax;
             return false;
         }
         
         // if tmin > tmax, ray doesn't intersect AABB
         if (tmin > tmax)
         {
-            //t = tmax;
+            t = tmax;
             return false;
         }
         
-        //t = tmin;
+        t = tmin;
+        *intersection_point = r.origin + r.direction * t;
         return true;
     }
     
-    inline b32 new_aabb_ray_intersection(Ray ray, BoundingBox b)
+    inline b32 new_aabb_ray_intersection(Ray ray, BoundingBox b, math::Vec3* intersection_point)
     {
-        auto ray_dir = ray.ray;
+        auto ray_dir = ray.direction;
         auto ray_origin = ray.origin;
         
         auto temp = 0.0f;
@@ -2553,63 +2634,29 @@ namespace math
         if(tz_min > t_min) t_min = tz_min;
         if(tz_max < t_max) t_max = tz_max;
         
+        *intersection_point = ray_origin + ray_dir * temp;
+        
         return true;
     }
-    
-    inline Ray raycast_from_mouse_coordinates(r32 mouse_x, r32 mouse_y, Mat4 p, Mat4 v, r32 width, r32 height)
+
+    struct Plane
     {
-        Ray ray;
-        r32 x = 1.0f - (2.0f * mouse_x) / width;
-        r32 y = (2.0f * mouse_y / height) - 1.0f;
-        r32 z = 1.0f;
-        Vec3 ray_nds = Vec3(x, y, z);
-        Vec4 ray_clip = Vec4(ray_nds.xy, 1.0, 1.0f);
-        Vec4 ray_eye = inverse(p) * ray_clip;
-        ray_eye = Vec4(ray_eye.xy, 1.0f, 0.0f);
-        Vec3 ray_world = (v * ray_eye).xyz;
-        ray_world = normalize(ray_world);
-        
-        //printf("Ray world %f %f %f\n", ray_world.x, ray_world.y, ray_world.z);
-        ray.ray = ray_world;
-        return(ray);
-    }
-    
-    inline Ray cast_picking_ray(r32 mouse_x, r32 mouse_y, Mat4 p, Mat4 v, r32 width, r32 height)
+        Vec3 normal;
+        r32 d;
+    };
+
+    static Plane get_plane(math::Vec3 a, math::Vec3 b, math::Vec3 c)
     {
-        auto mx = 1.0f - (2.0f * mouse_x) / width;
-        auto my = 1.0f - (2.0f * mouse_y / height);
-        
-        // 1.0f is the far plane in NDC
-        auto mouse = inverse(p) * math::Vec3(mx, my, 1.0f);
-        mouse.z = 1.0f;
-        mouse = inverse(v) * mouse;
-        
-        // -1.0f is the near plane in NDC
-        auto origin = inverse(p) * math::Vec3(mx, my, -1.0f);
-        origin.z = 1.0f;
-        origin = inverse(v) * origin;
-        
-        auto temp_ray = math::Vec4(mouse - origin, 0.0f);
-        temp_ray = normalize(temp_ray);
-        Ray ray;
-        ray.origin = origin;
-        ray.target = mouse;
-        ray.ray = temp_ray.xyz;
-        //printf("%f %f %f\n", ray.origin.x, ray.origin.y, ray.origin.z);
-        
-        ray.ray = raycast_from_mouse_coordinates(mouse_x, mouse_y, p, v, width, height).ray;
-        return(ray);
+        Vec3 u = b - a;
+        Vec3 v = c - a;
+
+        Plane p = {};
+        p.normal = normalize(cross(u, v));
+        p.d = dot(p.normal, b);
+
+        return p;
     }
-    
-    inline Ray cast_ray(Vec3 origin, Vec3 target)
-    {
-        Ray ray;
-        ray.origin = origin;
-        ray.target = target;
-        ray.ray = normalize(math::Vec4(target - origin, 0.0f)).xyz;
-        return ray;
-    }
-    
+
 #define COLOR_RED math::Rgba(1, 0, 0, 1)
 #define COLOR_GREEN math::Rgba(0, 1, 0, 1)
 #define COLOR_BLUE math::Rgba(0, 0, 1, 1)
@@ -2695,7 +2742,7 @@ namespace math
         r32 tile_width_half = 0.5f;
         r32 tile_height_half = 0.25f;
         
-        math::Vec2 temp_pt;
+        math::Vec2 temp_pt(0.0f);
         
         temp_pt.x = (position.x / tile_width_half + position.y / tile_height_half) / 2.0f;
         temp_pt.y = (position.y / tile_height_half - position.x / tile_width_half) / 2.0f;
@@ -2708,7 +2755,7 @@ namespace math
         r32 tile_width_half = 0.5f;
         r32 tile_height_half = 0.25f;
         
-        math::Vec2 temp_pt;
+        math::Vec2 temp_pt(0.0f);
         temp_pt.x = (position.x - position.y) * tile_width_half;
         temp_pt.y = (position.x + position.y) * tile_height_half;
         //return tempPt;

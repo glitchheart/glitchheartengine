@@ -1,0 +1,1495 @@
+[1mdiff --cc src/engine_math.h[m
+[1mindex 31ba2aa,22d231e..0000000[m
+[1m--- a/src/engine_math.h[m
+[1m+++ b/src/engine_math.h[m
+[1mdiff --cc src/main.cpp[m
+[1mindex 8276f39,c0d22c3..0000000[m
+[1m--- a/src/main.cpp[m
+[1m+++ b/src/main.cpp[m
+[1mdiff --cc src/opengl_rendering.cpp[m
+[1mindex 31e6184,dee7be2..0000000[m
+[1m--- a/src/opengl_rendering.cpp[m
+[1m+++ b/src/opengl_rendering.cpp[m
+[1mdiff --cc src/render_pipeline.h[m
+[1mindex b83cb13,e8875bc..0000000[m
+[1m--- a/src/render_pipeline.h[m
+[1m+++ b/src/render_pipeline.h[m
+[1mdiff --cc src/rendering.cpp[m
+[1mindex 882442d,4c3427a..0000000[m
+[1m--- a/src/rendering.cpp[m
+[1m+++ b/src/rendering.cpp[m
+[1mdiff --cc src/rendering.h[m
+[1mindex 56f2d5d,540b1d9..0000000[m
+[1m--- a/src/rendering.h[m
+[1m+++ b/src/rendering.h[m
+[1mdiff --cc src/scene.cpp[m
+[1mindex 3253930,acc1883..0000000[m
+[1m--- a/src/scene.cpp[m
+[1m+++ b/src/scene.cpp[m
+[1mdiff --cc src/scene.h[m
+[1mindex c6859a9,5aae210..0000000[m
+[1m--- a/src/scene.h[m
+[1m+++ b/src/scene.h[m
+[1mdiff --cc src/shader_loader.cpp[m
+[1mindex e798c45,c9be933..0000000[m
+[1m--- a/src/shader_loader.cpp[m
+[1m+++ b/src/shader_loader.cpp[m
+[36m@@@ -726,20 -726,20 +726,20 @@@[m [mnamespace renderin[m
+          shader.last_loaded = sb1.st_mtime;[m
+      }[m
+  [m
+[31m--    static void check_for_shader_file_changes(Renderer &renderer)[m
+[32m++    static void check_for_shader_file_changes(Renderer *renderer)[m
+      {[m
+[31m--        for (i32 i = 0; i < renderer.render.shader_count; i++)[m
+[32m++        for (i32 i = 0; i < renderer->render.shader_count; i++)[m
+          {[m
+[31m--            if (check_dirty(renderer.render.shaders[i]))[m
+[32m++            if (check_dirty(renderer->render.shaders[i]))[m
+              {[m
+[31m--                renderer.render.shaders_to_reload[renderer.render.shaders_to_reload_count++] = i;[m
+[32m++                renderer->render.shaders_to_reload[renderer->render.shaders_to_reload_count++] = i;[m
+              }[m
+          }[m
+      }[m
+  [m
+      static int out_count = 0;[m
+  [m
+[31m--    static void load_shader(Renderer &renderer, Shader &shader)[m
+[32m++    static void load_shader(Renderer *renderer, Shader &shader)[m
+      {[m
+          FILE *file = fopen(shader.path, "r");[m
+  [m
+[36m@@@ -748,7 -748,7 +748,7 @@@[m
+          if (file)[m
+          {[m
+              size_t size = 0;[m
+[31m--            char *source = read_file_into_buffer(&renderer.shader_arena, file, &size);[m
+[32m++            char *source = read_file_into_buffer(&renderer->shader_arena, file, &size);[m
+  [m
+              shader.vert_shader = nullptr;[m
+              shader.geo_shader = nullptr;[m
+[36m@@@ -767,7 -767,7 +767,7 @@@[m
+              {[m
+                  if (starts_with(&source[i], "#vert"))[m
+                  {[m
+[31m--                    shader.vert_shader = load_shader_text(&renderer.shader_arena, &source[i + strlen("#vert") + 1], true, shader, &uniforms, &uniform_count, shader.path, &i);[m
+[32m++                    shader.vert_shader = load_shader_text(&renderer->shader_arena, &source[i + strlen("#vert") + 1], true, shader, &uniforms, &uniform_count, shader.path, &i);[m
+                  }[m
+                  else if (starts_with(&source[i], "#geo"))[m
+                  {[m
+[36m@@@ -775,7 -775,7 +775,7 @@@[m
+                  }[m
+                  else if (starts_with(&source[i], "#frag"))[m
+                  {[m
+[31m--                    shader.frag_shader = load_shader_text(&renderer.shader_arena, &source[i + strlen("#frag") + 1], false, shader, &uniforms, &uniform_count, shader.path, &i);[m
+[32m++                    shader.frag_shader = load_shader_text(&renderer->shader_arena, &source[i + strlen("#frag") + 1], false, shader, &uniforms, &uniform_count, shader.path, &i);[m
+                  }[m
+              }[m
+  [m
+[36m@@@ -882,7 -865,7 +882,7 @@@[m
+                      Structure &structure = shader.structures[u.structure_index];[m
+  [m
+                      i32 num_to_allocate = u.array_size;[m
+[31m--                    array.entries = push_array(&renderer.mesh_arena, num_to_allocate, UniformEntry);[m
+[32m++                    array.entries = push_array(&renderer->mesh_arena, num_to_allocate, UniformEntry);[m
+  [m
+                      if (u.mapping_type == UniformMappingType::DIRECTIONAL_LIGHTS || u.mapping_type == UniformMappingType::POINT_LIGHTS)[m
+                      {[m
+[36m@@@ -914,7 -897,7 +914,7 @@@[m
+                  else[m
+                  {[m
+                      i32 num_to_allocate = u.array_size;[m
+[31m--                    array.entries = push_array(&renderer.mesh_arena, num_to_allocate, UniformEntry);[m
+[32m++                    array.entries = push_array(&renderer->mesh_arena, num_to_allocate, UniformEntry);[m
+  [m
+                      for (i32 i = 0; i < u.array_size; i++)[m
+                      {[m
+[36m@@@ -948,12 -931,12 +948,12 @@@[m
+  [m
+          if (!material.uniform_values)[m
+          {[m
+[31m--            //material.uniform_values = push_array(&renderer.mesh_arena, size, UniformValue);[m
+[32m++            //material.uniform_values = push_array(&renderer->mesh_arena, size, UniformValue);[m
+          }[m
+  [m
+          if (!material.arrays)[m
+          {[m
+[31m--            //material.arrays = push_array(&renderer.mesh_arena, array_size, UniformArray);[m
+[32m++            //material.arrays = push_array(&renderer->mesh_arena, array_size, UniformArray);[m
+          }[m
+  [m
+          material.uniform_value_count = (i32)size;[m
+[36m@@@ -1127,17 -1169,17 +1127,17 @@@[m
+          }[m
+      }[m
+  [m
+[31m--    static void get_updated_material(Material *new_material, Material &current_material, Shader &shader, Renderer &renderer)[m
+[32m++    static void get_updated_material(Material *new_material, Material &current_material, Shader &shader, Renderer *renderer)[m
+      {[m
+          set_shader_values(*new_material, shader, renderer);[m
+          set_old_material_values(*new_material, current_material);[m
+      }[m
+  [m
+[31m--    static void update_materials_with_shader(Renderer &renderer, Shader &shader)[m
+[32m++    static void update_materials_with_shader(Renderer *renderer, Shader &shader)[m
+      {[m
+[31m--        for (i32 i = 0; i < renderer.render.material_count; i++)[m
+[32m++        for (i32 i = 0; i < renderer->render.material_count; i++)[m
+          {[m
+[31m--            Material &material = renderer.render.materials[i];[m
+[32m++            Material &material = renderer->render.materials[i];[m
+              if (material.shader.handle == shader.index)[m
+              {[m
+                  Material new_material = {};[m
+[36m@@@ -1145,7 -1187,7 +1145,7 @@@[m
+                  get_updated_material(&new_material, material, shader, renderer);[m
+                  memcpy(new_material.instanced_vertex_attributes, material.instanced_vertex_attributes, material.instanced_vertex_attribute_count * sizeof(VertexAttributeInstanced));[m
+                  new_material.instanced_vertex_attribute_count = material.instanced_vertex_attribute_count;[m
+[31m--                renderer.render.materials[i] = new_material;[m
+[32m++                renderer->render.materials[i] = new_material;[m
+              }[m
+          }[m
+  [m
+[36m@@@ -1168,20 -1213,20 +1168,20 @@@[m
+      {[m
+          if (handle.handle == 0)[m
+          {[m
+[31m--            handle.handle = renderer.render.texture_count++ + 1;[m
+[32m++            handle.handle = renderer->render.texture_count++ + 1;[m
+              assert(handle.handle != 0);[m
+          }[m
+  [m
+[31m--        Texture* texture = renderer.render.textures[handle.handle - 1];[m
+[32m++        Texture* texture = renderer->render.textures[handle.handle - 1];[m
+  [m
+[31m--        renderer.api_functions.load_texture(texture, filtering, wrap, format, width, height, data, renderer.api_functions.render_state, &renderer);[m
+[32m++        renderer->api_functions.load_texture(texture, filtering, wrap, format, width, height, data, renderer->api_functions.render_state, renderer);[m
+      }[m
+  [m
+[31m--    static void load_texture(const char *full_texture_path, Renderer &renderer, TextureFiltering filtering, TextureWrap wrap, TextureFormat format, TextureHandle &handle)[m
+[32m++    static void load_texture(const char *full_texture_path, Renderer *renderer, TextureFiltering filtering, TextureWrap wrap, TextureFormat format, TextureHandle &handle)[m
+      {[m
+          if(handle.handle == 0)[m
+          {[m
+[31m--            handle.handle = renderer.render.texture_count++ + 1;[m
+[32m++            handle.handle = renderer->render.texture_count++ + 1;[m
+              assert(handle.handle != 0);[m
+          }[m
+  [m
+[36m@@@ -1193,8 -1238,8 +1193,8 @@@[m
+              i32 size = platform.tell_file(png_file);[m
+              platform.seek_file(png_file, 0, SO_SET);[m
+  [m
+[31m--            TemporaryMemory temp_mem = begin_temporary_memory(&renderer.texture_arena);[m
+[31m--            stbi_uc* tex_data = push_size(&renderer.texture_arena, size + 1, stbi_uc);[m
+[32m++            TemporaryMemory temp_mem = begin_temporary_memory(&renderer->texture_arena);[m
+[32m++            stbi_uc* tex_data = push_size(&renderer->texture_arena, size + 1, stbi_uc);[m
+              platform.read_file(tex_data, size, 1, png_file);[m
+  [m
+              i32 width;[m
+[36m@@@ -1204,11 -1249,11 +1204,11 @@@[m
+              platform.close_file(png_file);[m
+              end_temporary_memory(temp_mem);[m
+  [m
+[31m--            assert(renderer.api_functions.load_texture);[m
+[32m++            assert(renderer->api_functions.load_texture);[m
+  [m
+[31m--            Texture* texture = renderer.render.textures[handle.handle - 1];[m
+[32m++            Texture* texture = renderer->render.textures[handle.handle - 1];[m
+              [m
+[31m--            renderer.api_functions.load_texture(texture, filtering, wrap, format, width, height, image_data, renderer.api_functions.render_state, &renderer);[m
+[32m++            renderer->api_functions.load_texture(texture, filtering, wrap, format, width, height, image_data, renderer->api_functions.render_state, renderer);[m
+  [m
+              stbi_image_free(image_data);[m
+          }[m
+[36m@@@ -1219,20 -1264,20 +1219,20 @@@[m
+          }[m
+      }[m
+  [m
+[31m--    static void update_buffer(Renderer &renderer, UpdateBufferInfo update_info)[m
+[32m++    static void update_buffer(Renderer *renderer, UpdateBufferInfo update_info)[m
+      {[m
+[31m--        assert(renderer.render.updated_buffer_handle_count + 1 < global_max_custom_buffers);[m
+[31m--        assert(renderer.render._internal_buffer_handles);[m
+[32m++        assert(renderer->render.updated_buffer_handle_count + 1 < global_max_custom_buffers);[m
+[32m++        assert(renderer->render._internal_buffer_handles);[m
+  [m
+          // @Incomplete: Update from data[m
+          // Find RegisterBufferInfo from handle[m
+          // Update data in info from new_data[m
+  [m
+[31m--        i32 internal_handle = renderer.render._internal_buffer_handles[update_info.buffer.handle - 1];[m
+[32m++        i32 internal_handle = renderer->render._internal_buffer_handles[update_info.buffer.handle - 1];[m
+  [m
+[31m--        renderer.render.buffers[internal_handle].data = update_info.update_data;[m
+[32m++        renderer->render.buffers[internal_handle].data = update_info.update_data;[m
+  [m
+[31m--        renderer.render.updated_buffer_handles[renderer.render.updated_buffer_handle_count++] = internal_handle;[m
+[32m++        renderer->render.updated_buffer_handles[renderer->render.updated_buffer_handle_count++] = internal_handle;[m
+      }[m
+  [m
+      static size_t size_for_type(ValueType type)[m
+[36m@@@ -1260,13 -1305,13 +1260,13 @@@[m
+          }[m
+      }[m
+  [m
+[31m--    static math::Vec2i get_scale(Renderer& renderer)[m
+[32m++    static math::Vec2i get_scale(Renderer *renderer)[m
+      {[m
+[31m--        return {renderer.framebuffer_width, renderer.framebuffer_height};[m
+[32m++        return {renderer->framebuffer_width, renderer->framebuffer_height};[m
+      }[m
+      [m
+  [m
+[31m--    static math::Vec3 to_ui(Renderer& renderer, math::Vec2 coord)[m
+[32m++    static math::Vec3 to_ui(Renderer *renderer, math::Vec2 coord)[m
+      {[m
+          math::Vec2i scale = get_scale(renderer);[m
+          math::Vec3 res;[m
+[36m@@@ -1276,7 -1321,7 +1276,7 @@@[m
+          return res;[m
+      }[m
+  [m
+[31m--    math::Vec2 from_ui(Renderer& renderer, math::Vec3 coord)[m
+[32m++    math::Vec2 from_ui(Renderer *renderer, math::Vec3 coord)[m
+      {[m
+          math::Vec2i scale = get_scale(renderer);[m
+          math::Vec2 res(0.0f);[m
+[36m@@@ -1285,17 -1330,17 +1285,17 @@@[m
+          return res;[m
+      }[m
+  [m
+[31m--    r32 from_ui(Renderer& renderer, i32 scale, r32 coord)[m
+[32m++    r32 from_ui(Renderer *renderer, i32 scale, r32 coord)[m
+      {[m
+          return ((r32)coord / (r32)UI_COORD_DIMENSION) * (r32)scale;[m
+      }[m
+  [m
+[31m--    r32 to_ui(Renderer& renderer, i32 scale, r32 coord)[m
+[32m++    r32 to_ui(Renderer *renderer, i32 scale, r32 coord)[m
+      {[m
+          return (coord / (r32)scale) * (r32)UI_COORD_DIMENSION;[m
+      }[m
+  [m
+[31m--        static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo font)[m
+[32m++    static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo font)[m
+      {[m
+          math::Vec2 size;[m
+          r32 placeholder_y = 0.0;[m
+[36m@@@ -1312,7 -1357,7 +1312,7 @@@[m
+                  stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,[m
+                                      text[i] - font.first_char, &size.x, &placeholder_y, &quad, 1);[m
+          [m
+[31m--                if(quad.y1 - quad.y0 > size.y)[m
+[32m++                if(MAX(quad.y1, quad.y0) - MIN(quad.y0, quad.y1) > size.y)[m
+                  {[m
+                      size.y = quad.y1 - quad.y0;[m
+                  }[m
+[36m@@@ -1330,13 -1375,13 +1330,13 @@@[m
+              }[m
+          }[m
+  [m
+[31m--        return math::Vec2(current_width, size.y * lines * (lines - 1));[m
+[32m++        return math::Vec2(current_width, size.y * lines * (lines));[m
+      }[m
+  [m
+[31m--    static TrueTypeFontInfo get_tt_font_info(Renderer& renderer, i32 handle)[m
+[32m++    static TrueTypeFontInfo get_tt_font_info(Renderer *renderer, i32 handle)[m
+      {[m
+[31m--        assert(handle >= 0 && handle < renderer.tt_font_count);[m
+[31m--        return renderer.tt_font_infos[handle];[m
+[32m++        assert(handle >= 0 && handle < renderer->tt_font_count);[m
+[32m++        return renderer->tt_font_infos[handle];[m
+      }[m
+  [m
+      static LineData get_line_size_data(const char *text, TrueTypeFontInfo font)[m
+[36m@@@ -1358,7 -1403,7 +1358,7 @@@[m
+                  stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,[m
+                                      text[i] - font.first_char, &line_data.line_sizes[line_data.line_count - 1].x, &placeholder_y, &quad, 1);[m
+          [m
+[31m--                if(quad.y1 - quad.y0 > size.y)[m
+[32m++                if(MAX(quad.y1, quad.y0) - MIN(quad.y0, quad.y1) > size.y)[m
+                  {[m
+                      line_data.line_sizes[line_data.line_count - 1].y = quad.y1 - quad.y0;[m
+                  }[m
+[36m@@@ -1382,11 -1427,11 +1382,37 @@@[m
+          return line_data;[m
+      }[m
+  [m
+[32m++    static LineData get_line_size_data_scaled(Renderer* renderer, const char *text, TrueTypeFontInfo font, u64 scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)[m
+[32m++    {[m
+[32m++        LineData line_data = get_line_size_data(text, font);[m
+[32m++[m
+[32m++        math::Vec2i scale = get_scale(renderer);[m
+[32m++        [m
+[32m++        for(i32 i = 0; i < line_data.line_count; i++)[m
+[32m++        {[m
+[32m++            if(scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)[m
+[32m++            {[m
+[32m++                r32 ratio = line_data.line_sizes[i].y / line_data.line_sizes[i].x;[m
+[32m++                line_data.line_sizes[i].x = to_ui(renderer, scale.x, line_data.line_sizes[i].x);[m
+[32m++                line_data.line_sizes[i].y = line_data.line_sizes[i].y * ratio;[m
+[32m++            }[m
+[32m++            else[m
+[32m++            {[m
+[32m++                line_data.line_sizes[i].x = to_ui(renderer, scale.x, line_data.line_sizes[i].x);[m
+[32m++                line_data.line_sizes[i].y = to_ui(renderer, scale.y, line_data.line_sizes[i].y);[m
+[32m++            }[m
+[32m++        }[m
+[32m++[m
+[32m++        line_data.total_height = to_ui(renderer, scale.y, line_data.total_height);[m
+[32m++        line_data.line_spacing = to_ui(renderer, scale.y, line_data.line_spacing);[m
+[32m +[m
+[31m-     static math::Vec2 get_text_size_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo font, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)[m
+[32m++        return line_data;[m
+[32m++    }[m
+[32m+ [m
+[31m -    static math::Vec2 get_text_size_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo font, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)[m
+[32m++    static math::Vec2 get_text_size_scaled(Renderer *renderer, const char* text, TrueTypeFontInfo font, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)[m
+      {[m
+          LineData line_data = get_line_size_data(text, font);[m
+[31m--        math::Vec2 font_size = line_data.line_sizes[0];[m
+[32m++        math::Vec2 font_size = math::Vec2(line_data.line_sizes[0].x, line_data.total_height);[m
+          math::Vec2 result(0.0f);[m
+      [m
+          math::Vec2i scale = get_scale(renderer);[m
+[36m@@@ -1408,7 -1453,7 +1434,7 @@@[m
+      [m
+  // Gets an array of text widths for each character[m
+  // Remember to free[m
+[31m--    static TextLengthInfo get_char_widths_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo &font, MemoryArena* arena)[m
+[32m++    static TextLengthInfo get_char_widths_scaled(Renderer *renderer, const char* text, TrueTypeFontInfo &font, MemoryArena* arena)[m
+      {[m
+          TextLengthInfo info = {};[m
+      [m
+[36m@@@ -1435,17 -1480,17 +1461,17 @@@[m
+      }[m
+  [m
+  [m
+[31m--    static void load_font(Renderer &renderer, const char *path, i32 size, FontHandle &handle)[m
+[32m++    static void load_font(Renderer *renderer, const char *path, i32 size, FontHandle &handle)[m
+      {[m
+          i32 index = handle.handle;[m
+  [m
+          if (index == 0)[m
+          {[m
+[31m--            handle.handle = renderer.tt_font_count++;[m
+[32m++            handle.handle = renderer->tt_font_count++;[m
+              index = handle.handle;[m
+          }[m
+          [m
+[31m--        TrueTypeFontInfo &font_info = renderer.tt_font_infos[index];[m
+[32m++        TrueTypeFontInfo &font_info = renderer->tt_font_infos[index];[m
+          char buf[256];[m
+          strncpy(buf, path, strlen(path) + 1);[m
+  [m
+[36m@@@ -1460,9 -1505,9 +1486,9 @@@[m
+          [m
+          strncpy(font_info.path, buf, strlen(buf) + 1);[m
+  [m
+[31m--        RenderPass& pass = renderer.render.ui.pass;[m
+[32m++        RenderPass& pass = renderer->render.ui.pass;[m
+  [m
+[31m--        FramebufferInfo& framebuffer = renderer.render.framebuffers[pass.framebuffer.handle - 1];[m
+[32m++        FramebufferInfo& framebuffer = renderer->render.framebuffers[pass.framebuffer.handle - 1];[m
+  [m
+          font_info.resolution_loaded_for.width = (i32)framebuffer.width;[m
+          font_info.resolution_loaded_for.height = (i32)framebuffer.height;[m
+[36m@@@ -1481,9 -1526,9 +1507,9 @@@[m
+  [m
+          font_info.ttf_buffer = (unsigned char*)malloc(1<<20);[m
+          [m
+[31m--        TemporaryMemory temp_mem = begin_temporary_memory(&renderer.font_arena);[m
+[32m++        TemporaryMemory temp_mem = begin_temporary_memory(&renderer->font_arena);[m
+  [m
+[31m--        unsigned char *temp_bitmap = push_array(&renderer.font_arena, font_info.atlas_width * font_info.atlas_height, unsigned char);[m
+[32m++        unsigned char *temp_bitmap = push_array(&renderer->font_arena, font_info.atlas_width * font_info.atlas_height, unsigned char);[m
+  [m
+          fread(font_info.ttf_buffer, 1, 1 << 20, fopen(font_info.path, "rb"));[m
+  [m
+[36m@@@ -1545,7 -1590,7 +1571,7 @@@[m
+          info.stride += size_for_type(type);[m
+      }[m
+  [m
+[31m--    static void load_material_from_mtl(Renderer &renderer, MaterialHandle material_handle, const char *file_path)[m
+[32m++    static void load_material_from_mtl(Renderer *renderer, MaterialHandle material_handle, const char *file_path)[m
+      {[m
+          // @Incomplete: We need a better way to do this![m
+          // Find the directory of the file[m
+[36m@@@ -1558,7 -1603,7 +1584,7 @@@[m
+              }[m
+          }[m
+  [m
+[31m--        TemporaryMemory temp_block = begin_temporary_memory(&renderer.temp_arena);[m
+[32m++        TemporaryMemory temp_block = begin_temporary_memory(&renderer->temp_arena);[m
+  [m
+          char *dir = push_string(temp_block.arena, index);[m
+          strncpy(dir, file_path, index);[m
+[36m@@@ -1570,7 -1615,7 +1596,7 @@@[m
+          {[m
+              char buffer[256];[m
+  [m
+[31m--            Material &material = renderer.render.materials[material_handle.handle];[m
+[32m++            Material &material = renderer->render.materials[material_handle.handle];[m
+              if (UniformValue *u = mapping(material, UniformMappingType::DIFFUSE_COLOR))[m
+              {[m
+                  u->float4_val = math::Rgba(1, 1, 1, 1);[m
+[36m@@@ -1725,22 -1770,22 +1751,22 @@@[m
+          }[m
+      }[m
+  [m
+[31m--    static i32 _find_unused_handle(Renderer &renderer)[m
+[32m++    static i32 _find_unused_handle(Renderer *renderer)[m
+      {[m
+[31m--        for (i32 index = renderer.render._current_internal_buffer_handle; index < global_max_custom_buffers; index++)[m
+[32m++        for (i32 index = renderer->render._current_internal_buffer_handle; index < global_max_custom_buffers; index++)[m
+          {[m
+[31m--            if (renderer.render._internal_buffer_handles[index] == -1)[m
+[32m++            if (renderer->render._internal_buffer_handles[index] == -1)[m
+              {[m
+[31m--                renderer.render._current_internal_buffer_handle = index;[m
+[32m++                renderer->render._current_internal_buffer_handle = index;[m
+                  return index;[m
+              }[m
+          }[m
+  [m
+          for (i32 index = 0; index < global_max_custom_buffers; index++)[m
+          {[m
+[31m--            if (renderer.render._internal_buffer_handles[index] == -1)[m
+[32m++            if (renderer->render._internal_buffer_handles[index] == -1)[m
+              {[m
+[31m--                renderer.render._current_internal_buffer_handle = index;[m
+[32m++                renderer->render._current_internal_buffer_handle = index;[m
+                  return index;[m
+              }[m
+          }[m
+[36m@@@ -1764,138 -1809,24 +1790,110 @@@[m
+          }[m
+      }[m
+  [m
+[31m--    static BufferHandle register_buffer(Renderer &renderer, RegisterBufferInfo info)[m
+[32m++    static BufferHandle register_buffer(Renderer *renderer, RegisterBufferInfo info)[m
+      {[m
+[31m--        assert(renderer.render.buffer_count + 1 < global_max_custom_buffers);[m
+[31m--        assert(renderer.render._internal_buffer_handles);[m
+[32m++        assert(renderer->render.buffer_count + 1 < global_max_custom_buffers);[m
+[32m++        assert(renderer->render._internal_buffer_handles);[m
+  [m
+          i32 unused_handle = _find_unused_handle(renderer) + 1;[m
+  [m
+[31m--        renderer.render._internal_buffer_handles[unused_handle - 1] = renderer.render.buffer_count++;[m
+[32m++        renderer->render._internal_buffer_handles[unused_handle - 1] = renderer->render.buffer_count++;[m
+  [m
+[31m--        renderer.render.buffers[renderer.render._internal_buffer_handles[unused_handle - 1]] = info;[m
+[32m++        renderer->render.buffers[renderer->render._internal_buffer_handles[unused_handle - 1]] = info;[m
+  [m
+          return {unused_handle};[m
+      }[m
+  [m
+[31m-     static BufferHandle create_line_buffer(Renderer &renderer)[m
+[31m-     {[m
+[31m-        assert(renderer.render.buffer_count + 1 < global_max_custom_buffers);[m
+[31m- [m
+[31m-         // @Note: Untextured[m
+[31m-         i32 vertex_size = 3;[m
+[31m- [m
+[31m-         RegisterBufferInfo info = create_register_buffer_info();[m
+[31m-         info.usage = BufferUsage::DYNAMIC;[m
+[31m-         add_vertex_attrib(ValueType::FLOAT3, info);[m
+[31m-         r32 vertices[6] = { 0, 0, 0, 0, 0, 0};[m
+[31m- [m
+[31m-         info.data.vertex_count = 2;[m
+[31m-         info.data.vertex_buffer_size = info.data.vertex_count * vertex_size * (i32)sizeof(r32);[m
+[31m- [m
+[31m-         info.data.vertex_buffer = push_size(&renderer.buffer_arena, info.data.vertex_buffer_size, r32);[m
+[31m- [m
+[31m-         for (i32 i = 0; i < 6; i++)[m
+[31m-         {[m
+[31m-             info.data.vertex_buffer[i] = vertices[i];[m
+[31m-         }[m
+[31m- [m
+[31m-         info.data.index_buffer_size = 0;[m
+[31m-         info.data.index_buffer_count = 0;[m
+[31m- [m
+[31m-         return {register_buffer(renderer, info).handle}; [m
+[31m-     }[m
+[31m- [m
+[31m -    static BufferHandle create_quad_buffer(Renderer &renderer, u64 anchor = 0, b32 uvs = false)[m
+[32m +    static r32 *generate_grid_buffer(Renderer &renderer, i32 width, i32 height, r32 unit_size)[m
+[32m +    {[m
+[32m +        r32 *grid_vertices = nullptr;[m
+[32m +        r32 real_grid_width = width * unit_size;[m
+[32m +        r32 real_grid_height = height * unit_size;[m
+[32m +        r32 half_size = 0.5f * unit_size;[m
+[32m +[m
+[32m +        // Bottom left -> Top left[m
+[32m +        buf_push(grid_vertices, -real_grid_width * 0.5f - half_size);[m
+[32m +        buf_push(grid_vertices, 0.0f);[m
+[32m +        buf_push(grid_vertices, -real_grid_height * 0.5f - half_size);[m
+[32m +        buf_push(grid_vertices, -real_grid_width * 0.5f - half_size);[m
+[32m +        buf_push(grid_vertices, 0.0f);[m
+[32m +        buf_push(grid_vertices, real_grid_height * 0.5f - half_size);[m
+[32m +[m
+[32m +        // Top left -> Top right[m
+[32m +        buf_push(grid_vertices, -real_grid_width * 0.5f - half_size);[m
+[32m +        buf_push(grid_vertices, 0.0f);[m
+[32m +        buf_push(grid_vertices, real_grid_height * 0.5f - half_size);[m
+[32m +        buf_push(grid_vertices, real_grid_width * 0.5f - half_size);[m
+[32m +        buf_push(grid_vertices, 0.0f);[m
+[32m +        buf_push(grid_vertices, real_grid_height * 0.5f - half_size);[m
+[32m +        [m
+[32m +        // Top right -> bottom right[m
+[32m +        buf_push(grid_vertices, real_grid_width * 0.5f - half_size);[m
+[32m +        buf_push(grid_vertices, 0.0f);[m
+[32m +        buf_push(grid_vertices, real_grid_height * 0.5f - half_size);[m
+[32m +        buf_push(grid_vertices, real_grid_width * 0.5f - half_size);[m
+[32m +        buf_push(grid_vertices, 0.0f);[m
+[32m +        buf_push(grid_vertices, -real_grid_height * 0.5f - half_size);[m
+[32m +[m
+[32m +        // Bottom left -> Bottom right[m
+[32m +        buf_push(grid_vertices, -real_grid_width * 0.5f - half_size);[m
+[32m +        buf_push(grid_vertices, 0.0f);[m
+[32m +        buf_push(grid_vertices, -real_grid_height * 0.5f - half_size);[m
+[32m +        buf_push(grid_vertices, real_grid_width * 0.5f - half_size);[m
+[32m +        buf_push(grid_vertices, 0.0f);[m
+[32m +        buf_push(grid_vertices, -real_grid_height * 0.5f - half_size);[m
+[32m +                     [m
+[32m +        for(i32 i = 1; i < MAX(width, height); i++)[m
+[32m +        {[m
+[32m +            if(i < width)[m
+[32m +            {[m
+[32m +                buf_push(grid_vertices, -real_grid_width * 0.5f + i - half_size);[m
+[32m +                buf_push(grid_vertices, 0.0f);[m
+[32m +                buf_push(grid_vertices, -real_grid_height * 0.5f - half_size);[m
+[32m +            [m
+[32m +                buf_push(grid_vertices, -real_grid_width * 0.5f + i - half_size);[m
+[32m +                buf_push(grid_vertices, 0.0f);[m
+[32m +                buf_push(grid_vertices, real_grid_height * 0.5f - half_size);    [m
+[32m +            }[m
+[32m +            [m
+[32m +            if(i < height)[m
+[32m +            {[m
+[32m +                buf_push(grid_vertices, -real_grid_width * 0.5f - half_size);[m
+[32m +                buf_push(grid_vertices, 0.0f);[m
+[32m +                buf_push(grid_vertices, -real_grid_height * 0.5f + i - half_size);[m
+[32m +                buf_push(grid_vertices, real_grid_width * 0.5f - half_size);[m
+[32m +                buf_push(grid_vertices, 0.0f);[m
+[32m +                buf_push(grid_vertices, -real_grid_height * 0.5f + i - half_size);[m
+[32m +            }[m
+[32m +        }[m
+[32m +[m
+[32m +        return grid_vertices;[m
+[32m +    }[m
+[32m +    [m
+[32m +    static BufferHandle create_vertex_buffer(Renderer &renderer, r32 *vertices, i32 size, i32 vertex_count)[m
+      {[m
+          assert(renderer.render.buffer_count + 1 < global_max_custom_buffers);[m
+  [m
+[32m +        RegisterBufferInfo info = create_register_buffer_info();[m
+[32m +        info.usage = BufferUsage::STATIC;[m
+[32m +        add_vertex_attrib(ValueType::FLOAT3, info);[m
+[32m +[m
+[32m +        info.data.vertex_count = vertex_count;[m
+[32m +        info.data.vertex_buffer_size = size;[m
+[32m +[m
+[32m +        info.data.vertex_buffer = push_size(&renderer.buffer_arena, info.data.vertex_buffer_size, r32);[m
+[32m +        memcpy(info.data.vertex_buffer, vertices, (size_t)info.data.vertex_buffer_size);[m
+[32m +[m
+[32m +        info.data.index_buffer_size = 0;[m
+[32m +        info.data.index_buffer_count = 0;[m
+[32m +[m
+[32m +        return {register_buffer(renderer, info).handle};[m
+[32m +    }[m
+[32m +[m
+[32m +    static BufferHandle create_quad_buffer(Renderer &renderer, u64 anchor = 0, b32 uvs = false)[m
+[32m +    {[m
+[31m-         assert(renderer.render.buffer_count + 1 < global_max_custom_buffers);[m
+[32m++        assert(renderer->render.buffer_count + 1 < global_max_custom_buffers);[m
+[32m +[m
+          // @Note: Untextured[m
+          i32 vertex_size = 2;[m
+  [m
+[36m@@@ -1963,7 -1894,7 +1961,7 @@@[m
+          info.data.vertex_count = 4;[m
+          info.data.vertex_buffer_size = info.data.vertex_count * vertex_size * (i32)sizeof(r32);[m
+  [m
+[31m--        info.data.vertex_buffer = push_size(&renderer.buffer_arena, info.data.vertex_buffer_size, r32);[m
+[32m++        info.data.vertex_buffer = push_size(&renderer->buffer_arena, info.data.vertex_buffer_size, r32);[m
+  [m
+          for (i32 i = 0; i < info.data.vertex_count * vertex_size; i++)[m
+          {[m
+[36m@@@ -1974,7 -1905,7 +1972,7 @@@[m
+          info.data.index_buffer_size = index_count * (i32)sizeof(u16);[m
+          info.data.index_buffer_count = index_count;[m
+  [m
+[31m--        info.data.index_buffer = push_size(&renderer.buffer_arena, info.data.index_buffer_size, u16);[m
+[32m++        info.data.index_buffer = push_size(&renderer->buffer_arena, info.data.index_buffer_size, u16);[m
+  [m
+          for (i32 i = 0; i < index_count; i++)[m
+          {[m
+[36m@@@ -1984,9 -1915,9 +1982,9 @@@[m
+          return {register_buffer(renderer, info).handle};[m
+      }[m
+  [m
+[31m--    static BufferHandle create_buffers_from_mesh(Renderer &renderer, Mesh &mesh, u64 vertex_data_flags, b32 has_normals, b32 has_uvs)[m
+[32m++    static BufferHandle create_buffers_from_mesh(Renderer *renderer, Mesh &mesh, u64 vertex_data_flags, b32 has_normals, b32 has_uvs)[m
+      {[m
+[31m--        assert(renderer.render.buffer_count + 1 < global_max_custom_buffers);[m
+[32m++        assert(renderer->render.buffer_count + 1 < global_max_custom_buffers);[m
+          i32 vertex_size = 3;[m
+  [m
+          RegisterBufferInfo info = create_register_buffer_info();[m
+[36m@@@ -2008,7 -1939,7 +2006,7 @@@[m
+          info.data.vertex_count = mesh.vertex_count;[m
+          info.data.vertex_buffer_size = mesh.vertex_count * vertex_size * (i32)sizeof(r32);[m
+  [m
+[31m--        info.data.vertex_buffer = push_size(&renderer.mesh_arena, info.data.vertex_buffer_size, r32);[m
+[32m++        info.data.vertex_buffer = push_size(&renderer->mesh_arena, info.data.vertex_buffer_size, r32);[m
+          generate_vertex_buffer(info.data.vertex_buffer, mesh.vertices, mesh.vertex_count, vertex_size, has_normals, has_uvs);[m
+  [m
+          i32 index_count = mesh.face_count * 3;[m
+[36m@@@ -2018,7 -1949,7 +2016,7 @@@[m
+          // @Robustness:(Niels): How do we make sure that this is cleared if the mesh is removed?[m
+          // Or will that never happen? Maybe use malloc/free instead? Or maybe at some point[m
+          // we really __should__ create a more general purpose allocator ourselves...[m
+[31m--        info.data.index_buffer = push_size(&renderer.mesh_arena, info.data.index_buffer_size, u16);[m
+[32m++        info.data.index_buffer = push_size(&renderer->mesh_arena, info.data.index_buffer_size, u16);[m
+          generate_index_buffer(info.data.index_buffer, mesh.faces, mesh.face_count);[m
+  [m
+          return {register_buffer(renderer, info).handle};[m
+[36m@@@ -2035,8 -1966,8 +2033,8 @@@[m
+  [m
+          Mesh mesh;[m
+          mesh = {};[m
+[31m--        mesh.vertices = push_array(&renderer.mesh_arena, sizeof(plane_vertices) / sizeof(r32) / 3, Vertex);[m
+[31m--        mesh.faces = push_array(&renderer.mesh_arena, sizeof(plane_indices) / sizeof(u16) / 3, Face);[m
+[32m++        mesh.vertices = push_array(&renderer->mesh_arena, sizeof(plane_vertices) / sizeof(r32) / 3, Vertex);[m
+[32m++        mesh.faces = push_array(&renderer->mesh_arena, sizeof(plane_indices) / sizeof(u16) / 3, Face);[m
+          mesh.vertex_count = sizeof(plane_vertices) / sizeof(r32) / 3;[m
+  [m
+          for (i32 i = 0; i < mesh.vertex_count; i++)[m
+[36m@@@ -2084,8 -2015,8 +2082,8 @@@[m
+  [m
+          Mesh mesh;[m
+          mesh = {};[m
+[31m--        mesh.vertices = push_array(&renderer.mesh_arena, sizeof(cube_vertices) / sizeof(r32) / 3, Vertex);[m
+[31m--        mesh.faces = push_array(&renderer.mesh_arena, sizeof(cube_indices) / sizeof(u16) / 3, Face);[m
+[32m++        mesh.vertices = push_array(&renderer->mesh_arena, sizeof(cube_vertices) / sizeof(r32) / 3, Vertex);[m
+[32m++        mesh.faces = push_array(&renderer->mesh_arena, sizeof(cube_indices) / sizeof(u16) / 3, Face);[m
+  [m
+          mesh.vertex_count = sizeof(cube_vertices) / sizeof(r32) / 3;[m
+  [m
+[36m@@@ -2331,11 -2262,11 +2329,11 @@@[m
+              }[m
+              fclose(file);[m
+  [m
+[31m--            assert(renderer.mesh_count + 1 < global_max_meshes);[m
+[32m++            assert(renderer->mesh_count + 1 < global_max_meshes);[m
+  [m
+              Mesh mesh;[m
+[31m--            mesh.vertices = push_array(&renderer.mesh_arena, buf_len(final_vertices), Vertex);[m
+[31m--            mesh.faces = push_array(&renderer.mesh_arena, buf_len(faces), Face);[m
+[32m++            mesh.vertices = push_array(&renderer->mesh_arena, buf_len(final_vertices), Vertex);[m
+[32m++            mesh.faces = push_array(&renderer->mesh_arena, buf_len(faces), Face);[m
+              mesh.vertex_count = (i32)buf_len(final_vertices);[m
+              mesh.face_count = (i32)buf_len(faces);[m
+  [m
+[36m@@@ -2366,13 -2297,13 +2364,13 @@@[m
+                      }[m
+                  }[m
+  [m
+[31m--                auto temp_block = begin_temporary_memory(&renderer.temp_arena);[m
+[32m++                auto temp_block = begin_temporary_memory(&renderer->temp_arena);[m
+  [m
+                  char *dir = push_string(temp_block.arena, index);[m
+                  strncpy(dir, file_path, index);[m
+  [m
+                  dir[index] = 0;[m
+[31m--                char *material_file_path = concat(dir, mtl_file_name, &renderer.temp_arena);[m
+[32m++                char *material_file_path = concat(dir, mtl_file_name, &renderer->temp_arena);[m
+  [m
+                  load_material_from_mtl(renderer, *material_handle, material_file_path);[m
+  [m
+[36m@@@ -2413,13 -2344,13 +2411,13 @@@[m
+          }[m
+      }[m
+  [m
+[31m--    static void set_uniform_value(Renderer &renderer, MaterialInstanceHandle handle, const char *name, r32 value)[m
+[32m++    static void set_uniform_value(Renderer *renderer, MaterialInstanceHandle handle, const char *name, r32 value)[m
+      {[m
+          Material &material = get_material_instance(handle, renderer);[m
+          set_uniform_value(renderer, material, name, value);[m
+      }[m
+  [m
+[31m--    static void set_uniform_value(Renderer &renderer, Material &material, const char *name, math::Vec2 value)[m
+[32m++    static void set_uniform_value(Renderer *renderer, Material &material, const char *name, math::Vec2 value)[m
+      {[m
+          for (i32 i = 0; i < material.instanced_vertex_attribute_count; i++)[m
+          {[m
+[36m@@@ -2444,13 -2375,13 +2442,13 @@@[m
+          }[m
+      }[m
+  [m
+[31m--    static void set_uniform_value(Renderer &renderer, MaterialInstanceHandle handle, const char *name, math::Vec2 value)[m
+[32m++    static void set_uniform_value(Renderer *renderer, MaterialInstanceHandle handle, const char *name, math::Vec2 value)[m
+      {[m
+          Material &material = get_material_instance(handle, renderer);[m
+          set_uniform_value(renderer, material, name, value);[m
+      }[m
+  [m
+[31m--    static void set_uniform_value(Renderer &renderer, Material &material, const char *name, math::Vec3 value)[m
+[32m++    static void set_uniform_value(Renderer *renderer, Material &material, const char *name, math::Vec3 value)[m
+      {[m
+          for (i32 i = 0; i < material.uniform_value_count; i++)[m
+          {[m
+[36m@@@ -2464,13 -2395,13 +2462,13 @@@[m
+          }[m
+      }[m
+  [m
+[31m--    static void set_uniform_value(Renderer &renderer, MaterialInstanceHandle handle, const char *name, math::Vec3 value)[m
+[32m++    static void set_uniform_value(Renderer *renderer, MaterialInstanceHandle handle, const char *name, math::Vec3 value)[m
+      {[m
+          Material &material = get_material_instance(handle, renderer);[m
+          set_uniform_value(renderer, material, name, value);[m
+      }[m
+  [m
+[31m--    static void set_uniform_value(Renderer &renderer, Material &material, const char *name, math::Vec4 value)[m
+[32m++    static void set_uniform_value(Renderer *renderer, Material &material, const char *name, math::Vec4 value)[m
+      {[m
+          for (i32 i = 0; i < material.instanced_vertex_attribute_count; i++)[m
+          {[m
+[36m@@@ -2495,13 -2426,13 +2493,13 @@@[m
+          }[m
+      }[m
+  [m
+[31m--    static void set_uniform_value(Renderer &renderer, MaterialInstanceHandle handle, const char *name, math::Vec4 value)[m
+[32m++    static void set_uniform_value(Renderer *renderer, MaterialInstanceHandle handle, const char *name, math::Vec4 value)[m
+      {[m
+          Material &material = get_material_instance(handle, renderer);[m
+          set_uniform_value(renderer, material, name, value);[m
+      }[m
+  [m
+[31m--    static void set_uniform_value(Renderer &renderer, Material &material, const char *name, i32 value)[m
+[32m++    static void set_uniform_value(Renderer *renderer, Material &material, const char *name, i32 value)[m
+      {[m
+          for (i32 i = 0; i < material.instanced_vertex_attribute_count; i++)[m
+          {[m
+[36m@@@ -2542,13 -2473,13 +2540,13 @@@[m
+          }[m
+      }[m
+  [m
+[31m--    static void set_uniform_value(Renderer &renderer, MaterialInstanceHandle handle, const char *name, i32 value)[m
+[32m++    static void set_uniform_value(Renderer *renderer, MaterialInstanceHandle handle, const char *name, i32 value)[m
+      {[m
+          Material &material = get_material_instance(handle, renderer);[m
+          set_uniform_value(renderer, material, name, value);[m
+      }[m
+  [m
+[31m--    static void set_uniform_value(Renderer &renderer, Material &material, const char *name, math::Mat4 value)[m
+[32m++    static void set_uniform_value(Renderer *renderer, Material &material, const char *name, math::Mat4 value)[m
+      {[m
+          for (i32 i = 0; i < material.instanced_vertex_attribute_count; i++)[m
+          {[m
+[36m@@@ -2576,13 -2507,13 +2574,13 @@@[m
+          }[m
+      }[m
+  [m
+[31m--    static void set_uniform_value(Renderer &renderer, MaterialInstanceHandle handle, const char *name, math::Mat4 value)[m
+[32m++    static void set_uniform_value(Renderer *renderer, MaterialInstanceHandle handle, const char *name, math::Mat4 value)[m
+      {[m
+          Material &material = get_material_instance(handle, renderer);[m
+          set_uniform_value(renderer, material, name, value);[m
+      }[m
+  [m
+[31m--    static void set_uniform_value(Renderer &renderer, Material &material, const char *name, TextureHandle value)[m
+[32m++    static void set_uniform_value(Renderer *renderer, Material &material, const char *name, TextureHandle value)[m
+      {[m
+          for (i32 i = 0; i < material.uniform_value_count; i++)[m
+          {[m
+[36m@@@ -2597,13 -2528,13 +2595,13 @@@[m
+          }[m
+      }[m
+  [m
+[31m--    static void set_uniform_value(Renderer &renderer, MaterialInstanceHandle handle, const char *name, TextureHandle value)[m
+[32m++    static void set_uniform_value(Renderer *renderer, MaterialInstanceHandle handle, const char *name, TextureHandle value)[m
+      {[m
+          Material &material = get_material_instance(handle, renderer);[m
+          set_uniform_value(renderer, material, name, value);[m
+      }[m
+  [m
+[31m--    static void set_uniform_value(Renderer &renderer, Material &material, const char *name, MSTextureHandle value)[m
+[32m++    static void set_uniform_value(Renderer *renderer, Material &material, const char *name, MSTextureHandle value)[m
+      {[m
+          for (i32 i = 0; i < material.uniform_value_count; i++)[m
+          {[m
+[36m@@@ -2617,13 -2548,13 +2615,13 @@@[m
+          }[m
+      }[m
+  [m
+[31m--    static void set_uniform_value(Renderer &renderer, MaterialInstanceHandle handle, const char *name, MSTextureHandle value)[m
+[32m++    static void set_uniform_value(Renderer *renderer, MaterialInstanceHandle handle, const char *name, MSTextureHandle value)[m
+      {[m
+          Material &material = get_material_instance(handle, renderer);[m
+          set_uniform_value(renderer, material, name, value);[m
+      }[m
+  [m
+[31m--    static void set_uniform_array_value(Renderer &renderer, Material &material, const char *array_name, i32 index, const char *variable_name, r32 value)[m
+[32m++    static void set_uniform_array_value(Renderer *renderer, Material &material, const char *array_name, i32 index, const char *variable_name, r32 value)[m
+      {[m
+          for (i32 i = 0; i < material.array_count; i++)[m
+          {[m
+[36m@@@ -2648,13 -2579,13 +2646,13 @@@[m
+          }[m
+      }[m
+  [m
+[31m--    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, r32 value)[m
+[32m++    static void set_uniform_array_value(Renderer *renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, r32 value)[m
+      {[m
+          Material &material = get_material_instance(handle, renderer);[m
+          set_uniform_array_value(renderer, material, array_name, index, variable_name, value);[m
+      }[m
+  [m
+[31m--    static void set_uniform_array_value(Renderer &renderer, Material &material, const char *array_name, i32 index, const char *variable_name, math::Vec2 value)[m
+[32m++    static void set_uniform_array_value(Renderer *renderer, Material &material, const char *array_name, i32 index, const char *variable_name, math::Vec2 value)[m
+      {[m
+          for (i32 i = 0; i < material.array_count; i++)[m
+          {[m
+[36m@@@ -2678,13 -2609,13 +2676,13 @@@[m
+          }[m
+      }[m
+  [m
+[31m--    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec2 value)[m
+[32m++    static void set_uniform_array_value(Renderer *renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec2 value)[m
+      {[m
+          Material &material = get_material_instance(handle, renderer);[m
+          set_uniform_array_value(renderer, material, array_name, index, variable_name, value);[m
+      }[m
+  [m
+[31m--    static void set_uniform_array_value(Renderer &renderer, Material &material, const char *array_name, i32 index, const char *variable_name, math::Vec3 value)[m
+[32m++    static void set_uniform_array_value(Renderer *renderer, Material &material, const char *array_name, i32 index, const char *variable_name, math::Vec3 value)[m
+      {[m
+          for (i32 i = 0; i < material.array_count; i++)[m
+          {[m
+[36m@@@ -2708,13 -2639,13 +2706,13 @@@[m
+          }[m
+      }[m
+  [m
+[31m--    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec3 value)[m
+[32m++    static void set_uniform_array_value(Renderer *renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec3 value)[m
+      {[m
+          Material &material = get_material_instance(handle, renderer);[m
+          set_uniform_array_value(renderer, material, array_name, index, variable_name, value);[m
+      }[m
+  [m
+[31m--    static void set_uniform_array_value(Renderer &renderer, Material& material, const char *array_name, i32 index, const char *variable_name, math::Vec4 value)[m
+[32m++    static void set_uniform_array_value(Renderer *renderer, Material& material, const char *array_name, i32 index, const char *variable_name, math::Vec4 value)[m
+      {[m
+          for (i32 i = 0; i < material.array_count; i++)[m
+          {[m
+[36m@@@ -2737,13 -2668,13 +2735,13 @@@[m
+          }[m
+      }[m
+  [m
+[31m--    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec4 value)[m
+[32m++    static void set_uniform_array_value(Renderer *renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Vec4 value)[m
+      {[m
+          Material &material = get_material_instance(handle, renderer);[m
+          set_uniform_array_value(renderer, material, array_name, index, variable_name, value);[m
+      }[m
+  [m
+[31m--    static void set_uniform_array_value(Renderer &renderer, Material &material, const char *array_name, i32 index, const char *variable_name, i32 value)[m
+[32m++    static void set_uniform_array_value(Renderer *renderer, Material &material, const char *array_name, i32 index, const char *variable_name, i32 value)[m
+      {[m
+          for (i32 i = 0; i < material.array_count; i++)[m
+          {[m
+[36m@@@ -2774,13 -2705,13 +2772,13 @@@[m
+          }[m
+      }[m
+  [m
+[31m--    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, i32 value)[m
+[32m++    static void set_uniform_array_value(Renderer *renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, i32 value)[m
+      {[m
+          Material &material = get_material_instance(handle, renderer);[m
+          set_uniform_array_value(renderer, material, array_name, index, variable_name, value);[m
+      }[m
+  [m
+[31m--    static void set_uniform_array_value(Renderer &renderer, Material& material, const char *array_name, i32 index, const char *variable_name, math::Mat4 value)[m
+[32m++    static void set_uniform_array_value(Renderer *renderer, Material& material, const char *array_name, i32 index, const char *variable_name, math::Mat4 value)[m
+      {[m
+          for (i32 i = 0; i < material.array_count; i++)[m
+          {[m
+[36m@@@ -2804,14 -2735,14 +2802,14 @@@[m
+          }[m
+      }[m
+  [m
+[31m--    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Mat4 value)[m
+[32m++    static void set_uniform_array_value(Renderer *renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, math::Mat4 value)[m
+      {[m
+          Material &material = get_material_instance(handle, renderer);[m
+          set_uniform_array_value(renderer, material, array_name, index, variable_name, value);[m
+      }[m
+  [m
+  // @Incomplete: Add MSTexture support for arrays[m
+[31m--    static void set_uniform_array_value(Renderer &renderer, Material &material, const char *array_name, i32 index, const char *variable_name, rendering::TextureHandle value)[m
+[32m++    static void set_uniform_array_value(Renderer *renderer, Material &material, const char *array_name, i32 index, const char *variable_name, rendering::TextureHandle value)[m
+      {[m
+          for (i32 i = 0; i < material.array_count; i++)[m
+          {[m
+[36m@@@ -2835,7 -2766,7 +2833,7 @@@[m
+          }[m
+      }[m
+  [m
+[31m--    static void set_uniform_array_value(Renderer &renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, TextureHandle value)[m
+[32m++    static void set_uniform_array_value(Renderer *renderer, MaterialInstanceHandle handle, const char *array_name, i32 index, const char *variable_name, TextureHandle value)[m
+      {[m
+          Material &material = get_material_instance(handle, renderer);[m
+          set_uniform_array_value(renderer, material, array_name, index, variable_name, value);[m
+[36m@@@ -2846,15 -2784,14 +2844,16 @@@[m
+          ShadowCommand shadow_command = {};[m
+          shadow_command.buffer = buffer_handle;[m
+          shadow_command.transform = transform;[m
+[31m--        renderer.render.shadow_commands[renderer.render.shadow_command_count++] = shadow_command;[m
+[32m++        renderer->render.shadow_commands[renderer->render.shadow_command_count++] = shadow_command;[m
+      }[m
+  [m
+[31m -    static void push_buffer_to_render_pass(Renderer &renderer, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, Transform &transform, ShaderHandle shader_handle, RenderPassHandle render_pass_handle)[m
+[32m +    static void push_buffer_to_render_pass(Renderer &renderer, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, Transform &transform, ShaderHandle shader_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH, PrimitiveType primitive_type = PrimitiveType::TRIANGLES)[m
+      {[m
+[31m--        assert(renderer.render.render_command_count < global_max_render_commands);[m
+[32m++        RenderPass &pass = renderer->render.passes[render_pass_handle.handle - 1];[m
+[32m++        assert(pass.commands.render_command_count < global_max_render_commands);[m
+  [m
+          RenderCommand render_command = {};[m
+[32m +        render_command.primitive_type = primitive_type;[m
+          render_command.buffer = buffer_handle;[m
+          render_command.material = material_instance_handle;[m
+          render_command.transform = transform;[m
+[36m@@@ -2875,30 -2807,21 +2874,30 @@@[m
+          render_command.buffer = buffer_handle;[m
+          render_command.material = material_instance_handle;[m
+          render_command.pass.shader_handle = shader_handle;[m
+[31m--        RenderPass &pass = renderer.render.passes[render_pass_handle.handle - 1];[m
+[32m++        RenderPass &pass = renderer->render.passes[render_pass_handle.handle - 1];[m
+          pass.commands.render_commands[pass.commands.render_command_count++] = render_command;[m
+[32m +[m
+[32m +        if(type == CommandType::WITH_DEPTH)[m
+[32m +            pass.commands.render_commands[pass.commands.render_command_count++] = render_command;[m
+[32m +        else[m
+[32m +            pass.commands.depth_free_commands[pass.commands.depth_free_command_count++] = render_command;[m
+      }[m
+  [m
+[31m -    static void push_instanced_buffer_to_shadow_pass(Renderer &renderer, i32 count, BufferHandle buffer_handle, VertexAttributeInstanced *instanced_attrs, i32 attr_count)[m
+[32m +    static void push_instanced_buffer_to_render_pass(Renderer &renderer, i32 count, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, ShaderHandle shader_handle, RenderPassHandle render_pass_handle)[m
+[32m +    {[m
+[32m +    }[m
+[32m +[m
+[31m-     static void push_instanced_buffer_to_shadow_pass(Renderer &renderer, i32 count, BufferHandle buffer_handle, VertexAttributeInstanced *instanced_attrs, i32 attr_count)[m
+[32m++    static void push_instanced_buffer_to_shadow_pass(Renderer *renderer, i32 count, BufferHandle buffer_handle, VertexAttributeInstanced *instanced_attrs, i32 attr_count)[m
+      {[m
+          ShadowCommand shadow_command = {};[m
+          memcpy(shadow_command.instanced_vertex_attributes, instanced_attrs, attr_count * sizeof(VertexAttributeInstanced));[m
+          shadow_command.instanced_vertex_attribute_count = attr_count;[m
+          shadow_command.count = count;[m
+          shadow_command.buffer = buffer_handle;[m
+[31m--        renderer.render.shadow_commands[renderer.render.shadow_command_count++] = shadow_command;[m
+[32m++        renderer->render.shadow_commands[renderer->render.shadow_command_count++] = shadow_command;[m
+      }[m
+  [m
+[31m--    static math::Vec2 get_relative_size(Renderer &renderer, math::Vec2 size, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)[m
+[32m++    static math::Vec2 get_relative_size(Renderer *renderer, math::Vec2 size, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)[m
+      {[m
+          math::Vec2i resolution_scale = get_scale(renderer);[m
+  [m
+[36m@@@ -2944,7 -2867,7 +2943,7 @@@[m
+  // centered:      Whether or not the original quad was centered (need to know this for origin etc.)[m
+  // scaling_flags: How do we scale these UI elements?[m
+  // origin:        The origin[m
+[31m--    static RelativeUIQuadInfo get_relative_info(Renderer &renderer, math::Vec2 position, math::Vec2 relative_size, math::Vec2 size, RelativeFlag relative, b32 centered, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO, math::Vec2 origin = math::Vec2(0.0f))[m
+[32m++    static RelativeUIQuadInfo get_relative_info(Renderer *renderer, math::Vec2 position, math::Vec2 relative_size, math::Vec2 size, RelativeFlag relative, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)[m
+      {[m
+          math::Vec2i resolution_scale = get_scale(renderer);[m
+  [m
+[36m@@@ -2953,61 -2876,61 +2952,32 @@@[m
+          pos.y = (position.y / UI_COORD_DIMENSION) * resolution_scale.y;[m
+          pos.z = 0.0f;[m
+  [m
+[31m--        pos.x -= origin.x;[m
+[31m--        pos.y -= origin.y;[m
+[31m--[m
+          math::Vec3 scaled_size = math::Vec3(get_relative_size(renderer, relative_size, scaling_flags), 0.0f);[m
+  [m
+          math::Vec3 relative_pos = math::Vec3(pos.x, pos.y, 0.0f);[m
+  [m
+          math::Vec3 new_size = math::Vec3(get_relative_size(renderer, size, scaling_flags), 0.0f);[m
+  [m
+[31m--        r32 factor_x = scaled_size.x / origin.x;[m
+[31m--        r32 factor_y = scaled_size.y / origin.y;[m
+[31m--[m
+[31m--        if (origin.y == 0.0f)[m
+[31m--        {[m
+[31m--            factor_y = 1.0f;[m
+[31m--        }[m
+[31m--        if (origin.x == 0.0f)[m
+[31m--        {[m
+[31m--            factor_x = 1.0f;[m
+[31m--        }[m
+[31m--[m
+          switch (relative)[m
+          {[m
+          case RELATIVE_TOP:[m
+          {[m
+[31m--            relative_pos.y += (i32)scaled_size.y / factor_y;[m
+[32m++            relative_pos.y += (i32)scaled_size.y;[m
+          }[m
+          break;[m
+          case RELATIVE_LEFT:[m
+          {[m
+[31m--            if (origin.x == 0.0f)[m
+[31m--            {[m
+[31m--                relative_pos.x -= (i32)scaled_size.x / factor_x;[m
+[31m--            }[m
+[31m--            else[m
+[31m--            {[m
+[31m--                relative_pos.x -= (i32)scaled_size.x / factor_x + new_size.x;[m
+[31m--            }[m
+[32m++            relative_pos.x -= (i32)scaled_size.x + new_size.x;[m
+          }[m
+          break;[m
+          case RELATIVE_RIGHT:[m
+          {[m
+[31m--            if (origin.x == 0.0f)[m
+[31m--            {[m
+[31m--                relative_pos.x += (i32)scaled_size.x / factor_x;[m
+[31m--            }[m
+[31m--            else[m
+[31m--            {[m
+[31m--                relative_pos.x += (i32)scaled_size.x / factor_x + scaled_size.x;[m
+[31m--            }[m
+[32m++            relative_pos.x += (i32)scaled_size.x;[m
+          }[m
+          break;[m
+          case RELATIVE_BOTTOM:[m
+          {[m
+[31m--            relative_pos.y -= (i32)scaled_size.y / factor_y - scaled_size.y + new_size.y;[m
+[32m++            relative_pos.y -= (i32)scaled_size.y;[m
+          }[m
+          break;[m
+          }[m
+[36m@@@ -3031,7 -2954,7 +3001,7 @@@[m
+          }[m
+      }[m
+  [m
+[31m--    static math::Rect scale_clip_rect(Renderer &renderer, math::Rect clip_rect, u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)[m
+[32m++    static math::Rect scale_clip_rect(Renderer *renderer, math::Rect clip_rect, u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)[m
+      {[m
+          math::Vec2i resolution_scale = get_scale(renderer);[m
+          math::Rect scaled_clip_rect;[m
+[36m@@@ -3051,10 -2974,10 +3021,30 @@@[m
+              scaled_clip_rect.height = (clip_rect.height / UI_COORD_DIMENSION) * (r32)resolution_scale.y;[m
+          }[m
+  [m
+[32m++        if(isnan(scaled_clip_rect.x) || scaled_clip_rect.x < 0.0f)[m
+[32m++        {[m
+[32m++            scaled_clip_rect.x = 0.0f;[m
+[32m++        }[m
+[32m++[m
+[32m++        if(isnan(scaled_clip_rect.y) || scaled_clip_rect.y < 0.0f)[m
+[32m++        {[m
+[32m++            scaled_clip_rect.y = 0.0f;[m
+[32m++        }[m
+[32m++[m
+[32m++        if(isnan(scaled_clip_rect.width) || scaled_clip_rect.width < 0.0f)[m
+[32m++        {[m
+[32m++            scaled_clip_rect.width = 0.0f;[m
+[32m++        }[m
+[32m++[m
+[32m++        if(isnan(scaled_clip_rect.height) || scaled_clip_rect.height < 0.0f)[m
+[32m++        {[m
+[32m++            scaled_clip_rect.height = 0.0f;[m
+[32m++        }[m
+[32m++[m
+          return scaled_clip_rect;[m
+      }[m
+  [m
+[31m--    static void generate_text_coordinates(const char *text, TrueTypeFontInfo &font_info, math::Vec3 position, u64 alignment_flags, FramebufferInfo &framebuffer, CharacterData **coords)[m
+[32m++    static void generate_text_coordinates(Renderer* renderer, const char *text, TrueTypeFontInfo &font_info, math::Vec3 position, u64 alignment_flags, FramebufferInfo &framebuffer, CharacterData **coords)[m
+      {[m
+          // @Note: Compute the coord buffer[m
+          i32 n = 0;[m
+[36m@@@ -3068,7 -2991,7 +3058,7 @@@[m
+  [m
+          if (alignment_flags & UIAlignment::TOP)[m
+          {[m
+[31m--            //y = line_data.total_height;[m
+[32m++            y -= line_data.total_height;[m
+          }[m
+          else if (alignment_flags & UIAlignment::BOTTOM)[m
+          {[m
+[36m@@@ -3122,22 -3045,22 +3112,54 @@@[m
+          }[m
+      }[m
+  [m
+[31m--    static void push_text(Renderer &renderer, CreateTextCommandInfo info, const char *text)[m
+[32m++    static void push_text(Renderer *renderer, CreateTextCommandInfo info, const char *text)[m
+      {[m
+[31m--        RenderPass &pass = renderer.render.ui.pass;[m
+[32m++        math::Vec2 size = get_text_size_scaled(renderer, text, get_tt_font_info(renderer, info.font.handle), 0);[m
+[32m++        [m
+[32m++        if(info.alignment_flags & UIAlignment::LEFT)[m
+[32m++        {[m
+[32m++            if(info.position.x + size.x < 0.0f || info.position.x > 1000.0f)[m
+[32m++            {[m
+[32m++                return;[m
+[32m++            }[m
+[32m++        }[m
+[32m++        else[m
+[32m++        {[m
+[32m++            if(info.position.x < 0.0f || info.position.x - size.x > 1000.0f)[m
+[32m++            {[m
+[32m++                return;[m
+[32m++            }[m
+[32m++        }[m
+[32m++        [m
+[32m++        if(info.alignment_flags & UIAlignment::TOP)[m
+[32m++        {[m
+[32m++            if(info.position.y - size.y > 1000.0f || info.position.y < 0.0f)[m
+[32m++            {[m
+[32m++                return;[m
+[32m++            }[m
+[32m++        }[m
+[32m++        else[m
+[32m++        {[m
+[32m++            if(info.position.y + size.y < 0.0f || info.position.y > 1000.0f)[m
+[32m++            {[m
+[32m++                return;[m
+[32m++            }[m
+[32m++        }[m
+[32m++        [m
+[32m++        RenderPass &pass = renderer->render.ui.pass;[m
+          TextRenderCommand &command = pass.ui.text_commands[pass.ui.text_command_count];[m
+  [m
+          command.font = info.font;[m
+  [m
+[31m--        FramebufferInfo *framebuffer = &renderer.render.framebuffers[pass.framebuffer.handle - 1];[m
+[31m--        TrueTypeFontInfo &font_info = renderer.tt_font_infos[info.font.handle];[m
+[32m++        FramebufferInfo *framebuffer = &renderer->render.framebuffers[pass.framebuffer.handle - 1];[m
+[32m++        TrueTypeFontInfo &font_info = renderer->tt_font_infos[info.font.handle];[m
+  [m
+          if (font_info.resolution_loaded_for.width != (i32)framebuffer->width || font_info.resolution_loaded_for.height != (i32)framebuffer->height)[m
+          {[m
+              load_font(renderer, font_info.path, font_info.load_size, info.font);[m
+          }[m
+  [m
+[31m--        framebuffer = &renderer.render.framebuffers[pass.framebuffer.handle - 1];[m
+[32m++        framebuffer = &renderer->render.framebuffers[pass.framebuffer.handle - 1];[m
+  [m
+          math::Vec2i resolution_scale = get_scale(renderer);[m
+  [m
+[36m@@@ -3146,42 -3069,42 +3168,58 @@@[m
+          pos.y = (info.position.y / UI_COORD_DIMENSION) * resolution_scale.y;[m
+          pos.z = 0.0f;[m
+  [m
+[31m--        math::Rect scaled_clip_rect = scale_clip_rect(renderer, info.clip_rect);[m
+[32m++        math::Rect scaled_clip_rect = scale_clip_rect(renderer, info.clip_rect, 0);[m
+[32m++[m
+[32m++        if(scaled_clip_rect.width == 0.0f || scaled_clip_rect.height == 0.0f)[m
+[32m++        {[m
+[32m++            info.clip = false;[m
+[32m++        }[m
+  [m
+          command.clip = info.clip;[m
+          command.clip_rect = scaled_clip_rect;[m
+          command.text_length = strlen(text);[m
+  [m
+[32m++        assert(info.z_layer < Z_LAYERS);[m
+[32m++        [m
+          // @Incomplete: Set material?[m
+[31m--        command.material = renderer.render.materials[renderer.render.ui.font_material.handle];[m
+[32m++        command.material = renderer->render.materials[renderer->render.ui.font_material.handle];[m
+  [m
+          set_uniform_value(renderer, command.material, "color", info.color);[m
+          set_uniform_value(renderer, command.material, "z", (r32)info.z_layer);[m
+          set_uniform_value(renderer, command.material, "tex", font_info.texture);[m
+  [m
+[32m++        pass.ui.text_z_layers[info.z_layer][pass.ui.text_z_layer_counts[info.z_layer]++] = pass.ui.text_command_count;[m
+[32m++[m
+          command.shader_handle = command.material.shader;[m
+  [m
+          CharacterData *coords = pass.ui.coords[pass.ui.text_command_count];[m
+  [m
+[31m--        generate_text_coordinates(text, font_info, pos, info.alignment_flags, *framebuffer, &coords);[m
+[32m++        generate_text_coordinates(renderer, text, font_info, pos, info.alignment_flags, *framebuffer, &coords);[m
+  [m
+          command.buffer = {pass.ui.text_command_count++};[m
+      }[m
+  [m
+[31m--    static void push_buffer_to_ui_pass(Renderer &renderer, BufferHandle buffer_handle, ShaderHandle shader, CreateUICommandInfo info)[m
+[32m++    static void push_buffer_to_ui_pass(Renderer *renderer, BufferHandle buffer_handle, ShaderHandle shader, CreateUICommandInfo info)[m
+      {[m
+          UIRenderCommand render_command = {};[m
+          render_command.buffer = buffer_handle;[m
+  [m
+[32m++        b32 transparent = false;[m
+[32m++[m
+          if (info.texture_handle.handle != 0)[m
+          {[m
+[31m--            render_command.material = renderer.render.materials[renderer.render.ui.textured_material.handle];[m
+[32m++            render_command.material = renderer->render.materials[renderer->render.ui.textured_material.handle];[m
+              set_uniform_value(renderer, render_command.material, "tex0", info.texture_handle);[m
+          }[m
+          else[m
+          {[m
+[31m--            render_command.material = renderer.render.materials[renderer.render.ui.material.handle];[m
+[32m++            render_command.material = renderer->render.materials[renderer->render.ui.material.handle];[m
+              set_uniform_value(renderer, render_command.material, "color", info.color);[m
+[32m++[m
+[32m++            if(info.color.a < 1.0f)[m
+[32m++            {[m
+[32m++                transparent = true;[m
+[32m++            }[m
+          }[m
+  [m
+          Transform transform = {};[m
+[36m@@@ -3192,15 -3115,15 +3230,29 @@@[m
+          render_command.transform = transform;[m
+          render_command.shader_handle = render_command.material.shader;[m
+          render_command.clip_rect = info.clip_rect;[m
+[31m--        RenderPass &pass = renderer.render.ui.pass;[m
+[31m--        pass.ui.render_commands[pass.ui.render_command_count++] = render_command;[m
+[32m++        render_command.clip = info.clip;[m
+[32m++        RenderPass &pass = renderer->render.ui.pass;[m
+[32m++        [m
+[32m++        if(transparent)[m
+[32m++        {[m
+[32m++            pass.ui.transparent_commands[pass.ui.transparent_command_count++] = render_command;[m
+[32m++        }[m
+[32m++        else[m
+[32m++        {[m
+[32m++            assert(info.z_layer < Z_LAYERS);[m
+[32m++            i32 *z_layer = pass.ui.ui_z_layers[info.z_layer];[m
+[32m++            i32 z_index = pass.ui.ui_z_layer_counts[info.z_layer]++;[m
+[32m++            z_layer[z_index] = pass.ui.render_command_count;[m
+[32m++            pass.ui.render_commands[pass.ui.render_command_count++] = render_command;[m
+[32m++        }[m
+[32m++        [m
+      }[m
+  [m
+[31m--    static UpdateBufferInfo create_update_buffer_info(Renderer &renderer, BufferHandle handle)[m
+[32m++    static UpdateBufferInfo create_update_buffer_info(Renderer *renderer, BufferHandle handle)[m
+      {[m
+[31m--        i32 internal_handle = renderer.render._internal_buffer_handles[handle.handle - 1];[m
+[32m++        i32 internal_handle = renderer->render._internal_buffer_handles[handle.handle - 1];[m
+  [m
+[31m--        RegisterBufferInfo reg_info = renderer.render.buffers[internal_handle];[m
+[32m++        RegisterBufferInfo reg_info = renderer->render.buffers[internal_handle];[m
+          UpdateBufferInfo info = {};[m
+          info.buffer = handle;[m
+          info.update_data = reg_info.data;[m
+[36m@@@ -3258,20 -3166,20 +3310,71 @@@[m
+          return info;[m
+      }[m
+  [m
+[31m--    static void push_ui_quad(Renderer &renderer, CreateUICommandInfo info)[m
+[32m++    static void push_ui_quad(Renderer *renderer, CreateUICommandInfo info)[m
+      {[m
+          CreateUICommandInfo scaled_info = info;[m
+          math::Vec2i resolution_scale = get_scale(renderer);[m
+  [m
+[32m++        if(info.anchor_flag & UIAlignment::LEFT)[m
+[32m++        {[m
+[32m++            if(info.position.x + info.scale.x < 0.0f || info.position.x > 1000.0f)[m
+[32m++            {[m
+[32m++                return;[m
+[32m++            }[m
+[32m++        }[m
+[32m++        else if(info.anchor_flag & UIAlignment::RIGHT)[m
+[32m++        {[m
+[32m++            if(info.position.x < 0.0f || info.position.x + info.scale.x > 1000.0f)[m
+[32m++            {[m
+[32m++                return;[m
+[32m++            }[m
+[32m++        }[m
+[32m++        else[m
+[32m++        {[m
+[32m++            if(info.position.x - info.scale.x / 2.0f < 0.0f || info.position.x + info.scale.x / 2.0f > 1000.0f)[m
+[32m++            {[m
+[32m++                return;[m
+[32m++            }[m
+[32m++        }[m
+[32m++        [m
+[32m++        if(info.anchor_flag & UIAlignment::TOP)[m
+[32m++        {[m
+[32m++            if(info.position.y - info.scale.y > 1000.0f || info.position.y < 0.0f)[m
+[32m++            {[m
+[32m++                return;[m
+[32m++            }[m
+[32m++        }[m
+[32m++        else if(info.anchor_flag & UIAlignment::BOTTOM)[m
+[32m++        {[m
+[32m++            if(info.position.y + info.scale.y < 0.0f || info.position.y > 1000.0f)[m
+[32m++            {[m
+[32m++                return;[m
+[32m++            }[m
+[32m++        }[m
+[32m++        else[m
+[32m++        {[m
+[32m++            if(info.position.y - info.scale.y / 2.0f < 0.0f || info.position.y + info.scale.y / 2.0f > 1000.0f)[m
+[32m++            {[m
+[32m++                return;[m
+[32m++            }[m
+[32m++        }[m
+[32m++        [m
+          math::Vec2 pos;[m
+          pos.x = (info.position.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;[m
+          pos.y = (info.position.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;[m
+[31m--[m
+[32m++        [m
+          scaled_info.position = pos;[m
+          scaled_info.z_layer = info.z_layer;[m
+  [m
+          scaled_info.scale = get_relative_size(renderer, info.scale, info.scaling_flag);[m
+[31m--        scaled_info.clip_rect = scale_clip_rect(renderer, info.clip_rect, info.scaling_flag);[m
+[32m++        scaled_info.clip_rect = scale_clip_rect(renderer, info.clip_rect, 0);[m
+[32m++[m
+[32m++        if(scaled_info.clip_rect.width == 0.0f || scaled_info.clip_rect.height == 0.0f)[m
+[32m++        {[m
+[32m++            info.clip = false;[m
+[32m++        }[m
+[32m++        [m
+[32m++        scaled_info.clip = info.clip;[m
+  [m
+          scaled_info.rotation = info.rotation;[m
+          scaled_info.color = info.color;[m
+[36m@@@ -3282,100 -3190,100 +3385,54 @@@[m
+          BufferHandle buffer = {};[m
+          ShaderHandle shader = {};[m
+  [m
+[31m--        if (info.texture_handle.handle != 0)[m
+[32m++        if (anchor & UIAlignment::TOP)[m
+          {[m
+[31m--            if (anchor & UIAlignment::TOP)[m
+[32m++            r32 overflow = pos.y - scaled_info.scale.y;[m
+[32m++            if(overflow < 0.0f)[m
+              {[m
+[31m--                if (anchor & UIAlignment::LEFT)[m
+[31m--                {[m
+[31m--                    buffer = renderer.render.ui.top_left_textured_quad_buffer;[m
+[31m--                }[m
+[31m--                else if (anchor & UIAlignment::RIGHT)[m
+[31m--                {[m
+[31m--                    buffer = renderer.render.ui.top_right_textured_quad_buffer;[m
+[31m--                }[m
+[31m--                else[m
+[31m--                {[m
+[31m--                    buffer = renderer.render.ui.top_x_centered_textured_quad_buffer;[m
+[31m--                }[m
+[32m++                scaled_info.scale.y -= overflow;[m
+              }[m
+[31m--            else if (anchor & UIAlignment::BOTTOM)[m
+[32m++            if (anchor & UIAlignment::LEFT)[m
+              {[m
+[31m--                if (anchor & UIAlignment::LEFT)[m
+[31m--                {[m
+[31m--                    buffer = renderer.render.ui.bottom_left_textured_quad_buffer;[m
+[31m--                }[m
+[31m--                else if (anchor & UIAlignment::RIGHT)[m
+[31m--                {[m
+[31m--                    buffer = renderer.render.ui.bottom_right_textured_quad_buffer;[m
+[31m--                }[m
+[31m--                else[m
+[31m--                {[m
+[31m--                    buffer = renderer.render.ui.bottom_x_centered_textured_quad_buffer;[m
+[31m--                }[m
+[32m++                buffer = renderer->render.ui.top_left_textured_quad_buffer;[m
+[32m++            }[m
+[32m++            else if (anchor & UIAlignment::RIGHT)[m
+[32m++            {[m
+[32m++                buffer = renderer->render.ui.top_right_textured_quad_buffer;[m
+              }[m
+              else[m
+              {[m
+[31m--                if (anchor & UIAlignment::LEFT)[m
+[31m--                {[m
+[31m--                    buffer = renderer.render.ui.left_y_centered_textured_quad_buffer;[m
+[31m--                }[m
+[31m--                else if (anchor & UIAlignment::RIGHT)[m
+[31m--                {[m
+[31m--                    buffer = renderer.render.ui.right_y_centered_textured_quad_buffer;[m
+[31m--                }[m
+[31m--                else[m
+[31m--                {[m
+[31m--                    buffer = renderer.render.ui.centered_textured_quad_buffer;[m
+[31m--                }[m
+[32m++                buffer = renderer->render.ui.top_x_centered_textured_quad_buffer;[m
+[32m++            }[m
+[32m++        }[m
+[32m++        else if (anchor & UIAlignment::BOTTOM)[m
+[32m++        {[m
+[32m++            if (anchor & UIAlignment::LEFT)[m
+[32m++            {[m
+[32m++                buffer = renderer->render.ui.bottom_left_textured_quad_buffer;[m
+[32m++            }[m
+[32m++            else if (anchor & UIAlignment::RIGHT)[m
+[32m++            {[m
+[32m++                buffer = renderer->render.ui.bottom_right_textured_quad_buffer;[m
+[32m++            }[m
+[32m++            else[m
+[32m++            {[m
+[32m++                buffer = renderer->render.ui.bottom_x_centered_textured_quad_buffer;[m
+              }[m
+          }[m
+          else[m
+          {[m
+[31m--            if (anchor & UIAlignment::TOP)[m
+[32m++            if (anchor & UIAlignment::LEFT)[m
+              {[m
+[31m--                if (anchor & UIAlignment::LEFT)[m
+[31m--                {[m
+[31m--                    buffer = renderer.render.ui.top_left_quad_buffer;[m
+[31m--                }[m
+[31m--                else if (anchor & UIAlignment::RIGHT)[m
+[31m--                {[m
+[31m--                    buffer = renderer.render.ui.top_right_quad_buffer;[m
+[31m--                }[m
+[31m--                else[m
+[31m--                {[m
+[31m--                    buffer = renderer.render.ui.top_x_centered_quad_buffer;[m
+[31m--                }[m
+[32m++                buffer = renderer->render.ui.left_y_centered_textured_quad_buffer;[m
+              }[m
+[31m--            else if (anchor & UIAlignment::BOTTOM)[m
+[32m++            else if (anchor & UIAlignment::RIGHT)[m
+              {[m
+[31m--                if (anchor & UIAlignment::LEFT)[m
+[31m--                {[m
+[31m--                    buffer = renderer.render.ui.bottom_left_quad_buffer;[m
+[31m--                }[m
+[31m--                else if (anchor & UIAlignment::RIGHT)[m
+[31m--                {[m
+[31m--                    buffer = renderer.render.ui.bottom_right_quad_buffer;[m
+[31m--                }[m
+[31m--                else[m
+[31m--                {[m
+[31m--                    buffer = renderer.render.ui.bottom_x_centered_quad_buffer;[m
+[31m--                }[m
+[32m++                buffer = renderer->render.ui.right_y_centered_textured_quad_buffer;[m
+              }[m
+              else[m
+              {[m
+[31m--                if (anchor & UIAlignment::LEFT)[m
+[31m--                {[m
+[31m--                    buffer = renderer.render.ui.left_y_centered_quad_buffer;[m
+[31m--                }[m
+[31m--                else if (anchor & UIAlignment::RIGHT)[m
+[31m--                {[m
+[31m--                    buffer = renderer.render.ui.right_y_centered_quad_buffer;[m
+[31m--                }[m
+[31m--                else[m
+[31m--                {[m
+[31m--                    buffer = renderer.render.ui.centered_quad_buffer;[m
+[31m--                }[m
+[32m++                buffer = renderer->render.ui.centered_textured_quad_buffer;[m
+              }[m
+          }[m
+  [m

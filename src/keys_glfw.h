@@ -286,8 +286,17 @@ static void controller_keys(i32 joystick)
 
 static void cursor_position_callback(GLFWwindow *window, double x_pos, double y_pos)
 {
+    
+    glfwGetCursorPos(window, &x_pos, &y_pos);
+        
     input_controller.mouse_x_delta = x_pos - input_controller.mouse_x;
     input_controller.mouse_y_delta = y_pos - input_controller.mouse_y;
+    
+    if(input_controller.mouse_x_delta > 100)
+        input_controller.mouse_x_delta = 0.0;
+    if(input_controller.mouse_y_delta > 100)
+        input_controller.mouse_y_delta = 0.0;
+    
     input_controller.mouse_x = x_pos;
     input_controller.mouse_y = y_pos;
 }
@@ -364,6 +373,7 @@ static void set_invalid_keys()
             input_controller.keys_just_pressed[key_code] = KEY_INVALID;
         }
         input_controller.keys_up[key_code] = false;
+        input_controller.ignore_key[key_code] = false;
     } 
     input_controller.current_character = 0x0;
 }
@@ -395,6 +405,7 @@ static void set_mouse_invalid_keys()
     input_controller.scroll_y = 0;
     input_controller.mouse_x_delta = 0.0;
     input_controller.mouse_y_delta = 0.0;
+    input_controller.ignore_mouse = false;
 }
 
 

@@ -37,6 +37,20 @@ struct ParticleSpawnInfo
 #define EMITTER_FUNC(name) ParticleSpawnInfo name(RandomSeries& series, r32 min, r32 max)
 typedef EMITTER_FUNC(EmitterFunc);
 
+enum EmissionFuncType
+{
+    DIRECTION,
+    RANDOM_DIRECTION,
+    SQUARE_2D,
+    SQUARE_2D_RANDOM,
+    SQUARE,
+    SQUARE_RANDOM,
+    DISC,
+    DISC_RANDOM,
+    CIRCLE,
+    CIRCLE_RANDOM
+};
+
 struct EmissionModule
 {
     EmissionType type;
@@ -51,8 +65,8 @@ struct EmissionModule
     r32 min;
     r32 max;
     r32 rate_over_distance;
-    
-    EmitterFunc* emitter_func;
+
+    EmissionFuncType emitter_func_type;
 };
 
 struct ParticleSystemAttributes
@@ -63,6 +77,7 @@ struct ParticleSystemAttributes
     b32 prewarm;
 
     ParticleSpace particle_space;
+    rendering::BufferHandle buffer;
 
     math::Rgba start_color;
     
@@ -128,7 +143,7 @@ struct ParticleSystemAttributes
 
     r32 spread;
     i32 particles_per_second;
-    i32 texture_handle;
+    rendering::TextureHandle texture_handle;
     r32 gravity;
     
     EmissionModule emission_module;
@@ -152,7 +167,7 @@ struct Particles
     
     r64_4x *life;
     
-    i32 *texture_handle;
+    rendering::TextureHandle *texture_handle;
 };
 
 struct ParticleSystemHandle
@@ -164,14 +179,18 @@ struct ParticleSystemHandle
 
 struct ParticleSystemInfo
 {
-    b32 running;
+    b32 simulating;
+    b32 paused;
+    
     b32 emitting;
+    
     b32 prewarmed;
 
     r64 time_spent;
 
     ParticleSystemAttributes attributes;
-    
+    rendering::MaterialInstanceHandle material_handle;
+
     r32 particles_cumulative;
 
     struct
@@ -202,13 +221,11 @@ struct ParticleSystemInfo
         i32 value_count;
     } speed_over_lifetime;
     
-    i32 offset_buffer_handle;
-    i32 color_buffer_handle;
-    i32 size_buffer_handle;
-    i32 angle_buffer_handle;
-    TransformInfo transform;
-    
-    Material material;
+    rendering::InstanceBufferHandle offset_buffer_handle;
+    rendering::InstanceBufferHandle color_buffer_handle;
+    rendering::InstanceBufferHandle size_buffer_handle;
+    rendering::InstanceBufferHandle angle_buffer_handle;
+    rendering::Transform transform;
     
     Particles particles;
     i32* emitted_for_this_index;
@@ -229,11 +246,6 @@ struct ParticleSystemInfo
     i32 total_emitted;
     i32 last_used_particle;
     i32 max_particles;
-    
-    math::Vec3 *offsets;
-    math::Vec4 *colors;
-    math::Vec2 *sizes;
-    r32 *angles;
     
     r64 current_emission_time;
     
