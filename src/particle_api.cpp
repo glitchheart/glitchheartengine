@@ -420,7 +420,7 @@ static i32 add_color_key(ParticleSystemInfo &particle_system, r64 key_time, math
     {
         values[particle_system.color_over_lifetime.value_count] = value;
         keys[particle_system.color_over_lifetime.value_count] = key_time;
-        new_index = particle_system.color_over_lifetime.value_count;
+        // new_index = particle_system.color_over_lifetime.value_count;
     }
     
     particle_system.color_over_lifetime.value_count++;
@@ -478,13 +478,13 @@ static i32 add_size_key(ParticleSystemInfo &particle_system, r64 key_time, math:
     {
         values[particle_system.size_over_lifetime.value_count] = value;
         keys[particle_system.size_over_lifetime.value_count] = key_time;
+        new_index = particle_system.size_over_lifetime.value_count;
     }
     
     particle_system.size_over_lifetime.value_count++;
 
     return new_index;
 }
-
 
 static void remove_size_key(ParticleSystemInfo &particle_system, r64 key_time)
 {
@@ -536,6 +536,7 @@ static i32 add_speed_key(ParticleSystemInfo &particle_system, r64 key_time, r32 
     {
         values[particle_system.speed_over_lifetime.value_count] = value;
         keys[particle_system.speed_over_lifetime.value_count] = key_time;
+        new_index = particle_system.speed_over_lifetime.value_count;;
     }
     
     
