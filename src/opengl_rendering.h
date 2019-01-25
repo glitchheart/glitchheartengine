@@ -43,7 +43,9 @@ struct Framebuffer
     GLuint tex0_loc;
     GLuint tex_color_buffer_handles[4];
     i32 tex_color_buffer_count;
-    GLuint depth_buffer_handle;
+    
+    GLuint depth_buffer_handles[4];
+    i32 depth_buffer_count;
     GLuint vao;
     GLuint vbo;
     GLuint ebo;
