@@ -10,7 +10,7 @@ struct PlatformHandle
     HANDLE handle;
 };
 
-#define copy_file(game_library_path, temp_game_library_path, overwrite, arena) CopyFile(game_library_path, temp_game_library_path, overwrite)
+#define copy_file(game_library_path, temp_game_library_path, overwrite) CopyFile(game_library_path, temp_game_library_path, overwrite)
 
 time_t file_time_to_time_t(const FILETIME& ft)
 {
