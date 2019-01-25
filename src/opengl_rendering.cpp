@@ -416,7 +416,7 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
     for (i32 i = 0; i < info.color_attachments.count; i++)
     {
         rendering::ColorAttachment &attachment = info.color_attachments.attachments[i];
-        if (attachment.type == rendering::ColorAttachmentType::RENDER_BUFFER)
+        if (attachment.type == rendering::AttachmentType::RENDER_BUFFER)
         {
             if (framebuffer.tex_color_buffer_handles[i] != 0)
             {
@@ -535,9 +535,9 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
     }
 }
 
-static void create_framebuffer_depth_texture_attachment(rendering::FramebufferInfo &info, Framebuffer &framebuffer, i32 width, i32 height, Renderer *renderer)
+static void _create_framebuffer_depth_texture_attachment(rendering::DepthAttachment &attachment, i32 index, Framebuffer &framebuffer, i32 width, i32 height, Renderer *renderer)
 {
-    if(info.depth_attachment.flags & rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED)
+    if(attachment.flags & rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED)
     {
         Texture* texture = renderer->render.textures[renderer->render.texture_count++];
         i32 handle = renderer->render.texture_count;
@@ -545,7 +545,7 @@ static void create_framebuffer_depth_texture_attachment(rendering::FramebufferIn
         glGenTextures(1, &texture->handle);
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture->handle);
         
-        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, info.depth_attachment.samples, GL_DEPTH_COMPONENT, width, height, GL_TRUE);
+        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, attachment.samples, GL_DEPTH_COMPONENT, width, height, GL_TRUE);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -559,8 +559,8 @@ static void create_framebuffer_depth_texture_attachment(rendering::FramebufferIn
 
         texture->width = width;
         texture->height = height;
-        framebuffer.depth_buffer_handle = handle;
-        info.depth_attachment.texture = {handle};
+        framebuffer.depth_buffer_handles[index] = handle;
+        attachment.texture = {handle};
     }
     else
     {
@@ -584,32 +584,51 @@ static void create_framebuffer_depth_texture_attachment(rendering::FramebufferIn
 
         texture->width = width;
         texture->height = height;
-        framebuffer.depth_buffer_handle = handle;
-        info.depth_attachment.texture = {handle};
+        framebuffer.depth_buffer_handles[index] = handle;
+        attachment.texture = {handle};
     }
-    
 }
 
-static void create_framebuffer_render_buffer_attachment(rendering::FramebufferInfo &info, Framebuffer &framebuffer, i32 width, i32 height)
+static void _create_framebuffer_depth_render_buffer_attachment(rendering::DepthAttachment &attachment, i32 index, Framebuffer &framebuffer, i32 width, i32 height)
 {
-    if (framebuffer.depth_buffer_handle != 0)
+    if (framebuffer.depth_buffer_handles[index] != 0)
     {
-        glDeleteRenderbuffers(1, &framebuffer.depth_buffer_handle);
+        glDeleteRenderbuffers(1, &framebuffer.depth_buffer_handles[index]);
     }
     
-    glGenRenderbuffers(1, &framebuffer.depth_buffer_handle);
-    glBindRenderbuffer(GL_RENDERBUFFER, framebuffer.depth_buffer_handle);
+    glGenRenderbuffers(1, &framebuffer.depth_buffer_handles[index]);
+    glBindRenderbuffer(GL_RENDERBUFFER, framebuffer.depth_buffer_handles[index]);
 
-    if (info.depth_attachment.flags & rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED)
+    if (attachment.flags & rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED)
     {
-        glRenderbufferStorageMultisample(GL_RENDERBUFFER, info.depth_attachment.samples, GL_DEPTH_COMPONENT, width, height);
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, attachment.samples, GL_DEPTH_COMPONENT, width, height);
     }
     else
     {
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
     }
 
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, framebuffer.depth_buffer_handle);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, framebuffer.depth_buffer_handles[index]);
+}
+
+
+static void create_framebuffer_depth_attachment(rendering::FramebufferInfo &info, Framebuffer &framebuffer, i32 width, i32 height, Renderer *renderer)
+{
+    framebuffer.depth_buffer_count = info.color_attachments.count;
+    
+    for (i32 i = 0; i < info.color_attachments.count; i++)
+    {
+        rendering::DepthAttachment &attachment = info.depth_attachments.attachments[i];
+
+        if(attachment.type == rendering::AttachmentType::TEXTURE)
+        {
+            _create_framebuffer_depth_texture_attachment(attachment, i, framebuffer, width, height, renderer);
+        }
+        else
+        {
+            _create_framebuffer_depth_render_buffer_attachment(attachment, i, framebuffer, width, height);
+        }
+    }
 }
 
 // @Incomplete: We should probably have a good way to link one or multiple light sources to this
@@ -667,12 +686,9 @@ static void create_new_framebuffer(rendering::FramebufferInfo &info, Framebuffer
     if (info.color_attachments.enabled)
         create_framebuffer_color_attachment(render_state, renderer, info, framebuffer, info.width, info.height);
 
-    if (info.depth_attachment.enabled)
+    if (info.depth_attachments.enabled)
     {
-        if(info.depth_attachment.flags & rendering::DepthAttachmentFlags::DEPTH_TEXTURE)
-            create_framebuffer_depth_texture_attachment(info, framebuffer, info.width, info.height, renderer);
-        else
-            create_framebuffer_render_buffer_attachment(info, framebuffer, info.width, info.height);
+        create_framebuffer_depth_attachment(info, framebuffer, info.width, info.height, renderer);
     }
 
     glDrawBuffers(color_buffer_count, attachments);
@@ -1167,7 +1183,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
 
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
 
     glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
     glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);

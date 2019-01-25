@@ -822,8 +822,8 @@ namespace rendering
         FramebufferInfo info = {};
         info.color_attachments.enabled = false;
         info.color_attachments.count = 0;
-        info.depth_attachment.enabled = false;
-        info.depth_attachment.flags = 0;
+        info.depth_attachments.enabled = false;
+        info.depth_attachments.count = 0;
         info.size_ratio = 1;
 
         return info;
@@ -870,10 +870,10 @@ namespace rendering
         return { -1 };
     }
 
-     static TextureHandle get_depth_texture_from_framebuffer(FramebufferHandle framebuffer, Renderer *renderer)
+    static TextureHandle get_depth_texture_from_framebuffer(i32 index, FramebufferHandle framebuffer, Renderer *renderer)
     {
         FramebufferInfo &info = renderer->render.framebuffers[framebuffer.handle - 1];
-        return info.depth_attachment.texture;
+        return info.depth_attachments.attachments[index].texture;
     }
 
     static MSTextureHandle get_ms_texture_from_framebuffer(i32 texture_index, FramebufferHandle framebuffer, Renderer *renderer)
@@ -890,7 +890,7 @@ namespace rendering
         return { -1 };
     }
     
-    static void add_color_attachment(ColorAttachmentType type, u64 flags, FramebufferInfo &info, u32 samples = 0)
+    static void add_color_attachment(AttachmentType type, u64 flags, FramebufferInfo &info, u32 samples = 0)
     {
         ColorAttachment attachment;
         attachment.type = type;
@@ -906,11 +906,21 @@ namespace rendering
         info.color_attachments.attachments[info.color_attachments.count++] = attachment;
     }
 
-    static void add_depth_attachment(u64 flags, FramebufferInfo &info, u32 samples = 0)
+    static void add_depth_attachment(AttachmentType type, u64 flags, FramebufferInfo &info, u32 samples = 0)
     {
-        info.depth_attachment.enabled = true;
-        info.depth_attachment.flags = flags;
-        info.depth_attachment.samples = samples;
+        DepthAttachment attachment;
+        attachment.type = type;
+        attachment.flags = flags;
+        
+        
+        if(flags & DepthAttachmentFlags::DEPTH_MULTISAMPLED)
+        {
+            assert(samples > 0);
+        }
+
+        info.depth_attachments.enabled = true;
+        attachment.samples = samples;
+        info.depth_attachments.attachments[info.depth_attachments.count++] = attachment;
     }
 
     static void set_clipping_plane(math::Vec4 plane, RenderPassHandle render_pass_handle, Renderer *renderer)
@@ -1834,6 +1844,7 @@ namespace rendering
         math::Vec3 adj_n = 2.0f * vertices[n-1] - vertices[n-2];
 
         buf_push(vertices, adj_n);
+        buf_push(vertices, adj_n);
         // n++;
         n = buf_len(vertices) - 1;
 
@@ -1845,7 +1856,8 @@ namespace rendering
             buf_push(lines, vertices[i + 2]);
         }
         
-        direct_update_buffer(renderer, buffer, (r32*)lines, n * 4, sizeof(math::Vec3) * n * 4);
+        direct_update_buffer(renderer, buffer, (r32*)lines, buf_len(lines), buf_len(lines) * sizeof(r32));
+        buf_free(lines);
     }
 
     static math::Vec3* generate_grid_buffer(Renderer* renderer, i32 width, i32 height, r32 unit_size)

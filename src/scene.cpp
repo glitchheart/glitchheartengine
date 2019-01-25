@@ -1514,10 +1514,6 @@ namespace scene
                 if(manager->callbacks.on_started_edit_mode)
                     manager->callbacks.on_started_edit_mode(handle);
                 
-                // @Note: Unnecessary?
-                if(manager->callbacks.on_load)
-                    manager->callbacks.on_load(handle);
-
                 manager->play_camera = scene.camera;
             }
             else
@@ -1740,6 +1736,9 @@ namespace scene
         if(scene_manager->mode == SceneMode::EDITING)
         {
             editor_setup(scene_manager);
+            
+            if(scene_manager->callbacks.on_load)
+                scene_manager->callbacks.on_load(handle);
         }
     }
     

@@ -530,7 +530,7 @@ namespace rendering
         DEPTH_TEXTURE = 1 << 1
     };
 
-    enum class ColorAttachmentType
+    enum class AttachmentType
     {
         TEXTURE,
         RENDER_BUFFER
@@ -538,7 +538,21 @@ namespace rendering
 
     struct ColorAttachment
     {
-        ColorAttachmentType type;
+        AttachmentType type;
+        u64 flags;
+
+        union
+        {
+            TextureHandle texture;
+            MSTextureHandle ms_texture;
+        };
+        
+        u32 samples;
+    };
+
+    struct DepthAttachment
+    {
+        AttachmentType type;
         u64 flags;
 
         union
@@ -570,10 +584,9 @@ namespace rendering
         struct
         {
             b32 enabled;
-            u64 flags;
-            u32 samples;
-            TextureHandle texture;
-        } depth_attachment;
+            DepthAttachment attachments[4];
+            i32 count;
+        } depth_attachments;
 
         struct
         {
