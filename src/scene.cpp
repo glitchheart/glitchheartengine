@@ -1713,15 +1713,15 @@ namespace scene
             }
         }
         
-        Scene &scene = get_scene(handle);
-        assert(scene.valid);
+        Scene *scene = &get_scene(handle);
+        assert(scene->valid);
 
         scene_manager->loaded_scene = handle;
 
-        if(!scene.loaded)
+        if(!scene->loaded)
         {
-            allocate_instance_buffers(scene);
-            scene.loaded = true;
+            allocate_instance_buffers(*scene);
+            scene->loaded = true;
             
             if(scene_manager->callbacks.on_scene_loaded)
                 scene_manager->callbacks.on_scene_loaded(handle);
