@@ -72,7 +72,7 @@ static InputController input_controller;
 
 static void load_game_code(GameCode &game_code, char *game_library_path, char *temp_game_library_path, MemoryArena *arena = nullptr)
 {
-    if (!copy_file(game_library_path, temp_game_library_path, false, arena))
+    if (!copy_file(game_library_path, temp_game_library_path, false))
         return;
 
     game_code.update = update_stub;
@@ -688,7 +688,6 @@ int main(int argc, char **args)
     Renderer *renderer = renderer_alloc;
     *renderer = {};
 
-    
     b32 do_save_config = false;
     
     if constexpr(global_graphics_api == GRAPHICS_VULKAN)

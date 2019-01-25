@@ -322,7 +322,7 @@ namespace scene
     typedef void (*OnSceneLoaded)(SceneHandle scene);
     typedef void (*OnEntityUpdated)(EntityHandle entity, SceneHandle scene);
     typedef void (*OnEntitySelected)(EntityHandle entity, SceneHandle scene);
-    typedef void (*OnEntityDeleted)(EntityHandle entity, SceneHandle scene);
+    typedef void (*OnEntityWillBeDeleted)(EntityHandle entity, SceneHandle scene);
     typedef void (*OnEntityRegisteredWithType)(EntityHandle entity, u32 type, SceneHandle scene);
     typedef EntityData* (*OnLoadEntityOfType)(EntityHandle entity, u32 type, SceneHandle scene);
 
@@ -446,7 +446,7 @@ namespace scene
             OnSceneLoaded on_scene_loaded;
             OnEntityUpdated on_entity_updated;
             OnEntitySelected on_entity_selected;
-            OnEntityDeleted on_entity_deleted;
+            OnEntityWillBeDeleted on_entity_will_be_deleted;
             OnEntityRegisteredWithType on_entity_registered_with_type;
             OnLoadEntityOfType on_load_entity_of_type;
         } callbacks;

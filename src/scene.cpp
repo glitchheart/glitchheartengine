@@ -724,6 +724,9 @@ namespace scene
     {
         SceneManager *scene_manager = handle.manager;
         
+        if(!scene_manager)
+            return;
+        
         if(scene_manager->callbacks.on_scene_will_be_freed)
             scene_manager->callbacks.on_scene_will_be_freed(handle);
         
@@ -1362,6 +1365,9 @@ namespace scene
     
     static void delete_entity(EntityHandle handle, SceneManager *manager)
     {
+        if(manager->callbacks.on_entity_will_be_deleted)
+            manager->callbacks.on_entity_will_be_deleted(handle, manager->loaded_scene);
+        
         TransformComponent &transform = get_transform_comp(handle, manager->loaded_scene);
         
         for(i32 i = 0; i < transform.child_count; i ++)
@@ -1697,7 +1703,7 @@ namespace scene
     static void load_scene(SceneHandle handle, u64 load_flags)
     {
         SceneManager *scene_manager = handle.manager;
-        
+
         if(scene_manager->scene_loaded)
         {
             scene::deactivate_particle_systems(scene_manager->loaded_scene);
