@@ -2593,9 +2593,6 @@ namespace scene
     
     static void _unregister_entity(EntityHandle handle, Scene &scene)
     {
-        if(handle.handle == 0 || scene._internal_handles[handle.handle - 1] == -1 && scene._internal_handles[handle.handle - 1] < scene.entity_count)
-            return;
-        
         i32 removed_handle = handle.handle;
         
         // Invalidate handle
@@ -2670,7 +2667,18 @@ namespace scene
     static void unregister_entity(EntityHandle entity, SceneHandle handle)
     {
         Scene &scene = get_scene(handle);
+        
+        if(entity.handle == 0 || scene._internal_handles[entity.handle - 1] == -1 && scene._internal_handles[entity.handle - 1] < scene.entity_count)
+            return;
+        
+        TransformComponent transform = get_transform_comp(entity, handle);
         _unregister_entity(entity, scene);
+
+        for(i32 i = 0; i < transform.child_count; i++)
+        {
+            TransformComponent &child_transform = get_transform_comp(transform.child_handles[i], handle);
+            unregister_entity(child_transform.entity, handle);
+        }
     }
 
     static EntityHandle place_entity_from_template(math::Vec3 position, const char* path, SceneHandle scene, b32 savable = true)
