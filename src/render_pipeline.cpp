@@ -1845,8 +1845,8 @@ namespace rendering
 
         buf_push(vertices, adj_n);
         buf_push(vertices, adj_n);
-        // n++;
-        n = buf_len(vertices) - 1;
+
+        n = buf_len(vertices) - 3;
 
         for(size_t i = 1; i < n; i++)
         {
@@ -1856,7 +1856,7 @@ namespace rendering
             buf_push(lines, vertices[i + 2]);
         }
         
-        direct_update_buffer(renderer, buffer, (r32*)lines, buf_len(lines), buf_len(lines) * sizeof(r32));
+        direct_update_buffer(renderer, buffer, (r32*)lines, buf_len(lines), buf_len(lines) * sizeof(math::Vec3));
         buf_free(lines);
     }
 
@@ -1894,46 +1894,40 @@ namespace rendering
         buf_push(points, bottom_left);
         buf_push(points, bottom_right);
 
-        for(i32 i = 1; i < height; i++)
+        for(i32 i = 1; i < width; i++)
         {
-            if(i < width)
-            {
-                math::Vec3 origin;
-                origin.x = -real_grid_width * 0.5f + i - half_size;
-                origin.y = 0.0f;
-                origin.z = -real_grid_height * 0.5f - half_size;
+            math::Vec3 origin;
+            origin.x = -real_grid_width * 0.5f + i - half_size;
+            origin.y = 0.0f;
+            origin.z = -real_grid_height * 0.5f - half_size;
 
-                math::Vec3 end;
-                end.x = -real_grid_width * 0.5f + i - half_size;
-                end.y = 0.0f;
-                end.z = real_grid_height * 0.5f - half_size;
+            math::Vec3 end;
+            end.x = -real_grid_width * 0.5f + i - half_size;
+            end.y = 0.0f;
+            end.z = real_grid_height * 0.5f - half_size;
 
-                buf_push(points, origin);
-                buf_push(points, end);
-                buf_push(points, origin);
-            }
+            buf_push(points, origin);
+            buf_push(points, end);
+            buf_push(points, origin);
         }
 
         buf_push(points, bottom_left);
 
         for(i32 i = 1; i < height; i++)
         {
-            if(i < height)
-            {
-                math::Vec3 origin;
-                origin.x = -real_grid_width * 0.5f - half_size;
-                origin.y = 0.0f;
-                origin.z = -real_grid_height * 0.5f + i - half_size;
+            math::Vec3 origin;
+            origin.x = -real_grid_width * 0.5f - half_size;
+            origin.y = 0.0f;
+            origin.z = -real_grid_height * 0.5f + i - half_size;
 
-                math::Vec3 end;
-                end.x = real_grid_width * 0.5f - half_size;
-                end.y = 0.0f;
-                end.z = -real_grid_height * 0.5f + i - half_size;
+            math::Vec3 end;
+            end.x = real_grid_width * 0.5f - half_size;
+            end.y = 0.0f;
+            end.z = -real_grid_height * 0.5f + i - half_size;
 
-                buf_push(points, origin);
-                buf_push(points, end);
-                buf_push(points, origin);
-            }
+            buf_push(points, origin);
+            buf_push(points, end);
+            buf_push(points, origin);
         }
         return points;
     }
