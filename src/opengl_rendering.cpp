@@ -569,7 +569,7 @@ static void _create_framebuffer_depth_texture_attachment(rendering::DepthAttachm
     
         glGenTextures(1, &texture->handle);
         glBindTexture(GL_TEXTURE_2D, texture->handle);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
         // Prevent shadows outside of the shadow map
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -2196,40 +2196,54 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
     for (i32 pass_index = renderer->render.pass_count - 1; pass_index >= 0; pass_index--)
     {
         rendering::RenderPass &pass = renderer->render.passes[pass_index];
-
-        Framebuffer &framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
-
-        glViewport(0, 0, framebuffer.width, framebuffer.height);
-        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
-
-        // @Incomplete: Not all framebuffers should have depth testing or clear both bits
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LESS);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glClearColor(renderer->clear_color.r, renderer->clear_color.g, renderer->clear_color.b, renderer->clear_color.a);
-
-        for (i32 i = 0; i < pass.commands.render_command_count; i++)
+       
+        if(pass.type == rendering::RenderPassType::NORMAL)
         {
-            rendering::RenderCommand &command = pass.commands.render_commands[i];
-            rendering::Material &material = get_material_instance(command.material, renderer);
+            Framebuffer &framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
+
+            glViewport(0, 0, framebuffer.width, framebuffer.height);
+            glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
+
+            // @Incomplete: Not all framebuffers should have depth testing or clear both bits
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_LESS);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glClearColor(renderer->clear_color.r, renderer->clear_color.g, renderer->clear_color.b, renderer->clear_color.a);
+
+            for (i32 i = 0; i < pass.commands.render_command_count; i++)
+            {
+                rendering::RenderCommand &command = pass.commands.render_commands[i];
+                rendering::Material &material = get_material_instance(command.material, renderer);
             
-            render_buffer(command.primitive_type, command.transform, command.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
-        }
+                render_buffer(command.primitive_type, command.transform, command.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
+            }
 
-        glDisable(GL_DEPTH_TEST);
+            glDisable(GL_DEPTH_TEST);
         
-        for (i32 i = 0; i < pass.commands.depth_free_command_count; i++)
+            for (i32 i = 0; i < pass.commands.depth_free_command_count; i++)
+            {
+                rendering::RenderCommand &command = pass.commands.depth_free_commands[i];
+                rendering::Material &material = get_material_instance(command.material, renderer);
+
+                render_buffer(command.primitive_type, command.transform, command.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
+            }
+
+            glEnable(GL_DEPTH_TEST);
+        
+            pass.commands.render_command_count = 0;
+            pass.commands.depth_free_command_count = 0; 
+        }
+        else if(pass.type == rendering::RenderPassType::READ_DRAW)
         {
-            rendering::RenderCommand &command = pass.commands.depth_free_commands[i];
-            rendering::Material &material = get_material_instance(command.material, renderer);
-
-            render_buffer(command.primitive_type, command.transform, command.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
+            Framebuffer &read_framebuffer = render_state.v2.framebuffers[pass.read_framebuffer.handle - 1];
+            Framebuffer &draw_framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
+            
+            glViewport(0, 0, draw_framebuffer.width, draw_framebuffer.height);
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, read_framebuffer.buffer_handle);
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, draw_framebuffer.buffer_handle);
+            glBlitFramebuffer(0, 0, draw_framebuffer.width, draw_framebuffer.height, 0, 0, draw_framebuffer.width, draw_framebuffer.height, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
-
-        glEnable(GL_DEPTH_TEST);
-        
-        pass.commands.render_command_count = 0;
-        pass.commands.depth_free_command_count = 0;
     }
 
     //glBindFramebuffer(GL_FRAMEBUFFER, 0);
