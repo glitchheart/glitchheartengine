@@ -590,6 +590,7 @@ namespace rendering
     static RenderPassHandle create_render_pass(const char *name, FramebufferHandle framebuffer, Renderer *renderer)
     {
         RenderPass &pass = renderer->render.passes[renderer->render.pass_count];
+        pass.type = RenderPassType::NORMAL;
         pass.framebuffer = framebuffer;
         pass.use_scene_camera = true;
         pass.clipping_planes.type = ClippingPlaneType::NONE;
@@ -600,6 +601,14 @@ namespace rendering
         pass.commands.depth_free_commands = push_array(&renderer->render.render_pass_arena, global_max_depth_free_commands, RenderCommand);
         
         return { (renderer->render.pass_count++) + 1};
+    }
+
+    static void set_read_draw_render_passes(RenderPassHandle read_from_pass, RenderPassHandle draw_to_pass, Renderer *renderer)
+    {
+        RenderPass &read = renderer->render.passes[read_from_pass.handle - 1];
+        RenderPass &draw = renderer->render.passes[draw_to_pass.handle - 1];
+        draw.type = RenderPassType::READ_DRAW;
+        draw.read_framebuffer = read.framebuffer;
     }
 
     static void create_ui_render_pass(Renderer *renderer)

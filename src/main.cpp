@@ -37,7 +37,6 @@ static MemoryState memory_state;
 //#include "vulkan_rendering.h"
 #endif
 
-
 #include "opengl_rendering.h"
 #include "animation.cpp"
 #include "keycontroller.cpp"
@@ -46,7 +45,6 @@ static MemoryState memory_state;
 #include "fmod_sound.h"
 #include "fmod_sound.cpp"
 #include "filehandling.h"
-
 
 #include "shader_loader.cpp"
 #include "render_pipeline.cpp"
@@ -441,10 +439,10 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     final_info.height = renderer->framebuffer_height;
     rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, final_info, 8);
     rendering::add_depth_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::DepthAttachmentFlags::DEPTH_TEXTURE | rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, final_info, 8);
-    
+
     rendering::FramebufferHandle final_framebuffer = rendering::create_framebuffer(final_info, renderer);
     rendering::set_final_framebuffer(renderer, final_framebuffer);
-
+    
     rendering::RenderPassHandle standard = rendering::create_render_pass(STANDARD_PASS, final_framebuffer, renderer);
 
     // UI

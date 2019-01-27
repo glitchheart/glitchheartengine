@@ -612,6 +612,12 @@ namespace rendering
     
 #define STANDARD_PASS "STANDARD_PASS"
 
+    enum class RenderPassType
+    {
+        NORMAL,
+        READ_DRAW
+    };
+    
     // @Note: When rendering a scene, multiple render passes can be used.
     // Each render component can register itself to a render pass
     // Each render pass has it's own render commands
@@ -621,8 +627,10 @@ namespace rendering
     struct RenderPass
     {
         char name[32];
+        RenderPassType type;
         
         FramebufferHandle framebuffer;
+        FramebufferHandle read_framebuffer;
         
         b32 use_scene_camera;
         Camera camera;
