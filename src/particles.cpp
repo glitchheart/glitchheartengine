@@ -600,7 +600,6 @@ void emit_particle(Renderer *renderer, ParticleSystemInfo &particle_system, i32*
 	}
 
 	// @Note(Niels): Init particle to the init values saved in the particle system
-
 	if (particle_system.attributes.start_life_time_type == StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
 	{
 		r64_4x v = random_between_4x(entropy, particle_system.attributes.life.random_between_two_constants.l0, particle_system.attributes.life.random_between_two_constants.l1);
@@ -648,8 +647,6 @@ void emit_particle(Renderer *renderer, ParticleSystemInfo &particle_system, i32*
 		particle_system.particles.start_angle[original_index] = particle_system.attributes.angle.constant.start_angle;
 	}
 
-
-	//    particle_system.particles.color[original_index] = Rgba_4x(particle_system.attributes.start_color);
 	particle_system.particles.relative_position[original_index] = Vec3_4x(0.0f);
 
     ParticleSpawnInfo spawn_info = {};
@@ -778,35 +775,36 @@ void update_particle_system(ParticleSystemInfo& particle_system, Renderer *rende
 		i32 new_particles = 0;
 
 		// @Note(Niels): Figure out the burst amount if there is any
-		i32 burst_particles = 0;
+		// i32 burst_particles = 0;
 
 		// @Note(Niels): Burst code for burst emission.
-		auto value_count = particle_system.attributes.emission_module.burst_over_lifetime.value_count;
-		if (value_count > 0)
-		{
-			auto burst_index = particle_system.attributes.emission_module.burst_over_lifetime.current_index;
+        // @Incomplete
+		// auto value_count = particle_system.attributes.emission_module.burst_over_lifetime.value_count;
+		// if (value_count > 0)
+		// {
+		// 	auto burst_index = particle_system.attributes.emission_module.burst_over_lifetime.current_index;
 
-			if (burst_index < value_count)
-			{
-				auto &current_burst = particle_system.attributes.emission_module.burst_over_lifetime.values[burst_index];
+		// 	if (burst_index < value_count)
+		// 	{
+		// 		auto &current_burst = particle_system.attributes.emission_module.burst_over_lifetime.values[burst_index];
 
-				auto target_time = current_burst.repeat_interval;
+		// 		auto target_time = current_burst.repeat_interval;
 
-				particle_system.current_emission_time += delta_time;
+		// 		particle_system.current_emission_time += delta_time;
 
-				if (particle_system.current_emission_time >= target_time)
-				{
-					burst_particles = current_burst.count;
+		// 		if (particle_system.current_emission_time >= target_time)
+		// 		{
+		// 			burst_particles = current_burst.count;
 
-					if (current_burst.cycle_count > 0 && particle_system.attributes.emission_module.burst_over_lifetime.current_index >= current_burst.cycle_count)
-					{
-						particle_system.attributes.emission_module.burst_over_lifetime.current_index++;
-					}
+		// 			if (current_burst.cycle_count > 0 && particle_system.attributes.emission_module.burst_over_lifetime.current_index >= current_burst.cycle_count)
+		// 			{
+		// 				particle_system.attributes.emission_module.burst_over_lifetime.current_index++;
+		// 			}
 
-					particle_system.current_emission_time = 0.0;
-				}
-			}
-		}
+		// 			particle_system.current_emission_time = 0.0;
+		// 		}
+		// 	}
+		// }
 
 		particle_system.time_spent += delta_time;
 
@@ -820,8 +818,8 @@ void update_particle_system(ParticleSystemInfo& particle_system, Renderer *rende
 			particle_system.particles_cumulative = particle_system.particles_cumulative - new_particles;
 		}
 
-		// @Incomplete: Burst is not completely implemented
-		i32 simd_burst_particles = math::multiple_of_number(burst_particles, 4);
+		// // @Incomplete: Burst is not completely implemented
+		// i32 simd_burst_particles = math::multiple_of_number(burst_particles, 4);
 
 		// @Note(Niels): Check if the new amount is below the max and below the amount of dead particles.
 		new_particles = MIN(particle_system.max_particles, MIN(new_particles, particle_system.dead_particle_count * 4));
@@ -857,11 +855,11 @@ void update_particle_system(ParticleSystemInfo& particle_system, Renderer *rende
 			}
 		}
 
-		// @Note(Niels): Same goes for burst		
-		for (i32 i = 0; i < simd_burst_particles / 4; i++)
-		{
-			emit_particle(renderer, particle_system, emitted_alive_buf, emitted_alive_count, *renderer->particles.entropy, 4);
-		}
+		// // @Note(Niels): Same goes for burst		
+		// for (i32 i = 0; i < simd_burst_particles / 4; i++)
+		// {
+		// 	emit_particle(renderer, particle_system, emitted_alive_buf, emitted_alive_count, *renderer->particles.entropy, 4);
+		// }
 	}
 
     if(!particle_system.paused)
@@ -891,6 +889,6 @@ void update_particle_systems(Renderer *renderer, r64 delta_time)
 		}
 	}
 }
-// @Move: END
+// @End
 
 
