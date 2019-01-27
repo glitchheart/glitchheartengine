@@ -130,9 +130,6 @@ struct RenderState
     };
     
     GLuint quad_index_buffer;
-
-	Buffer *gl_buffers;
-	i32 gl_buffer_count;
     
     GLuint framebuffer_quad_vao;
     GLuint framebuffer_quad_vbo;
