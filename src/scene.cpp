@@ -3253,7 +3253,7 @@ namespace scene
             rendering::Material& particle_material = get_material_instance(system.material_handle, renderer);
 
             rendering::BufferHandle buffer = system.attributes.buffer.handle != 0 ? system.attributes.buffer : renderer->particles.quad_buffer;
-            
+
             rendering::push_instanced_buffer_to_render_pass(renderer, system.particle_count, buffer, system.material_handle, particle_material.shader, rendering::get_render_pass_handle_for_name(STANDARD_PASS, renderer), rendering::CommandType::WITH_DEPTH);
         }
 
