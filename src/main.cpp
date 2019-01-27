@@ -378,8 +378,6 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     renderer->render.shadow_commands = push_array(&renderer->command_arena, global_max_shadow_commands, rendering::ShadowCommand);
     renderer->render.queued_commands = push_array(&renderer->command_arena, global_max_render_commands, QueuedRenderCommand);
     
-    renderer->render.buffers = push_array(&renderer->buffer_arena, global_max_custom_buffers, rendering::RegisterBufferInfo);
-    renderer->render.updated_buffer_handles = push_array(&renderer->buffer_arena, global_max_custom_buffers, i32);
     renderer->render.material_count = 0;
     
     //@Incomplete: Make these dynamically allocated?
@@ -408,6 +406,13 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
         renderer->render._internal_buffer_handles[index] = -1;
     }
     
+    renderer->render.buffers = push_array(&renderer->buffer_arena, global_max_custom_buffers, Buffer*);
+
+    for(i32 i = 0; i < global_max_custom_buffers; i++)
+    {
+        renderer->render.buffers[i] = push_struct(&renderer->buffer_arena, Buffer);
+    }
+          
     renderer->render.removed_buffer_handles = push_array(&renderer->buffer_arena, global_max_custom_buffers, i32);
 
 #if DEBUG
@@ -458,7 +463,7 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     renderer->render.textured_ui_quad_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/ui_texture_quad.shd");
     renderer->render.ui.material = rendering::create_material(renderer, renderer->render.ui_quad_shader);
     renderer->render.ui.textured_material = rendering::create_material(renderer, renderer->render.textured_ui_quad_shader);
-
+    
     // Initialize font material
     renderer->render.font_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/font.shd");
     renderer->render.ui.font_material = rendering::create_material(renderer, renderer->render.font_shader);
@@ -554,26 +559,27 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
         renderer->render.instancing.internal_float4_buffers[i] = push_struct(&renderer->buffer_arena, Buffer);
         renderer->render.instancing.internal_mat4_buffers[i] = push_struct(&renderer->buffer_arena, Buffer);
     }
+
+    TemporaryMemory temp_mem = begin_temporary_memory(&renderer->buffer_arena);
     
     rendering::RegisterBufferInfo particle_buffer = rendering::create_register_buffer_info();
     particle_buffer.usage = rendering::BufferUsage::STATIC;
     add_vertex_attrib(rendering::ValueType::FLOAT3, particle_buffer);
-    add_vertex_attrib(rendering::ValueType::FLOAT2, particle_buffer);
-    
-    r32 quad_vertices[20] =
-    {
-        -0.5f, 0.5f, 0.0f, 0.0f, 0.0f,
-        0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
-        0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
-        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f
-    };
 
-    i32 vertex_size = 5;
+    i32 vertex_size = 3;
     particle_buffer.data.vertex_count = 4;
-    particle_buffer.data.vertex_buffer_size = particle_buffer.data.vertex_count * vertex_size * (i32)sizeof(r32);
+    particle_buffer.data.vertex_buffer_size = particle_buffer.data.vertex_count * vertex_size * (i32)(sizeof(r32));
     particle_buffer.data.vertex_buffer = push_size(&renderer->buffer_arena, particle_buffer.data.vertex_buffer_size, r32);
-
-    for (i32 i = 0; i < particle_buffer.data.vertex_count * vertex_size; i++)
+        
+    r32 quad_vertices[12] =
+        {
+            -0.5f, 0.5f, 0.0f,
+            0.5f, 0.5f, 0.0f,
+            0.5f, -0.5f, 0.0f,
+            -0.5f, -0.5f, 0.0f,
+        };
+    
+    for(i32 i = 0; i < particle_buffer.data.vertex_count * vertex_size; i++)
     {
         particle_buffer.data.vertex_buffer[i] = quad_vertices[i];
     }
@@ -595,6 +601,29 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     }
 
     renderer->particles.quad_buffer = rendering::register_buffer(renderer, particle_buffer);
+    
+    add_vertex_attrib(rendering::ValueType::FLOAT2, particle_buffer);
+    
+    r32 textured_quad_vertices[20] =
+    {
+        -0.5f, 0.5f, 0.0f, 0.0f, 0.0f,
+        0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
+        0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
+        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f
+    };
+
+    vertex_size = 5;
+    particle_buffer.data.vertex_buffer_size = particle_buffer.data.vertex_count * vertex_size * (i32)sizeof(r32);
+    particle_buffer.data.vertex_buffer = push_size(&renderer->buffer_arena, particle_buffer.data.vertex_buffer_size, r32);
+
+    for (i32 i = 0; i < particle_buffer.data.vertex_count * vertex_size; i++)
+    {
+        particle_buffer.data.vertex_buffer[i] = textured_quad_vertices[i];
+    }
+
+    renderer->particles.textured_quad_buffer = rendering::register_buffer(renderer, particle_buffer);
+
+    end_temporary_memory(temp_mem);
 }
 
 #if defined(_WIN32) && !defined(DEBUG)
@@ -681,7 +710,6 @@ int main(int argc, char **args)
 
     render_state.string_arena = {};
     render_state.gl_shader_count = 0;
-    render_state.gl_buffer_count = 0;
     render_state.gl_shaders = push_array(&platform_state->perm_arena, 64, ShaderGL);
 
     Renderer *renderer_alloc = push_struct(&platform_state->perm_arena, Renderer);
