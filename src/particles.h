@@ -158,7 +158,6 @@ struct Particles
     r32_4x *angle;
     
     Vec3_4x *relative_position;
-    r32 *relative_size;
 
     Vec2_4x* start_size;
     r32_4x* start_speed;
@@ -166,8 +165,6 @@ struct Particles
     r32_4x* start_angle;
     
     r64_4x *life;
-    
-    rendering::TextureHandle *texture_handle;
 };
 
 struct ParticleSystemHandle
@@ -206,8 +203,8 @@ struct ParticleSystemInfo
         r64 *keys;
         i32 value_count;
     } color_over_lifetime;
-    
-    struct 
+
+    struct
     {
         math::Vec2 *values;
         r64 *keys;
@@ -250,6 +247,7 @@ struct ParticleSystemInfo
     r64 current_emission_time;
     
     MemoryArena arena;
+    MemoryArena simd_arena;
 };
 
 #endif

@@ -454,7 +454,9 @@ typedef void (*CreateFramebuffer)(rendering::FramebufferInfo &framebuffer_info, 
 typedef void (*CreateInstanceBuffer)(Buffer *buffer, size_t buffer_size, rendering::BufferUsage usage, RenderState *render_state, Renderer *renderer);
 typedef void (*DeleteInstanceBuffer)(Buffer *buffer, RenderState *render_state, Renderer *renderer);
 typedef void (*DeleteAllInstanceBuffers)(RenderState *render_state, Renderer *renderer);
-typedef void (*UpdateBuffer)(rendering::BufferHandle handle, r32 *data, size_t count, size_t size, RenderState *render_state, Renderer *renderer);
+typedef void (*UpdateBuffer)(Buffer *buffer, rendering::BufferType buffer_type, void *data, size_t count, size_t size, rendering::BufferUsage buffer_usage, RenderState *render_state, Renderer *renderer);
+typedef void (*CreateBuffer)(Buffer *buffer, rendering::RegisterBufferInfo info, RenderState *render_state, Renderer *renderer);
+typedef void (*DeleteBuffer)(Buffer *buffer, RenderState *render_state, Renderer *renderer);
 typedef void (*SetMouseLock)(b32 locked, RenderState *render_state);
 typedef b32 (*GetMouseLock)(RenderState *render_state);
 typedef void (*SetWindowMode)(RenderState* render_state, Renderer* renderer, Resolution resolution, WindowMode window_mode);
@@ -470,6 +472,8 @@ struct GraphicsAPI
     DeleteAllInstanceBuffers delete_all_instance_buffers;
 
     UpdateBuffer update_buffer;
+    CreateBuffer create_buffer;
+    DeleteBuffer delete_buffer;
     
     SetMouseLock set_mouse_lock;
     GetMouseLock get_mouse_lock;
@@ -497,15 +501,6 @@ struct Renderer
 	
 	MemoryArena command_arena;
     
-	/* i32 *_internal_buffer_handles; */
-	/* i32 _current_internal_buffer_handle; */
-    
-	/* i32 *updated_buffer_handles; */
-	/* i32 updated_buffer_handle_count; */
-    
-	/* i32 *removed_buffer_handles; */
-	/* i32 removed_buffer_handle_count; */
-    
 	Mesh *meshes;
 	i32 mesh_count;
     
@@ -520,6 +515,7 @@ struct Renderer
 
 		RandomSeries* entropy;
         rendering::BufferHandle quad_buffer;
+        rendering::BufferHandle textured_quad_buffer;
 	} particles;
     
 	// Shadow map
@@ -610,9 +606,9 @@ struct Renderer
         i32 material_instance_count;
         i32 *_internal_material_instance_handles;
         i32 current_material_instance_index;
-		
-		rendering::RegisterBufferInfo *buffers;
-		i32 buffer_count;
+
+        Buffer **buffers;
+        i32 buffer_count;
     
 		i32 *_internal_buffer_handles;
 		i32 _current_internal_buffer_handle;
