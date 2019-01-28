@@ -151,6 +151,10 @@ namespace rendering
         {
             type = VertexAttributeMappingType::MODEL;
         }
+        else if (starts_with(mapped_buffer, "DIFFUSE_COLOR"))
+        {
+            type = VertexAttributeMappingType::DIFFUSE_COLOR;
+        }
         else if (starts_with(mapped_buffer, "PARTICLE_POSITION"))
         {
             type = VertexAttributeMappingType::PARTICLE_POSITION;
