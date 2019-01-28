@@ -409,6 +409,118 @@ static void create_instance_buffer(Buffer *buffer, size_t buffer_size, rendering
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+static void delete_buffer(Buffer *buffer, RenderState *render_state, Renderer *renderer)
+{
+    glDeleteBuffers(1, &buffer->vbo);
+}
+
+static void create_buffer(Buffer *buffer, rendering::RegisterBufferInfo info, RenderState *render_state, Renderer *renderer)
+{
+    *buffer = {};
+
+    if(buffer->vbo == 0)
+    {
+        glGenBuffers(1, &buffer->vbo);
+    }
+
+    buffer->vertex_buffer_size = info.data.vertex_buffer_size;
+    buffer->index_buffer_count = info.data.index_buffer_count;
+    buffer->vertex_count = info.data.vertex_count;
+
+    glGenVertexArrays(1, &buffer->vao);
+    bind_vertex_array(buffer->vao, *render_state);
+
+    glGenBuffers(1, &buffer->vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+
+    GLenum usage = get_usage(info.usage);
+
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)info.data.vertex_buffer_size, info.data.vertex_buffer, usage);
+
+    size_t offset = 0;
+
+    for (i32 i = 0; i < info.vertex_attribute_count; i++)
+    {
+        rendering::VertexAttribute &attrib = info.vertex_attributes[i];
+
+        GLenum type = GL_FLOAT;
+        i32 count = 1;
+        size_t type_size = 0;
+
+        switch (attrib.type)
+        {
+        case rendering::ValueType::FLOAT:
+        {
+            type = GL_FLOAT;
+            count = 1;
+            type_size = sizeof(GLfloat);
+        }
+        break;
+        case rendering::ValueType::FLOAT2:
+        {
+            type = GL_FLOAT;
+            count = 2;
+            type_size = 2 * sizeof(GLfloat);
+        }
+        break;
+        case rendering::ValueType::FLOAT3:
+        {
+            type = GL_FLOAT;
+            count = 3;
+            type_size = 3 * sizeof(GLfloat);
+        }
+        break;
+        case rendering::ValueType::FLOAT4:
+        {
+            type = GL_FLOAT;
+            count = 4;
+            type_size = 4 * sizeof(GLfloat);
+        }
+        break;
+        case rendering::ValueType::INTEGER:
+        {
+            type = GL_INT;
+            count = 1;
+            type_size = 1 * sizeof(GLint);
+        }
+        break;
+        case rendering::ValueType::BOOL:
+        {
+            type = GL_INT;
+            count = 1;
+            type_size = 1 * sizeof(GLint);
+        }
+        break;
+        case rendering::ValueType::MAT4:
+        {
+            type = GL_FLOAT;
+            count = 16;
+            type_size = 16 * sizeof(GLfloat);
+        }
+        break;
+        case rendering::ValueType::TEXTURE:
+        case rendering::ValueType::INVALID:
+        {
+            assert(false);
+        }
+        break;
+        }
+
+        vertex_attrib_pointer(i, count, type, (u32)info.stride, (void *)offset);
+
+        offset += type_size;
+    }
+
+    if (info.data.index_buffer_count > 0)
+    {
+        glGenBuffers(1, &buffer->ibo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->ibo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, info.data.index_buffer_size, info.data.index_buffer, usage);
+    }
+
+    bind_vertex_array(0, *render_state);
+}
+
 static void create_framebuffer_color_attachment(RenderState &render_state, Renderer *renderer, rendering::FramebufferInfo &info, Framebuffer &framebuffer, i32 width, i32 height)
 {
     framebuffer.tex_color_buffer_count = info.color_attachments.count;
@@ -823,8 +935,6 @@ static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
     render_state->total_delta = 0.0f;
     render_state->frame_delta = 0.0f;
 
-    render_state->gl_buffers = push_array(render_state->perm_arena, global_max_custom_buffers, Buffer);
-
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBlendEquation(GL_FUNC_ADD);
@@ -1002,22 +1112,61 @@ static void set_mouse_lock(b32 locked, RenderState *render_state)
 static Buffer &get_internal_buffer(Renderer *renderer, RenderState &render_state, rendering::BufferHandle buffer)
 {
     i32 handle = renderer->render._internal_buffer_handles[buffer.handle - 1];
-    Buffer &gl_buffer = render_state.gl_buffers[handle];
-    return gl_buffer;
+    Buffer *gl_buffer = renderer->render.buffers[handle];
+    return *gl_buffer;
 }
 
-static void direct_update_buffer(rendering::BufferHandle handle, r32 *data, size_t count, size_t size, RenderState *render_state, Renderer *renderer)
+static void update_vertex_buffer(Buffer *buffer, r32 *data, size_t count, size_t size, rendering::BufferUsage buffer_usage, RenderState *render_state, Renderer *renderer)
 {
-    Buffer& buffer = get_internal_buffer(renderer, *render_state, handle);
-
-    bind_vertex_array(buffer.vao, *render_state);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
-    buffer.vertex_count = (i32)count;
-    buffer.vertex_buffer_size = (i32)size;
+    bind_vertex_array(buffer->vao, *render_state);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+    buffer->vertex_count = (i32)count;
+    buffer->vertex_buffer_size = (i32)size;
 
     glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW);
 
     bind_vertex_array(0, *render_state);
+
+    GLenum usage = get_usage(buffer_usage);
+
+    bind_vertex_array(buffer->vao, *render_state);
+    buffer->vertex_count = (i32)count;
+    buffer->vertex_buffer_size = (i32)size;
+
+    glBufferData(GL_ARRAY_BUFFER, size, data, usage);
+
+    bind_vertex_array(0, *render_state);
+}
+
+static void update_index_buffer(Buffer *buffer, u16* data, size_t count, size_t size, rendering::BufferUsage buffer_usage, RenderState *render_state, Renderer* renderer)
+{
+    if(buffer->ibo != 0)
+    {
+        GLenum usage = get_usage(buffer_usage);
+        bind_vertex_array(buffer->vao, *render_state);
+        
+        buffer->index_buffer_count = (i32)count;
+        buffer->index_buffer_size = (i32)size;
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->ibo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, usage);
+    }
+}
+
+static void update_buffer(Buffer *buffer, rendering::BufferType buffer_type, void* data, size_t count, size_t size, rendering::BufferUsage buffer_usage, RenderState *render_state, Renderer* renderer)
+{
+    switch(buffer_type)
+    {
+    case rendering::BufferType::VERTEX:
+    {
+        update_vertex_buffer(buffer, (r32*)data, count, size, buffer_usage, render_state, renderer);
+    }
+    break;
+    case rendering::BufferType::INDEX:
+    {
+        update_index_buffer(buffer, (u16*)data, count, size, buffer_usage, render_state, renderer);        
+    }
+    break;    
+    }
 }
 
 static void set_window_mode(RenderState* render_state, Renderer* renderer, Resolution new_resolution, WindowMode new_window_mode)
@@ -1093,12 +1242,13 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     renderer->api_functions.create_framebuffer = &create_framebuffer;
     renderer->api_functions.create_instance_buffer = &create_instance_buffer;
     renderer->api_functions.delete_instance_buffer = &delete_instance_buffer;
-    renderer->api_functions.update_buffer = &direct_update_buffer;
+    renderer->api_functions.create_buffer = &create_buffer;
+    renderer->api_functions.delete_buffer = &delete_buffer;
+    renderer->api_functions.update_buffer = &update_buffer;
     renderer->api_functions.set_mouse_lock = &set_mouse_lock;
     renderer->api_functions.get_mouse_lock = &get_mouse_lock;
     renderer->api_functions.set_window_cursor = &set_window_cursor;
     renderer->api_functions.set_window_mode = &set_window_mode;
-        
 
     auto recreate_window = render_state.window != nullptr;
 
@@ -1110,7 +1260,6 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
             exit(EXIT_FAILURE);
         }
     }
-
 
     render_state.paused = false;
 
@@ -1399,145 +1548,6 @@ static void set_ms_texture_uniform(GLuint shader_handle, GLuint texture, i32 ind
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture);
 }
 
-#define BUFFER_OFFSET(i) ((char *)NULL + (i))
-
-// @Incomplete: Ignores if the register info has new vertex attributes
-static void update_buffer(Buffer &buffer, rendering::RegisterBufferInfo info, RenderState &render_state)
-{
-    GLenum usage = GL_DYNAMIC_DRAW;
-
-    // @Incomplete: Copy/Read?
-    switch (info.usage)
-    {
-    case rendering::BufferUsage::DYNAMIC:
-        usage = GL_DYNAMIC_DRAW;
-        break;
-    case rendering::BufferUsage::STATIC:
-        usage = GL_STATIC_DRAW;
-        break;
-    case rendering::BufferUsage::STREAM:
-        usage = GL_STREAM_DRAW;
-        break;
-    }
-
-    bind_vertex_array(buffer.vao, render_state);
-    buffer.vertex_count = info.data.vertex_count;
-    buffer.vertex_buffer_size = info.data.vertex_buffer_size;
-
-    glBufferData(GL_ARRAY_BUFFER, info.data.vertex_buffer_size, info.data.vertex_buffer, usage);
-
-    if (info.data.index_buffer_count > 0)
-    {
-        buffer.index_buffer_count = info.data.index_buffer_count;
-        buffer.index_buffer_size = info.data.index_buffer_size;
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, info.data.index_buffer_size, info.data.index_buffer, usage);
-    }
-
-    bind_vertex_array(0, render_state);
-}
-
-static void register_buffer(Buffer &buffer, rendering::RegisterBufferInfo info, RenderState &render_state)
-{
-    buffer.vertex_buffer_size = info.data.vertex_buffer_size;
-    buffer.index_buffer_count = info.data.index_buffer_count;
-    buffer.vertex_count = info.data.vertex_count;
-
-    glGenVertexArrays(1, &buffer.vao);
-    bind_vertex_array(buffer.vao, render_state);
-
-    glGenBuffers(1, &buffer.vbo);
-
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
-
-    GLenum usage = get_usage(info.usage);
-
-    glBufferData(GL_ARRAY_BUFFER, info.data.vertex_buffer_size, info.data.vertex_buffer, usage);
-
-    size_t offset = 0;
-
-    for (i32 i = 0; i < info.vertex_attribute_count; i++)
-    {
-        rendering::VertexAttribute &attrib = info.vertex_attributes[i];
-
-        GLenum type = GL_FLOAT;
-        i32 count = 1;
-        size_t type_size = 0;
-
-        switch (attrib.type)
-        {
-        case rendering::ValueType::FLOAT:
-        {
-            type = GL_FLOAT;
-            count = 1;
-            type_size = 1 * sizeof(GLfloat);
-        }
-        break;
-        case rendering::ValueType::FLOAT2:
-        {
-            type = GL_FLOAT;
-            count = 2;
-            type_size = 2 * sizeof(GLfloat);
-        }
-        break;
-        case rendering::ValueType::FLOAT3:
-        {
-            type = GL_FLOAT;
-            count = 3;
-            type_size = 3 * sizeof(GLfloat);
-        }
-        break;
-        case rendering::ValueType::FLOAT4:
-        {
-            type = GL_FLOAT;
-            count = 4;
-            type_size = 4 * sizeof(GLfloat);
-        }
-        break;
-        case rendering::ValueType::INTEGER:
-        {
-            type = GL_INT;
-            count = 1;
-            type_size = 1 * sizeof(GLint);
-        }
-        break;
-        case rendering::ValueType::BOOL:
-        {
-            type = GL_INT;
-            count = 1;
-            type_size = 1 * sizeof(GLint);
-        }
-        break;
-        case rendering::ValueType::MAT4:
-        {
-            type = GL_FLOAT;
-            count = 16;
-            type_size = 16 * sizeof(GLfloat);
-        }
-        break;
-        case rendering::ValueType::TEXTURE:
-        case rendering::ValueType::INVALID:
-        {
-            assert(false);
-        }
-        break;
-        }
-
-        vertex_attrib_pointer(i, count, type, (u32)info.stride, (void *)offset);
-
-        offset += type_size;
-    }
-
-    if (info.data.index_buffer_count > 0)
-    {
-        glGenBuffers(1, &buffer.ibo);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, info.data.index_buffer_size, info.data.index_buffer, usage);
-    }
-
-    bind_vertex_array(0, render_state);
-}
-
 static void register_framebuffers(RenderState &render_state, Renderer *renderer)
 {
     for (i32 index = render_state.v2.framebuffer_count; index < renderer->render.framebuffer_count; index++)
@@ -1566,32 +1576,6 @@ static void register_framebuffers(RenderState &render_state, Renderer *renderer)
         info.pending_textures.count = 0;
     }
     render_state.v2.framebuffer_count = renderer->render.framebuffer_count;
-}
-
-//@Cleanup: Remove new
-static void register_new_buffers(RenderState &render_state, Renderer *renderer)
-{
-    for (i32 index = render_state.gl_buffer_count; index < renderer->render.buffer_count; index++)
-    {
-        rendering::RegisterBufferInfo &info = renderer->render.buffers[index];
-        Buffer &gl_buffer = render_state.gl_buffers[index];
-        register_buffer(gl_buffer, info, render_state);
-    }
-
-    render_state.gl_buffer_count = renderer->render.buffer_count;
-}
-
-static void update_new_buffers(RenderState &render_state, Renderer *renderer)
-{
-    for (i32 index = 0; renderer->render.updated_buffer_handle_count; index++)
-    {
-        i32 handle = renderer->render.updated_buffer_handles[index];
-        rendering::RegisterBufferInfo &info = renderer->render.buffers[handle];
-        Buffer &gl_buffer = render_state.gl_buffers[handle];
-        update_buffer(gl_buffer, info, render_state);
-    }
-
-    renderer->render.updated_buffer_handle_count = 0;
 }
 
 static void set_uniform(RenderState &render_state, Renderer *renderer, GLuint program, rendering::UniformValue &uniform_value, GLuint location, i32 *texture_count = nullptr)
@@ -1990,8 +1974,7 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
 
 static void render_shadow_buffer(rendering::ShadowCommand &shadow_command, RenderState &render_state, Renderer *renderer)
 {
-    i32 handle = renderer->render._internal_buffer_handles[shadow_command.buffer.handle - 1];
-    Buffer &buffer = render_state.gl_buffers[handle];
+    Buffer &buffer = get_internal_buffer(renderer, render_state, shadow_command.buffer);
 
     bind_vertex_array(buffer.vao, render_state);
 
@@ -2023,8 +2006,7 @@ static void render_shadow_buffer(rendering::ShadowCommand &shadow_command, Rende
 
 static void render_instanced_shadow_buffer(rendering::ShadowCommand &shadow_command, RenderState &render_state, Renderer *renderer)
 {
-    i32 handle = renderer->render._internal_buffer_handles[shadow_command.buffer.handle - 1];
-    Buffer &buffer = render_state.gl_buffers[handle];
+    Buffer &buffer = get_internal_buffer(renderer, render_state, shadow_command.buffer);
 
     bind_vertex_array(buffer.vao, render_state);
 
@@ -2087,10 +2069,6 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
 
     Buffer &font_buffer = get_internal_buffer(renderer, render_state, renderer->render.ui.font_buffer);
 
-    i32 internal_handle = renderer->render._internal_buffer_handles[renderer->render.ui.font_buffer.handle - 1];
-
-    rendering::RegisterBufferInfo &info = renderer->render.buffers[internal_handle];
-
     glDisable(GL_DEPTH_TEST);
 
     for(i32 i = 0; i < Z_LAYERS; i++)
@@ -2115,11 +2093,11 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
             rendering::CharacterBufferHandle char_buf_handle = command.buffer;
             rendering::CharacterData *coords = pass.ui.coords[char_buf_handle.handle];
 
-            info.data.vertex_buffer_size = (i32)(6 * command.text_length * sizeof(rendering::CharacterData));
-            info.data.vertex_count = (i32)(6 * command.text_length * 3);
-            info.data.vertex_buffer = (r32 *)coords;
+            i32 vertex_buffer_size = (i32)(6 * command.text_length * sizeof(rendering::CharacterData));
+            i32 vertex_count = (i32)(6 * command.text_length * 3);
+            r32* vertex_buffer = (r32 *)coords;
 
-            update_buffer(font_buffer, info, render_state);
+            update_buffer(&font_buffer, rendering::BufferType::VERTEX, vertex_buffer, vertex_count, vertex_buffer_size, rendering::BufferUsage::DYNAMIC, &render_state, renderer);
             render_buffer(rendering::PrimitiveType::TRIANGLES, {}, renderer->render.ui.font_buffer, pass, render_state, renderer, command.material, pass.camera, 0 ,&render_state.gl_shaders[command.shader_handle.handle]);
 
             if (command.clip)
@@ -2142,7 +2120,6 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
                 glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
             }
 
-
             render_buffer(rendering::PrimitiveType::TRIANGLES, {}, command.buffer, pass, render_state, renderer, command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
             
             if (command.clip)
@@ -2155,32 +2132,10 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
         pass.ui.text_z_layer_counts[i] = 0;
     }
 
-    // for (i32 i = 0; i < pass.ui.transparent_command_count; i++)
-    // {
-    //     rendering::UIRenderCommand &command = pass.ui.transparent_commands[i];
-
-    //     if (command.clip)
-    //     {
-    //         glEnable(GL_SCISSOR_TEST);
-    //         math::Rect clip_rect = command.clip_rect;
-    //         glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
-    //     }
-
-    //     render_buffer(rendering::PrimitiveType::TRIANGLES, {}, command.buffer, pass, render_state, renderer, command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
-
-    //     if (command.clip)
-    //     {
-    //         glDisable(GL_SCISSOR_TEST);
-    //     }
-    // }
-    
-
-
     glClear(GL_DEPTH_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
 
     pass.ui.text_command_count = 0;
-    // pass.ui.transparent_command_count = 0;
     pass.ui.render_command_count = 0;
 }
 
@@ -2333,7 +2288,7 @@ static void render(RenderState &render_state, Renderer *renderer, r64 delta_time
 
     b32 should_render = renderer->window_width != 0;
 
-    register_new_buffers(render_state, renderer);
+    // register_new_buffers(render_state, renderer);
     //register_framebuffers(render_state, renderer);
 
     if (should_render)

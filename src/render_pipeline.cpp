@@ -1207,20 +1207,15 @@ namespace rendering
         }
     }
 
-    static void update_buffer(Renderer *renderer, UpdateBufferInfo update_info)
+    static void update_buffer(rendering::BufferHandle handle, BufferType buffer_type, BufferUsage usage, void* data, size_t count, size_t size, Renderer *renderer)
     {
-        assert(renderer->render.updated_buffer_handle_count + 1 < global_max_custom_buffers);
         assert(renderer->render._internal_buffer_handles);
 
-        // @Incomplete: Update from data
-        // Find RegisterBufferInfo from handle
-        // Update data in info from new_data
-
-        i32 internal_handle = renderer->render._internal_buffer_handles[update_info.buffer.handle - 1];
-
-        renderer->render.buffers[internal_handle].data = update_info.update_data;
-
-        renderer->render.updated_buffer_handles[renderer->render.updated_buffer_handle_count++] = internal_handle;
+        i32 _internal_handle = renderer->render._internal_buffer_handles[handle.handle - 1];
+        
+        Buffer* buffer = renderer->render.buffers[_internal_handle];
+        
+        renderer->api_functions.update_buffer(buffer, buffer_type, data, count, size, usage, renderer->api_functions.render_state, renderer);
     }
 
     static size_t size_for_type(ValueType type)
@@ -1801,9 +1796,16 @@ namespace rendering
 
         renderer->render._internal_buffer_handles[unused_handle - 1] = renderer->render.buffer_count++;
 
-        renderer->render.buffers[renderer->render._internal_buffer_handles[unused_handle - 1]] = info;
+        Buffer *buffer = renderer->render.buffers[renderer->render._internal_buffer_handles[unused_handle - 1]];
+        
+        renderer->api_functions.create_buffer(buffer, info, renderer->api_functions.render_state, renderer);
 
         return {unused_handle};
+    }
+
+    static BufferHandle create_buffer(Renderer *renderer, RegisterBufferInfo info)
+    {
+        
     }
 
     static BufferHandle create_line_buffer(Renderer *renderer)
@@ -1834,10 +1836,10 @@ namespace rendering
         return {register_buffer(renderer, info).handle}; 
     }
 
-    static void direct_update_buffer(Renderer *renderer, BufferHandle handle, r32 *data, size_t count, size_t size)
-    {
-        renderer->api_functions.update_buffer(handle, data, count, size, renderer->api_functions.render_state, renderer);
-    }
+    // static void update_buffer(Renderer *renderer, BufferHandle handle, r32 *data, size_t count, size_t size)
+    // {
+    //     renderer->api_functions.update_buffer(handle, data, count, size, renderer->api_functions.render_state, renderer);
+    // }
 
     static void update_line_buffer(Renderer* renderer, BufferHandle buffer, math::Vec3* vertices, size_t n)
     {
@@ -1865,7 +1867,7 @@ namespace rendering
             buf_push(lines, vertices[i + 2]);
         }
         
-        direct_update_buffer(renderer, buffer, (r32*)lines, buf_len(lines), buf_len(lines) * sizeof(math::Vec3));
+        update_buffer(buffer, BufferType::VERTEX, BufferUsage::DYNAMIC, (r32*)lines, buf_len(lines), buf_len(lines) * sizeof(math::Vec3), renderer);
         buf_free(lines);
     }
 
@@ -2027,11 +2029,14 @@ namespace rendering
         u16 quad_indices[6] =
             {
                 0, 1, 2,
-                0, 2, 3};
+                0, 2, 3
+            };
 
         info.data.vertex_count = 4;
         info.data.vertex_buffer_size = info.data.vertex_count * vertex_size * (i32)sizeof(r32);
 
+        TemporaryMemory temp_mem = begin_temporary_memory(&renderer->buffer_arena);
+        
         info.data.vertex_buffer = push_size(&renderer->buffer_arena, info.data.vertex_buffer_size, r32);
 
         for (i32 i = 0; i < info.data.vertex_count * vertex_size; i++)
@@ -2050,7 +2055,11 @@ namespace rendering
             info.data.index_buffer[i] = quad_indices[i];
         }
 
-        return {register_buffer(renderer, info).handle};
+        rendering::BufferHandle handle = register_buffer(renderer, info);
+
+        end_temporary_memory(temp_mem);
+
+        return handle;
     }
 
     static BufferHandle create_buffers_from_mesh(Renderer *renderer, Mesh &mesh, u64 vertex_data_flags, b32 has_normals, b32 has_uvs)
@@ -3458,8 +3467,6 @@ namespace rendering
         UIRenderCommand render_command = {};
         render_command.buffer = buffer_handle;
 
-        b32 transparent = false;
-
         if (info.texture_handle.handle != 0)
         {
             render_command.material = renderer->render.materials[renderer->render.ui.textured_material.handle];
@@ -3469,11 +3476,6 @@ namespace rendering
         {
             render_command.material = renderer->render.materials[renderer->render.ui.material.handle];
             set_uniform_value(renderer, render_command.material, "color", info.color);
-
-            if(info.color.a < 1.0f)
-            {
-                transparent = true;
-            }
         }
 
         set_uniform_value(renderer, render_command.material, "position", info.transform.position);
@@ -3485,41 +3487,17 @@ namespace rendering
         render_command.clip = info.clip;
         RenderPass &pass = renderer->render.ui.pass;
         
-        // if(transparent)
-        // {
-        //     pass.ui.transparent_commands[pass.ui.transparent_command_count++] = render_command;
-        // }
-        // else
-        // {
-            assert(info.z_layer < Z_LAYERS);
-            i32 *z_layer = pass.ui.ui_z_layers[info.z_layer];
-            i32 z_index = pass.ui.ui_z_layer_counts[info.z_layer]++;
-            z_layer[z_index] = pass.ui.render_command_count;
-            pass.ui.render_commands[pass.ui.render_command_count++] = render_command;
-        // }
-        
+        assert(info.z_layer < Z_LAYERS);
+        i32 *z_layer = pass.ui.ui_z_layers[info.z_layer];
+        i32 z_index = pass.ui.ui_z_layer_counts[info.z_layer]++;
+        z_layer[z_index] = pass.ui.render_command_count;
+        pass.ui.render_commands[pass.ui.render_command_count++] = render_command;
     }
 
-    static UpdateBufferInfo create_update_buffer_info(Renderer *renderer, BufferHandle handle)
+    static void update_buffer(Renderer *renderer, BufferHandle handle, BufferData new_data, BufferUsage usage = BufferUsage::DYNAMIC)
     {
-        i32 internal_handle = renderer->render._internal_buffer_handles[handle.handle - 1];
-
-        RegisterBufferInfo reg_info = renderer->render.buffers[internal_handle];
-        UpdateBufferInfo info = {};
-        info.buffer = handle;
-        info.update_data = reg_info.data;
-
-        return info;
-    }
-
-    static void update_buffer(Renderer *renderer, BufferHandle handle, BufferData new_data)
-    {
-        i32 internal_handle = renderer->render._internal_buffer_handles[handle.handle - 1];
-        RegisterBufferInfo reg_info = renderer->render.buffers[internal_handle];
-
-        UpdateBufferInfo update_info = create_update_buffer_info(renderer, handle);
-        update_info.update_data = new_data;
-        update_buffer(renderer, update_info);
+        update_buffer(handle, BufferType::VERTEX, usage, new_data.vertex_buffer, (size_t)new_data.vertex_count, (size_t)new_data.vertex_buffer_size, renderer);
+        update_buffer(handle, BufferType::INDEX, usage, new_data.index_buffer, (size_t)new_data.index_buffer_count, (size_t)new_data.index_buffer_size, renderer);
     }
 
     static CreateUICommandInfo create_ui_command_info()

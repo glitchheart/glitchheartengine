@@ -300,7 +300,13 @@ namespace rendering
     
 	HANDLE(Buffer);
     HANDLE(InternalBuffer);
-	
+
+    enum class BufferType
+    {
+        VERTEX,
+        INDEX
+    };
+    
 	struct BufferData
 	{
 		r32* vertex_buffer;
@@ -340,12 +346,6 @@ namespace rendering
 
 		RegisterBufferInfo() {}
 	};
-
-    struct UpdateBufferInfo
-    {
-        BufferHandle buffer;
-        BufferData update_data;
-    };
 
     struct LineBufferHandle
     {

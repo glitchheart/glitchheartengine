@@ -97,6 +97,7 @@ static ParticleSystemAttributes get_default_particle_system_attributes()
 static void _allocate_particle_system(Renderer *renderer, ParticleSystemInfo& system_info, i32 max_particles)
 {
     MemoryArena* memory_arena = &system_info.arena;
+    MemoryArena* simd_arena = &system_info.simd_arena;
     clear(memory_arena);
     
     //@Note: For SIMD
@@ -113,29 +114,30 @@ static void _allocate_particle_system(Renderer *renderer, ParticleSystemInfo& sy
     {
         system_info.dead_particles[dead_index] = dead_index;
     }
-    
-    system_info.alive0_particle_count = 0;
-    system_info.alive1_particle_count = 0;
-    
-    system_info.particles.position = push_array_simd(memory_arena, max_over_four, Vec3_4x);
-    system_info.particles.direction = push_array_simd(memory_arena, max_over_four, Vec3_4x);
-    system_info.particles.color = push_array_simd(memory_arena, max_over_four, Rgba_4x);
-    system_info.particles.angle = push_array_simd(memory_arena, max_over_four, r32_4x);
+
     system_info.emitted_for_this_index = push_array(memory_arena, max_over_four, i32);
     for(i32 i = 0; i < max_over_four; i++)
     {
         system_info.emitted_for_this_index[i] = 0;
     }
     
-    system_info.particles.size = push_array_simd(memory_arena, max_over_four, Vec2_4x);
-    system_info.particles.start_size = push_array_simd(memory_arena, max_over_four, Vec2_4x);
-    system_info.particles.start_life = push_array_simd(memory_arena, max_over_four, r64_4x);
-    system_info.particles.start_speed = push_array_simd(memory_arena, max_over_four, r32_4x);
-    system_info.particles.start_angle = push_array_simd(memory_arena, max_over_four, r32_4x);
-    system_info.particles.relative_position = push_array_simd(memory_arena, max_over_four, Vec3_4x);
+    system_info.alive0_particle_count = 0;
+    system_info.alive1_particle_count = 0;
     
-    system_info.particles.life = push_array_simd(memory_arena, max_over_four, r64_4x);
-    system_info.particles.texture_handle = push_array(memory_arena, system_info.max_particles, rendering::TextureHandle);
+    system_info.particles.position = push_array_simd(simd_arena, max_over_four, Vec3_4x);
+    system_info.particles.direction = push_array_simd(simd_arena, max_over_four, Vec3_4x);
+    system_info.particles.color = push_array_simd(simd_arena, max_over_four, Rgba_4x);
+    system_info.particles.angle = push_array_simd(simd_arena, max_over_four, r32_4x);
+
+    system_info.particles.size = push_array_simd(simd_arena, max_over_four, Vec2_4x);
+    system_info.particles.start_size = push_array_simd(simd_arena, max_over_four, Vec2_4x);
+    system_info.particles.start_life = push_array_simd(simd_arena, max_over_four, r64_4x);
+    system_info.particles.start_speed = push_array_simd(simd_arena, max_over_four, r32_4x);
+    system_info.particles.start_angle = push_array_simd(simd_arena, max_over_four, r32_4x);
+    system_info.particles.relative_position = push_array_simd(simd_arena, max_over_four, Vec3_4x);
+
+    system_info.particles.life = push_array_simd(simd_arena, max_over_four, r64_4x);
+    push_size(memory_arena, sizeof(rendering::TextureHandle), rendering::TextureHandle);
     
     system_info.color_over_lifetime.value_count = 0;
     system_info.size_over_lifetime.value_count = 0;
