@@ -1024,10 +1024,29 @@ namespace rendering
         return nullptr;
     }
 
+    static VertexAttributeInstanced *attrib_mapping(Material &material, VertexAttributeMappingType type)
+    {
+        for (i32 i = 0; i < material.instanced_vertex_attribute_count; i++)
+        {
+            if (material.instanced_vertex_attributes[i].mapping_type == type)
+            {
+                return &material.instanced_vertex_attributes[i];
+            }
+        }
+
+        return nullptr;
+    }
+
     static UniformValue *get_mapping(MaterialInstanceHandle handle, UniformMappingType type, Renderer *renderer)
     {
         Material &material = get_material_instance(handle, renderer);
         return mapping(material, type);
+    }
+    
+    static VertexAttributeInstanced *get_attrib_mapping(MaterialInstanceHandle handle, VertexAttributeMappingType type, Renderer *renderer)
+    {
+        Material &material = get_material_instance(handle, renderer);
+        return attrib_mapping(material, type);
     }
 
     static UniformValue *get_value(Material &material, ValueType type, const char *name)
@@ -1632,6 +1651,11 @@ namespace rendering
                     {
                         sscanf(buffer, "Kd %f %f %f", &u->float4_val.r, &u->float4_val.g, &u->float4_val.b);
                         u->float4_val.a = 1.0f;
+                    }
+                    else if(VertexAttributeInstanced *va = attrib_mapping(material, VertexAttributeMappingType::DIFFUSE_COLOR))
+                    {
+                        sscanf(buffer, "Kd %f %f %f", &va->attribute.float4_val.r, &va->attribute.float4_val.g, &va->attribute.float4_val.b);
+                        va->attribute.float4_val.a = 1.0f;
                     }
                 }
                 else if (starts_with(buffer, "Ks")) // specular color
