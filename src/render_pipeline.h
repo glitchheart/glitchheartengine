@@ -97,6 +97,7 @@ namespace rendering
         POSITION,
         SCALE,
         ROTATION,
+        DIFFUSE_COLOR,
         MODEL,
         PARTICLE_POSITION,
         PARTICLE_COLOR,
