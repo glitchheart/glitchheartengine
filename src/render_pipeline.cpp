@@ -3076,7 +3076,7 @@ namespace rendering
     static void scale(Transform& transform, math::Vec3 scale)
     {
         transform.dirty |= scale.x != 0.0f || scale.y != 0.0f || scale.z != 0.0f;
-        transform.scale += scale;
+        transform.scale *= scale;
     }
 
     static void set_scale(Transform& transform, math::Vec3 scale)
