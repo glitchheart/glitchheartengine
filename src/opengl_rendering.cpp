@@ -1332,7 +1332,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
 
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
-    glfwSwapInterval(0);
+    glfwSwapInterval(1);
 
     glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
     glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
@@ -1692,6 +1692,16 @@ static void set_uniform(rendering::Transform transform, const rendering::RenderP
         case rendering::UniformMappingType::CAMERA_FORWARD:
         {
             set_vec3_uniform(gl_shader.program, location, math::forward(camera.view_matrix));
+        }
+        break;
+        case rendering::UniformMappingType::FRAMEBUFFER_WIDTH:
+        {
+            set_int_uniform(gl_shader.program, location, renderer->window_width);
+        }
+        break;
+        case rendering::UniformMappingType::FRAMEBUFFER_HEIGHT:
+        {
+            set_int_uniform(gl_shader.program, location, renderer->window_height);
         }
         break;
         case rendering::UniformMappingType::CLIPPING_PLANE:
