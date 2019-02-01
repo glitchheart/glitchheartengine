@@ -1078,7 +1078,7 @@ namespace scene
             r32 unit = manager->gizmos.current_distance_to_camera;
             
             TransformComponent &transform_comp = get_transform_comp(manager->selected_entity, manager->loaded_scene);
-            rendering::Transform t = rendering::create_transform(transform_comp.transform.position, math::Vec3(1.0f), transform_comp.transform.orientation);
+            rendering::Transform t = rendering::create_transform(transform_comp.transform.position, math::Vec3(1.0f), math::Vec3(0.0f));
             math::Vec3 yellow(RGB_FLOAT(189), RGB_FLOAT(183), RGB_FLOAT(107));
 
             if(manager->gizmos.transformation_type == TransformationType::SCALE)
@@ -1481,7 +1481,7 @@ namespace scene
     static void find_all_template_files(SceneManager *scene_manager)
     {
         DirectoryData data = {};
-        platform.get_all_files_with_extension("../assets/templates/", "tmpl", &data, true);
+        platform.get_all_files_with_extension("../assets/templates/PLACABLES/", "tmpl", &data, true);
         scene_manager->editor.template_files = data;
     }
 
@@ -2681,11 +2681,16 @@ namespace scene
         }
     }
 
-    static EntityHandle place_entity_from_template(math::Vec3 position, const char* path, SceneHandle scene, b32 savable = true)
+    static EntityHandle place_entity_from_template(math::Vec3 position, const char* path, SceneHandle scene, b32 savable = true, b32 select = false)
     {
         EntityHandle entity = register_entity_from_template_file(path, scene, savable);
         TransformComponent &transform = get_transform_comp(entity, scene);
         rendering::set_position(transform.transform, position);
+        if(select)
+        {
+            select_entity(entity, scene.manager);
+        }
+        
         return entity;
     }
     
