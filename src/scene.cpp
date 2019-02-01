@@ -3056,8 +3056,6 @@ namespace scene
                     default:
                     assert(false);
                     }
-
-
                 }
 
                 if (ent.comp_flags & scene::COMP_RENDER)
@@ -3126,7 +3124,7 @@ namespace scene
                     
                         if(ent.comp_flags & scene::COMP_TRANSFORM)
                         {
-                            system.transform.position += transform.transform.position;
+                            system.transform.position += math::translation(transform.transform.model);
                             system.transform.scale = transform.transform.scale;
                             system.transform.orientation = transform.transform.orientation;
                             

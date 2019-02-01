@@ -314,7 +314,15 @@ namespace rendering
         {
             type = UniformMappingType::CAMERA_FORWARD;
         }
-
+        else if(starts_with(mapped_buffer, "FRAMEBUFFER_WIDTH"))
+        {
+            type = UniformMappingType::FRAMEBUFFER_WIDTH;
+        }
+        else if(starts_with(mapped_buffer, "FRAMEBUFFER_HEIGHT"))
+        {
+            type = UniformMappingType::FRAMEBUFFER_HEIGHT;
+        }
+        
         return type;
     }
 

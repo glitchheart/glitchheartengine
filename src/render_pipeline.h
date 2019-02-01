@@ -160,6 +160,9 @@ namespace rendering
         CAMERA_UP,
         CAMERA_RIGHT,
         CAMERA_FORWARD,
+
+        FRAMEBUFFER_WIDTH,
+        FRAMEBUFFER_HEIGHT,
         
 		MAX
     };
