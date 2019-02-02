@@ -54,7 +54,8 @@ namespace scene
         scene_manager->registered_types[scene_manager->registered_type_count++] = registered;
     }
 
-    static void register_member(RegisteredEntityType& registered, size_t offset, char* name, FieldType type)
+#define register_member(registered, entity_type, field, field_type) _register_member(registered, offsetof(entity_type, field), #field, field_type)
+    static void _register_member(RegisteredEntityType& registered, size_t offset, char* name, FieldType type)
     {
         strcpy(registered.fields[registered.field_count].name, name);
         registered.fields[registered.field_count].offset = offset;
