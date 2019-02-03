@@ -3176,11 +3176,10 @@ namespace rendering
     {
     }
 
-    static void push_instanced_buffer_to_shadow_pass(Renderer *renderer, i32 count, BufferHandle buffer_handle, VertexAttributeInstanced *instanced_attrs, i32 attr_count)
+    static void push_instanced_buffer_to_shadow_pass(Renderer *renderer, i32 count, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle)
     {
         ShadowCommand shadow_command = {};
-        memcpy(shadow_command.instanced_vertex_attributes, instanced_attrs, attr_count * sizeof(VertexAttributeInstanced));
-        shadow_command.instanced_vertex_attribute_count = attr_count;
+        shadow_command.material = material_instance_handle;
         shadow_command.count = count;
         shadow_command.buffer = buffer_handle;
         renderer->render.shadow_commands[renderer->render.shadow_command_count++] = shadow_command;
