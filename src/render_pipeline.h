@@ -508,8 +508,8 @@ namespace rendering
         Transform transform;
 
         // Instanced call
-        VertexAttributeInstanced instanced_vertex_attributes[8];
-        i32 instanced_vertex_attribute_count;
+        
+		MaterialInstanceHandle material;
     };
     
     enum FramebufferType

@@ -3164,7 +3164,7 @@ namespace scene
                 BatchedCommand &render_command = queued_command.commands[batch_index];
 
                 rendering::Material &mat_instance = get_material_instance(render_command.material_handle, renderer);
-
+                
                 if (mat_instance.instanced_vertex_attribute_count == 0)
                 {
                     // Just push the buffer as a normal draw call
@@ -3241,7 +3241,7 @@ namespace scene
             // Push the command to the shadow buffer if it casts shadows
             if(first_command.casts_shadows)
             {
-                rendering::push_instanced_buffer_to_shadow_pass(renderer, queued_command.count, queued_command.buffer_handle, material.instanced_vertex_attributes, material.instanced_vertex_attribute_count);
+                rendering::push_instanced_buffer_to_shadow_pass(renderer, queued_command.count, queued_command.buffer_handle, first_command.material_handle);
             }
         
             // Push the command to the correct render passes

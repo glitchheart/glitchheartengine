@@ -2014,7 +2014,7 @@ static void render_shadow_buffer(rendering::ShadowCommand &shadow_command, Rende
     bind_vertex_array(0, render_state);
 }
 
-static void render_instanced_shadow_buffer(rendering::ShadowCommand &shadow_command, RenderState &render_state, Renderer *renderer)
+static void render_instanced_shadow_buffer(rendering::ShadowCommand &shadow_command, rendering::Material &material, RenderState &render_state, Renderer *renderer)
 {
     Buffer &buffer = get_internal_buffer(renderer, render_state, shadow_command.buffer);
 
@@ -2025,7 +2025,7 @@ static void render_instanced_shadow_buffer(rendering::ShadowCommand &shadow_comm
 
     glUseProgram(gl_shader.program);
 
-    setup_instanced_vertex_attribute_buffers(shadow_command.instanced_vertex_attributes, shadow_command.instanced_vertex_attribute_count, shader_info, render_state, renderer);
+    setup_instanced_vertex_attribute_buffers(material.instanced_vertex_attributes, material.instanced_vertex_attribute_count, shader_info, render_state, renderer);
 
     static GLint lsLoc = glGetUniformLocation(gl_shader.program, "lightSpaceMatrix");
     set_mat4_uniform(gl_shader.program, lsLoc, renderer->render.light_space_matrix);
@@ -2056,10 +2056,12 @@ static void render_shadows(RenderState &render_state, Renderer *renderer, Frameb
     for (i32 i = 0; i < renderer->render.shadow_command_count; i++)
     {
         rendering::ShadowCommand &shadow_command = renderer->render.shadow_commands[i];
-        if (shadow_command.count > 1)
-            render_instanced_shadow_buffer(shadow_command, render_state, renderer);
-        else
-            render_shadow_buffer(shadow_command, render_state, renderer);
+        rendering::Material &material = get_material_instance(shadow_command.material, renderer);
+        
+        //if (shadow_command.count > 1)
+            render_instanced_shadow_buffer(shadow_command, material, render_state, renderer);
+            //else
+            //render_shadow_buffer(shadow_command, render_state, renderer);
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -2297,9 +2299,6 @@ static void render(RenderState &render_state, Renderer *renderer, r64 delta_time
     clear(&renderer->shader_arena);
 
     b32 should_render = renderer->window_width != 0;
-
-    // register_new_buffers(render_state, renderer);
-    //register_framebuffers(render_state, renderer);
 
     if (should_render)
     {
