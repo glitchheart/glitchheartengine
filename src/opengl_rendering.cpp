@@ -2151,6 +2151,23 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
     pass.ui.render_command_count = 0;
 }
 
+static void render_line(rendering::RenderCommand& command, rendering::Material& material, rendering::RenderPass &pass, Renderer *renderer, RenderState &render_state)
+{
+    math::Vec3 line[4];
+    line[0] = 2.0f * command.line.p0 - command.line.p1;
+    line[1] = command.line.p0;
+    line[2] = command.line.p1;
+    line[3] = 2.0f * line[2] - line[3];
+
+    rendering::update_buffer(renderer->render.line_buffer, rendering::BufferType::VERTEX, rendering::BufferUsage::DYNAMIC, (r32*)line, 4, sizeof(math::Vec3) * 4, renderer);
+                    
+    rendering::set_uniform_value(renderer, material, "thickness", command.line.thickness);
+    rendering::set_uniform_value(renderer, material, "color", command.line.color);
+    rendering::set_uniform_value(renderer, material, "miter_limit", 0.1f);
+
+    render_buffer(rendering::PrimitiveType::LINES, command.transform, renderer->render.line_buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
+}
+
 static void render_all_passes(RenderState &render_state, Renderer *renderer)
 {
     bind_vertex_array(0, render_state);
@@ -2181,8 +2198,20 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
             {
                 rendering::RenderCommand &command = pass.commands.render_commands[i];
                 rendering::Material &material = get_material_instance(command.material, renderer);
-            
-                render_buffer(command.primitive_type, command.transform, command.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
+
+                switch(command.type)
+                {
+                case rendering::RenderCommandType::BUFFER:
+                {
+                    render_buffer(command.buffer.primitive_type, command.transform, command.buffer.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
+                }
+                break;
+                case rendering::RenderCommandType::LINE:
+                {
+                    render_line(command, material, pass, renderer, render_state);
+                }
+                break;
+                }
             }
 
             glDisable(GL_DEPTH_TEST);
@@ -2192,7 +2221,19 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
                 rendering::RenderCommand &command = pass.commands.depth_free_commands[i];
                 rendering::Material &material = get_material_instance(command.material, renderer);
 
-                render_buffer(command.primitive_type, command.transform, command.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
+                                switch(command.type)
+                {
+                case rendering::RenderCommandType::BUFFER:
+                {
+                    render_buffer(command.buffer.primitive_type, command.transform, command.buffer.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
+                }
+                break;
+                case rendering::RenderCommandType::LINE:
+                {
+                    render_line(command, material, pass, renderer, render_state);
+                }
+                break;
+                }
             }
 
             glEnable(GL_DEPTH_TEST);
