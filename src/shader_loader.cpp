@@ -322,6 +322,10 @@ namespace rendering
         {
             type = UniformMappingType::FRAMEBUFFER_HEIGHT;
         }
+        else if(starts_with(mapped_buffer, "TIME"))
+        {
+            type = UniformMappingType::TIME;
+        }
         
         return type;
     }
