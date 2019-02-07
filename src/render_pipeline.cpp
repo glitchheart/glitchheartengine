@@ -1827,11 +1827,6 @@ namespace rendering
         return {unused_handle};
     }
 
-    static BufferHandle create_buffer(Renderer *renderer, RegisterBufferInfo info)
-    {
-        
-    }
-
     static BufferHandle create_line_buffer(Renderer *renderer)
     {
        assert(renderer->render.buffer_count + 1 < global_max_custom_buffers);
@@ -1860,11 +1855,6 @@ namespace rendering
         return {register_buffer(renderer, info).handle}; 
     }
 
-    // static void update_buffer(Renderer *renderer, BufferHandle handle, r32 *data, size_t count, size_t size)
-    // {
-    //     renderer->api_functions.update_buffer(handle, data, count, size, renderer->api_functions.render_state, renderer);
-    // }
-
     static void update_line_buffer(Renderer* renderer, BufferHandle buffer, math::Vec3* vertices, size_t n)
     {
         math::Vec3* lines = nullptr;
@@ -1873,6 +1863,7 @@ namespace rendering
         buf_push(lines, adj_0);
         buf_push(lines, vertices[0]);
         buf_push(lines, vertices[1]);
+
         buf_push(lines, vertices[2]);
         buf_push(lines, vertices[3]);
 
@@ -3138,14 +3129,37 @@ namespace rendering
         renderer->render.shadow_commands[renderer->render.shadow_command_count++] = shadow_command;
     }
 
+    static void push_line_to_render_pass(Renderer *renderer, math::Vec3 p0, math::Vec3 p1, r32 thickness, math::Vec3 color, Transform transform, MaterialInstanceHandle material_instance_handle, ShaderHandle shader_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH)
+    {
+        RenderPass &pass = renderer->render.passes[render_pass_handle.handle - 1];
+        assert(pass.commands.render_command_count < global_max_render_commands);
+
+        RenderCommand render_command = {};
+        render_command.type = RenderCommandType::LINE;
+        render_command.material = material_instance_handle;
+        render_command.pass.shader_handle = shader_handle;
+        render_command.transform = transform;
+
+        render_command.line.p0 = p0;
+        render_command.line.p1 = p1;
+        render_command.line.thickness = thickness;
+        render_command.line.color = color;
+
+        if(type == CommandType::WITH_DEPTH)
+            pass.commands.render_commands[pass.commands.render_command_count++] = render_command;
+        else
+            pass.commands.depth_free_commands[pass.commands.depth_free_command_count++] = render_command;
+    }
+
     static void push_buffer_to_render_pass(Renderer *renderer, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, Transform &transform, ShaderHandle shader_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH, PrimitiveType primitive_type = PrimitiveType::TRIANGLES)
     {
         RenderPass &pass = renderer->render.passes[render_pass_handle.handle - 1];
         assert(pass.commands.render_command_count < global_max_render_commands);
 
         RenderCommand render_command = {};
-        render_command.primitive_type = primitive_type;
-        render_command.buffer = buffer_handle;
+        render_command.type = RenderCommandType::BUFFER;
+        render_command.buffer.primitive_type = primitive_type;
+        render_command.buffer.buffer = buffer_handle;
         render_command.material = material_instance_handle;
         render_command.transform = transform;
         render_command.pass.shader_handle = shader_handle;
@@ -3159,9 +3173,10 @@ namespace rendering
     static void push_instanced_buffer_to_render_pass(Renderer *renderer, i32 count, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, ShaderHandle shader_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH, PrimitiveType primitive_type = PrimitiveType::TRIANGLES)
     {
         RenderCommand render_command = {};
-        render_command.primitive_type = primitive_type;
+        render_command.type = RenderCommandType::BUFFER;
+        render_command.buffer.primitive_type = primitive_type;
         render_command.count = count;
-        render_command.buffer = buffer_handle;
+        render_command.buffer.buffer = buffer_handle;
         render_command.material = material_instance_handle;
         render_command.pass.shader_handle = shader_handle;
         RenderPass &pass = renderer->render.passes[render_pass_handle.handle - 1];

@@ -373,21 +373,42 @@ namespace rendering
         TRIANGLES,
         LINES
     };
+
+    enum class RenderCommandType
+    {
+        BUFFER,
+        LINE,
+    };
     
     struct RenderCommand
     {
+        RenderCommandType type;
 		MaterialInstanceHandle material;
-		Transform transform;
-		BufferHandle buffer;
-
+        Transform transform;
+        
         i32 count;
 
-        PrimitiveType primitive_type;
         struct
         {
             rendering::RenderPassHandle pass_handle;
             rendering::ShaderHandle shader_handle;
         } pass;
+
+        union
+        {
+            struct
+            {
+                BufferHandle buffer;
+                PrimitiveType primitive_type;
+            } buffer;
+            struct
+            {
+                math::Vec3 p0;
+                math::Vec3 p1;
+                r32 thickness;
+                math::Vec3 color;
+            } line;
+        };
     };
 
     enum UIScalingFlag
@@ -405,12 +426,6 @@ namespace rendering
         RIGHT = (1 << 1),
         TOP = (1 << 2),
         BOTTOM = (1 << 3),
-    };
-
-    struct LineCommandData
-    {
-        math::Vec3 p1;
-        math::Vec3 p2;
     };
 
     struct FontHandle
@@ -669,9 +684,6 @@ namespace rendering
 
                 i32 **ui_z_layers;
                 i32 *ui_z_layer_counts;
-
-                /* rendering::UIRenderCommand* transparent_commands; */
-                /* i32 transparent_command_count; */
 
                 //@Cleanup: An extra 8 + 8 + 8 bytes?
                 rendering::CharacterData **coords;

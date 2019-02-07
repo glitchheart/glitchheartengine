@@ -1109,63 +1109,32 @@ namespace scene
             }
                 
             // Draw transform manipulators
-            math::Vec3 line[4];
-
-            // The first adjacency vector
-            math::Vec3 v1 = 2.0f * math::Vec3(0.0f) - math::Vec3(manager->gizmos.current_distance_to_camera, 0.0f, 0.0f);
-            math::Vec3 v2 = math::Vec3(0.0f, 0.0f, 0.0f);
-            math::Vec3 v3 = math::Vec3(manager->gizmos.current_distance_to_camera, 0.0f, 0.0f);
-            math::Vec3 v4 = 2.0f * v3 - v2;
-
-            line[0] = v1;
-            line[1] = v2;
-            line[2] = v3;
-            line[3] = v4;
-
-            size_t count = 4;
+            math::Vec3 v1 = math::Vec3(0.0f, 0.0f, 0.0f);
+            math::Vec3 v2 = math::Vec3(manager->gizmos.current_distance_to_camera, 0.0f, 0.0f);
 
             r32 line_thickness = 5.0f;
-            r32 miter_limit = 0.1f;
 
             // X
-            rendering::update_buffer(manager->gizmos.x_buffer, rendering::BufferType::VERTEX, rendering::BufferUsage::DYNAMIC, (r32*)line, count, sizeof(math::Vec3) * count, manager->renderer);
             rendering::set_uniform_value(manager->renderer, manager->gizmos.x_material, "color", c == TranslationConstraint::X ? yellow : math::Vec3(1.0f, 0.0f, 0.0f));
-            rendering::set_uniform_value(manager->renderer, manager->gizmos.x_material, "thickness", line_thickness);
-            rendering::set_uniform_value(manager->renderer, manager->gizmos.x_material, "miter_limit", miter_limit);
-            rendering::push_buffer_to_render_pass(manager->renderer, manager->gizmos.x_buffer, manager->gizmos.x_material, t, manager->gizmos.line_shader, {1}, rendering::CommandType::NO_DEPTH, rendering::PrimitiveType::LINES);
+            math::Vec3 color = c == TranslationConstraint::X ? yellow : math::Vec3(1.0f, 0.0f, 0.0f);
+
+            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color,t, manager->gizmos.x_material, manager->gizmos.line_shader, {1}, rendering::CommandType::NO_DEPTH);
 
             // Y
-            v1 = 2.0f * math::Vec3(0.0f) - math::Vec3(0.0f, manager->gizmos.current_distance_to_camera, 0.0f);
-            v2 = math::Vec3(0.0f, 0.0f, 0.0f);
-            v3 = math::Vec3(0.0f, manager->gizmos.current_distance_to_camera, 0.0f);
-            v4 = 2.0f * v3 - v2;
+            v1 = math::Vec3(0.0f, 0.0f, 0.0f);
+            v2 = math::Vec3(0.0f, manager->gizmos.current_distance_to_camera, 0.0f);
 
-            line[0] = v1;
-            line[1] = v2;
-            line[2] = v3;
-            line[3] = v4;
+            color = c == TranslationConstraint::Y ? yellow : math::Vec3(0.0f, 1.0f, 0.0f);
 
-            rendering::update_buffer(manager->gizmos.y_buffer, rendering::BufferType::VERTEX, rendering::BufferUsage::DYNAMIC, (r32*)line, count, sizeof(math::Vec3) * count, manager->renderer);
-            rendering::set_uniform_value(manager->renderer, manager->gizmos.y_material, "color", c == TranslationConstraint::Y ? yellow : math::Vec3(0.0f, 1.0f, 0.0f));
-            rendering::set_uniform_value(manager->renderer, manager->gizmos.y_material, "thickness", line_thickness);
-            rendering::set_uniform_value(manager->renderer, manager->gizmos.y_material, "miter_limit", miter_limit);
-            rendering::push_buffer_to_render_pass(manager->renderer, manager->gizmos.y_buffer, manager->gizmos.y_material, t, manager->gizmos.line_shader, {1}, rendering::CommandType::NO_DEPTH, rendering::PrimitiveType::LINES);
+            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.y_material, manager->gizmos.line_shader, {1}, rendering::CommandType::NO_DEPTH);
 
             // Z
-            v1 = 2.0f * math::Vec3(0.0f) - math::Vec3(0.0f, 0.0f, manager->gizmos.current_distance_to_camera);
-            v2 = math::Vec3(0.0f, 0.0f, 0.0f);
-            v3 = math::Vec3(0.0f, 0.0f, manager->gizmos.current_distance_to_camera);
-            v4 = 2.0f * v3 - v2;
+            v1 = math::Vec3(0.0f, 0.0f, 0.0f);
+            v2 = math::Vec3(0.0f, 0.0f, manager->gizmos.current_distance_to_camera);
 
-            line[0] = v1;
-            line[1] = v2;
-            line[2] = v3;
-            line[3] = v4;
-            rendering::update_buffer(manager->gizmos.z_buffer, rendering::BufferType::VERTEX, rendering::BufferUsage::DYNAMIC, (r32*)line, count, sizeof(math::Vec3) * count, manager->renderer);
-            rendering::set_uniform_value(manager->renderer, manager->gizmos.z_material, "color", c == TranslationConstraint::Z ? yellow : math::Vec3(0.0f, 0.0f, 1.0f));
-            rendering::set_uniform_value(manager->renderer, manager->gizmos.z_material, "thickness", line_thickness);
-            rendering::set_uniform_value(manager->renderer, manager->gizmos.z_material, "miter_limit", miter_limit);
-            rendering::push_buffer_to_render_pass(manager->renderer, manager->gizmos.z_buffer, manager->gizmos.z_material, t, manager->gizmos.line_shader, {1}, rendering::CommandType::NO_DEPTH, rendering::PrimitiveType::LINES);
+            color = c == TranslationConstraint::Z ? yellow : math::Vec3(0.0f, 0.0f, 1.0f);
+
+            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.z_material, manager->gizmos.line_shader, {1}, rendering::CommandType::NO_DEPTH);
         }
     }
 

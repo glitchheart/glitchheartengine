@@ -466,6 +466,13 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     renderer->render.font_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/font.shd");
     renderer->render.ui.font_material = rendering::create_material(renderer, renderer->render.font_shader);
 
+    rendering::RegisterBufferInfo line_info = rendering::create_register_buffer_info();
+
+    add_vertex_attrib(rendering::ValueType::FLOAT3, line_info);
+    line_info.usage = rendering::BufferUsage::DYNAMIC;
+
+    renderer->render.line_buffer = rendering::register_buffer(renderer, line_info);
+    
     rendering::RegisterBufferInfo font_info = rendering::create_register_buffer_info();
 
     add_vertex_attrib(rendering::ValueType::FLOAT4, font_info);
