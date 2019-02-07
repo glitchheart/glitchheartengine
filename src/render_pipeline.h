@@ -163,6 +163,8 @@ namespace rendering
 
         FRAMEBUFFER_WIDTH,
         FRAMEBUFFER_HEIGHT,
+
+        TIME,
         
 		MAX
     };

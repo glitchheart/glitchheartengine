@@ -1704,6 +1704,11 @@ static void set_uniform(rendering::Transform transform, const rendering::RenderP
             set_int_uniform(gl_shader.program, location, renderer->window_height);
         }
         break;
+        case rendering::UniformMappingType::TIME:
+        {
+            set_float_uniform(gl_shader.program, location, (r32)glfwGetTime());
+        }
+        break;
         case rendering::UniformMappingType::CLIPPING_PLANE:
         {
             set_vec4_uniform(gl_shader.program, location, render_pass.clipping_planes.plane);
