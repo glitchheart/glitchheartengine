@@ -2197,7 +2197,11 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
             glEnable(GL_DEPTH_TEST);
             glDepthFunc(GL_LESS);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glClearColor(renderer->clear_color.r, renderer->clear_color.g, renderer->clear_color.b, renderer->clear_color.a);
+
+            if(pass.has_clear_color)
+                glClearColor(pass.clear_color.r, pass.clear_color.g, pass.clear_color.b, pass.clear_color.a);
+            else
+                glClearColor(renderer->clear_color.r, renderer->clear_color.g, renderer->clear_color.b, renderer->clear_color.a);
 
             for (i32 i = 0; i < pass.commands.render_command_count; i++)
             {

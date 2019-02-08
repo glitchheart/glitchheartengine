@@ -432,18 +432,45 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     rendering::set_bloom_shader(renderer, "../engine_assets/standard_shaders/bloom.shd");
     rendering::set_blur_shader(renderer, "../engine_assets/standard_shaders/blur.shd");
     rendering::set_hdr_shader(renderer, "../engine_assets/standard_shaders/hdr.shd");
+
+    rendering::ShaderHandle blur_shader = renderer->render.blur_shader;
+    rendering::ShaderHandle bloom_shader = renderer->render.bloom_shader;
+    
+    // Create the framebuffers
+    rendering::FramebufferInfo standard_resolve_info = rendering::generate_framebuffer_info();
+    standard_resolve_info.width = renderer->framebuffer_width;
+    standard_resolve_info.height = renderer->framebuffer_height;
+    
+    rendering::add_color_attachment(rendering::AttachmentType::TEXTURE, rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_resolve_info);
+    
+    rendering::FramebufferHandle standard_resolve_framebuffer = rendering::create_framebuffer(standard_resolve_info, renderer);
+    rendering::RenderPassHandle standard_resolve = rendering::create_render_pass("standard_resolve", standard_resolve_framebuffer, renderer);
+    
+    rendering::FramebufferInfo standard_info = rendering::generate_framebuffer_info();
+    standard_info.width = renderer->framebuffer_width;
+    standard_info.height = renderer->framebuffer_height;
+    
+    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 8);
+    rendering::add_depth_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::DepthAttachmentFlags::DEPTH_TEXTURE | rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, standard_info, 8);
+
+    rendering::FramebufferHandle standard_framebuffer = rendering::create_framebuffer(standard_info, renderer);
+    rendering::RenderPassHandle standard = rendering::create_render_pass(STANDARD_PASS, standard_framebuffer, renderer);
+
+    
+    rendering::RenderPassHandle read_draw_pass = rendering::create_render_pass("read_draw", standard_framebuffer, renderer);
+
+    rendering::set_read_draw_render_passes(read_draw_pass, standard_resolve, renderer);
     
     // Final framebuffer
     rendering::FramebufferInfo final_info = rendering::generate_framebuffer_info();
     final_info.width = renderer->framebuffer_width;
     final_info.height = renderer->framebuffer_height;
+    
     rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, final_info, 8);
     rendering::add_depth_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::DepthAttachmentFlags::DEPTH_TEXTURE | rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, final_info, 8);
 
     rendering::FramebufferHandle final_framebuffer = rendering::create_framebuffer(final_info, renderer);
     rendering::set_final_framebuffer(renderer, final_framebuffer);
-    
-    rendering::RenderPassHandle standard = rendering::create_render_pass(STANDARD_PASS, final_framebuffer, renderer);
 
     // UI
     renderer->render.ui.top_left_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::LEFT, true);
@@ -501,41 +528,48 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
 
     //Pass through post processing
 
-    //BLOOM
-    // rendering::FramebufferInfo bloom_info = rendering::generate_framebuffer_info();
-    // bloom_info.width = renderer->framebuffer_width;
-    // bloom_info.height = renderer->framebuffer_height;
+    rendering::FramebufferInfo blur_framebuffer = rendering::generate_framebuffer_info();
+    blur_framebuffer.width = renderer->framebuffer_width;
+    blur_framebuffer.height = renderer->framebuffer_height;
+    rendering::add_color_attachment(rendering::AttachmentType::TEXTURE, rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, blur_framebuffer, 0);
 
-//     rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, bloom_info, 0)
-// ;
-//     rendering::ShaderHandle blur_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/blur.shd");
-//     rendering::ShaderHandle bloom_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/bloom.shd");
-
-//     rendering::TextureHandle src_tex = rendering::get_texture_from_framebuffer(1, hdr_fbo, renderer);
-//     b32 horizontal = true;
-
-//     rendering::FramebufferHandle blur_fbo[2] = {rendering::create_framebuffer(bloom_info, renderer), rendering::create_framebuffer(bloom_info, renderer)};
-
-//     renderer->render.bloom.active = true;
-//     renderer->render.bloom.exposure = 1.8f;
-//     renderer->render.bloom.amount = 5;
+    rendering::FramebufferHandle blur_handle = rendering::create_framebuffer(blur_framebuffer, renderer);
     
-//     for(i32 i = 0; i < renderer->render.bloom.amount; i++)
-//     {
-//         // @Incomplete: Duplicate names for passes?
-//         rendering::PostProcessingRenderPassHandle blur = rendering::create_post_processing_render_pass("Bloom_Blur", blur_fbo[horizontal], renderer, blur_shader);
+    renderer->render.emissive_pass = rendering::create_render_pass("emissive_pass", blur_handle, renderer);
+    rendering::set_render_pass_clear_color(renderer->render.emissive_pass, math::Rgba(0, 0, 0, 0), renderer);
+    
+    // BLOOM
+    rendering::FramebufferInfo blur_info = rendering::generate_framebuffer_info();
+    blur_info.width = renderer->framebuffer_width;
+    blur_info.height = renderer->framebuffer_height;
 
-//         rendering::set_uniform_value(renderer, blur, "image", src_tex);
-//         rendering::set_uniform_value(renderer, blur, "horizontal", horizontal);
+    rendering::add_color_attachment(rendering::AttachmentType::TEXTURE, rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, blur_info);
 
-//         src_tex = rendering::get_texture_from_framebuffer(0, blur_fbo[horizontal], renderer);
-//         horizontal = !horizontal;
-//     }
+    rendering::TextureHandle src_tex = rendering::get_texture_from_framebuffer(0, blur_handle, renderer);
 
-//     rendering::PostProcessingRenderPassHandle bloom = rendering::create_post_processing_render_pass("Bloom", final_framebuffer, renderer, bloom_shader);
+    b32 horizontal = true;
 
-//     rendering::set_uniform_value(renderer, bloom, "scene", rendering::get_texture_from_framebuffer(0, hdr_fbo, renderer));
-//     rendering::set_uniform_value(renderer, bloom, "blur", src_tex);
+    rendering::FramebufferHandle blur_fbo[2] = { rendering::create_framebuffer(blur_info, renderer), rendering::create_framebuffer(blur_info, renderer) };
+    
+    renderer->render.bloom.active = true;
+    renderer->render.bloom.exposure = 1.8f;
+    renderer->render.bloom.amount = 5;
+    
+    for(i32 i = 0; i < renderer->render.bloom.amount; i++)
+    {
+        // @Incomplete: Duplicate names for passes?
+        rendering::PostProcessingRenderPassHandle blur = rendering::create_post_processing_render_pass("Bloom_Blur", blur_fbo[horizontal], renderer, blur_shader);
+
+        rendering::set_uniform_value(renderer, blur, "image", src_tex);
+        rendering::set_uniform_value(renderer, blur, "horizontal", horizontal);
+
+        src_tex = rendering::get_texture_from_framebuffer(0, blur_fbo[horizontal], renderer);
+        horizontal = !horizontal;
+    }
+
+    rendering::PostProcessingRenderPassHandle final_blur_pass = rendering::create_post_processing_render_pass("Blur_To_Final", final_framebuffer, renderer, bloom_shader);
+    rendering::set_uniform_value(renderer, final_blur_pass, "scene", rendering::get_texture_from_framebuffer(0, standard_resolve_framebuffer, renderer));
+    rendering::set_uniform_value(renderer, final_blur_pass, "blur", src_tex);
 
 //     rendering::set_uniform_value(renderer, bloom, "bloom", renderer->render.bloom.active);
 //     rendering::set_uniform_value(renderer, bloom, "exposure", renderer->render.bloom.exposure);

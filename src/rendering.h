@@ -730,6 +730,7 @@ struct Renderer
         } hdr;
 
         rendering::FramebufferHandle final_framebuffer;
+        rendering::RenderPassHandle emissive_pass;
         
 	} render;
 };
