@@ -237,6 +237,26 @@ namespace scene
         } particles;
         struct
         {
+            LightType type;
+
+            math::Vec3 ambient;
+            math::Vec3 diffuse;
+            math::Vec3 specular;
+            
+            union
+            {
+                struct
+                {                    
+                    math::Vec3 direction;
+                } directional;
+                struct
+                {
+                    math::Vec3 position;
+                    r32 constant;
+                    r32 linear;
+                    r32 quadratic;
+                } point;
+            };
         } light;
     };
     
@@ -402,9 +422,6 @@ namespace scene
             Gizmos selected_gizmo;
             TranslationConstraint constraint;
 
-            rendering::BufferHandle x_buffer;
-            rendering::BufferHandle y_buffer;
-            rendering::BufferHandle z_buffer;
             rendering::ShaderHandle line_shader;
             rendering::MaterialHandle line_material;
             rendering::MaterialInstanceHandle x_material;
@@ -475,11 +492,6 @@ namespace scene
         scene_manager->renderer = renderer;
 
         scene_manager->debug_cube.handle = 0;
-
-        scene_manager->gizmos.x_buffer = rendering::create_line_buffer(renderer);
-        scene_manager->gizmos.y_buffer = rendering::create_line_buffer(renderer);
-        scene_manager->gizmos.z_buffer = rendering::create_line_buffer(renderer);
-
         scene_manager->gizmos.line_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/line.shd");
         scene_manager->gizmos.line_material = rendering::create_material(renderer, scene_manager->gizmos.line_shader);
         
