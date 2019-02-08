@@ -13,6 +13,7 @@ namespace scene
     static RenderComponent& add_render_component(SceneHandle scene, EntityHandle entity_handle, b32 cast_shadows);
     static TransformComponent& add_transform_component(SceneHandle scene, EntityHandle entity_handle);
     static ParticleSystemComponent& add_particle_system_component(SceneHandle handle, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles, rendering::MaterialHandle material);
+    static LightComponent & add_light_component(SceneHandle &handle, EntityHandle entity_handle);
     static EntityHandle register_entity(u64 comp_flags, SceneHandle scene, b32 savable);
     static void unregister_entity(EntityHandle handle, SceneHandle scene);
     static EntityTemplate _load_template(const char *path, SceneHandle scene);
@@ -28,11 +29,16 @@ namespace scene
     static EntityHandle pick_entity(i32 mouse_x, i32 mouse_y);
     static Entity& get_entity(EntityHandle handle, SceneHandle& scene_handle);
     static RegisteredEntityType * get_registered_type(u32 type_id, SceneManager *manager);
+    static b32 has_light_component(EntityHandle entity_handle, SceneHandle& scene);
+    static b32 has_particle_component(EntityHandle entity_handle, SceneHandle& scene);
+    static b32 has_render_component(EntityHandle entity_handle, SceneHandle& scene);
+    static b32 has_transform_component(EntityHandle entity_handle, SceneHandle& scene);
     
     // @Deprecated
     static RenderComponent& _add_render_component(Scene &scene, EntityHandle entity_handle, b32 cast_shadows);
     static TransformComponent& _add_transform_component(Scene &scene, EntityHandle entity_handle);
     static ParticleSystemComponent& _add_particle_system_component(Scene &scene, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles, rendering::MaterialHandle material);
+    static LightComponent& _add_light_component(Scene &scene, EntityHandle entity_handle);
     static EntityHandle _register_entity(u64 comp_flags, Scene &scene, b32 savable);
     static void _unregister_entity(EntityHandle handle, Scene &scene);
     static EntityTemplate _load_template(const char *path, Scene &scene);
@@ -205,7 +211,6 @@ namespace scene
         rendering::set_position_z(comp.transform, z);
     }
 
-    
 	static void set_uniform_value(EntityHandle handle, const char* name, r32 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
@@ -399,6 +404,37 @@ namespace scene
                     fprintf(file, "scale: %f %f %f\n", transform.transform.scale.x, transform.transform.scale.y, transform.transform.scale.z);
                     fprintf(file, "rotation: %f %f %f\n", transform.transform.euler_angles.x, transform.transform.euler_angles.y, transform.transform.euler_angles.z);
 
+                    if(has_light_component(entity.handle, scene_handle))
+                    {
+                        LightComponent &light = get_light_comp(entity.handle, scene_handle);
+
+                        switch(light.type)
+                        {
+                        case LightType::DIRECTIONAL:
+                        {
+                            fprintf(file, "light::direction: %f %f %f\n", light.dir_light.direction.x, light.dir_light.direction.y, light.dir_light.direction.z);
+                            fprintf(file, "light::ambient: %f %f %f\n", light.dir_light.ambient.x, light.dir_light.ambient.y, light.dir_light.ambient.z);
+                            fprintf(file, "light::diffuse: %f %f %f\n", light.dir_light.diffuse.x, light.dir_light.diffuse.y, light.dir_light.diffuse.z);
+                            fprintf(file, "light::specular: %f %f %f\n", light.dir_light.specular.x, light.dir_light.specular.y, light.dir_light.specular.z);                            
+                        }
+                        break;
+                        case LightType::POINT:
+                        {
+                            fprintf(file, "light::direction: %f %f %f\n", light.point_light.position.x, light.point_light.position.y, light.point_light.position.z);
+                            fprintf(file, "light::constant: %f\n", light.point_light.constant);
+                            fprintf(file, "light::linear: %f\n", light.point_light.linear);
+                            fprintf(file, "light::quadratic: %f\n", light.point_light.quadratic);
+                            fprintf(file, "light::ambient: %f %f %f\n", light.point_light.ambient.x, light.point_light.ambient.y, light.point_light.ambient.z);
+                            fprintf(file, "light::diffuse: %f %f %f\n", light.point_light.diffuse.x, light.point_light.diffuse.y, light.point_light.diffuse.z);
+                            fprintf(file, "light::specular: %f %f %f\n", light.point_light.specular.x, light.point_light.specular.y, light.point_light.specular.z);                            
+                        }
+                        break;
+                        default:
+                        assert(false);
+                        break;
+                        }
+                    }
+
                     RegisteredEntityType* type_info = get_registered_type(entity.type, scene_handle.manager);
 
                     if(type_info)
@@ -552,6 +588,113 @@ namespace scene
             }
             else if(starts_with(buffer, "id"))
             {
+            }
+            else if(starts_with(buffer, "light::"))
+            {
+                LightComponent &light_comp = get_light_comp(handle, scene);
+                if(starts_with(buffer, "light::direction"))
+                {
+                    if(light_comp.type != LightType::DIRECTIONAL)
+                    {
+                        log_error("ERROR in scene loading: Light type mismatch");
+                    }
+                    sscanf(buffer, "light::direction: %f %f %f", &light_comp.dir_light.direction.x, &light_comp.dir_light.direction.y, &light_comp.dir_light.direction.z);
+                }
+                else if(starts_with(buffer, "light::ambient"))
+                {
+                    math::Vec3 ambient;
+                    sscanf(buffer, "light::ambient: %f %f %f", &ambient.x, &ambient.y, &ambient.z);
+                    switch(light_comp.type)
+                    {
+                    case LightType::DIRECTIONAL:
+                    {
+                        light_comp.dir_light.ambient = ambient;
+                    }
+                    break;
+                    case LightType::POINT:
+                    {
+                        light_comp.point_light.ambient = ambient;                        
+                    }
+                    break;
+                    default:
+                    assert(false);
+                    break;
+                    }
+                }
+                else if(starts_with(buffer, "light::diffuse"))
+                {
+                    math::Vec3 diffuse;
+                    sscanf(buffer, "light::diffuse: %f %f %f", &diffuse.x, &diffuse.y, &diffuse.z);
+                    switch(light_comp.type)
+                    {
+                    case LightType::DIRECTIONAL:
+                    {
+                        light_comp.dir_light.diffuse = diffuse;
+                    }
+                    break;
+                    case LightType::POINT:
+                    {
+                        light_comp.point_light.diffuse = diffuse;                        
+                    }
+                    break;
+                    default:
+                    assert(false);
+                    break;
+                    }
+                }
+                else if(starts_with(buffer, "light::specular"))
+                {
+                    math::Vec3 specular;
+                    sscanf(buffer, "light::specular: %f %f %f", &specular.x, &specular.y, &specular.z);
+                    switch(light_comp.type)
+                    {
+                    case LightType::DIRECTIONAL:
+                    {
+                        light_comp.dir_light.specular = specular;
+                    }
+                    break;
+                    case LightType::POINT:
+                    {
+                        light_comp.point_light.specular = specular;                        
+                    }
+                    break;
+                    default:
+                    assert(false);
+                    break;
+                    }
+                }
+                else if(starts_with(buffer, "light::position"))
+                {
+                    if(light_comp.type != LightType::POINT)
+                    {
+                        log_error("ERROR in scene loading: Light type mismatch");
+                    }
+                    sscanf(buffer, "light::direction: %f %f %f", &light_comp.point_light.position.x, &light_comp.point_light.position.y, &light_comp.point_light.position.z);
+                }
+                else if(starts_with(buffer, "light::constant"))
+                {
+                    if(light_comp.type != LightType::POINT)
+                    {
+                        log_error("ERROR in scene loading: Light type mismatch");
+                    }
+                    sscanf(buffer, "light::constant: %f", &light_comp.point_light.constant);
+                }
+                else if(starts_with(buffer, "light::linear"))
+                {
+                    if(light_comp.type != LightType::POINT)
+                    {
+                        log_error("ERROR in scene loading: Light type mismatch");
+                    }
+                    sscanf(buffer, "light::linear: %f", &light_comp.point_light.linear);
+                }
+                else if(starts_with(buffer, "light::quadratic"))
+                {
+                    if(light_comp.type != LightType::POINT)
+                    {
+                        log_error("ERROR in scene loading: Light type mismatch");
+                    }
+                    sscanf(buffer, "light::quadratic: %f", &light_comp.point_light.quadratic);
+                }
             }
             else
             {
@@ -839,20 +982,6 @@ namespace scene
 
 #define EPSILON 0.00001f
 
-    // b32 ray_intersects_plane(math::Vec3 plane_normal, math::Vec3 plane_position, math::Vec3 ray_origin, math::Vec3 ray_direction, math::Vec3 &intersection_point)
-    // {
-    //     r32 denom = math::dot(plane_normal, ray_direction);
-    //     if(denom > EPSILON)
-    //     {
-    //         math::Vec3 dist_vec = plane_position - ray_origin;
-    //         r32 t = -math::dot(dist_vec, plane_normal) / denom;
-    //         intersection_point = ray_origin + ray_direction * t;
-    //         return t >= 0;
-    //     }
-
-    //     return false;
-    // }
-
     b32 ray_intersects_plane(math::Vec3 plane_normal, math::Vec3 plane_position, math::Vec3 ray_origin, math::Vec3 ray_direction, math::Vec3 &intersection_point)
     {
         // assuming vectors are all normalized
@@ -894,30 +1023,6 @@ namespace scene
         if(t < 0) return false;
 
         return true;
-    }
-    
-    static b32 _is_gizmo(EntityHandle entity, SceneManager *manager)
-    {
-        
-        // if(entity.handle == manager->gizmos.x_arrow.handle)
-        // {
-        //     manager->gizmos.selected_gizmo = Gizmos::X_ARROW;
-        //     return true;
-        // }
-
-        // if(entity.handle == manager->gizmos.y_arrow.handle)
-        // {
-        //     manager->gizmos.selected_gizmo = Gizmos::Y_ARROW;
-        //     return true;
-        // }
-
-        // if(entity.handle == manager->gizmos.z_arrow.handle)
-        // {
-        //     manager->gizmos.selected_gizmo = Gizmos::Z_ARROW;
-        //     return true;
-        // }
-
-        return false;
     }
 
     static void deactivate_gizmo_arrows(SceneManager *manager)
@@ -2296,12 +2401,76 @@ namespace scene
 
                     templ.particles.attributes = attributes;
                 }
+                else if(starts_with(buffer, "-light"))
+                {
+                    templ.comp_flags |= COMP_LIGHT;
+                    
+                    while(fgets(buffer, 256, file) && !starts_with(buffer, "-"))
+                    {
+                        if(starts_with(buffer, "type"))
+                        {
+                            char buf[256];
+                            sscanf(buffer, "type: %s", buf);
+                            if(starts_with(buf, "directional"))
+                            {
+                                templ.light.type = LightType::DIRECTIONAL;
+                            }
+                            else if(starts_with(buf, "point"))
+                            {
+                                templ.light.type = LightType::POINT;                                
+                            }
+                            else
+                            {
+                                log_error("ERROR in template loading: Unknown light type");
+                            }
+                        }
+                        else if(starts_with(buffer, "direction"))
+                        {
+                            assert(templ.light.type == LightType::DIRECTIONAL);
+                        }
+                        else if(starts_with(buffer, "ambient"))
+                        {
+                            sscanf(buffer, "ambient: %f %f %f", &templ.light.ambient.x, &templ.light.ambient.y, &templ.light.ambient.z);
+                        }
+                        else if(starts_with(buffer, "diffuse"))
+                        {
+                            sscanf(buffer, "diffuse: %f %f %f", &templ.light.diffuse.x, &templ.light.diffuse.y, &templ.light.diffuse.z);
+                        }
+                        else if(starts_with(buffer, "specular"))
+                        {
+                            sscanf(buffer, "specular: %f %f %f", &templ.light.specular.x, &templ.light.specular.y, &templ.light.specular.z);                            
+                        }
+                        else if(starts_with(buffer, "position"))
+                        {
+                            assert(templ.light.type == LightType::POINT);
+                            sscanf(buffer, "position: %f %f %f", &templ.light.point.position.x, &templ.light.point.position.y, &templ.light.point.position.z);
+                        }
+                        else if(starts_with(buffer, "constant"))
+                        {
+                            assert(templ.light.type == LightType::POINT);
+                            sscanf(buffer, "constant: %f", &templ.light.point.constant);
+                        }
+                        else if(starts_with(buffer, "linear"))
+                        {
+                            assert(templ.light.type == LightType::POINT);
+                            sscanf(buffer, "linear: %f", &templ.light.point.linear);
+                        }
+                        else if(starts_with(buffer, "quadratic"))
+                        {
+                            assert(templ.light.type == LightType::POINT);
+                            sscanf(buffer, "quadratic: %f", &templ.light.point.quadratic);
+                        }
+                    }
+                }
             }
             
             fclose(file);
         }
         else
+        {
+            log_error("ERROR in template loading: Could not find file %s", path);
             assert(false);
+        }
         
         return(templ);
     }
@@ -2462,6 +2631,43 @@ namespace scene
             
             if(templ.particles.started)
                 start_particle_system(ps_comp.handle, scene.renderer);
+        }
+
+        if(templ.comp_flags & COMP_LIGHT)
+        {
+            LightComponent &light_comp = _add_light_component(scene, handle);
+
+            switch(templ.light.type)
+            {
+            case LightType::DIRECTIONAL:
+            {
+                light_comp.type = LightType::DIRECTIONAL;
+                DirectionalLight &light = light_comp.dir_light;
+
+                light.direction = templ.light.directional.direction;
+                light.ambient = templ.light.ambient;
+                light.diffuse = templ.light.diffuse;
+                light.specular = templ.light.specular;
+            }
+            break;
+            case LightType::POINT:
+            {
+                light_comp.type = LightType::POINT;
+                PointLight &light = light_comp.point_light;
+
+                light.position = templ.light.point.position;
+                light.constant = templ.light.point.constant;
+                light.linear = templ.light.point.linear;
+                light.quadratic = templ.light.point.quadratic;
+                light.ambient = templ.light.ambient;
+                light.diffuse = templ.light.diffuse;
+                light.specular = templ.light.specular;
+            }
+            break;
+            default:
+            assert(false);
+            break;
+            }
         }
         
         return(handle);
@@ -3018,9 +3224,9 @@ namespace scene
                     case scene::LightType::DIRECTIONAL:
                     {
                         renderer->render.directional_lights[renderer->render.dir_light_count++] = light_comp.dir_light;
-                        math::Vec3 view_pos = -light_comp.dir_light.direction * 10.0f;
+                        math::Vec3 view_pos = -light_comp.dir_light.direction * 15.0f;
                         
-                        rendering::set_light_space_matrices(renderer, math::ortho(-10, 10, -10, 10, 1, 20.0f), view_pos, math::Vec3(0.0f));
+                        rendering::set_light_space_matrices(renderer, math::ortho(-10, 20, -10, 20, 1, 40.0f), view_pos, math::Vec3(0.0f));
                     }
                     
                     break;
