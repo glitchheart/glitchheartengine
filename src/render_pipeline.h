@@ -649,6 +649,9 @@ namespace rendering
     {
         char name[32];
         RenderPassType type;
+
+        b32 has_clear_color;
+        math::Rgba clear_color;
         
         FramebufferHandle framebuffer;
         FramebufferHandle read_framebuffer;

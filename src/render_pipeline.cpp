@@ -590,6 +590,7 @@ namespace rendering
     static RenderPassHandle create_render_pass(const char *name, FramebufferHandle framebuffer, Renderer *renderer)
     {
         RenderPass &pass = renderer->render.passes[renderer->render.pass_count];
+        pass.has_clear_color = false;
         pass.type = RenderPassType::NORMAL;
         pass.framebuffer = framebuffer;
         pass.use_scene_camera = true;
@@ -609,6 +610,13 @@ namespace rendering
         RenderPass &draw = renderer->render.passes[draw_to_pass.handle - 1];
         draw.type = RenderPassType::READ_DRAW;
         draw.read_framebuffer = read.framebuffer;
+    }
+
+    static void set_render_pass_clear_color(RenderPassHandle handle, math::Rgba clear_color, Renderer *renderer)
+    {
+        RenderPass &pass = renderer->render.passes[handle.handle - 1];
+        pass.has_clear_color = true;
+        pass.clear_color = clear_color;
     }
 
     static void create_ui_render_pass(Renderer *renderer)
