@@ -1203,6 +1203,17 @@ static void update_buffer(Buffer *buffer, rendering::BufferType buffer_type, voi
     }
 }
 
+static void set_v_sync(RenderState *render_state, b32 value)
+{
+    glfwSwapInterval(value ? 1 : 0);
+    render_state->vsync_active = value;
+}
+
+static b32 get_v_sync(RenderState *render_state)
+{
+    return render_state->vsync_active;
+}
+
 static void set_window_mode(RenderState* render_state, Renderer* renderer, Resolution new_resolution, WindowMode new_window_mode)
 {
     b32 save = false;
@@ -1283,6 +1294,8 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     renderer->api_functions.get_mouse_lock = &get_mouse_lock;
     renderer->api_functions.set_window_cursor = &set_window_cursor;
     renderer->api_functions.set_window_mode = &set_window_mode;
+    renderer->api_functions.set_v_sync = &set_v_sync;
+    renderer->api_functions.get_v_sync = &get_v_sync;
 
     auto recreate_window = render_state.window != nullptr;
 
@@ -1367,6 +1380,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
     glfwSwapInterval(1);
+    render_state.vsync_active = true;
 
     glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
     glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
@@ -2265,7 +2279,7 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
                 rendering::RenderCommand &command = pass.commands.depth_free_commands[i];
                 rendering::Material &material = get_material_instance(command.material, renderer);
 
-                                switch(command.type)
+                switch(command.type)
                 {
                 case rendering::RenderCommandType::BUFFER:
                 {
@@ -2283,7 +2297,7 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
             glEnable(GL_DEPTH_TEST);
         
             pass.commands.render_command_count = 0;
-            pass.commands.depth_free_command_count = 0; 
+            pass.commands.depth_free_command_count = 0;
         }
         else if(pass.type == rendering::RenderPassType::READ_DRAW)
         {

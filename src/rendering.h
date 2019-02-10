@@ -460,6 +460,8 @@ typedef void (*DeleteBuffer)(Buffer *buffer, RenderState *render_state, Renderer
 typedef void (*SetMouseLock)(b32 locked, RenderState *render_state);
 typedef b32 (*GetMouseLock)(RenderState *render_state);
 typedef void (*SetWindowMode)(RenderState* render_state, Renderer* renderer, Resolution resolution, WindowMode window_mode);
+typedef void (*SetVSync)(RenderState *render_state, b32 value);
+typedef b32 (*GetVSync)(RenderState *render_state);
 
 struct GraphicsAPI
 {
@@ -479,6 +481,8 @@ struct GraphicsAPI
     GetMouseLock get_mouse_lock;
 
     SetWindowMode set_window_mode;
+    SetVSync set_v_sync;
+    GetVSync get_v_sync;
     
     RenderState *render_state;
 };
@@ -731,6 +735,7 @@ struct Renderer
 
         rendering::FramebufferHandle final_framebuffer;
         rendering::RenderPassHandle emissive_pass;
+        rendering::RenderPassHandle standard_pass;
         
 	} render;
 };

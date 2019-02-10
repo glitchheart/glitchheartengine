@@ -1362,6 +1362,9 @@ namespace rendering
         r32 max_y = 0.0f;
     
         line_data.line_spacing = (r32)font.size + font.line_gap * font.scale;
+
+        i32 x0, x1, y0, y1;
+        stbtt_GetFontBoundingBox(&font.info, &x0, &y0, &x1, &y1);
     
         for(u32 i = 0; i < strlen(text); i++)
         {
@@ -1371,16 +1374,6 @@ namespace rendering
                 stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
                                     text[i] - font.first_char, &line_data.line_sizes[line_data.line_count - 1].x, &placeholder_y, &quad, 1);
 
-                if(quad.y1 > max_y)
-                {
-                    max_y = quad.y1;
-                }
-
-                if(quad.y0 < min_y)
-                {
-                    min_y = quad.y0;
-                }
-                
                 if(MAX(quad.y1, quad.y0) - MIN(quad.y0, quad.y1) > size.y)
                 {
                     line_data.line_sizes[line_data.line_count - 1].y = quad.y1 - quad.y0;
@@ -1398,38 +1391,13 @@ namespace rendering
 
         if(line_data.line_count == 1)
         {
+            min_y = y0 * font.scale;
+            max_y = y1 * font.scale;
             line_data.total_height = max_y - min_y;
         }
         else
             line_data.total_height = (line_data.line_count - 1) * line_data.line_spacing;
     
-        return line_data;
-    }
-
-    static LineData get_line_size_data_scaled(Renderer* renderer, const char *text, TrueTypeFontInfo font, u64 scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)
-    {
-        LineData line_data = get_line_size_data(text, font);
-
-        math::Vec2i scale = get_scale(renderer);
-        
-        for(i32 i = 0; i < line_data.line_count; i++)
-        {
-            if(scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)
-            {
-                r32 ratio = line_data.line_sizes[i].y / line_data.line_sizes[i].x;
-                line_data.line_sizes[i].x = to_ui(renderer, scale.x, line_data.line_sizes[i].x);
-                line_data.line_sizes[i].y = line_data.line_sizes[i].y * ratio;
-            }
-            else
-            {
-                line_data.line_sizes[i].x = to_ui(renderer, scale.x, line_data.line_sizes[i].x);
-                line_data.line_sizes[i].y = to_ui(renderer, scale.y, line_data.line_sizes[i].y);
-            }
-        }
-
-        line_data.total_height = to_ui(renderer, scale.y, line_data.total_height);
-        line_data.line_spacing = to_ui(renderer, scale.y, line_data.line_spacing);
-
         return line_data;
     }
 
@@ -1550,7 +1518,7 @@ namespace rendering
         if (!stbtt_PackFontRange(&context, font_info.ttf_buffer, 0, (r32)font_info.size, font_info.first_char, font_info.char_count, font_info.char_data))
             printf("Failed to pack font");
 
-        stbtt_PackEnd(&context);
+        stbtt_PackEnd(&context);       
 
         load_texture(renderer, TextureFiltering::LINEAR, TextureWrap::CLAMP_TO_EDGE, temp_bitmap, font_info.atlas_width, font_info.atlas_height, TextureFormat::RED, texture);
 
@@ -3375,12 +3343,17 @@ namespace rendering
         }
         else if ((alignment_flags & UIAlignment::BOTTOM) == 0)
         {
-            y -= line_data.total_height / 2.0f;
+            y -= line_data.total_height / 2.0f; 
         }
 
         y = framebuffer.height - y;
 
         calculate_current_x_from_line_data(&x, line_data.line_sizes[current_line], alignment_flags);
+
+        // @Note: Compute baseling
+        i32 x0, x1, y0, y1;
+        stbtt_GetFontBoundingBox(&font_info.info, &x0, &y0, &x1, &y1);
+        r32 baseline = font_info.scale * -y0;
 
         for (u32 i = 0; i < strlen(text); i++)
         {
@@ -3406,8 +3379,8 @@ namespace rendering
 
             r32 x_min = quad.x0;
             r32 x_max = quad.x1;
-            r32 y_min = framebuffer.height - quad.y0;
-            r32 y_max = framebuffer.height - quad.y1;
+            r32 y_min = framebuffer.height - (quad.y0 - baseline);
+            r32 y_max = framebuffer.height - (quad.y1 - baseline);
 
             (*coords)[n++] = {x_max, y_max, quad.s1, quad.t1};
             (*coords)[n++] = {x_max, y_min, quad.s1, quad.t0};
