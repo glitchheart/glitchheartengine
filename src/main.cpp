@@ -452,7 +452,7 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     standard_info.height = renderer->framebuffer_height;
     
     rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 4);
-    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 4);
+    //rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 4);
     rendering::add_depth_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::DepthAttachmentFlags::DEPTH_TEXTURE | rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, standard_info, 4);
 
     rendering::FramebufferHandle standard_framebuffer = rendering::create_framebuffer(standard_info, renderer);
