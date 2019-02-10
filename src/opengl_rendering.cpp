@@ -807,9 +807,43 @@ static void create_new_framebuffer(rendering::FramebufferInfo &info, Framebuffer
 
     free(attachments);
 
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE)
     {
         log_error("Error: Framebuffer incomplete");
+        if(status == GL_FRAMEBUFFER_UNDEFINED)
+        {
+            log_error("FRAMEBUFFER UNDEFINED");
+        }
+        else if(status == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT)
+        {
+            log_error("INCOMPLETE ATTACHMENT");
+        }
+        else if(status == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT)
+        {
+            log_error("MISSING ATTACHMENT");
+        }
+        else if(status == GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER)
+        {
+            log_error("INCOMPLETE DRAW BUFFER");
+        }
+        else if(status == GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER)
+        {
+            log_error("INCOMPLETE READ BUFFER");
+        }
+        else if(status == GL_FRAMEBUFFER_UNSUPPORTED)
+        {
+            log_error("UNSUPPORTED");
+        }
+        else if(status == GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE)
+        {
+            log_error("INCOMPLETE MULTISAMPLE");
+        }
+        else if(status == GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS)
+        {
+            log_error("INCOMPLETE LAYER TARGETS");
+        }
+        
         error_gl();
     }
 }
