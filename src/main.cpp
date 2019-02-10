@@ -442,6 +442,7 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     standard_resolve_info.height = renderer->framebuffer_height;
     
     rendering::add_color_attachment(rendering::AttachmentType::TEXTURE, rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_resolve_info);
+    rendering::add_color_attachment(rendering::AttachmentType::TEXTURE, rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_resolve_info);
     
     rendering::FramebufferHandle standard_resolve_framebuffer = rendering::create_framebuffer(standard_resolve_info, renderer);
     rendering::RenderPassHandle standard_resolve = rendering::create_render_pass("standard_resolve", standard_resolve_framebuffer, renderer);
@@ -450,13 +451,13 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     standard_info.width = renderer->framebuffer_width;
     standard_info.height = renderer->framebuffer_height;
     
-    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 8);
-    rendering::add_depth_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::DepthAttachmentFlags::DEPTH_TEXTURE | rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, standard_info, 8);
+    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 4);
+    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 4);
+    rendering::add_depth_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::DepthAttachmentFlags::DEPTH_TEXTURE | rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, standard_info, 4);
 
     rendering::FramebufferHandle standard_framebuffer = rendering::create_framebuffer(standard_info, renderer);
     rendering::RenderPassHandle standard = rendering::create_render_pass(STANDARD_PASS, standard_framebuffer, renderer);
 
-    
     //rendering::RenderPassHandle read_draw_pass = rendering::create_render_pass("read_draw", standard_framebuffer, renderer);
 
     rendering::set_read_draw_render_passes(standard, standard_resolve, renderer);
@@ -528,15 +529,15 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
 
     //Pass through post processing
 
-    rendering::FramebufferInfo blur_framebuffer = rendering::generate_framebuffer_info();
-    blur_framebuffer.width = renderer->framebuffer_width;
-    blur_framebuffer.height = renderer->framebuffer_height;
-    rendering::add_color_attachment(rendering::AttachmentType::TEXTURE, rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, blur_framebuffer, 0);
+    // rendering::FramebufferInfo blur_framebuffer = rendering::generate_framebuffer_info();
+    // blur_framebuffer.width = renderer->framebuffer_width;
+    // blur_framebuffer.height = renderer->framebuffer_height;
+    // rendering::add_color_attachment(rendering::AttachmentType::TEXTURE, rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, blur_framebuffer, 0);
 
-    rendering::FramebufferHandle blur_handle = rendering::create_framebuffer(blur_framebuffer, renderer);
+    // rendering::FramebufferHandle blur_handle = rendering::create_framebuffer(blur_framebuffer, renderer);
     
-    renderer->render.emissive_pass = rendering::create_render_pass("emissive_pass", blur_handle, renderer);
-    rendering::set_render_pass_clear_color(renderer->render.emissive_pass, math::Rgba(0, 0, 0, 0), renderer);
+    // renderer->render.emissive_pass = rendering::create_render_pass("emissive_pass", blur_handle, renderer);
+    // rendering::set_render_pass_clear_color(renderer->render.emissive_pass, math::Rgba(0, 0, 0, 0), renderer);
     
     // BLOOM
     rendering::FramebufferInfo blur_info = rendering::generate_framebuffer_info();
@@ -545,7 +546,7 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
 
     rendering::add_color_attachment(rendering::AttachmentType::TEXTURE, rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, blur_info);
 
-    rendering::TextureHandle src_tex = rendering::get_texture_from_framebuffer(0, blur_handle, renderer);
+    rendering::TextureHandle src_tex = rendering::get_texture_from_framebuffer(1, standard_resolve_framebuffer, renderer);
 
     b32 horizontal = true;
 
