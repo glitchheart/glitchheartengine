@@ -186,6 +186,7 @@ void save_config(const char *file_path, Renderer* renderer, SoundDevice *sound_d
         r32 sfx_vol = 1.0f;
         r32 music_vol = 1.0f;
         r32 master_vol = 1.0f;
+        b32 vsync = renderer->api_functions.get_v_sync(renderer->api_functions.render_state);
 
         if (sound_device)
         {
@@ -199,6 +200,7 @@ void save_config(const char *file_path, Renderer* renderer, SoundDevice *sound_d
         fprintf(file, "sfx_volume %.2f\n", sfx_vol);
         fprintf(file, "music_volume %.2f\n", music_vol);
         fprintf(file, "master_volume %.2f\n", master_vol);
+        fprintf(file, "vsync %d\n", vsync);
 
         fclose(file);
 
@@ -209,6 +211,7 @@ void save_config(const char *file_path, Renderer* renderer, SoundDevice *sound_d
         core.config_data.sfx_volume = sfx_vol;
         core.config_data.music_volume = music_vol;
         core.config_data.master_volume = master_vol;
+        core.config_data.vsync = vsync;
     }
 }
 
@@ -267,6 +270,7 @@ inline void load_config(const char *file_path, ConfigData *config_data, MemoryAr
         config_data->sfx_volume = 1.0f;
         config_data->music_volume = 1.0f;
         config_data->master_volume = 1.0f;
+        config_data->vsync = true;
 
         save_config(file_path);
     }
@@ -315,6 +319,10 @@ inline void load_config(const char *file_path, ConfigData *config_data, MemoryAr
             else if (starts_with(line_buffer, "master_volume"))
             {
                 sscanf(line_buffer, "master_volume %f", &config_data->master_volume);
+            }
+            else if (starts_with(line_buffer, "vsync"))
+            {
+                sscanf(line_buffer, "vsync %d", &config_data->vsync);
             }
         }
         fclose(file);
@@ -457,6 +465,7 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
 
     rendering::FramebufferHandle standard_framebuffer = rendering::create_framebuffer(standard_info, renderer);
     rendering::RenderPassHandle standard = rendering::create_render_pass(STANDARD_PASS, standard_framebuffer, renderer);
+    renderer->render.standard_pass = standard;
 
     //rendering::RenderPassHandle read_draw_pass = rendering::create_render_pass("read_draw", standard_framebuffer, renderer);
 

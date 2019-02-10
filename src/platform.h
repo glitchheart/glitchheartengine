@@ -124,6 +124,7 @@ struct ConfigData
     r32 master_volume;
     r32 sfx_volume;
     r32 music_volume;
+    b32 vsync;
 };
 
 #define MAX_FILE_PATHS 128

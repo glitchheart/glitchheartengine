@@ -1223,7 +1223,7 @@ namespace scene
             rendering::set_uniform_value(manager->renderer, manager->gizmos.x_material, "color", c == TranslationConstraint::X ? yellow : math::Vec3(1.0f, 0.0f, 0.0f));
             math::Vec3 color = c == TranslationConstraint::X ? yellow : math::Vec3(1.0f, 0.0f, 0.0f);
 
-            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color,t, manager->gizmos.x_material, manager->gizmos.line_shader, {1}, rendering::CommandType::NO_DEPTH);
+            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color,t, manager->gizmos.x_material, manager->gizmos.line_shader, manager->renderer->render.standard_pass, rendering::CommandType::NO_DEPTH);
 
             // Y
             v1 = math::Vec3(0.0f, 0.0f, 0.0f);
@@ -1231,7 +1231,7 @@ namespace scene
 
             color = c == TranslationConstraint::Y ? yellow : math::Vec3(0.0f, 1.0f, 0.0f);
 
-            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.y_material, manager->gizmos.line_shader, {1}, rendering::CommandType::NO_DEPTH);
+            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.y_material, manager->gizmos.line_shader, manager->renderer->render.standard_pass, rendering::CommandType::NO_DEPTH);
 
             // Z
             v1 = math::Vec3(0.0f, 0.0f, 0.0f);
@@ -1239,7 +1239,7 @@ namespace scene
 
             color = c == TranslationConstraint::Z ? yellow : math::Vec3(0.0f, 0.0f, 1.0f);
 
-            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.z_material, manager->gizmos.line_shader, {1}, rendering::CommandType::NO_DEPTH);
+            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.z_material, manager->gizmos.line_shader, manager->renderer->render.standard_pass, rendering::CommandType::NO_DEPTH);
         }
     }
 

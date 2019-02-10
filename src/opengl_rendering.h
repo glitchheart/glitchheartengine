@@ -75,6 +75,8 @@ struct RenderState
 
     GLFWwindow *window;
 
+    b32 vsync_active;
+
     i32 window_width;
     i32 window_height;
     i32 framebuffer_width;
