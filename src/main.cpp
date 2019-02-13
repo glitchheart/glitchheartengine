@@ -449,7 +449,7 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     standard_resolve_info.width = renderer->framebuffer_width;
     standard_resolve_info.height = renderer->framebuffer_height;
     
-    rendering::add_color_attachment(rendering::AttachmentType::TEXTURE, rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_resolve_info);
+	rendering::add_color_attachment(rendering::AttachmentType::TEXTURE, rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_resolve_info);
     rendering::add_color_attachment(rendering::AttachmentType::TEXTURE, rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_resolve_info);
     
     rendering::FramebufferHandle standard_resolve_framebuffer = rendering::create_framebuffer(standard_resolve_info, renderer);
@@ -459,12 +459,13 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     standard_info.width = renderer->framebuffer_width;
     standard_info.height = renderer->framebuffer_height;
     
-    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 4);
-    //rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 4);
-    rendering::add_depth_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::DepthAttachmentFlags::DEPTH_TEXTURE | rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, standard_info, 4);
+    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 8);
+    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 8);
+    rendering::add_depth_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, standard_info, 8);
 
     rendering::FramebufferHandle standard_framebuffer = rendering::create_framebuffer(standard_info, renderer);
     rendering::RenderPassHandle standard = rendering::create_render_pass(STANDARD_PASS, standard_framebuffer, renderer);
+    
     renderer->render.standard_pass = standard;
 
     //rendering::RenderPassHandle read_draw_pass = rendering::create_render_pass("read_draw", standard_framebuffer, renderer);
@@ -794,7 +795,8 @@ int main(int argc, char **args)
     TimerController *timer_controller_ptr = (TimerController*)malloc(sizeof(TimerController));
     TimerController &timer_controller = *timer_controller_ptr;
     timer_controller.timer_count = 0;
-
+    timer_controller.paused = false;
+    
     SoundDevice sound_device = {};
     sound_device.system = nullptr;
     debug_log("Initializing FMOD");
