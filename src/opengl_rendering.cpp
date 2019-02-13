@@ -525,17 +525,18 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
 {
     framebuffer.tex_color_buffer_count = info.color_attachments.count;
 
-    for (i32 i = 0; i < info.color_attachments.count; i++)
+    for(i32 i = 0; i < info.color_attachments.count; i++)
     {
         rendering::ColorAttachment &attachment = info.color_attachments.attachments[i];
-        if (attachment.type == rendering::AttachmentType::RENDER_BUFFER)
+        
+        if(attachment.type == rendering::AttachmentType::RENDER_BUFFER)
         {
-            if (framebuffer.tex_color_buffer_handles[i] != 0)
+            if(framebuffer.tex_color_buffer_handles[i] != 0)
             {
                 glDeleteRenderbuffers(1, &framebuffer.tex_color_buffer_handles[i]);
             }
 
-            if (attachment.flags & rendering::ColorAttachmentFlags::MULTISAMPLED)
+            if(attachment.flags & rendering::ColorAttachmentFlags::MULTISAMPLED)
             {
                 if (framebuffer.tex_color_buffer_handles[i] != 0)
                 {
@@ -591,27 +592,28 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
                 texture = renderer->render.textures[renderer->render.texture_count++];
                 handle = renderer->render.texture_count;
             }
+            
             assert(handle != 0);
 
             glGenTextures(1, &texture->handle);
 
-            if (attachment.flags & rendering::ColorAttachmentFlags::MULTISAMPLED)
+            if(attachment.flags & rendering::ColorAttachmentFlags::MULTISAMPLED)
             {
                 glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture->handle);
 
                 if (attachment.flags & rendering::ColorAttachmentFlags::HDR)
                 {
                     glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, attachment.samples, GL_RGBA16F, width, height, GL_TRUE);
-                    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+                    //glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
                 }
                 else
                 {
                     glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, attachment.samples, GL_RGBA, width, height, GL_TRUE);
-                    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+                    //glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
                 }
 
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D_MULTISAMPLE, texture->handle, NULL);
-                attachment.ms_texture = {handle};
+                attachment.ms_texture = { handle };
             }
             else
             {
@@ -637,7 +639,7 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 }
                 
-                attachment.texture = {handle};
+                attachment.texture = { handle };
             }
 
             texture->width = width;
@@ -711,7 +713,7 @@ static void _create_framebuffer_depth_render_buffer_attachment(rendering::DepthA
     glGenRenderbuffers(1, &framebuffer.depth_buffer_handles[index]);
     glBindRenderbuffer(GL_RENDERBUFFER, framebuffer.depth_buffer_handles[index]);
 
-    if (attachment.flags & rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED)
+    if(attachment.flags & rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED)
     {
         glRenderbufferStorageMultisample(GL_RENDERBUFFER, attachment.samples, GL_DEPTH_COMPONENT, width, height);
     }
@@ -723,12 +725,11 @@ static void _create_framebuffer_depth_render_buffer_attachment(rendering::DepthA
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, framebuffer.depth_buffer_handles[index]);
 }
 
-
 static void create_framebuffer_depth_attachment(rendering::FramebufferInfo &info, Framebuffer &framebuffer, i32 width, i32 height, Renderer *renderer)
 {
     framebuffer.depth_buffer_count = info.color_attachments.count;
     
-    for (i32 i = 0; i < info.color_attachments.count; i++)
+    for (i32 i = 0; i < info.depth_attachments.count; i++)
     {
         rendering::DepthAttachment &attachment = info.depth_attachments.attachments[i];
 
@@ -2252,6 +2253,12 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
             
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+            if(framebuffer.tex_color_buffer_count > 1)
+            {
+                static const float transparent[] = { 0, 0, 0, 0 };
+                glClearBufferfv(GL_COLOR, 1, transparent);
+            }
+            
             for (i32 i = 0; i < pass.commands.render_command_count; i++)
             {
                 rendering::RenderCommand &command = pass.commands.render_commands[i];
@@ -2307,7 +2314,18 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
             glViewport(0, 0, draw_framebuffer.width, draw_framebuffer.height);
             glBindFramebuffer(GL_READ_FRAMEBUFFER, read_framebuffer.buffer_handle);
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER, draw_framebuffer.buffer_handle);
-            glBlitFramebuffer(0, 0, draw_framebuffer.width, draw_framebuffer.height, 0, 0, draw_framebuffer.width, draw_framebuffer.height, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+
+            for(i32 i = 0; i < read_framebuffer.tex_color_buffer_count; i++)
+            {
+                glReadBuffer(GL_COLOR_ATTACHMENT0 + i);
+                glDrawBuffer(GL_COLOR_ATTACHMENT0 + i);
+            
+                 glBlitFramebuffer(0, 0, draw_framebuffer.width, draw_framebuffer.height, 0, 0, draw_framebuffer.width, draw_framebuffer.height, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+            }
+            
+            glReadBuffer(GL_COLOR_ATTACHMENT0);
+            glDrawBuffer(GL_COLOR_ATTACHMENT0);
+                
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
     }

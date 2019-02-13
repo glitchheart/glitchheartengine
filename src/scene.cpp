@@ -2845,7 +2845,7 @@ namespace scene
     {
         Scene &scene = get_scene(handle);
         
-        if(entity.handle == 0 || scene._internal_handles[entity.handle - 1] == -1 && scene._internal_handles[entity.handle - 1] < scene.entity_count)
+        if(entity.handle > scene.entity_count || entity.handle == 0 || scene._internal_handles[entity.handle - 1] == -1 && scene._internal_handles[entity.handle - 1] < scene.entity_count)
             return;
         
         TransformComponent transform = get_transform_comp(entity, handle);
