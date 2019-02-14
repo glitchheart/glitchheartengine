@@ -701,11 +701,11 @@ struct Renderer
 
         MemoryArena render_pass_arena;
         
-		/* rendering::RenderCommand *render_commands; */
-		/* i32 render_command_count; */
-
         QueuedRenderCommand *queued_commands;
         i32 queued_command_count;
+
+        rendering::CustomUniformMapping *custom_mappings;
+        i32 custom_mapping_count;
 
         rendering::ShadowCommand *shadow_commands;
         i32 shadow_command_count;

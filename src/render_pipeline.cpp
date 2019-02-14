@@ -668,7 +668,7 @@ namespace rendering
         pass.ui.text_commands = push_array(&renderer->render.render_pass_arena, global_max_ui_commands, TextRenderCommand);
         pass.ui.text_command_count = 0;
     }
-
+    
     static void set_uniforms_from_shader(Renderer *renderer, RenderPass& pass, ShaderHandle shader_handle)
     {
         Shader& shader = renderer->render.shaders[shader_handle.handle];
@@ -2454,6 +2454,134 @@ namespace rendering
         {
             error("File not found", file_path);
             return {0};
+        }
+    }
+
+    static void set_custom_mapped_uniform_value(Renderer *renderer, const char *name, r32 value)
+    {
+        for(i32 i = 0; i < renderer->render.custom_mapping_count; i++)
+        {
+            CustomUniformMapping &mapping = renderer->render.custom_mappings[i];
+
+            if(strcmp(mapping.name, name) == 0)
+            {
+                assert(mapping.type == ValueType::FLOAT);
+                mapping.float_val = value;
+                return;
+            }
+        }
+    }
+
+    static void set_custom_mapped_uniform_value(Renderer *renderer, const char *name, math::Vec2 value)
+    {
+        for(i32 i = 0; i < renderer->render.custom_mapping_count; i++)
+        {
+            CustomUniformMapping &mapping = renderer->render.custom_mappings[i];
+
+            if(strcmp(mapping.name, name) == 0)
+            {
+                assert(mapping.type == ValueType::FLOAT2);
+                mapping.float2_val = value;
+                return;
+            }
+        }
+    }
+    
+    static void set_custom_mapped_uniform_value(Renderer *renderer, const char *name, math::Vec3 value)
+    {
+        for(i32 i = 0; i < renderer->render.custom_mapping_count; i++)
+        {
+            CustomUniformMapping &mapping = renderer->render.custom_mappings[i];
+
+            if(strcmp(mapping.name, name) == 0)
+            {
+                assert(mapping.type == ValueType::FLOAT3);
+                mapping.float3_val = value;
+                return;
+            }
+        }
+    }
+
+    static void set_custom_mapped_uniform_value(Renderer *renderer, const char *name, math::Vec4 value)
+    {
+        for(i32 i = 0; i < renderer->render.custom_mapping_count; i++)
+        {
+            CustomUniformMapping &mapping = renderer->render.custom_mappings[i];
+
+            if(strcmp(mapping.name, name) == 0)
+            {
+                assert(mapping.type == ValueType::FLOAT4);
+                mapping.float4_val = value;
+                return;
+            }
+        }
+    }
+
+    static void set_custom_mapped_uniform_value(Renderer *renderer, const char *name, math::Mat4 value)
+    {
+        for(i32 i = 0; i < renderer->render.custom_mapping_count; i++)
+        {
+            CustomUniformMapping &mapping = renderer->render.custom_mappings[i];
+
+            if(strcmp(mapping.name, name) == 0)
+            {
+                assert(mapping.type == ValueType::MAT4);
+                mapping.mat4_val = value;
+                return;
+            }
+        }
+    }
+
+    static void set_custom_mapped_uniform_value(Renderer *renderer, const char *name, TextureHandle texture)
+    {
+        for(i32 i = 0; i < renderer->render.custom_mapping_count; i++)
+        {
+            CustomUniformMapping &mapping = renderer->render.custom_mappings[i];
+
+            if(strcmp(mapping.name, name) == 0)
+            {
+                assert(mapping.type == ValueType::TEXTURE);
+                mapping.texture = texture;
+                return;
+            }
+        }
+    }
+
+    static void set_custom_mapped_uniform_value(Renderer *renderer, const char *name, MSTextureHandle texture)
+    {
+        for(i32 i = 0; i < renderer->render.custom_mapping_count; i++)
+        {
+            CustomUniformMapping &mapping = renderer->render.custom_mappings[i];
+
+            if(strcmp(mapping.name, name) == 0)
+            {
+                assert(mapping.type == ValueType::MS_TEXTURE);
+                mapping.ms_texture = texture;
+                return;
+            }
+        }
+    }
+
+    static void set_custom_mapped_uniform_value(Renderer *renderer, const char *name, i32 value)
+    {
+        for(i32 i = 0; i < renderer->render.custom_mapping_count; i++)
+        {
+            CustomUniformMapping &mapping = renderer->render.custom_mappings[i];
+
+            if(strcmp(mapping.name, name) == 0)
+            {
+                assert(mapping.type == ValueType::INTEGER || mapping.type == ValueType::BOOL);
+                if (mapping.type == ValueType::BOOL)
+                {
+                    mapping.boolean_val = value;
+                    return;
+                }
+                else if (mapping.type == ValueType::INTEGER)
+                {
+                    mapping.integer_val = value;
+                    return;
+                }
+            }
         }
     }
     

@@ -165,8 +165,33 @@ namespace rendering
         FRAMEBUFFER_HEIGHT,
 
         TIME,
+        CUSTOM,
         
 		MAX
+    };
+
+    struct CustomUniformMapping
+    {
+        char name[32];
+        ValueType type;
+
+        union
+        {
+			r32 float_val = 0.0f;
+			math::Vec2 float2_val;
+			math::Vec3 float3_val;
+			math::Vec4 float4_val;
+			i32 integer_val;
+			b32 boolean_val;
+			math::Mat4 mat4_val;
+			TextureHandle texture;
+            MSTextureHandle ms_texture;
+        };
+    };
+
+    struct CustomUniformHandle
+    {
+        i32 handle;
     };
 
     struct Uniform
@@ -174,6 +199,8 @@ namespace rendering
 		UniformMappingType mapping_type;
 		ValueType type;
 		char name[32];
+
+        CustomUniformHandle custom_mapping;
         
         i32 structure_index; // If the uniforms is a structure we should save the index of the structure for later
 
