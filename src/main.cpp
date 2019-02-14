@@ -404,6 +404,7 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     }
 
     renderer->render.shaders = push_array(&renderer->mesh_arena, global_max_shaders, rendering::Shader);
+    renderer->render.custom_mappings = push_array(&renderer->mesh_arena, 32, rendering::CustomUniformMapping);
     renderer->render._internal_buffer_handles = push_array(&renderer->buffer_arena, global_max_custom_buffers, i32);
     renderer->render._current_internal_buffer_handle = 0;
     
@@ -435,7 +436,7 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     rendering::set_wireframe_shader(renderer, "../engine_assets/standard_shaders/wireframe.shd");
     rendering::set_debug_line_shader(renderer, "../engine_assets/standard_shaders/line.shd");
     rendering::set_shadow_map_shader(renderer, "../engine_assets/standard_shaders/shadow_map.shd");
-    rendering::set_light_space_matrices(renderer, math::ortho(-25, 25, -25, 25, 1, 20.0f), math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0.0f, 0.0f, 0.0f));
+    rendering::set_light_space_matrices(renderer, math::ortho(-15, 15, -15, 15, 1, 20.0f), math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0.0f, 0.0f, 0.0f));
 
     rendering::set_bloom_shader(renderer, "../engine_assets/standard_shaders/bloom.shd");
     rendering::set_blur_shader(renderer, "../engine_assets/standard_shaders/blur.shd");

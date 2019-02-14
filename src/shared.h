@@ -37,6 +37,7 @@ struct MemoryArena;
 
 #define RGB_FLOAT(integer) 1.0f / 255.0f * integer
 #define RGB_VEC4(r, g, b) math::Rgba(RGB_FLOAT(r), RGB_FLOAT(g), RGB_FLOAT(b), 1.0f)
+#define RGB(r, g, b) math::Vec3(RGB_FLOAT(r), RGB_FLOAT(g), RGB_FLOAT(b))
 #define HEX_TO_RGB(hex) math::Rgba(((hex >> 16) & 0xFF) / 255.0f, ((hex >> 8) & 0xFF) / 255.0f, ((hex) & 0xFF) / 255.0f, 1.0f)
 
 #define INVERT_RGB(rgb) RGB_VEC4(255 - rgb.r, 255 - rgb.g, 255 - rgb.b)

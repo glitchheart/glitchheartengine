@@ -1703,6 +1703,70 @@ static void set_uniform(rendering::Transform transform, const rendering::RenderP
     {
         switch (uniform.mapping_type)
         {
+        case rendering::UniformMappingType::CUSTOM:
+        {
+            rendering::CustomUniformMapping mapping = renderer->render.custom_mappings[uniform.custom_mapping.handle];
+            switch(mapping.type)
+            {
+            case rendering::ValueType::FLOAT:
+            {
+                set_float_uniform(gl_shader.program, location, mapping.float_val);
+            }
+            break;
+            case rendering::ValueType::FLOAT2:
+            {
+                set_vec2_uniform(gl_shader.program, location, mapping.float2_val);
+            }
+            break;
+            case rendering::ValueType::FLOAT3:
+            {
+                set_vec3_uniform(gl_shader.program, location, mapping.float3_val);
+
+            }
+            break;
+            case rendering::ValueType::FLOAT4:
+            {
+                set_vec4_uniform(gl_shader.program, location, mapping.float4_val);
+            }
+            break;
+            case rendering::ValueType::INTEGER:
+            {
+                set_int_uniform(gl_shader.program, location, mapping.integer_val);
+            }
+            break;
+            case rendering::ValueType::BOOL:
+            {
+                set_bool_uniform(gl_shader.program, location, mapping.boolean_val);
+            }
+            break;
+            case rendering::ValueType::MAT4:
+            {
+                set_mat4_uniform(gl_shader.program, location, mapping.mat4_val);
+            }
+            break;
+            case rendering::ValueType::TEXTURE:
+            {
+                if(mapping.texture.handle == 0)
+                    return;
+                
+                Texture *texture = renderer->render.textures[mapping.texture.handle - 1];
+                set_texture_uniform(gl_shader.program, texture->handle, *texture_count);
+                (*texture_count)++;
+            }
+            break;
+            case rendering::ValueType::MS_TEXTURE:
+            {
+                if(mapping.ms_texture.handle == 0)
+                    return;
+                
+                Texture *texture = renderer->render.textures[mapping.ms_texture.handle - 1];
+                set_ms_texture_uniform(gl_shader.program, texture->handle, *texture_count);
+                (*texture_count)++;
+            }
+            break;
+            }            
+        }
+        break;
         case rendering::UniformMappingType::NONE:
         case rendering::UniformMappingType::DIFFUSE_TEX:
         case rendering::UniformMappingType::DIFFUSE_COLOR:
