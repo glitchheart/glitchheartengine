@@ -1831,15 +1831,22 @@ namespace rendering
         return {register_buffer(renderer, info).handle}; 
     }
 
-    static void update_line_buffer(Renderer* renderer, BufferHandle buffer, math::Vec3* vertices, size_t n)
+    static void update_line_buffer(Renderer* renderer, BufferHandle buffer, math::Vec3* _vertices, size_t n)
     {
         math::Vec3* lines = nullptr;
+        math::Vec3* vertices = nullptr;
+
+        for(size_t i = 0; i < n; i++)
+        {
+            math::Vec3 v = _vertices[i];
+            buf_push(vertices, v);
+        }
 
         math::Vec3 adj_0 = 2.0f * vertices[0] - vertices[1];
         buf_push(lines, adj_0);
+
         buf_push(lines, vertices[0]);
         buf_push(lines, vertices[1]);
-
         buf_push(lines, vertices[2]);
         buf_push(lines, vertices[3]);
 
@@ -1859,7 +1866,9 @@ namespace rendering
         }
         
         update_buffer(buffer, BufferType::VERTEX, BufferUsage::DYNAMIC, (r32*)lines, buf_len(lines), buf_len(lines) * sizeof(math::Vec3), renderer);
+
         buf_free(lines);
+        buf_free(vertices);
     }
 
     static math::Vec3* generate_grid_buffer(Renderer* renderer, i32 width, i32 height, r32 unit_size)

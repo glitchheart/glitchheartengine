@@ -187,6 +187,7 @@ namespace rendering
             }
         }
 
+        assert(renderer->render.custom_mapping_count < MAX_CUSTOM_UNIFORM_MAPPINGS);
         CustomUniformMapping& new_mapping = renderer->render.custom_mappings[renderer->render.custom_mapping_count++];
         strncpy(new_mapping.name, mapped_buffer, strlen(mapped_buffer));
         new_mapping.type = type;
@@ -511,7 +512,26 @@ namespace rendering
             {
                 // @Note: Game shaders are included with ""
                 char include_name[256];
-                sscanf(buffer, "#include \"%s\"", include_name);
+
+                i32 quotes_found  = 0;
+                i32 index = 0;
+                
+                for(size_t c = 0; c < strlen(buffer); c++)
+                {
+                    if(buffer[c] == '\"')
+                    {
+                        quotes_found++;
+                        if(quotes_found == 2)
+                        {
+                            include_name[index] = '\0';
+                            break;
+                        }
+                    }
+                    else if(quotes_found == 1)
+                    {
+                        include_name[index++] = buffer[c];
+                    }
+                }
 
                 char *included_path = concat("../assets/shaders/", include_name, &temp_arena);
 
