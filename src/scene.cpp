@@ -1487,7 +1487,7 @@ namespace scene
     {
         if(KEY(Key_LeftCtrl))
             return;
-        
+
         // Update camera
         if(KEY(Key_W))
         {
@@ -1580,7 +1580,7 @@ namespace scene
         
         SceneManager *manager = handle.manager;
 
-        #if DEBUG
+#if DEBUG
         if(KEY_DOWN(Key_E) && KEY(Key_LeftCtrl))
         {
             if(manager->mode == SceneMode::RUNNING)
@@ -1650,6 +1650,24 @@ namespace scene
                     
                     manager->selected_entity = { -1 };
                     manager->gizmos.active = false;
+                }
+            }
+
+            if(KEY(Key_LeftCtrl) && KEY_DOWN(Key_D))
+            {
+                if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
+                {
+                    Entity e = get_entity(manager->selected_entity, manager->loaded_scene);
+                    if(e.savable)
+                    {
+                        EntityHandle new_entity = register_entity_from_template_file(e.template_path, manager->loaded_scene, true);
+                        TransformComponent &transform = get_transform_comp(e.handle, manager->loaded_scene);
+                        TransformComponent &new_transform = get_transform_comp(new_entity, manager->loaded_scene);
+                        set_scale(new_transform, transform.transform.scale);
+                        set_position(new_transform, transform.transform.position);
+                        set_rotation(new_transform, transform.transform.euler_angles);
+                        select_entity(new_entity, manager);
+                    }
                 }
             }
 
@@ -2895,6 +2913,20 @@ namespace scene
         }
         
         return entity;
+    }
+
+    static b32 is_entity_active(EntityHandle handle, SceneHandle &scene_handle)
+    {
+        Scene& scene = get_scene(scene_handle);
+        if(handle.handle > 0)
+        {
+            i32 internal_handle = scene._internal_handles[handle.handle - 1];
+            if(internal_handle > -1)
+            {
+                return scene.active_entities[internal_handle];
+            }
+        }
+        return false;
     }
     
     static void _set_active(EntityHandle handle, b32 active, Scene &scene)

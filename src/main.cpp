@@ -1,3 +1,5 @@
+#define WIN32_LEAN_AND_MEAN
+#define VC_EXTRA_LEAN
 
 #include "shared.h"
 
@@ -404,7 +406,7 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     }
 
     renderer->render.shaders = push_array(&renderer->mesh_arena, global_max_shaders, rendering::Shader);
-    renderer->render.custom_mappings = push_array(&renderer->mesh_arena, 32, rendering::CustomUniformMapping);
+    renderer->render.custom_mappings = push_array(&renderer->mesh_arena, MAX_CUSTOM_UNIFORM_MAPPINGS, rendering::CustomUniformMapping);
     renderer->render._internal_buffer_handles = push_array(&renderer->buffer_arena, global_max_custom_buffers, i32);
     renderer->render._current_internal_buffer_handle = 0;
     
