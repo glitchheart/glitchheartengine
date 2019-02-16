@@ -106,9 +106,6 @@ static void update_arcball_rotation(Camera &camera, r32 pitch_amount, r32 yaw_am
     camera.right = math::normalize(math::cross(math::Vec3(0, 1, 0), camera.forward));
     camera.up = math::cross(camera.forward, camera.right);
     
-    /* camera.yaw = atan2(camera.forward.x, camera.forward.z) / DEGREE_IN_RADIANS; */
-    /* camera.pitch = asin(camera.forward.y) / DEGREE_IN_RADIANS; */
-    
 	camera.view_matrix = math::look_at(camera.forward, camera.position);
 }
 

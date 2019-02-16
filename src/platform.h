@@ -248,10 +248,14 @@ typedef PLATFORM_CREATE_DIRECTORY(PlatformCreateDirectory);
 
 struct WorkQueue;
 struct WorkQueueEntry;
+struct ThreadInfo;
 typedef void (*WorkCallback)(WorkQueue *queue, void *data);
 
 #define PLATFORM_ADD_ENTRY(name) void name(WorkQueue *queue, WorkCallback work_ptr, void *data)
 typedef PLATFORM_ADD_ENTRY(PlatformAddEntry);
+
+#define PLATFORM_MAKE_QUEUE(name) void name(WorkQueue *queue, u32 thread_count, ThreadInfo *thread_infos)
+typedef PLATFORM_MAKE_QUEUE(PlatformMakeQueue);
 
 #define PLATFORM_COMPLETE_ALL_WORK(name) void name(WorkQueue *queue)
 typedef PLATFORM_COMPLETE_ALL_WORK(PlatformCompleteAllWork);
@@ -283,6 +287,7 @@ struct PlatformApi
 
     PlatformAddEntry *add_entry;
     PlatformCompleteAllWork *complete_all_work;
+    PlatformMakeQueue *make_queue;
 };
 
 extern PlatformApi platform;

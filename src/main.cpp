@@ -341,7 +341,7 @@ static void check_shader_files(WorkQueue *queue, void *data)
     }
 }
 
-static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInfo *reload_thread)
+static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInfo *reload_thread, ParticleApi particle_api)
 {
     renderer->pixels_per_unit = global_pixels_per_unit;
     renderer->frame_lock = 0;
@@ -352,6 +352,9 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
 
     renderer->particles.particle_systems = push_array(&renderer->particle_arena, global_max_particle_systems, ParticleSystemInfo);
     renderer->particles._internal_handles = push_array(&renderer->particle_arena, global_max_particle_systems, i32);
+    renderer->particles.work_queues = push_array(&renderer->particle_arena, global_max_particle_systems, WorkQueue);
+    renderer->particles.api = &particle_api;
+
 
     PushParams params = default_push_params();
     params.alignment = math::multiple_of_number_uint(member_size(RandomSeries, state), 16);
@@ -436,6 +439,7 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     
     rendering::set_fallback_shader(renderer, "../engine_assets/standard_shaders/fallback.shd");
     rendering::set_wireframe_shader(renderer, "../engine_assets/standard_shaders/wireframe.shd");
+    rendering::set_bounding_box_shader(renderer, "../engine_assets/standard_shaders/bounding_box.shd");
     rendering::set_debug_line_shader(renderer, "../engine_assets/standard_shaders/line.shd");
     rendering::set_shadow_map_shader(renderer, "../engine_assets/standard_shaders/shadow_map.shd");
     rendering::set_light_space_matrices(renderer, math::ortho(-15, 15, -15, 15, 1, 20.0f), math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0.0f, 0.0f, 0.0f));
@@ -750,8 +754,6 @@ int main(int argc, char **args)
 
     load_config("../.config", &core.config_data, &platform_state->perm_arena);
 
-    core.config_data;
-
     init_keys();
     RenderState *render_state_ptr = push_struct(&platform_state->perm_arena, RenderState);
     RenderState &render_state = *render_state_ptr;
@@ -785,10 +787,34 @@ int main(int argc, char **args)
         initialize_opengl(render_state, renderer, &core.config_data, &platform_state->perm_arena, &do_save_config);
     }
 
+    ParticleApi particle_api = {};
+    particle_api.get_particle_system_info = &get_particle_system_info;
+    particle_api.start_particle_system = &start_particle_system;
+    particle_api.stop_particle_system = &stop_particle_system;
+    particle_api.pause_particle_system = &pause_particle_system;
+    particle_api.remove_all_particle_systems = &remove_all_particle_systems;
+    particle_api.particle_system_is_running = &particle_system_is_running;
+    
+    particle_api.get_default_attributes = &get_default_particle_system_attributes;
+    particle_api.create_particle_system = &create_particle_system;
+    particle_api.remove_particle_system = &remove_particle_system;
+    particle_api.update_particle_system = &update_particle_system;
+
+    particle_api.add_burst_over_time_key = &add_burst_over_time_key;
+    particle_api.add_angle_key = &add_angle_key;
+    particle_api.remove_angle_key = &remove_angle_key;
+    particle_api.add_color_key = &add_color_key;
+    particle_api.remove_color_key = &remove_color_key;
+    particle_api.add_size_key = &add_size_key;
+    particle_api.remove_size_key = &remove_size_key;
+
+    particle_api.add_speed_key = &add_speed_key;
+    particle_api.remove_speed_key = &remove_speed_key;
+    
     WorkQueue reload_queue;
     ThreadInfo reload_thread;
-    init_renderer(renderer, &reload_queue, &reload_thread);
-    
+    init_renderer(renderer, &reload_queue, &reload_thread, particle_api);
+
     scene::SceneManager *scene_manager = scene::create_scene_manager(&platform_state->perm_arena, renderer);
     
     GameCode game = {};
@@ -844,7 +870,7 @@ int main(int argc, char **args)
     template_state.template_count = 0;
 
     template_state.templates = push_array(&platform_state->perm_arena, global_max_entity_templates, scene::EntityTemplate);
-
+    
     core.renderer = renderer;
     core.input_controller = &input_controller;
     core.timer_controller = &timer_controller;
