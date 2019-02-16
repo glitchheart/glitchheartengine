@@ -2483,7 +2483,7 @@ namespace rendering
                 uv.y = 1.0f - uv.y;
                 vertex_ptrs->uvs[vertex_ptrs->uv_count++] = uv;
             }
-			else if (starts_with(buffer, "v")) // vertex
+			else if (starts_with(buffer, "v ")) // vertex
 			{
 				Vertex vertex = {};
 				sscanf(buffer, "v %f %f %f", &vertex.position.x, &vertex.position.y, &vertex.position.z);
@@ -2635,7 +2635,7 @@ namespace rendering
 			{
 				counts.uv_count++;
 			}
-			else if (starts_with(buffer, "v"))
+			else if (starts_with(buffer, "v "))
 			{
 				counts.vertex_count++;
 			}
@@ -2713,7 +2713,7 @@ namespace rendering
                 {
                     char name[256];
                     sscanf(buffer, "g %[^\n]", name);
-                    read_line(buffer, 256, &source);
+                    //read_line(buffer, 256, &source);
                     
                     parse_obj_object(name, &ptrs, &source, &obj_info.data[obj_info.object_count++], mat_pairs, mat_pair_count, renderer);
                 }
