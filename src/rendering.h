@@ -703,6 +703,7 @@ struct Renderer
         QueuedRenderCommand *queued_commands;
         i32 queued_command_count;
 
+#define MAX_CUSTOM_UNIFORM_MAPPINGS 64
         rendering::CustomUniformMapping *custom_mappings;
         i32 custom_mapping_count;
 
