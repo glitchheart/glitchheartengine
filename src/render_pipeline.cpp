@@ -2492,7 +2492,7 @@ namespace rendering
                 uv.y = 1.0f - uv.y;
                 vertex_ptrs->uvs[vertex_ptrs->uv_count++] = uv;
             }
-			else if (starts_with(buffer, "v")) // vertex
+			else if (starts_with(buffer, "v ")) // vertex
 			{
 				Vertex vertex = {};
 				sscanf(buffer, "v %f %f %f", &vertex.position.x, &vertex.position.y, &vertex.position.z);
@@ -2644,7 +2644,7 @@ namespace rendering
 			{
 				counts.uv_count++;
 			}
-			else if (starts_with(buffer, "v"))
+			else if (starts_with(buffer, "v "))
 			{
 				counts.vertex_count++;
 			}
@@ -2682,11 +2682,12 @@ namespace rendering
 			ptrs.face_count = 0;
 
 			ptrs.vertices = (Vertex*)malloc(sizeof(Vertex) * data_counts.vertex_count);
-			ptrs.final_vertices = (Vertex*)malloc(sizeof(Vertex) * data_counts.vertex_count);
+			
 			ptrs.normals = (math::Vec3*)malloc(sizeof(math::Vec3) * data_counts.normal_count);
 			ptrs.uvs = (math::Vec2*)malloc(sizeof(math::Vec2) * data_counts.uv_count);
 			ptrs.faces = (Face*)malloc(sizeof(Face) * data_counts.face_count);
-
+            ptrs.final_vertices = (Vertex*)malloc(sizeof(Vertex) * data_counts.vertex_count * data_counts.face_count);
+            
 			char buffer[256];
             
             while (read_line(buffer, 256, &source))
@@ -2721,7 +2722,7 @@ namespace rendering
                 {
                     char name[256];
                     sscanf(buffer, "g %[^\n]", name);
-                    read_line(buffer, 256, &source);
+                    //read_line(buffer, 256, &source);
                     
                     parse_obj_object(name, &ptrs, &source, &obj_info.data[obj_info.object_count++], mat_pairs, mat_pair_count, renderer);
                 }
