@@ -329,6 +329,7 @@ namespace rendering
         
 		Material () {}
     };
+
     
 	HANDLE(Buffer);
     HANDLE(InternalBuffer);
@@ -382,6 +383,21 @@ namespace rendering
     struct LineBufferHandle
     {
         i32 handle;
+    };
+
+#define MAX_OBJ_OBJECTS 32
+
+    struct OBJ_ObjectData
+    {
+        rendering::MaterialHandle material;
+        rendering::BufferHandle buffer;
+        math::Vec3 mesh_scale;
+    };
+    
+    struct OBJ_ObjectInfo
+    {
+        OBJ_ObjectData data[MAX_OBJ_OBJECTS];
+        i32 object_count;
     };
     
     struct Transform

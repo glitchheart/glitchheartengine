@@ -63,17 +63,17 @@ inline char* str_sep(char** s, const char* delim)
 
 static char* read_file_into_buffer(MemoryArena* arena, FILE* file, size_t *out_size = nullptr)
 {
-	fseek(file, 0, SEEK_END);
-	size_t size = (size_t)ftell(file);
-	fseek(file, 0, SEEK_SET);
+	fseek(file, 0L, SEEK_END);
+	long size = ftell(file);
+	fseek(file, 0L, SEEK_SET);
 
 	if(out_size)
 	{
-		*out_size = size;
+		*out_size = (size_t)size;
 	}
 	    
-	char* source = push_string(arena, size);
-	fread(source, size, 1, file);
+	char* source = push_string(arena, (size_t)size);
+	fread(source, sizeof(char), (size_t)size, file);
 
 	return source;
 }
@@ -100,6 +100,26 @@ inline b32 starts_with(const char *a, const char *b)
     return 0;
 }
 
+static char *read_line_from_buffer(char *out, size_t size, char **in)
+{
+	if (**in == '\0') return nullptr;
+
+	for (size_t i = 0; i < size; i++, ++(*in))
+	{
+		char c = **in;
+		out[i] = c;
+
+		if (c == '\n')
+		{
+			out[i] = '\0';
+			++(*in);
+			break;
+		}
+	}
+
+	return out;
+}
+
 static char* read_line(char* out, size_t size, char** in)
 {
     if(**in == '\0') return nullptr;
@@ -107,19 +127,22 @@ static char* read_line(char* out, size_t size, char** in)
 
     for(i = 0; i < size; ++i, ++(*in))
     {
-	out[i] = **in;
-	if(**in == '\0')
-	    break;
-	if(**in == '\n')
-	{
-	    out[i + 1] = '\0';
-	    ++(*in);
-	    break;
-	}
+		out[i] = **in;
+
+		if(**in == '\0')
+			break;
+
+		if(**in == '\n')
+		{
+			out[i + 1] = '\0';
+			++(*in);
+			break;
+		}
     }
 
     if(i == size - 1)
-	out[i] = '\0';
+		out[i] = '\0';
+
     return out;
 }
 
