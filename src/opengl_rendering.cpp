@@ -1175,16 +1175,18 @@ static void update_vertex_buffer(Buffer *buffer, r32 *data, size_t count, size_t
 
 static void update_index_buffer(Buffer *buffer, u16* data, size_t count, size_t size, rendering::BufferUsage buffer_usage, RenderState *render_state, Renderer* renderer)
 {
-    if(buffer->ibo != 0)
+    if(buffer->ibo == 0)
     {
-        GLenum usage = get_usage(buffer_usage);
-        bind_vertex_array(buffer->vao, *render_state);
-        
-        buffer->index_buffer_count = (i32)count;
-        buffer->index_buffer_size = (i32)size;
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->ibo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, usage);
+        glGenBuffers(1, &buffer->ibo);
     }
+    
+    GLenum usage = get_usage(buffer_usage);
+    bind_vertex_array(buffer->vao, *render_state);
+        
+    buffer->index_buffer_count = (i32)count;
+    buffer->index_buffer_size = (i32)size;
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, usage);
 }
 
 static void update_buffer(Buffer *buffer, rendering::BufferType buffer_type, void* data, size_t count, size_t size, rendering::BufferUsage buffer_usage, RenderState *render_state, Renderer* renderer)
@@ -2088,7 +2090,17 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
         if (buffer.ibo)
         {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
-            glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void *)nullptr);
+            if(primitive_type == rendering::PrimitiveType::TRIANGLES)
+            {
+                glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void *)nullptr);
+            }
+            else if(primitive_type == rendering::PrimitiveType::LINE_LOOP)
+            {
+                glDrawElements(GL_LINE_LOOP, 4, GL_UNSIGNED_SHORT, 0);
+                glDrawElements(GL_LINE_LOOP, 4, GL_UNSIGNED_SHORT, (GLvoid*)(4 * sizeof(GLushort)));
+                glDrawElements(GL_LINES, 8, GL_UNSIGNED_SHORT, (GLvoid*)(8 * sizeof(GLushort)));
+            }
+            
         }
         else
         {
@@ -2096,6 +2108,8 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
                 glDrawArrays(GL_TRIANGLES, 0, buffer.vertex_count / 3);
             else if(primitive_type == rendering::PrimitiveType::LINES)
                 glDrawArrays(GL_LINES_ADJACENCY, 0, buffer.vertex_count);
+            else if(primitive_type == rendering::PrimitiveType::LINES)
+                glDrawArrays(GL_LINE_LOOP, 0, buffer.vertex_count);
         }
     }
 }
