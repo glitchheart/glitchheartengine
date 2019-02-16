@@ -122,7 +122,7 @@ namespace scene
 		TransformComponentHandle parent_handle;
 
         // Remember the child's handle to be able to quickly remove the childs parent handle if the parent is removed
-		TransformComponentHandle child_handles[4];
+		TransformComponentHandle child_handles[MAX_CHILDREN];
         i32 child_count;
 
         EntityHandle entity;

@@ -1856,6 +1856,7 @@ namespace scene
         
         entity.render_handle = { scene.render_component_count++ };
         scene::RenderComponent &comp = scene.render_components[entity.render_handle.handle];
+        comp.wireframe_enabled = false;
         comp.render_pass_count = 0;
         comp.casts_shadows = cast_shadows;
         
@@ -2029,12 +2030,13 @@ namespace scene
     static TemplateHandle _create_template_copy_with_new_render_data(EntityTemplate *template_to_copy, EntityTemplateState &template_state, const rendering::OBJ_ObjectData &obj_data)
     {
         EntityTemplate new_template = *template_to_copy;
+        new_template.child_count = 0;
         new_template.render.buffer_handle = obj_data.buffer;
         new_template.render.material_handle = obj_data.material;
         new_template.render.mesh_scale = obj_data.mesh_scale;
 
         template_state.templates[template_state.template_count++] = new_template;
-        return { template_state.template_count };
+        return { template_state.template_count - 1};
     }
     
     static void _load_template(EntityTemplate *templ, const char *path, EntityTemplateState &template_state, Scene &scene)
@@ -2722,14 +2724,15 @@ namespace scene
         EntityHandle entity = _register_entity_with_template(*templ, scene, savable);
 
         //// Add all children registered to the template
-        //for(i32 i = 0; i < templ->child_count; i++)
-        //{
-        //    scene::add_child(entity, _register_entity_with_template(template_state->templates[templ->child_handles[i].handle - 1], scene, false), scene.handle);
-        //}
+        for(i32 i = 0; i < templ->child_count; i++)
+        {
+			scene::EntityHandle child = _register_entity_with_template(template_state->templates[templ->child_handles[i].handle - 1], scene, false);
+			scene::add_child(entity, child, scene.handle);
+        }
         
         return(entity);
     }
-
+			
     static EntityHandle register_entity_from_template_file(const char *path, SceneHandle scene_handle, b32 savable = false)
     {
         Scene &scene = get_scene(scene_handle);
