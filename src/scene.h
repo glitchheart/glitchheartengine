@@ -132,12 +132,15 @@ namespace scene
     {
         rendering::MaterialHandle original_material_handle;
         rendering::BufferHandle buffer_handle;
+        rendering::BufferHandle bounding_box_buffer;
         rendering::MaterialInstanceHandle material_handle;
         
         b32 casts_shadows;
         math::Vec3 mesh_scale;
+        math::BoundingBox bounding_box;
 
         b32 wireframe_enabled;
+        b32 bounding_box_enabled;
         b32 ignore_depth;
             
         // @Note: All the render passes this component should be rendered in
@@ -188,8 +191,10 @@ namespace scene
             b32 ignore_depth;
             b32 casts_shadows;
             math::Vec3 mesh_scale;
+            math::BoundingBox bounding_box;
             b32 is_new_version;
             rendering::BufferHandle buffer_handle;
+            rendering::BufferHandle bounding_box_buffer;
             rendering::MaterialHandle material_handle;
 
             char render_pass_names[8][32];

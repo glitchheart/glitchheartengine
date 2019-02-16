@@ -242,6 +242,13 @@ namespace rendering
         renderer->render.wireframe_material = create_material_instance(renderer, material);
     }
 
+    static void set_bounding_box_shader(Renderer *renderer, const char *path)
+    {
+        renderer->render.bounding_box_shader = load_shader(renderer, path);
+        MaterialHandle material = rendering::create_material(renderer, renderer->render.bounding_box_shader);
+        renderer->render.bounding_box_material = create_material_instance(renderer, material);
+    }
+
     static void set_debug_line_shader(Renderer *renderer, const char *path)
     {
         renderer->render.line_shader = load_shader(renderer, path);
@@ -1841,6 +1848,57 @@ namespace rendering
         return {register_buffer(renderer, info).handle}; 
     }
 
+    static BufferHandle create_bounding_box_buffer(Renderer *renderer)
+    {
+        RegisterBufferInfo info = create_register_buffer_info();
+        info.usage = rendering::BufferUsage::STATIC;
+        add_vertex_attrib(rendering::ValueType::FLOAT3, info);
+
+        BufferHandle buffer = register_buffer(renderer, info);
+        
+        math::Vec3* vertices = nullptr;
+
+        buf_push(vertices, math::Vec3(-0.5, -0.5, -0.5));
+        buf_push(vertices, math::Vec3(0.5, -0.5, -0.5));
+        buf_push(vertices, math::Vec3(0.5, 0.5, -0.5));
+        buf_push(vertices, math::Vec3(-0.5, 0.5, -0.5));
+        buf_push(vertices, math::Vec3(-0.5, -0.5, 0.5));
+        buf_push(vertices, math::Vec3(0.5, -0.5, 0.5));
+        buf_push(vertices, math::Vec3(0.5, 0.5, 0.5));
+        buf_push(vertices, math::Vec3(-0.5, 0.5, 0.5));
+
+        u16 *indices = nullptr;
+
+        buf_push(indices, 0);
+        buf_push(indices, 1);
+        buf_push(indices, 2);
+        buf_push(indices, 3);
+
+        buf_push(indices, 4);
+        buf_push(indices, 5);
+        buf_push(indices, 6);
+        buf_push(indices, 7);
+
+        buf_push(indices, 0);
+        buf_push(indices, 4);
+        buf_push(indices, 1);
+        buf_push(indices, 5);
+        buf_push(indices, 2);
+        buf_push(indices, 6);
+        buf_push(indices, 3);
+        buf_push(indices, 7);
+
+        // @Incomplete: Change to static?
+        update_buffer(buffer, BufferType::VERTEX, BufferUsage::DYNAMIC, (r32*)vertices, buf_len(vertices), buf_len(vertices) * sizeof(math::Vec3), renderer);
+
+        update_buffer(buffer, BufferType::INDEX, BufferUsage::DYNAMIC, (r32*)indices, buf_len(indices), buf_len(indices) * sizeof(u16), renderer);
+
+        buf_free(vertices);
+        buf_free(indices);
+
+        return buffer;
+    }
+
     static void update_line_buffer(Renderer* renderer, BufferHandle buffer, math::Vec3* _vertices, size_t n)
     {
         math::Vec3* lines = nullptr;
@@ -2112,7 +2170,7 @@ namespace rendering
         return {register_buffer(renderer, info).handle};
     }
     
-    static BufferHandle create_plane(Renderer *renderer, math::Vec3 *scale = nullptr)
+    static BufferHandle create_plane(Renderer *renderer, math::Vec3 *scale = nullptr, math::BoundingBox *box = nullptr)
     {
         r32 min_x = 10000;
         r32 min_y = 10000;
@@ -2157,11 +2215,19 @@ namespace rendering
         {
             *scale = math::Vec3(max_x - min_x, max_y - min_y, max_z - min_z); 
         }
+
+        if(box)
+        {
+            math::BoundingBox new_box = {};
+            new_box.min = math::Vec3(min_x, min_y, min_z);
+            new_box.max = math::Vec3(max_x, max_y, max_z);
+            *box = new_box;
+        }
         
         return {create_buffers_from_mesh(renderer, mesh, 0, true, true)};
     }
 
-    static BufferHandle create_cube(Renderer *renderer, math::Vec3 *scale)
+    static BufferHandle create_cube(Renderer *renderer, math::Vec3 *scale, math::BoundingBox *box = nullptr)
     {
         r32 min_x = 10000;
         r32 min_y = 10000;
@@ -2207,6 +2273,14 @@ namespace rendering
         {
             *scale = math::Vec3(max_x - min_x, max_y - min_y, max_z - min_z); 
         }
+
+        if(box)
+        {
+            math::BoundingBox new_box = {};
+            new_box.min = math::Vec3(min_x, min_y, min_z);
+            new_box.max = math::Vec3(max_x, max_y, max_z);
+            *box = new_box;
+        }
         
         return {create_buffers_from_mesh(renderer, mesh, 0, true, true)};
     }
@@ -2221,7 +2295,7 @@ namespace rendering
         vertex.uv = uv;
         vertex.normal = normal;
 
-        for (size_t index = 0; index < current_size; index++)
+        for (i32 index = 0; index < current_size; index++)
         {
             Vertex &existing = final_vertices[index];
 
@@ -2311,6 +2385,7 @@ namespace rendering
                 }
                 else if (starts_with(buffer, "Ka")) // ambient color
                 {
+					assert(material);
                     if (UniformValue *u = mapping(*material, UniformMappingType::AMBIENT_COLOR))
                     {
                         sscanf(buffer, "Ka %f %f %f", &u->float4_val.r, &u->float4_val.g, &u->float4_val.b);
@@ -2319,7 +2394,8 @@ namespace rendering
                 }
                 else if (starts_with(buffer, "Kd")) // diffuse color
                 {
-                    if (UniformValue *u = mapping(*material, UniformMappingType::DIFFUSE_COLOR))
+					assert(material);
+					if (UniformValue *u = mapping(*material, UniformMappingType::DIFFUSE_COLOR))
                     {
                         sscanf(buffer, "Kd %f %f %f", &u->float4_val.r, &u->float4_val.g, &u->float4_val.b);
                         u->float4_val.a = 1.0f;
@@ -2332,7 +2408,8 @@ namespace rendering
                 }
                 else if (starts_with(buffer, "Ks")) // specular color
                 {
-                    if (UniformValue *u = mapping(*material, UniformMappingType::SPECULAR_COLOR))
+					assert(material);
+					if (UniformValue *u = mapping(*material, UniformMappingType::SPECULAR_COLOR))
                     {
                         sscanf(buffer, "Ks %f %f %f", &u->float4_val.r, &u->float4_val.g, &u->float4_val.b);
                         u->float4_val.a = 1.0f;
@@ -2340,21 +2417,24 @@ namespace rendering
                 }
                 else if (starts_with(buffer, "Ns")) // specular exponent
                 {
-                    if (UniformValue *u = mapping(*material, UniformMappingType::SPECULAR_EXPONENT))
+					assert(material);
+					if (UniformValue *u = mapping(*material, UniformMappingType::SPECULAR_EXPONENT))
                     {
                         sscanf(buffer, "Ns %f", &u->float_val);
                     }
                 }
                 else if (starts_with(buffer, "d"))
                 {
-                    if (UniformValue *u = mapping(*material, UniformMappingType::DISSOLVE))
+					assert(material);
+					if (UniformValue *u = mapping(*material, UniformMappingType::DISSOLVE))
                     {
                         sscanf(buffer, "d %f", &u->float_val);
                     }
                 }
                 else if (starts_with(buffer, "map_Ka")) // ambient map
                 {
-                    if (UniformValue *u = mapping(*material, UniformMappingType::AMBIENT_TEX))
+					assert(material);
+					if (UniformValue *u = mapping(*material, UniformMappingType::AMBIENT_TEX))
                     {
                         char name[64];
                         sscanf(buffer, "map_Ka %s", name);
@@ -2367,6 +2447,7 @@ namespace rendering
                 }
                 else if (starts_with(buffer, "map_Kd")) // diffuse map
                 {
+					assert(material);
                     if (UniformValue *u = mapping(*material, UniformMappingType::DIFFUSE_TEX))
                     {
                         char name[64];
@@ -2380,6 +2461,7 @@ namespace rendering
                 }
                 else if (starts_with(buffer, "map_Ks")) // specular map
                 {
+					assert(material);
                     if (UniformValue *u = mapping(*material, UniformMappingType::SPECULAR_TEX))
                     {
                         char name[64];
@@ -2393,7 +2475,8 @@ namespace rendering
                 }
                 else if (starts_with(buffer, "map_Ns")) // specular intensity map
                 {
-                    if (UniformValue *u = mapping(*material, UniformMappingType::SPECULAR_INTENSITY_TEX))
+					assert(material);
+					if (UniformValue *u = mapping(*material, UniformMappingType::SPECULAR_INTENSITY_TEX))
                     {
                         char name[64];
                         sscanf(buffer, "map_Ns %s", name);
@@ -2617,6 +2700,10 @@ namespace rendering
 		vertex_ptrs->face_count = 0;
 
         obj_data->mesh_scale = math::Vec3(max_x - min_x, max_y - min_y, max_z - min_z);
+        math::BoundingBox box = {};
+        box.min = math::Vec3(min_x, min_y, min_z);
+        box.max = math::Vec3(max_x, max_y, max_z);
+        obj_data->bounding_box = box;
         obj_data->buffer = create_buffers_from_mesh(renderer, mesh, 0, with_normals, with_uvs);
     }
     

@@ -486,6 +486,8 @@ struct GraphicsAPI
     RenderState *render_state;
 };
 
+struct ParticleApi;
+
 struct Renderer
 {
     GraphicsAPI api_functions;
@@ -519,6 +521,11 @@ struct Renderer
 		RandomSeries* entropy;
         rendering::BufferHandle quad_buffer;
         rendering::BufferHandle textured_quad_buffer;
+
+        WorkQueue *work_queues;
+        i32 active_work_queue_count;
+        
+        ParticleApi *api;
 	} particles;
     
 	// Shadow map
@@ -587,6 +594,8 @@ struct Renderer
         rendering::ShaderHandle fallback_shader;
         rendering::ShaderHandle wireframe_shader;
         rendering::MaterialInstanceHandle wireframe_material;
+        rendering::ShaderHandle bounding_box_shader;
+        rendering::MaterialInstanceHandle bounding_box_material;
         rendering::ShaderHandle shadow_map_shader;
         rendering::ShaderHandle bloom_shader;
         rendering::ShaderHandle blur_shader;
