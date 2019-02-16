@@ -2657,9 +2657,15 @@ namespace rendering
 		return counts;
 	}
 
-    static OBJ_ObjectInfo load_obj(Renderer *renderer, const char *file_path, rendering::ShaderHandle shader_handle)
-    {
+	static OBJ_ObjectInfo load_obj(Renderer *renderer, const char *file_path, rendering::ShaderHandle shader_handle)
+	{
 		OBJ_ObjectInfo obj_info = {};
+		
+		for (i32 i = 0; i < MAX_OBJ_OBJECTS; i++)
+		{
+			obj_info.data[i].material = { -1 };
+		}
+
         obj_info.object_count = 0;
         
         FILE *file = fopen(file_path, "rb");
