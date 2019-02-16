@@ -508,4 +508,5 @@ static void init_platform(PlatformApi& platform_api)
     // Threading
     platform_api.add_entry = add_entry;
     platform_api.complete_all_work = complete_all_work;
+    platform_api.make_queue = make_queue;
 }

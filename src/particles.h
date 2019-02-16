@@ -153,9 +153,6 @@ struct Particles
 {
     Vec3_4x *position;
     Vec3_4x *direction;
-    Rgba_4x *color;
-    Vec2_4x *size;
-    r32_4x *angle;
     
     Vec3_4x *relative_position;
 
@@ -174,14 +171,25 @@ struct ParticleSystemHandle
 
 #define MAX_LIFETIME_VALUES 16
 
+struct WorkQueue;
+struct ThreadInfo;
+
+struct EmittedParticles
+{
+    i32 indices[4];
+};
+
 struct ParticleSystemInfo
 {
     b32 simulating;
     b32 paused;
     
     b32 emitting;
-    
     b32 prewarmed;
+
+    WorkQueue *work_queue;
+    ThreadInfo *thread_infos;
+    i32 thread_info_count;
 
     r64 time_spent;
 
@@ -225,7 +233,7 @@ struct ParticleSystemInfo
     rendering::Transform transform;
     
     Particles particles;
-    i32* emitted_for_this_index;
+    EmittedParticles* active_particles;
     
     i32 *alive0_particles;
     i32 alive0_particle_count;
@@ -248,6 +256,59 @@ struct ParticleSystemInfo
     
     MemoryArena arena;
     MemoryArena simd_arena;
+};
+
+typedef ParticleSystemInfo* (*GetParticleSystemInfo)(ParticleSystemHandle handle, Renderer *renderer);
+/* typedef void (*StartParticleSystem)(ParticleSystemInfo &system); */
+typedef void (*StartParticleSystem)(ParticleSystemHandle, Renderer *renderer);
+typedef void (*StopParticleSystem)(ParticleSystemHandle handle, Renderer *renderer);
+typedef void (*PauseParticleSystem)(ParticleSystemHandle handle, Renderer *renderer, b32 paused);
+typedef void (*RemoveAllParticleSystems)(Renderer *renderer);
+typedef b32 (*ParticleSystemIsRunning)(ParticleSystemHandle handle, Renderer *renderer);
+
+typedef ParticleSystemAttributes (*GetDefaultAttributes)();
+typedef ParticleSystemHandle (*CreateParticleSystem)(Renderer *renderer, i32 max_particles, rendering::MaterialHandle material, rendering::BufferHandle buffer);
+typedef void (*RemoveParticleSystem)(Renderer *renderer, ParticleSystemHandle &handle);
+typedef void (*UpdateParticleSystem)(Renderer *renderer, ParticleSystemHandle handle, i32 max_particles);
+
+typedef void (*AddBurstOverTimeKey)(ParticleSystemInfo &particle_system, r64 key_time, i32 count, i32 cycle_count, i32 max_count, i32 min_count);
+typedef i32 (*AddAngleKey)(ParticleSystemInfo &particle_system, r64 key_time, r32 value) ;
+typedef void (*RemoveAngleKey)(ParticleSystemInfo &particle_system, r64 key_time);
+
+typedef i32 (*AddColorKey)(ParticleSystemInfo &particle_system, r64 key_time, math::Rgba value);
+typedef void (*RemoveColorKey)(ParticleSystemInfo &particle_system, r64 key_time);
+
+typedef i32 (*AddSizeKey)(ParticleSystemInfo &particle_system, r64 key_time, math::Vec2 value);
+typedef void (*RemoveSizeKey)(ParticleSystemInfo &particle_system, r64 key_time);
+
+typedef i32 (*AddSpeedKey)(ParticleSystemInfo &particle_system, r64 key_time, r32 value);
+typedef void (*RemoveSpeedKey)(ParticleSystemInfo &particle_system, r64 key_time);
+
+struct ParticleApi
+{
+    GetParticleSystemInfo get_particle_system_info;
+    StartParticleSystem start_particle_system;
+    StopParticleSystem stop_particle_system;
+    PauseParticleSystem pause_particle_system;
+    RemoveAllParticleSystems remove_all_particle_systems;
+    ParticleSystemIsRunning particle_system_is_running;
+
+    GetDefaultAttributes get_default_attributes;;
+    CreateParticleSystem create_particle_system;
+    RemoveParticleSystem remove_particle_system;
+    UpdateParticleSystem update_particle_system;
+
+    AddBurstOverTimeKey add_burst_over_time_key;
+    AddAngleKey add_angle_key;
+    RemoveAngleKey remove_angle_key;
+
+    AddColorKey add_color_key;
+    RemoveColorKey remove_color_key;
+
+    AddSizeKey add_size_key;
+    RemoveSizeKey remove_size_key;
+    AddSpeedKey add_speed_key;
+    RemoveSpeedKey remove_speed_key;
 };
 
 #endif

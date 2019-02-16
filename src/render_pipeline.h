@@ -380,11 +380,6 @@ namespace rendering
 		RegisterBufferInfo() {}
 	};
 
-    struct LineBufferHandle
-    {
-        i32 handle;
-    };
-
 #define MAX_OBJ_OBJECTS 32
 
     struct OBJ_ObjectData
@@ -392,6 +387,7 @@ namespace rendering
         rendering::MaterialHandle material;
         rendering::BufferHandle buffer;
         math::Vec3 mesh_scale;
+        math::BoundingBox bounding_box;
     };
     
     struct OBJ_ObjectInfo
@@ -416,7 +412,8 @@ namespace rendering
     enum class PrimitiveType
     {
         TRIANGLES,
-        LINES
+        LINES,
+        LINE_LOOP
     };
 
     enum class RenderCommandType

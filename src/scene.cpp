@@ -898,7 +898,7 @@ namespace scene
                 for(i32 index = 0; index < scene.particle_system_component_count; index++)
                 {
                     ParticleSystemComponent& ps_comp = scene.particle_system_components[index];
-                    remove_particle_system(scene.renderer, ps_comp.handle);
+                    scene_manager->renderer->particles.api->remove_particle_system(scene.renderer, ps_comp.handle);
                 }
                 
                 scene.particle_system_component_count = 0;
@@ -937,7 +937,7 @@ namespace scene
         Scene &scene = get_scene(handle);                
         for(i32 i = 0; i < scene.particle_system_component_count; i++)
         {
-            stop_particle_system(scene.particle_system_components[i].handle, scene.renderer);
+            handle.manager->renderer->particles.api->stop_particle_system(scene.particle_system_components[i].handle, scene.renderer);
         }
     }
     
@@ -946,8 +946,8 @@ namespace scene
         Scene &scene = get_scene(handle);                
         for(i32 i = 0; i < scene.particle_system_component_count; i++)
         {
-            start_particle_system(scene.particle_system_components[i].handle, scene.renderer);
-            pause_particle_system(scene.particle_system_components[i].handle, scene.renderer, false);
+            handle.manager->renderer->particles.api->start_particle_system(scene.particle_system_components[i].handle, scene.renderer);
+            handle.manager->renderer->particles.api->pause_particle_system(scene.particle_system_components[i].handle, scene.renderer, false);
         }
     }
     
@@ -1169,6 +1169,27 @@ namespace scene
             RenderComponent &render_comp = _get_render_comp(entity_handle, scene);
             render_comp.wireframe_enabled = enabled;            
         }
+    }
+
+    static void set_bounding_box_enabled(b32 enabled, EntityHandle entity_handle, SceneHandle &handle)
+    {
+        Scene &scene = get_scene(handle);
+        if(has_render_component(entity_handle, handle))
+        {
+            RenderComponent &render_comp = _get_render_comp(entity_handle, scene);
+            render_comp.bounding_box_enabled = enabled;            
+        }
+    }
+
+    static b32 get_bounding_box_enabled(EntityHandle entity_handle, SceneHandle &handle)
+    {
+        Scene &scene = get_scene(handle);
+        if(has_render_component(entity_handle, handle))
+        {
+            RenderComponent &render_comp = _get_render_comp(entity_handle, scene);
+            return render_comp.bounding_box_enabled;            
+        }
+        return false;
     }
 
     static void _register_gizmos(SceneHandle scene)
@@ -1507,6 +1528,12 @@ namespace scene
         if(KEY(Key_D))
         {
             translate_right(camera, (r32)delta_time * 10.0f);
+        }
+
+        if(MOUSE(Mouse_Middle))
+        {
+            translate_up(camera, (r32)input_controller->mouse_y_delta * 0.01f);
+            translate_right(camera, (r32)-input_controller->mouse_x_delta * 0.01f);
         }
 
         if(KEY_DOWN(Key_LeftAlt))
@@ -1971,8 +1998,8 @@ namespace scene
         entity.particle_system_handle = {scene.particle_system_component_count++};
         scene::ParticleSystemComponent &comp = scene.particle_system_components[entity.particle_system_handle.handle];
         
-        comp.handle = create_particle_system(scene.renderer, max_particles, material, attributes.buffer);
-        ParticleSystemInfo* info = get_particle_system_info(comp.handle, scene.renderer);
+        comp.handle = scene.renderer->particles.api->create_particle_system(scene.renderer, max_particles, material, attributes.buffer);
+        ParticleSystemInfo* info = scene.renderer->particles.api->get_particle_system_info(comp.handle, scene.renderer);
         assert(info);
         
         info->attributes = attributes;
@@ -2052,6 +2079,7 @@ namespace scene
         new_template.render.buffer_handle = obj_data.buffer;
         new_template.render.material_handle = obj_data.material;
         new_template.render.mesh_scale = obj_data.mesh_scale;
+        new_template.render.bounding_box = obj_data.bounding_box;
 
         template_state.templates[template_state.template_count++] = new_template;
         return { template_state.template_count - 1};
@@ -2188,6 +2216,11 @@ namespace scene
                             obj_info = rendering::load_obj(scene.renderer, obj_file, shader_handle);
                             templ->render.buffer_handle = obj_info.data[0].buffer;
                             templ->render.material_handle = obj_info.data[0].material;
+
+                            templ->render.mesh_scale = obj_info.data[0].mesh_scale;
+                            templ->render.bounding_box = obj_info.data[0].bounding_box;
+
+                            templ->render.bounding_box_buffer = rendering::create_bounding_box_buffer(scene.renderer);
                         }
                         else if(starts_with(buffer, "prim"))
                         {
@@ -2196,12 +2229,12 @@ namespace scene
                             if(starts_with(prim_type, "cube"))
                             {
                                 templ->render.is_new_version = true;
-                                templ->render.buffer_handle = rendering::create_cube(scene.renderer, &templ->render.mesh_scale);
+                                templ->render.buffer_handle = rendering::create_cube(scene.renderer, &templ->render.mesh_scale, &templ->render.bounding_box);
                             }
                             else if(starts_with(prim_type, "plane"))
                             {
                                 templ->render.is_new_version = true;
-                                templ->render.buffer_handle = rendering::create_plane(scene.renderer, &templ->render.mesh_scale);
+                                templ->render.buffer_handle = rendering::create_plane(scene.renderer, &templ->render.mesh_scale, &templ->render.bounding_box);
                             }
                         }
                         else if(starts_with(buffer, "mtl"))
@@ -2228,7 +2261,7 @@ namespace scene
                     templ->particles.material_handle = {};
                     templ->particles.shader_handle = {};
 		    
-                    ParticleSystemAttributes attributes = get_default_particle_system_attributes();
+                    ParticleSystemAttributes attributes = scene.renderer->particles.api->get_default_attributes();
 		    
                     while(fgets(buffer, 256, file) && !starts_with(buffer, "-"))
                     {
@@ -2560,7 +2593,9 @@ namespace scene
             RenderComponent &render = _get_render_comp(handle, scene);
             render.ignore_depth = templ.render.ignore_depth;
             render.buffer_handle = templ.render.buffer_handle;
+            render.bounding_box_buffer = templ.render.bounding_box_buffer;
             render.material_handle = rendering::create_material_instance(scene.renderer, templ.render.material_handle);
+            render.bounding_box_enabled = false;
                 
             if(scene.loaded)
             {
@@ -2620,6 +2655,7 @@ namespace scene
         
             render.casts_shadows = templ.render.casts_shadows;
             render.mesh_scale = templ.render.mesh_scale;
+            render.bounding_box = templ.render.bounding_box;
                 
             for(i32 i = 0; i < templ.render.render_pass_count; i++)
             {
@@ -2631,27 +2667,27 @@ namespace scene
         {
             scene::ParticleSystemComponent &ps_comp = scene::_add_particle_system_component(scene, handle, templ.particles.attributes, templ.particles.max_particles, templ.particles.material_handle);
 
-            ParticleSystemInfo *ps = get_particle_system_info(ps_comp.handle, scene.renderer);
+            ParticleSystemInfo *ps = scene.renderer->particles.api->get_particle_system_info(ps_comp.handle, scene.renderer);
             
             for(i32 i = 0; i < templ.particles.size_over_lifetime.value_count; i++)
             {
                 r64 key = templ.particles.size_over_lifetime.keys[i];
                 math::Vec2 value = templ.particles.size_over_lifetime.values[i];
-                add_size_key(*ps, key, value);
+                scene.renderer->particles.api->add_size_key(*ps, key, value);
             }
 
             for(i32 i = 0; i < templ.particles.color_over_lifetime.value_count; i++)
             {
                 r64 key = templ.particles.color_over_lifetime.keys[i];
                 math::Rgba value = templ.particles.color_over_lifetime.values[i];
-                add_color_key(*ps, key, value);
+                scene.renderer->particles.api->add_color_key(*ps, key, value);
             }
 
             for(i32 i = 0; i < templ.particles.speed_over_lifetime.value_count; i++)
             {
                 r64 key = templ.particles.speed_over_lifetime.keys[i];
                 r32 value = templ.particles.speed_over_lifetime.values[i];
-                add_speed_key(*ps, key, value);
+                scene.renderer->particles.api->add_speed_key(*ps, key, value);
             }
 
             if(templ.comp_flags & COMP_TRANSFORM)
@@ -2668,7 +2704,9 @@ namespace scene
             ps_comp.render_pass = rendering::get_render_pass_handle_for_name(STANDARD_PASS, scene.renderer);
             
             if(templ.particles.started)
-                start_particle_system(ps_comp.handle, scene.renderer);
+            {
+                    scene.renderer->particles.api->start_particle_system(ps_comp.handle, scene.renderer);
+            }
         }
 
         if(templ.comp_flags & COMP_LIGHT)
@@ -2804,7 +2842,7 @@ namespace scene
         if(entity.comp_flags & COMP_PARTICLES)
         {
             ParticleSystemHandle ps_handle = scene.particle_system_components[entity.particle_system_handle.handle].handle;
-            remove_particle_system(scene.renderer, ps_handle);
+            scene.renderer->particles.api->remove_particle_system(scene.renderer, ps_handle);
             for(i32 index = entity.particle_system_handle.handle; index < scene.particle_system_component_count - 1; index++)
             {
                 scene.particle_system_components[index] = scene.particle_system_components[index + 1];
@@ -3333,6 +3371,18 @@ namespace scene
                         if(render.wireframe_enabled)
                         {
                             rendering::push_buffer_to_render_pass(renderer, render.buffer_handle, renderer->render.wireframe_material, transform.transform, renderer->render.wireframe_shader, render.render_passes[0], rendering::CommandType::NO_DEPTH);
+                        }
+
+                        if(render.bounding_box_enabled && render.bounding_box_buffer.handle != 0)
+                        {
+                            math::BoundingBox box = render.bounding_box;
+                            math::Vec3 size = math::Vec3(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z);
+                            math::Vec3 position = math::Vec3((box.min.x + box.max.x) / 2.0f, (box.min.y + box.max.y) / 2.0f, (box.min.z + box.max.z) / 2.0f);
+                            
+                            rendering::Transform box_transform = rendering::create_transform(position, size, math::Quat());
+                            box_transform.model = transform.transform.model * box_transform.model;
+
+                            rendering::push_buffer_to_render_pass(renderer, render.bounding_box_buffer, renderer->render.bounding_box_material, box_transform, renderer->render.bounding_box_shader, render.render_passes[0], rendering::CommandType::WITH_DEPTH, rendering::PrimitiveType::LINE_LOOP);
                         }
                         
                         BatchedCommand &batch_command = command->commands[command->count];

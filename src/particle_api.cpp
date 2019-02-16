@@ -1,4 +1,3 @@
-
 static ParticleSystemInfo* get_particle_system_info(ParticleSystemHandle handle, Renderer *renderer)
 {
     i32 _internal_handle = renderer->particles._internal_handles[handle.handle - 1];
@@ -59,7 +58,7 @@ static b32 particle_system_is_running(ParticleSystemHandle handle, Renderer *ren
     return(system.simulating);
 }
 
-static void set_rate_over_distanace(ParticleSystemInfo &particle_system, r32 rate_over_distance)
+static void set_rate_over_distance(ParticleSystemInfo &particle_system, r32 rate_over_distance)
 {
     particle_system.attributes.emission_module.rate_over_distance = rate_over_distance;
 }
@@ -115,10 +114,13 @@ static void _allocate_particle_system(Renderer *renderer, ParticleSystemInfo& sy
         system_info.dead_particles[dead_index] = dead_index;
     }
 
-    system_info.emitted_for_this_index = push_array(memory_arena, max_over_four, i32);
+    system_info.active_particles = push_array(memory_arena, max_over_four, EmittedParticles);
     for(i32 i = 0; i < max_over_four; i++)
     {
-        system_info.emitted_for_this_index[i] = 0;
+        system_info.active_particles[i].indices[0] = -1;
+        system_info.active_particles[i].indices[1] = -1;
+        system_info.active_particles[i].indices[2] = -1;
+        system_info.active_particles[i].indices[3] = -1;
     }
     
     system_info.alive0_particle_count = 0;
@@ -126,10 +128,7 @@ static void _allocate_particle_system(Renderer *renderer, ParticleSystemInfo& sy
     
     system_info.particles.position = push_array_simd(simd_arena, max_over_four, Vec3_4x);
     system_info.particles.direction = push_array_simd(simd_arena, max_over_four, Vec3_4x);
-    system_info.particles.color = push_array_simd(simd_arena, max_over_four, Rgba_4x);
-    system_info.particles.angle = push_array_simd(simd_arena, max_over_four, r32_4x);
 
-    system_info.particles.size = push_array_simd(simd_arena, max_over_four, Vec2_4x);
     system_info.particles.start_size = push_array_simd(simd_arena, max_over_four, Vec2_4x);
     system_info.particles.start_life = push_array_simd(simd_arena, max_over_four, r64_4x);
     system_info.particles.start_speed = push_array_simd(simd_arena, max_over_four, r32_4x);
@@ -239,6 +238,13 @@ static ParticleSystemHandle create_particle_system(Renderer *renderer, i32 max_p
     system_info.material_handle = rendering::create_material_instance(renderer, material);
     
     _allocate_particle_system(renderer, system_info, max_particles);
+    system_info.work_queue = {};
+
+    u32 thread_count = (u32)max_particles / 4;
+    system_info.thread_info_count = thread_count;
+    system_info.thread_infos = push_array(&system_info.arena, system_info.thread_info_count, ThreadInfo);
+    system_info.work_queue = &renderer->particles.work_queues[renderer->particles.active_work_queue_count++];
+    platform.make_queue(system_info.work_queue, system_info.thread_info_count, system_info.thread_infos);
     
     return handle;
 }
