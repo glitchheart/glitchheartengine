@@ -113,7 +113,7 @@ namespace scene
         LightComponentHandle light_handle;
     };
 
-    #define MAX_CHILDREN 4
+    #define MAX_CHILDREN 64
     
     struct TransformComponent
     {
@@ -130,26 +130,20 @@ namespace scene
     
     struct RenderComponent
     {
-        rendering::MaterialHandle material_handle;
         rendering::MaterialHandle original_material_handle;
+        rendering::BufferHandle buffer_handle;
+        rendering::MaterialInstanceHandle material_handle;
         
         b32 casts_shadows;
         math::Vec3 mesh_scale;
 
         b32 wireframe_enabled;
         b32 ignore_depth;
-        
-        b32 is_new_version;
-        struct
-        {
-            rendering::BufferHandle buffer_handle;
-            rendering::MaterialInstanceHandle material_handle;
             
-            // @Note: All the render passes this component should be rendered in
-            rendering::RenderPassHandle render_passes[8];
-            rendering::ShaderHandle shader_handles[8];
-            i32 render_pass_count;
-        } v2;
+        // @Note: All the render passes this component should be rendered in
+        rendering::RenderPassHandle render_passes[8];
+        rendering::ShaderHandle shader_handles[8];
+        i32 render_pass_count;
     };
     
     struct ParticleSystemComponent
@@ -191,21 +185,16 @@ namespace scene
         } transform;
         struct
         {
-            rendering::MaterialHandle material_handle;
-
             b32 ignore_depth;
             b32 casts_shadows;
             math::Vec3 mesh_scale;
             b32 is_new_version;
-            struct
-            {
-                rendering::BufferHandle buffer_handle;
-                rendering::MaterialHandle material_handle;
+            rendering::BufferHandle buffer_handle;
+            rendering::MaterialHandle material_handle;
 
-                char render_pass_names[8][32];
-                rendering::ShaderHandle shader_handles[8];
-                i32 render_pass_count;
-            } v2;
+            char render_pass_names[8][32];
+            rendering::ShaderHandle shader_handles[8];
+            i32 render_pass_count;
         } render;
         struct
         {
@@ -258,6 +247,10 @@ namespace scene
                 } point;
             };
         } light;
+        
+#define MAX_CHILD_HANDLES 32
+        TemplateHandle child_handles[MAX_CHILD_HANDLES];
+        i32 child_count;
     };
     
     // Holds all the currently loaded templates

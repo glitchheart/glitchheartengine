@@ -438,7 +438,6 @@ enum CursorType
     CURSOR_VRESIZE
 };
 
-
 struct ParticleSystemInfo;
 
 struct RenderState;
