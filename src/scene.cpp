@@ -2219,8 +2219,11 @@ namespace scene
 
                             templ->render.mesh_scale = obj_info.data[0].mesh_scale;
                             templ->render.bounding_box = obj_info.data[0].bounding_box;
-
-                            templ->render.bounding_box_buffer = rendering::create_bounding_box_buffer(scene.renderer);
+                            
+                            if(obj_info.object_count == 0)
+                            {
+                                templ->render.bounding_box_buffer = rendering::create_bounding_box_buffer(scene.renderer);
+                            }
                         }
                         else if(starts_with(buffer, "prim"))
                         {
@@ -2547,11 +2550,13 @@ namespace scene
 
         if(obj_info.object_count > 1)
         {
-            for(i32 i = 1; i < obj_info.object_count; i++)
+            for(i32 i = 0; i < obj_info.object_count; i++)
             {
                 const rendering::OBJ_ObjectData &data = obj_info.data[i];
                 templ->child_handles[templ->child_count++] = _create_template_copy_with_new_render_data(templ, template_state, data);
             }
+            
+            templ->comp_flags = templ->comp_flags & ~ COMP_RENDER;
         }
     }
 
