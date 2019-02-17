@@ -261,21 +261,6 @@ namespace scene
         assert(value.handle != 0);
         rendering::set_uniform_value(scene.manager->renderer, render.material_handle, name, value);
 	}
-    
-    static i32 _find_handle_in_range(i32 start, i32 end, i32 *handles)
-    {
-        i32 handle = -1;
-        for(i32 i = start; i < end; i++)
-        {
-            if(handles[i] == -1)
-            {
-                handle = i;
-                break;
-            }
-        }
-
-        return handle;
-    } 
 
     static i32 _find_next_free_internal_handle(SceneManager *scene_manager)
     {

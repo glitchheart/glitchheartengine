@@ -352,10 +352,14 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
 
     renderer->particles.particle_systems = push_array(&renderer->particle_arena, global_max_particle_systems, ParticleSystemInfo);
     renderer->particles._internal_handles = push_array(&renderer->particle_arena, global_max_particle_systems, i32);
+    renderer->particles._internal_work_queue_handles = push_array(&renderer->particle_arena, global_max_particle_systems, i32);
     renderer->particles.work_queues = push_array(&renderer->particle_arena, global_max_particle_systems, WorkQueue);
     renderer->particles.api = &particle_api;
 
-
+    renderer->particles.system_work_queue = (WorkQueue*)malloc(sizeof(WorkQueue));
+    renderer->particles.system_threads = push_array(&renderer->particle_arena, global_max_particle_systems, ThreadInfo);
+    platform.make_queue(renderer->particles.system_work_queue, global_max_particle_systems, renderer->particles.system_threads);
+    
     PushParams params = default_push_params();
     params.alignment = math::multiple_of_number_uint(member_size(RandomSeries, state), 16);
     renderer->particles.entropy = push_size(&renderer->particle_arena, sizeof(RandomSeries), RandomSeries, params);
@@ -364,6 +368,7 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     for (i32 index = 0; index < global_max_particle_systems; index++)
     {
         renderer->particles._internal_handles[index] = -1;
+        renderer->particles._internal_work_queue_handles[index] = -1;
     }
 
     renderer->particles.particle_system_count = 0;

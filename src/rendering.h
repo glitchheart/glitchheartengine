@@ -522,8 +522,12 @@ struct Renderer
         rendering::BufferHandle quad_buffer;
         rendering::BufferHandle textured_quad_buffer;
 
+        i32 *_internal_work_queue_handles;
+        i32 _current_internal_work_queue_handle;
+        
         WorkQueue *work_queues;
-        i32 active_work_queue_count;
+        WorkQueue *system_work_queue;
+        ThreadInfo *system_threads;
         
         ParticleApi *api;
 	} particles;

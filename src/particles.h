@@ -153,7 +153,7 @@ struct Particles
 {
     Vec3_4x *position;
     Vec3_4x *direction;
-    
+
     Vec3_4x *relative_position;
 
     Vec2_4x* start_size;
@@ -173,10 +173,13 @@ struct ParticleSystemHandle
 
 struct WorkQueue;
 struct ThreadInfo;
+struct ParticleWorkData;
 
-struct EmittedParticles
+struct UpdateParticleSystemWorkData
 {
-    i32 indices[4];
+    ParticleSystemInfo *info;
+    Renderer *renderer;
+    r64 delta_time;
 };
 
 struct ParticleSystemInfo
@@ -190,6 +193,9 @@ struct ParticleSystemInfo
     WorkQueue *work_queue;
     ThreadInfo *thread_infos;
     i32 thread_info_count;
+    ParticleWorkData *work_datas;
+    i32 work_data_count;
+    UpdateParticleSystemWorkData update_work_data;
 
     r64 time_spent;
 
@@ -233,7 +239,6 @@ struct ParticleSystemInfo
     rendering::Transform transform;
     
     Particles particles;
-    EmittedParticles* active_particles;
     
     i32 *alive0_particles;
     i32 alive0_particle_count;
@@ -257,6 +262,30 @@ struct ParticleSystemInfo
     MemoryArena arena;
     MemoryArena simd_arena;
 };
+
+#define PARTICLE_DATA_SIZE 2048
+struct ParticleWorkData
+{
+    Renderer *renderer;
+    ParticleSystemInfo *info;
+    r64 delta_time;
+    i32 particle_count;
+    
+    r32 angle_buffer[PARTICLE_DATA_SIZE * 4];
+    math::Vec3 offset_buffer[PARTICLE_DATA_SIZE * 4];
+    math::Vec2 size_buffer[PARTICLE_DATA_SIZE * 4];
+    math::Rgba color_buffer[PARTICLE_DATA_SIZE * 4];
+
+    i32 emitted_buffer[PARTICLE_DATA_SIZE];
+    i32 emitted_this_frame;
+
+    i32 next_frame_buffer[PARTICLE_DATA_SIZE];
+    i32 next_frame_count;
+
+    i32 dead_particle_indices[PARTICLE_DATA_SIZE];
+    i32 dead_particle_count;
+};
+
 
 typedef ParticleSystemInfo* (*GetParticleSystemInfo)(ParticleSystemHandle handle, Renderer *renderer);
 /* typedef void (*StartParticleSystem)(ParticleSystemInfo &system); */
