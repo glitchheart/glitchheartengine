@@ -113,30 +113,21 @@ static void _allocate_particle_system(Renderer *renderer, ParticleSystemInfo& sy
     {
         system_info.dead_particles[dead_index] = dead_index;
     }
-
-    system_info.active_particles = push_array(memory_arena, max_over_four, EmittedParticles);
-    for(i32 i = 0; i < max_over_four; i++)
-    {
-        system_info.active_particles[i].indices[0] = -1;
-        system_info.active_particles[i].indices[1] = -1;
-        system_info.active_particles[i].indices[2] = -1;
-        system_info.active_particles[i].indices[3] = -1;
-    }
     
     system_info.alive0_particle_count = 0;
     system_info.alive1_particle_count = 0;
     
     system_info.particles.position = push_array_simd(simd_arena, max_over_four, Vec3_4x);
     system_info.particles.direction = push_array_simd(simd_arena, max_over_four, Vec3_4x);
-
+    
     system_info.particles.start_size = push_array_simd(simd_arena, max_over_four, Vec2_4x);
     system_info.particles.start_life = push_array_simd(simd_arena, max_over_four, r64_4x);
     system_info.particles.start_speed = push_array_simd(simd_arena, max_over_four, r32_4x);
+    
     system_info.particles.start_angle = push_array_simd(simd_arena, max_over_four, r32_4x);
     system_info.particles.relative_position = push_array_simd(simd_arena, max_over_four, Vec3_4x);
 
     system_info.particles.life = push_array_simd(simd_arena, max_over_four, r64_4x);
-    push_size(memory_arena, sizeof(rendering::TextureHandle), rendering::TextureHandle);
     
     system_info.color_over_lifetime.value_count = 0;
     system_info.size_over_lifetime.value_count = 0;
@@ -191,27 +182,56 @@ static void _allocate_particle_system(Renderer *renderer, ParticleSystemInfo& sy
 
 i32 _find_unused_particle_system(Renderer *renderer)
 {
-    for(i32 index = renderer->particles._current_internal_handle; index < renderer->particles._max_particle_system_count; index++)
+    i32 handle = -1;
+
+    if(renderer->particles._internal_handles[renderer->particles._current_internal_handle] == -1)
     {
-        if(renderer->particles._internal_handles[index] == -1)
-        {
-            renderer->particles._current_internal_handle = index;
-            return index;
-        }
+        handle = renderer->particles._current_internal_handle;
     }
-    
-    for(i32 index = 0; index < renderer->particles._current_internal_handle; index++)
+    else
     {
-        if(renderer->particles._internal_handles[index] == -1)
+        i32 found_handle = _find_handle_in_range(renderer->particles._current_internal_handle, renderer->particles._max_particle_system_count, renderer->particles._internal_handles);
+        if(found_handle == -1)
         {
-            renderer->particles._current_internal_handle = index;
-            return index;
+            found_handle = _find_handle_in_range(0, renderer->particles._current_internal_handle, renderer->particles._internal_handles);
         }
+        handle = found_handle;
     }
-    
-    assert(false);
-    
-    return -1;
+
+    renderer->particles._current_internal_handle = handle + 1;
+    if(renderer->particles._current_internal_handle == renderer->particles._max_particle_system_count)
+    {
+        renderer->particles._current_internal_handle = 0;
+    }
+
+    return handle;
+}
+
+i32 _find_unused_work_queue(Renderer *renderer)
+{
+    i32 handle = -1;
+
+    if(renderer->particles._internal_work_queue_handles[renderer->particles._current_internal_work_queue_handle] == -1)
+    {
+        handle = renderer->particles._current_internal_work_queue_handle;
+    }
+    else
+    {
+        i32 found_handle = _find_handle_in_range(renderer->particles._current_internal_work_queue_handle, renderer->particles._max_particle_system_count, renderer->particles._internal_work_queue_handles);
+        if(found_handle == -1)
+        {
+            found_handle = _find_handle_in_range(0, renderer->particles._current_internal_work_queue_handle, renderer->particles._internal_work_queue_handles);
+        }
+        handle = found_handle;
+    }
+
+    renderer->particles._current_internal_work_queue_handle = handle + 1;
+    if(renderer->particles._current_internal_work_queue_handle == renderer->particles._max_particle_system_count)
+    {
+        renderer->particles._current_internal_work_queue_handle = 0;
+    }
+
+    return handle;
 }
 
 static ParticleSystemHandle create_particle_system(Renderer *renderer, i32 max_particles, rendering::MaterialHandle material, rendering::BufferHandle buffer = {0})
@@ -233,18 +253,27 @@ static ParticleSystemHandle create_particle_system(Renderer *renderer, i32 max_p
     system_info.transform = {};
     
     system_info.particle_count = 0;
-    system_info.last_used_particle = 0;
 
     system_info.material_handle = rendering::create_material_instance(renderer, material);
     
     _allocate_particle_system(renderer, system_info, max_particles);
-    system_info.work_queue = {};
 
-    u32 thread_count = (u32)max_particles / 4;
+    u32 thread_count = (u32)max_particles / PARTICLE_DATA_SIZE;
+    i32 count = max_particles - thread_count * PARTICLE_DATA_SIZE;
+    if(count > 0)
+    {
+        thread_count++;
+    }
     system_info.thread_info_count = thread_count;
     system_info.thread_infos = push_array(&system_info.arena, system_info.thread_info_count, ThreadInfo);
-    system_info.work_queue = &renderer->particles.work_queues[renderer->particles.active_work_queue_count++];
+
+    i32 _work_queue_handle = _find_unused_work_queue(renderer);
+    assert(_work_queue_handle != -1);
+    
+    system_info.work_queue = &renderer->particles.work_queues[_work_queue_handle];
     platform.make_queue(system_info.work_queue, system_info.thread_info_count, system_info.thread_infos);
+    system_info.work_datas = push_array(&system_info.arena, system_info.thread_info_count, ParticleWorkData);
+    system_info.work_data_count = system_info.thread_info_count;
     
     return handle;
 }

@@ -196,4 +196,19 @@ inline void get_current_min(math::Vec3 v1, math::Vec3 v2, r32 val1, r32 val2, ma
     *out_val = val2;
 }
 
+    static i32 _find_handle_in_range(i32 start, i32 end, i32 *handles)
+    {
+        i32 handle = -1;
+        for(i32 i = start; i < end; i++)
+        {
+            if(handles[i] == -1)
+            {
+                handle = i;
+                break;
+            }
+        }
+
+        return handle;
+    }
+
 #endif

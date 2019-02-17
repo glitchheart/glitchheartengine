@@ -2779,7 +2779,7 @@ namespace rendering
 			ptrs.normals = (math::Vec3*)malloc(sizeof(math::Vec3) * data_counts.normal_count);
 			ptrs.uvs = (math::Vec2*)malloc(sizeof(math::Vec2) * data_counts.uv_count);
 			ptrs.faces = (Face*)malloc(sizeof(Face) * data_counts.face_count);
-            ptrs.final_vertices = (Vertex*)malloc(sizeof(Vertex) * data_counts.vertex_count * data_counts.face_count);
+            ptrs.final_vertices = (Vertex*)malloc(sizeof(Vertex) * 3 * data_counts.face_count);
             
 			char buffer[256];
             
