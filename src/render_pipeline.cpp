@@ -2439,7 +2439,7 @@ namespace rendering
                         char name[64];
                         sscanf(buffer, "map_Ka %s", name);
 
-                        if (name[0] == '.')
+                        if (name[0] == '.' || name[1] == ':')
                             load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
                         else
                             load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
@@ -2453,7 +2453,7 @@ namespace rendering
                         char name[64];
                         sscanf(buffer, "map_Kd %s", name);
 
-                        if (name[0] == '.')
+                        if (name[0] == '.' || name[1] == ':')
                             load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
                         else
                             load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
@@ -2467,7 +2467,7 @@ namespace rendering
                         char name[64];
                         sscanf(buffer, "map_Ks %s", name);
 
-                        if (name[0] == '.')
+                        if (name[0] == '.' || name[1] == ':')
                             load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
                         else
                             load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
@@ -2481,7 +2481,7 @@ namespace rendering
                         char name[64];
                         sscanf(buffer, "map_Ns %s", name);
 
-                        if (name[0] == '.')
+                        if (name[0] == '.' || name[1] == ':')
                             load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
                         else
                             load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
