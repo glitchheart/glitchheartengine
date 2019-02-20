@@ -253,7 +253,7 @@ namespace scene
             };
         } light;
         
-#define MAX_CHILD_HANDLES 32
+#define MAX_CHILD_HANDLES 64
         TemplateHandle child_handles[MAX_CHILD_HANDLES];
         i32 child_count;
     };

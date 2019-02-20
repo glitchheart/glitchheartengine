@@ -2067,7 +2067,7 @@ namespace scene
         new_template.render.bounding_box = obj_data.bounding_box;
 
         template_state.templates[template_state.template_count++] = new_template;
-        return { template_state.template_count - 1};
+        return { template_state.template_count };
     }
     
     static void _load_template(EntityTemplate *templ, const char *path, EntityTemplateState &template_state, Scene &scene)

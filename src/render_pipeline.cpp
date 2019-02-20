@@ -2285,12 +2285,12 @@ namespace rendering
         return {create_buffers_from_mesh(renderer, mesh, 0, true, true)};
     }
 
-    static b32 vertex_equals(Vertex &v1, Vertex &v2)
+    static b32 vertex_equals(Vertex &v1, Vertex &v2, b32 with_normals, b32 with_uvs)
     {
-        return v1.position.x == v2.position.x && v1.position.y == v2.position.y && v1.position.z == v2.position.z && v1.uv.x == v2.uv.x && v1.uv.y == v2.uv.y && v1.normal.x == v2.normal.x && v1.normal.y == v2.normal.y && v1.normal.z == v2.normal.z;
+        return v1.position.x == v2.position.x && v1.position.y == v2.position.y && v1.position.z == v2.position.z && ((v1.uv.x == v2.uv.x && v1.uv.y == v2.uv.y) || !with_uvs) && ((v1.normal.x == v2.normal.x && v1.normal.y == v2.normal.y && v1.normal.z == v2.normal.z) || !with_normals);
     }
 
-    static i32 check_for_identical_vertex(Vertex &vertex, math::Vec2 uv, math::Vec3 normal, Vertex *final_vertices, i32 current_size, b32 *should_add)
+    static i32 check_for_identical_vertex(Vertex &vertex, math::Vec2 uv, math::Vec3 normal, b32 with_normals, b32 with_uvs, Vertex *final_vertices, i32 current_size, b32 *should_add)
     {
         vertex.uv = uv;
         vertex.normal = normal;
@@ -2299,7 +2299,7 @@ namespace rendering
         {
             Vertex &existing = final_vertices[index];
 
-            if (vertex_equals(existing, vertex))
+            if (vertex_equals(existing, vertex, with_normals, with_uvs))
             {
                 return (i32)index;
             }
@@ -2629,7 +2629,7 @@ namespace rendering
                     n1 = vertex_ptrs->normals[normal_indices.x - 1];
                 }
 
-                face.indices[0] = (u16)check_for_identical_vertex(v1, uv1, n1, vertex_ptrs->final_vertices, vertex_ptrs->final_vertex_count, &should_add);
+                face.indices[0] = (u16)check_for_identical_vertex(v1, uv1, n1, with_normals, with_uvs, vertex_ptrs->final_vertices, vertex_ptrs->final_vertex_count, &should_add);
 
                 if (should_add)
                 {
@@ -2651,7 +2651,7 @@ namespace rendering
                     n2 = vertex_ptrs->normals[normal_indices.y - 1];
                 }
 
-                face.indices[1] = (u16)check_for_identical_vertex(v2, uv2, n2, vertex_ptrs->final_vertices, vertex_ptrs->final_vertex_count, &should_add);
+                face.indices[1] = (u16)check_for_identical_vertex(v2, uv2, n2, with_normals, with_uvs, vertex_ptrs->final_vertices, vertex_ptrs->final_vertex_count, &should_add);
 
                 if (should_add)
                 {
@@ -2674,7 +2674,7 @@ namespace rendering
                     n3 = vertex_ptrs->normals[normal_indices.z - 1];
                 }
 
-                face.indices[2] = (u16)check_for_identical_vertex(v3, uv3, n3, vertex_ptrs->final_vertices, vertex_ptrs->final_vertex_count, &should_add);
+                face.indices[2] = (u16)check_for_identical_vertex(v3, uv3, n3, with_normals, with_uvs, vertex_ptrs->final_vertices, vertex_ptrs->final_vertex_count, &should_add);
 
                 if (should_add)
                 {
