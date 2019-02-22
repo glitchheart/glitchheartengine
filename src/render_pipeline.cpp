@@ -107,7 +107,7 @@ namespace rendering
                             u_v.uniform = new_uniform;
                             entry.values[entry.value_count++] = u_v;
                         }
-
+                        
                         array.entries[array.entry_count++] = entry;
                     }
                 }
@@ -2595,11 +2595,11 @@ namespace rendering
                 math::Vec3i normal_indices = {};
                 math::Vec3i uv_indices = {};
 
-                if (with_uvs && with_normals)
+                if (with_uvs && vertex_ptrs->normal_count > 0)
                 {
                     sscanf(buffer, "f %hd/%d/%d %hd/%d/%d %hd/%d/%d", &face.indices[0], &uv_indices.x, &normal_indices.x, &face.indices[1], &uv_indices.y, &normal_indices.y, &face.indices[2], &uv_indices.z, &normal_indices.z);
                 }
-                else if (with_uvs)
+                else if (vertex_ptrs->uv_count > 0)
                 {
                     sscanf(buffer, "f %hd/%d %hd/%d %hd/%d", &face.indices[0], &uv_indices.x, &face.indices[1], &uv_indices.y, &face.indices[2], &uv_indices.z);
                 }
@@ -2762,6 +2762,8 @@ namespace rendering
 			_MaterialPair mat_pairs[64];
 			i32 mat_pair_count = 0;
 
+            auto temp_block = begin_temporary_memory(&renderer->shader_arena);
+            
             char *source = read_file_into_buffer(&renderer->shader_arena, file);
 			char *source_copy = source;
 
@@ -2820,8 +2822,10 @@ namespace rendering
                     parse_obj_object(name, &ptrs, &source, &obj_info.data[obj_info.object_count++], mat_pairs, mat_pair_count, renderer);
                 }
             }
-			
-			free(ptrs.vertices);
+
+            end_temporary_memory(temp_block);
+
+            free(ptrs.vertices);
 			free(ptrs.final_vertices);
 			free(ptrs.normals);
 			free(ptrs.uvs);

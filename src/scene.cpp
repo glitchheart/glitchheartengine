@@ -767,7 +767,7 @@ namespace scene
     
     static void allocate_instance_buffers(Scene &scene)
     {
-        InstancePair instance_pairs[32];
+        InstancePair instance_pairs[64];
         i32 pair_count = 0;
         
         Renderer *renderer = scene.renderer;
@@ -3315,7 +3315,7 @@ namespace scene
                         renderer->render.directional_lights[renderer->render.dir_light_count++] = light_comp.dir_light;
                         math::Vec3 view_pos = -light_comp.dir_light.direction * 10;
                         
-                        rendering::set_light_space_matrices(renderer, math::ortho(-10, 10, -10, 10, 1, 20.0f), view_pos, math::Vec3(0.0f));
+                        rendering::set_light_space_matrices(renderer, math::ortho(-20, 20, -20, 20, -20, 20.0f), view_pos, math::Vec3(0.0f));
                     }
                     
                     break;
