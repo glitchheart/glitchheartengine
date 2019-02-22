@@ -463,6 +463,7 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     
 	rendering::add_color_attachment(rendering::AttachmentType::TEXTURE, rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_resolve_info);
     rendering::add_color_attachment(rendering::AttachmentType::TEXTURE, rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_resolve_info);
+    rendering::add_depth_attachment(rendering::AttachmentType::TEXTURE, 0, standard_resolve_info);
     
     rendering::FramebufferHandle standard_resolve_framebuffer = rendering::create_framebuffer(standard_resolve_info, renderer);
     rendering::RenderPassHandle standard_resolve = rendering::create_render_pass("standard_resolve", standard_resolve_framebuffer, renderer);
@@ -592,6 +593,7 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
 
     rendering::PostProcessingRenderPassHandle final_blur_pass = rendering::create_post_processing_render_pass("Blur_To_Final", final_framebuffer, renderer, bloom_shader);
     rendering::set_uniform_value(renderer, final_blur_pass, "scene", rendering::get_texture_from_framebuffer(0, standard_resolve_framebuffer, renderer));
+    rendering::set_uniform_value(renderer, final_blur_pass, "depth", rendering::get_depth_texture_from_framebuffer(0, standard_resolve_framebuffer, renderer));
     rendering::set_uniform_value(renderer, final_blur_pass, "blur", src_tex);
 
 //     rendering::set_uniform_value(renderer, bloom, "bloom", renderer->render.bloom.active);

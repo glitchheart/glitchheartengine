@@ -2456,7 +2456,8 @@ static void render_post_processing_passes(RenderState &render_state, Renderer *r
 
         for (i32 i = 0; i < pass.post_processing.uniform_value_count; i++)
         {
-            set_uniform({}, pass, pass.post_processing.uniform_values[i], shader, {}, &texture_count, render_state, renderer);
+            rendering::UniformValue &value = pass.post_processing.uniform_values[i];
+            set_uniform({}, pass, value, shader, {}, &texture_count, render_state, renderer);
         }
         
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_state.quad_index_buffer);
