@@ -2761,10 +2761,8 @@ namespace rendering
         {
 			_MaterialPair mat_pairs[64];
 			i32 mat_pair_count = 0;
-
-            auto temp_block = begin_temporary_memory(&renderer->shader_arena);
             
-            char *source = read_file_into_buffer(&renderer->shader_arena, file);
+            char *source = read_file_into_buffer(file);
 			char *source_copy = source;
 
 			_OBJ_DataCounts data_counts = get_data_counts(source_copy);
@@ -2812,6 +2810,8 @@ namespace rendering
                     dir[index] = 0;
                     char *material_file_path = concat(dir, mtl_file_name, &renderer->temp_arena);
                     load_materials_from_mtl(shader_handle, mat_pairs, &mat_pair_count, material_file_path, renderer);
+
+					end_temporary_memory(temp_block);
                 }
                 else if (starts_with(buffer, "g")) // we're starting with new geometry
                 {
@@ -2823,8 +2823,7 @@ namespace rendering
                 }
             }
 
-            end_temporary_memory(temp_block);
-
+            free(source_copy);
             free(ptrs.vertices);
 			free(ptrs.final_vertices);
 			free(ptrs.normals);
