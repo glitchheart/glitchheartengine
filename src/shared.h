@@ -61,6 +61,24 @@ inline char* str_sep(char** s, const char* delim)
     return start;
 }
 
+static char *read_file_into_buffer(FILE *file, size_t *out_size = nullptr)
+{
+    fseek(file, 0L, SEEK_END);
+	long size = ftell(file);
+	fseek(file, 0L, SEEK_SET);
+
+	if(out_size)
+	{
+		*out_size = (size_t)size;
+	}
+	    
+	char* source = (char*)malloc((size_t)size + 1);
+	fread(source, sizeof(char), (size_t)size, file);
+    source[size] = '\0';
+
+	return source;
+}
+
 static char* read_file_into_buffer(MemoryArena* arena, FILE* file, size_t *out_size = nullptr)
 {
 	fseek(file, 0L, SEEK_END);
@@ -72,8 +90,9 @@ static char* read_file_into_buffer(MemoryArena* arena, FILE* file, size_t *out_s
 		*out_size = (size_t)size;
 	}
 	    
-	char* source = push_string(arena, (size_t)size);
+	char* source = push_string(arena, (size_t)size + 1);
 	fread(source, sizeof(char), (size_t)size, file);
+    source[size] = '\0';
 
 	return source;
 }
