@@ -410,7 +410,7 @@ static void update_particles(ParticleWorkData &work_data)
         if(active_particle_count == 0)
         {
             work_data.dead_particle_indices[work_data.dead_particle_count++] = main_index;
-            assert(work_data.dead_particle_count < info.max_particles / 4);
+            assert(work_data.dead_particle_count <= info.max_particles / 4);
             continue;
         }
         else

@@ -1081,7 +1081,7 @@ namespace math
             return this->v[idx];
         }
         
-        Mat4() : v{{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}} {}
+    Mat4() : Mat4(1.0f) {}
         Mat4(r32 m11, r32 m12, r32 m13, r32 m14, 
              r32 m21, r32 m22, r32 m23, r32 m24,
              r32 m31, r32 m32, r32 m33, r32 m34,
@@ -1338,6 +1338,7 @@ namespace math
     
     Quat rotate(Quat in, r32 a, Vec3 axis);
     Mat4 rotate(Mat4 m, r32 a, Vec3 axis);
+    Mat4 rotate(Mat4 m, Quat r);
     Quat conjugate(Quat q);
     r32 magnitude(Quat q);
     r32 get_angle_in_radians(Quat q);
@@ -1581,7 +1582,7 @@ namespace math
     
     inline Vec3 operator*(Mat4 m, const Vec3& v)
     {
-        Vec3 r = transform(m,Vec4(v,0.0f)).xyz;
+        Vec3 r = transform(m,Vec4(v,1.0f)).xyz;
         return r;
     }
     
@@ -1974,6 +1975,16 @@ namespace math
     {
         return (r32)::acos(v);
     }
+
+    /* inline r32 tan(r32 v) */
+    /* { */
+    /*     return(r32)::tan(v); */
+    /* } */
+
+    inline r32 atan(r32 v)
+    {
+        return(r32)::atan(v);
+    }
     
     inline i32 multiple_of_number(i32 n, i32 mul)
     {
@@ -2160,6 +2171,13 @@ namespace math
     {
         Mat4 result(1.0f);
         result = y_rotate(y_angle) * x_rotate(x_angle) * z_rotate(z_angle) * result;
+        return result;
+    }
+
+    Mat4 rotate(Mat4 m, r32 a, Vec3 axis)
+    {
+        Quat r = rotate(Quat(), a / DEGREE_IN_RADIANS, axis);
+        Mat4 result = rotate(m, r);
         return result;
     }
     

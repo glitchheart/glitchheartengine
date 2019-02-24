@@ -3312,10 +3312,9 @@ namespace scene
                     {
                     case scene::LightType::DIRECTIONAL:
                     {
+                        Camera &camera = scene.camera;
                         renderer->render.directional_lights[renderer->render.dir_light_count++] = light_comp.dir_light;
-                        math::Vec3 view_pos = -light_comp.dir_light.direction * 10;
-                        
-                        rendering::set_light_space_matrices(renderer, math::ortho(-20, 20, -20, 20, -20, 20.0f), view_pos, math::Vec3(0.0f));
+                        rendering::calculate_light_space_matrices(renderer, camera, light_comp.dir_light.direction);
                     }
                     
                     break;

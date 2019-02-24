@@ -993,12 +993,158 @@ namespace rendering
         renderer->render.final_framebuffer = framebuffer;
     }
 
-    static void set_light_space_matrices(Renderer *renderer, math::Mat4 projection_matrix, math::Vec3 view_position, math::Vec3 target)
+    // static void set_light_space_matrices(Renderer *renderer, math::Mat4 projection_matrix, math::Vec3 view_position, math::Vec3 target)
+    // {
+    //     math::Mat4 view_matrix = math::look_at_with_target(view_position, target);
+    //     renderer->render.shadow_view_position = view_position;
+    //     renderer->render.light_space_matrix = projection_matrix * view_matrix;
+    // }
+
+    static void set_light_space_matrices(Renderer *renderer, math::Mat4 projection_matrix, math::Mat4 view_matrix)
     {
-        math::Mat4 view_matrix = math::look_at_with_target(view_position, target);
-        renderer->render.shadow_view_position = view_position;
+        renderer->render.shadow_view_position = math::translation(view_matrix);
         renderer->render.light_space_matrix = projection_matrix * view_matrix;
+        renderer->render.light_view_matrix = view_matrix;
     }
+
+    
+    static math::Vec3 calculate_light_space_frustum_corner(math::Mat4 light_view_matrix, math::Vec3 start, math::Vec3 direction, r32 width)
+    {
+        math::Vec3 point = start + direction * width;
+        point = light_view_matrix * point;
+        return point;
+    }
+
+    static void calculate_frustum_vertices(Renderer* renderer, math::Mat4 light_view_matrix, Camera camera, math::Vec3* output)
+    {
+        assert(output);
+        r32 aspect_ratio = (r32)renderer->framebuffer_width / (r32)renderer->framebuffer_height;
+        r32 near_plane = -1.0f;
+        r32 far_plane = 20.0f;
+
+        math::Mat4 rotation(1.0f);
+        rotation = math::rotate(rotation, DEGREE_IN_RADIANS * -camera.yaw, math::Vec3(0, 1, 0));
+        rotation = math::rotate(rotation, DEGREE_IN_RADIANS * -camera.pitch, math::Vec3(1, 0, 0));
+                        
+        math::Vec3 cam_pos = camera.position;
+        math::Vec3 forward = math::Vec3(0, 0, 1);
+        forward = rotation * forward;
+        
+        math::Vec3 to_far = forward * far_plane;
+        math::Vec3 to_near = forward * near_plane;
+
+        math::Vec3 center_near = to_near + cam_pos;
+        math::Vec3 center_far = to_far + cam_pos;
+
+        r32 fov = DEGREE_IN_RADIANS * 80.0f;
+        r32 tan_fov = tan(fov);
+
+        r32 far_width = far_plane * tan_fov;
+        r32 near_width = near_plane * tan_fov;
+        
+        r32 far_height = far_width / aspect_ratio;
+        r32 near_height = near_width / aspect_ratio;
+        
+        math::Vec3 up = rotation * math::Vec3(0, 1, 0);
+        math::Vec3 right = math::cross(forward, up);
+        math::Vec3 down = -up;
+        math::Vec3 left = -right;
+        math::Vec3 far_top = center_far + up * far_height;
+        math::Vec3 far_bottom = center_far + down * far_height;
+        math::Vec3 near_top = center_near + up * near_height;
+        math::Vec3 near_bottom = center_near + down * near_height;
+
+        output[0] = calculate_light_space_frustum_corner(light_view_matrix, far_top, right, far_width);
+        output[1] = calculate_light_space_frustum_corner(light_view_matrix, far_top, left, far_width);
+        output[2] = calculate_light_space_frustum_corner(light_view_matrix, far_bottom, right, far_width);
+        output[3] = calculate_light_space_frustum_corner(light_view_matrix, far_bottom, left, far_width);
+        output[4] = calculate_light_space_frustum_corner(light_view_matrix, near_top, right, near_width);
+        output[5] = calculate_light_space_frustum_corner(light_view_matrix, near_top, left, near_width);
+        output[6] = calculate_light_space_frustum_corner(light_view_matrix, near_bottom, right, near_width);
+        output[7] = calculate_light_space_frustum_corner(light_view_matrix, near_bottom, left, near_width);
+    }
+
+    static void calculate_light_space_matrices(Renderer *renderer, Camera &camera, math::Vec3 direction)
+    {
+        direction = math::normalize(direction);
+        math::Vec3 view_pos = -direction * 2.0f;
+        // math::Mat4 light_view_matrix = math::look_at_with_target(view_pos, math::Vec3(0.0f));
+
+        math::Vec3 points[8];
+
+        math::Mat4 light_view_matrix = renderer->render.light_view_matrix;
+        
+        calculate_frustum_vertices(renderer, light_view_matrix, camera, points);
+
+        r32 min_x = points[0].x;
+        r32 min_y = points[0].y;
+        r32 min_z = points[0].z;
+        r32 max_x = points[0].x;
+        r32 max_y = points[0].y;
+        r32 max_z = points[0].z;
+                        
+        for(i32 i = 0; i < 8; i++)
+        {
+            math::Vec3 point = points[i];
+            if(point.x > max_x)
+            {
+                max_x = point.x;
+            }
+            else if(point.x < min_x)
+            {
+                min_x = point.x;
+            }
+                            
+            if(point.y > max_y)
+            {
+                max_y = point.y;
+            }
+            else if(point.y < min_y)
+            {
+                min_y = point.y;
+            }
+                            
+            if(point.z > max_z)
+            {
+                max_z = point.z;
+            }
+            else if(point.z < min_z)
+            {
+                min_z = point.z;
+            }
+        }
+
+        r32 center_x = (min_x + max_x) / 2.0f;
+        r32 center_y = (min_y + max_y) / 2.0f;
+        r32 center_z = (min_z + max_z) / 2.0f;
+        math::Vec3 center = math::Vec3(center_x, center_y, center_z);
+
+        // Expensive?
+        math::Mat4 inverted = math::inverse(light_view_matrix);
+        center = inverted * center;
+
+        r32 width = max_x - min_x;
+        r32 height = max_y - min_y;
+        r32 length = max_z - min_z;
+
+        math::Mat4 ortho_proj(1.0f);
+        ortho_proj.m11 = 2.0f / width;
+        ortho_proj.m22 = 2.0f / height;
+        ortho_proj.m33 = -2.0f / length;
+        ortho_proj.m44 = 1.0f;
+
+        center = -center;
+        r32 pitch = math::acos(math::length(math::Vec2(direction.x, direction.z)));
+        light_view_matrix = math::Mat4(1.0f);
+        light_view_matrix = math::rotate(light_view_matrix, pitch, math::Vec3(1, 0, 0));
+        r32 yaw = math::atan(direction.x / direction.z) / DEGREE_IN_RADIANS;
+        yaw = direction.z > 0.0f ? yaw - 180.0f : yaw;
+        yaw = DEGREE_IN_RADIANS * yaw;
+        light_view_matrix = math::rotate(light_view_matrix, -yaw, math::Vec3(0, 1, 0));
+        light_view_matrix = math::translate(light_view_matrix, center);
+        rendering::set_light_space_matrices(renderer, ortho_proj, light_view_matrix);
+    }
+
 
     static inline Material &get_material_instance(MaterialInstanceHandle handle, Renderer *renderer)
     {
