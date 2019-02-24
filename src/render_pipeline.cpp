@@ -1022,13 +1022,9 @@ namespace rendering
         r32 near_plane = -1.0f;
         r32 far_plane = 20.0f;
 
-        math::Mat4 rotation(1.0f);
-        rotation = math::rotate(rotation, DEGREE_IN_RADIANS * -camera.yaw, math::Vec3(0, 1, 0));
-        rotation = math::rotate(rotation, DEGREE_IN_RADIANS * -camera.pitch, math::Vec3(1, 0, 0));
-                        
         math::Vec3 cam_pos = camera.position;
         math::Vec3 forward = math::Vec3(0, 0, 1);
-        forward = rotation * forward;
+        forward = camera.forward;
         
         math::Vec3 to_far = forward * far_plane;
         math::Vec3 to_near = forward * near_plane;
@@ -1045,8 +1041,8 @@ namespace rendering
         r32 far_height = far_width / aspect_ratio;
         r32 near_height = near_width / aspect_ratio;
         
-        math::Vec3 up = rotation * math::Vec3(0, 1, 0);
-        math::Vec3 right = math::cross(forward, up);
+        math::Vec3 up = camera.up;
+        math::Vec3 right = camera.right;
         math::Vec3 down = -up;
         math::Vec3 left = -right;
         math::Vec3 far_top = center_far + up * far_height;
