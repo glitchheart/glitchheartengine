@@ -413,14 +413,6 @@ enum TextureFormat
     RED
 };
 
-struct ShadowMapMatrices
-{
-	math::Mat4 depth_rojection_matrix;
-	math::Mat4 depth_model_matrix;
-	math::Mat4 depth_view_matrix;
-	math::Mat4 depth_bias_matrix;
-};
-
 struct Resolution
 {
 	i32 width;
@@ -531,9 +523,6 @@ struct Renderer
         
         ParticleApi *api;
 	} particles;
-    
-	// Shadow map
-	ShadowMapMatrices shadow_map_matrices;
     
 	i32 current_camera_handle;
     
@@ -730,7 +719,7 @@ struct Renderer
         i32 point_light_count;
 
         math::Mat4 light_space_matrix;
-        
+        math::Mat4 light_view_matrix;
         math::Vec3 shadow_view_position;
 
         struct

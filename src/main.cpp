@@ -447,7 +447,8 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     rendering::set_bounding_box_shader(renderer, "../engine_assets/standard_shaders/bounding_box.shd");
     rendering::set_debug_line_shader(renderer, "../engine_assets/standard_shaders/line.shd");
     rendering::set_shadow_map_shader(renderer, "../engine_assets/standard_shaders/shadow_map.shd");
-    rendering::set_light_space_matrices(renderer, math::ortho(-15, 15, -15, 15, 1, 20.0f), math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0.0f, 0.0f, 0.0f));
+    // // rendering::set_light_space_matrices(renderer, math::ortho(-15, 15, -15, 15, 1, 20.0f), math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0.0f, 0.0f, 0.0f));
+    // rendering::calculate_light_space_matrices(renderer, );
 
     rendering::set_bloom_shader(renderer, "../engine_assets/standard_shaders/bloom.shd");
     rendering::set_blur_shader(renderer, "../engine_assets/standard_shaders/blur.shd");
