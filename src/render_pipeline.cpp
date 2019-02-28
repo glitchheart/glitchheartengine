@@ -1019,8 +1019,8 @@ namespace rendering
     {
         assert(output);
         r32 aspect_ratio = (r32)renderer->framebuffer_width / (r32)renderer->framebuffer_height;
-        r32 near_plane = -1.0f;
-        r32 far_plane = 20.0f;
+        r32 near_plane = 0.1f;
+        r32 far_plane = 10.0f;
 
         math::Vec3 cam_pos = camera.position;
         math::Vec3 forward = math::Vec3(0, 0, 1);
@@ -1063,8 +1063,6 @@ namespace rendering
     static void calculate_light_space_matrices(Renderer *renderer, Camera &camera, math::Vec3 direction)
     {
         direction = math::normalize(direction);
-        math::Vec3 view_pos = -direction * 2.0f;
-        // math::Mat4 light_view_matrix = math::look_at_with_target(view_pos, math::Vec3(0.0f));
 
         math::Vec3 points[8];
 
@@ -1110,6 +1108,8 @@ namespace rendering
             }
         }
 
+        max_z += 10.0f;
+
         r32 center_x = (min_x + max_x) / 2.0f;
         r32 center_y = (min_y + max_y) / 2.0f;
         r32 center_z = (min_z + max_z) / 2.0f;
@@ -1130,14 +1130,14 @@ namespace rendering
         ortho_proj.m44 = 1.0f;
 
         center = -center;
-        r32 pitch = math::acos(math::length(math::Vec2(direction.x, direction.z)));
-        light_view_matrix = math::Mat4(1.0f);
-        light_view_matrix = math::rotate(light_view_matrix, pitch, math::Vec3(1, 0, 0));
-        r32 yaw = math::atan(direction.x / direction.z) / DEGREE_IN_RADIANS;
-        yaw = direction.z > 0.0f ? yaw - 180.0f : yaw;
-        yaw = DEGREE_IN_RADIANS * yaw;
-        light_view_matrix = math::rotate(light_view_matrix, -yaw, math::Vec3(0, 1, 0));
-        light_view_matrix = math::translate(light_view_matrix, center);
+        // r32 pitch = math::acos(math::length(math::Vec2(direction.x, direction.z)));
+        // light_view_matrix = math::Mat4(1.0f);
+        // light_view_matrix = math::rotate(light_view_matrix, pitch, math::Vec3(1, 0, 0));
+        // r32 yaw = math::atan(direction.x / direction.z) / DEGREE_IN_RADIANS;
+        // yaw = direction.z > 0.0f ? yaw - 180.0f : yaw;
+        // yaw = DEGREE_IN_RADIANS * yaw;
+        // light_view_matrix = math::rotate(light_view_matrix, -yaw, math::Vec3(0, 1, 0));
+        light_view_matrix = math::look_at(direction, direction * 10.0f - center);
         rendering::set_light_space_matrices(renderer, ortho_proj, light_view_matrix);
     }
 
