@@ -738,6 +738,8 @@ struct Renderer
         rendering::FramebufferHandle final_framebuffer;
         rendering::RenderPassHandle emissive_pass;
         rendering::RenderPassHandle standard_pass;
+        rendering::RenderPassHandle shadow_pass;
+        rendering::MaterialHandle shadow_map_material;
         
 	} render;
 };

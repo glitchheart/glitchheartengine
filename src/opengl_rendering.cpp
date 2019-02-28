@@ -763,12 +763,7 @@ static void create_shadow_map(Framebuffer &framebuffer, i32 width, i32 height)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
-    float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, framebuffer.shadow_map_handle, 0);
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
@@ -962,8 +957,6 @@ static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
     render_state->perm_arena = perm_arena;
 
     glfwGetFramebufferSize(render_state->window, &render_state->framebuffer_width, &render_state->framebuffer_height);
-
-    create_shadow_map(render_state->shadow_map_buffer, 2048, 2048);
 
     setup_quad(*render_state, render_state->perm_arena);
     
@@ -2053,6 +2046,8 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
 
     i32 texture_count = 0;
 
+    assert(gl_shader.location_count == material.uniform_value_count);
+    
     for (i32 i = 0; i < material.uniform_value_count; i++)
     {
         rendering::UniformValue &uniform_value = material.uniform_values[i];
@@ -2068,7 +2063,6 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
                 {
                     rendering::UniformValue &value = entry.values[k];
                     set_uniform(transform, render_pass, value, gl_shader, camera, &texture_count, render_state, renderer);
-
                 }
             }
         }
@@ -2341,12 +2335,19 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
             {
                 rendering::RenderCommand &command = pass.commands.render_commands[i];
                 rendering::Material &material = get_material_instance(command.material, renderer);
-
+                ShaderGL *shader = &render_state.gl_shaders[command.pass.shader_handle.handle];
+                
                 switch(command.type)
                 {
                 case rendering::RenderCommandType::BUFFER:
                 {
-                    render_buffer(command.buffer.primitive_type, command.transform, command.buffer.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
+                    if(pass_index == renderer->render.shadow_pass.handle - 1)
+                    {
+                        material = renderer->render.materials[renderer->render.shadow_map_material.handle];
+                        shader = nullptr;
+                    }
+                    
+                    render_buffer(command.buffer.primitive_type, command.transform, command.buffer.buffer, pass, render_state, renderer, material, pass.camera, command.count, shader);
                 }
                 break;
                 case rendering::RenderCommandType::LINE:
@@ -2499,7 +2500,7 @@ static void render(RenderState &render_state, Renderer *renderer, r64 delta_time
     if (should_render)
     {
         // Render through all passes
-        render_shadows(render_state, renderer, render_state.shadow_map_buffer);
+        // render_shadows(render_state, renderer, render_state.shadow_map_buffer);
         render_all_passes(render_state, renderer);
         render_post_processing_passes(render_state, renderer);
         render_ui_pass(render_state, renderer);
