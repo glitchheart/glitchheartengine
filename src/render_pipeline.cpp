@@ -233,6 +233,7 @@ namespace rendering
     static void set_shadow_map_shader(Renderer *renderer, const char *path)
     {
         renderer->render.shadow_map_shader = load_shader(renderer, path);
+        renderer->render.shadow_map_material = rendering::create_material(renderer, renderer->render.shadow_map_shader);
     }
 
     static void set_wireframe_shader(Renderer *renderer, const char *path)
@@ -1020,11 +1021,11 @@ namespace rendering
         assert(output);
         r32 aspect_ratio = (r32)renderer->framebuffer_width / (r32)renderer->framebuffer_height;
         r32 near_plane = 0.1f;
-        r32 far_plane = 10.0f;
+        r32 far_plane = 20.0f;
 
         math::Vec3 cam_pos = camera.position;
-        math::Vec3 forward = math::Vec3(0, 0, 1);
-        forward = camera.forward;
+
+        math::Vec3 forward = camera.forward;
         
         math::Vec3 to_far = forward * far_plane;
         math::Vec3 to_near = forward * near_plane;
@@ -1129,7 +1130,8 @@ namespace rendering
         ortho_proj.m33 = -2.0f / length;
         ortho_proj.m44 = 1.0f;
 
-        center = -center;
+        // center = -center;
+        center = math::Vec3(-center.x, center.y, -center.z);
         // r32 pitch = math::acos(math::length(math::Vec2(direction.x, direction.z)));
         // light_view_matrix = math::Mat4(1.0f);
         // light_view_matrix = math::rotate(light_view_matrix, pitch, math::Vec3(1, 0, 0));
@@ -3816,15 +3818,6 @@ namespace rendering
 
     static void push_instanced_buffer_to_render_pass(Renderer *renderer, i32 count, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, ShaderHandle shader_handle, RenderPassHandle render_pass_handle)
     {
-    }
-
-    static void push_instanced_buffer_to_shadow_pass(Renderer *renderer, i32 count, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle)
-    {
-        ShadowCommand shadow_command = {};
-        shadow_command.material = material_instance_handle;
-        shadow_command.count = count;
-        shadow_command.buffer = buffer_handle;
-        renderer->render.shadow_commands[renderer->render.shadow_command_count++] = shadow_command;
     }
 
     static math::Vec2 get_relative_size(Renderer *renderer, math::Vec2 size, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)

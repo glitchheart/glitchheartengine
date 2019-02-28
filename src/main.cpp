@@ -454,9 +454,10 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     rendering::set_blur_shader(renderer, "../engine_assets/standard_shaders/blur.shd");
     rendering::set_hdr_shader(renderer, "../engine_assets/standard_shaders/hdr.shd");
 
+    
     rendering::ShaderHandle blur_shader = renderer->render.blur_shader;
     rendering::ShaderHandle bloom_shader = renderer->render.bloom_shader;
-    
+
     // Create the framebuffers
     rendering::FramebufferInfo standard_resolve_info = rendering::generate_framebuffer_info();
     standard_resolve_info.width = renderer->framebuffer_width;
@@ -481,10 +482,21 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     rendering::RenderPassHandle standard = rendering::create_render_pass(STANDARD_PASS, standard_framebuffer, renderer);
     
     renderer->render.standard_pass = standard;
-
+   
     //rendering::RenderPassHandle read_draw_pass = rendering::create_render_pass("read_draw", standard_framebuffer, renderer);
 
     rendering::set_read_draw_render_passes(standard, standard_resolve, renderer);
+
+    // Create shadow pass
+    rendering::FramebufferInfo shadow_pass_info = rendering::generate_framebuffer_info();
+    shadow_pass_info.width = 2048;
+    shadow_pass_info.height = 2048;
+
+    rendering::add_depth_attachment(rendering::AttachmentType::TEXTURE, 0, shadow_pass_info);
+
+    rendering::FramebufferHandle shadow_fbo = rendering::create_framebuffer(shadow_pass_info, renderer);
+    rendering::RenderPassHandle shadow_pass = rendering::create_render_pass("shadow_pass", shadow_fbo, renderer);
+    renderer->render.shadow_pass = shadow_pass;
     
     // Final framebuffer
     rendering::FramebufferInfo final_info = rendering::generate_framebuffer_info();
