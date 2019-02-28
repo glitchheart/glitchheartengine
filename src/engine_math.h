@@ -2180,7 +2180,7 @@ namespace math
         Mat4 result = rotate(m, r);
         return result;
     }
-    
+
     inline Quat rotate(Quat in, r32 a, Vec3 axis)
     {
         Quat result(in);

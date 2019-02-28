@@ -35,7 +35,8 @@ static Camera create_camera(math::Vec3 position, math::Vec3 target, math::Mat4 p
     
     camera.forward = math::normalize(target - position);
     camera.right = math::normalize(math::cross(math::Vec3(0, 1, 0), camera.forward));
-    camera.up = math::cross(camera.forward, camera.right);
+    camera.up = math::normalize(math::cross(camera.forward, camera.right));
+    camera.right = math::cross(camera.up, camera.forward);
     
     camera.yaw = atan2(camera.forward.x, camera.forward.z) / DEGREE_IN_RADIANS;
     camera.pitch = asin(camera.forward.y) / DEGREE_IN_RADIANS;
