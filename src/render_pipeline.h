@@ -672,11 +672,18 @@ namespace rendering
     };
     
 #define STANDARD_PASS "STANDARD_PASS"
+#define SHADOW_PASS "SHADOW_PASS"
 
     enum class RenderPassType
     {
         NORMAL,
         READ_DRAW
+    };
+
+    enum RenderPassSettings
+    {
+        BACKFACE_CULLING = (1 << 0),
+        FRONTFACE_CULLING = (1 << 1)
     };
     
     // @Note: When rendering a scene, multiple render passes can be used.
@@ -689,6 +696,7 @@ namespace rendering
     {
         char name[32];
         RenderPassType type;
+        u64 settings;
 
         b32 has_clear_color;
         math::Rgba clear_color;

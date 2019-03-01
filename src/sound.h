@@ -1,6 +1,9 @@
 #ifndef SOUND_H
 #define SOUND_H
 
+namespace sound
+{
+
 struct SoundHandle
 {
     i32 handle;
@@ -217,6 +220,8 @@ struct SoundSystem
     r32 music_volume;
     r32 master_volume;
 };
+
+}
 
 
 #endif

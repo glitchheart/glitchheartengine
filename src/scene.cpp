@@ -2216,6 +2216,12 @@ namespace scene
                         else if(starts_with(buffer, "cast shadows"))
                         {
                             sscanf(buffer, "cast shadows: %d\n", &templ->render.casts_shadows);
+
+                            if(templ->render.casts_shadows)
+                            {
+                                strncpy(templ->render.render_pass_names[templ->render.render_pass_count], SHADOW_PASS, strlen(SHADOW_PASS) + 1);
+                                templ->render.shader_handles[templ->render.render_pass_count++] = scene.renderer->render.shadow_map_shader;
+                            }
                         }
                         else if(starts_with(buffer, "obj"))
                         {
@@ -2610,7 +2616,7 @@ namespace scene
             render.bounding_box_buffer = templ.render.bounding_box_buffer;
             render.material_handle = rendering::create_material_instance(scene.renderer, templ.render.material_handle);
             render.bounding_box_enabled = false;
-                
+            
             if(scene.loaded)
             {
                 // We have to look for the right instance buffers or allocate them
@@ -2670,7 +2676,7 @@ namespace scene
             render.casts_shadows = templ.render.casts_shadows;
             render.mesh_scale = templ.render.mesh_scale;
             render.bounding_box = templ.render.bounding_box;
-                
+            
             for(i32 i = 0; i < templ.render.render_pass_count; i++)
             {
                 add_to_render_pass(templ.render.render_pass_names[i], templ.render.shader_handles[i], render, scene.renderer);
@@ -3165,8 +3171,6 @@ namespace scene
     SET_MAT_ARRAY_VALUE(rendering::TextureHandle)
 
 
-#define STANDARD_PASS_HANDLE { 1 }
-
     static void recompute_transforms(TransformComponent& root, Scene& scene)
     {
         rendering::recompute_transform(root.transform);
@@ -3383,7 +3387,7 @@ namespace scene
                     {
                         if(render.wireframe_enabled)
                         {
-                            rendering::push_buffer_to_render_pass(renderer, render.buffer_handle, renderer->render.wireframe_material, transform.transform, renderer->render.wireframe_shader, render.render_passes[0], rendering::CommandType::NO_DEPTH);
+                            rendering::push_buffer_to_render_pass(renderer, render.buffer_handle, renderer->render.wireframe_material, transform.transform, renderer->render.wireframe_shader, renderer->render.standard_pass, rendering::CommandType::NO_DEPTH);
                         }
 
                         if(render.bounding_box_enabled && render.bounding_box_buffer.handle != 0)
@@ -3395,7 +3399,7 @@ namespace scene
                             rendering::Transform box_transform = rendering::create_transform(position, size, math::Quat());
                             box_transform.model = transform.transform.model * box_transform.model;
 
-                            rendering::push_buffer_to_render_pass(renderer, render.bounding_box_buffer, renderer->render.bounding_box_material, box_transform, renderer->render.bounding_box_shader, render.render_passes[0], rendering::CommandType::WITH_DEPTH, rendering::PrimitiveType::LINE_LOOP);
+                            rendering::push_buffer_to_render_pass(renderer, render.bounding_box_buffer, renderer->render.bounding_box_material, box_transform, renderer->render.bounding_box_shader, renderer->render.standard_pass, rendering::CommandType::WITH_DEPTH, rendering::PrimitiveType::LINE_LOOP);
                         }
                         
                         BatchedCommand &batch_command = command->commands[command->count];
@@ -3534,16 +3538,11 @@ namespace scene
                 }
             }
         
-            // Push the command to the shadow buffer if it casts shadows
-            if(first_command.casts_shadows)
-            {
-                rendering::push_instanced_buffer_to_shadow_pass(renderer, queued_command.count, queued_command.buffer_handle, first_command.material_handle);
-            }
-        
             // Push the command to the correct render passes
             for (i32 pass_index = 0; pass_index < first_command.pass_count; pass_index++)
             {
-                rendering::push_instanced_buffer_to_render_pass(renderer, queued_command.count, queued_command.buffer_handle, first_command.material_handle, first_command.shader_handles[pass_index], first_command.passes[pass_index], queued_command.ignore_depth ? rendering::CommandType::NO_DEPTH : rendering::CommandType::WITH_DEPTH);
+                rendering::push_instanced_buffer_to_render_pass(renderer, queued_command.count, queued_command.buffer_handle, first_command.material_handle,
+                                                                first_command.shader_handles[pass_index], first_command.passes[pass_index], queued_command.ignore_depth ? rendering::CommandType::NO_DEPTH : rendering::CommandType::WITH_DEPTH);
             }
         }
     
@@ -3555,7 +3554,7 @@ namespace scene
 
             rendering::BufferHandle buffer = system.attributes.buffer.handle != 0 ? system.attributes.buffer : (system.attributes.texture_handle.handle != 0 ? renderer->particles.textured_quad_buffer : renderer->particles.quad_buffer);
 
-            rendering::push_instanced_buffer_to_render_pass(renderer, system.particle_count, buffer, system.material_handle, particle_material.shader, rendering::get_render_pass_handle_for_name(STANDARD_PASS, renderer), rendering::CommandType::WITH_DEPTH);
+            rendering::push_instanced_buffer_to_render_pass(renderer, system.particle_count, buffer, system.material_handle, particle_material.shader, renderer->render.standard_pass, rendering::CommandType::WITH_DEPTH);
         }
 
         draw_gizmos(scene.scene_manager);
