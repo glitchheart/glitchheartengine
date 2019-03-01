@@ -342,7 +342,6 @@ static void update_sound_commands(SoundDevice *device, sound::SoundSystem *syste
             FMOD_Channel_IsPlaying(channel, &is_playing);
             if(is_playing)
             {
-                debug("i: %d\n", i);
                 FMOD_Channel_SetVolume(channel, 0.0f// source.channel_attributes.volume
                                        );
                 // set_channel_attributes(channel, source.channel_attributes, system, device, source.handle.handle);

@@ -385,6 +385,7 @@ namespace rendering
     struct OBJ_ObjectData
     {
         rendering::MaterialHandle material;
+        rendering::ShaderHandle shader;
         rendering::BufferHandle buffer;
         math::Vec3 mesh_scale;
         math::BoundingBox bounding_box;

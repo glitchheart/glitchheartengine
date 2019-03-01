@@ -2065,6 +2065,7 @@ namespace scene
         new_template.render.material_handle = obj_data.material;
         new_template.render.mesh_scale = obj_data.mesh_scale;
         new_template.render.bounding_box = obj_data.bounding_box;
+        new_template.render.shader_handles[0] = obj_data.shader;
 
         template_state.templates[template_state.template_count++] = new_template;
         return { template_state.template_count };
@@ -2181,7 +2182,8 @@ namespace scene
                                     // // Add the pass information
                                     strncpy(templ->render.render_pass_names[0], STANDARD_PASS, strlen(STANDARD_PASS) + 1);
                                     templ->render.shader_handles[0] = shader_with_uvs_handle;
-                                }
+									templ->render.render_pass_count = 1;
+								}
                                 else if(starts_with(buffer, "shd::no_uvs:"))
                                 {
                                     char shader_file[256];
@@ -2190,6 +2192,7 @@ namespace scene
                                     
                                     strncpy(templ->render.render_pass_names[0], STANDARD_PASS, strlen(STANDARD_PASS) + 1);
                                     templ->render.shader_handles[0] = shader_no_uvs_handle;
+									templ->render.render_pass_count = 1;
                                 }
                                 else if(starts_with(buffer, "shd:"))
                                 {
