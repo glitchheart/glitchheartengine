@@ -736,6 +736,7 @@ struct Renderer
         } hdr;
 
         rendering::FramebufferHandle final_framebuffer;
+        rendering::FramebufferHandle shadow_framebuffer;
         rendering::RenderPassHandle emissive_pass;
         rendering::RenderPassHandle standard_pass;
         rendering::RenderPassHandle shadow_pass;
