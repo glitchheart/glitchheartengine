@@ -3,8 +3,22 @@
 
 #define TIME_UNIT FMOD_TIMEUNIT_MS
 
+struct SoundDevice;
+
+struct SoundWorkData
+{
+    SoundDevice *device;
+    char path[256];
+    FMOD_SOUND* sound;
+};
+
 struct SoundDevice
 {
+    WorkQueue *work_queue;
+    SoundWorkData* work_data;
+    i32 thread_info_count;
+    ThreadInfo *thread_infos;
+    
     b32 is_initialized;
     
     FMOD_SYSTEM* system;
