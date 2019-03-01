@@ -2416,12 +2416,31 @@ namespace rendering
     {
         char name[32];
         rendering::MaterialHandle material;
+        rendering::ShaderHandle shader;
     };
 
-    
-    static void load_materials_from_mtl(rendering::ShaderHandle shader_handle, _MaterialPair *pairs, i32 *mat_pair_count, const char *file_path, Renderer *renderer)
+    static b32 mtl_has_texture(char *source)
     {
-         size_t index = 0;
+        char buffer[256];
+
+        while (read_line(buffer, 256, &source))
+        {
+            if(starts_with(buffer, "newmtl"))
+            {
+                return false;
+            }
+            if(starts_with(buffer, "map_Kd"))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+    
+    static void load_materials_from_mtl(rendering::ShaderHandle shader_no_uvs_handle, rendering::ShaderHandle shader_with_uvs_handle, _MaterialPair *pairs, i32 *mat_pair_count, const char *file_path, Renderer *renderer)
+    {
+        size_t index = 0;
         for (size_t i = 0; i < strlen(file_path); i++)
         {
             if (file_path[i] == '/')
@@ -2438,28 +2457,45 @@ namespace rendering
         dir[index] = 0;
         
         FILE *file = fopen(file_path, "r");
-
+        
         if(file)
         {
             char buffer[256];
 
             _MaterialPair *current = nullptr;
             Material *material = nullptr;
+            rendering::ShaderHandle shader_handle = { -1 };
+            char *source = read_file_into_buffer(file);
             
-            while (fgets(buffer, sizeof(buffer), file))
+            while (read_line(buffer, 256, &source))
             {
                 if (starts_with(buffer, "newmtl"))
                 {
+                    char *ptr = source;
+                    
+                    b32 has_texture = mtl_has_texture(ptr);
+
+                    if(has_texture)
+                    {
+                        shader_handle = shader_with_uvs_handle;
+                    }
+                    else
+                    {
+                        shader_handle = shader_no_uvs_handle;
+                    }
+                    
                     MaterialHandle handle = create_material(renderer, shader_handle);
                     material = &renderer->render.materials[handle.handle];
 
                     _MaterialPair pair;
                     pair.material = handle;
                     sscanf(buffer, "newmtl %[^\n]", pair.name);
+            
 
                     pairs[(*mat_pair_count)++] = pair;
                     
                     current = &pairs[*mat_pair_count - 1];
+                    current->shader = shader_handle;
                     
                     if (UniformValue *u = mapping(*material, UniformMappingType::DIFFUSE_COLOR))
                     {
@@ -2657,6 +2693,7 @@ namespace rendering
                         if(strcmp(pair.name, name) == 0)
                         {
                             obj_data->material = pair.material;
+                            obj_data->shader = pair.shader;
                             break;
                         }
                     }
@@ -2697,11 +2734,11 @@ namespace rendering
                 math::Vec3i normal_indices = {};
                 math::Vec3i uv_indices = {};
 
-                if (with_uvs && vertex_ptrs->normal_count > 0)
+                if (with_uvs && with_normals)
                 {
                     sscanf(buffer, "f %hd/%d/%d %hd/%d/%d %hd/%d/%d", &face.indices[0], &uv_indices.x, &normal_indices.x, &face.indices[1], &uv_indices.y, &normal_indices.y, &face.indices[2], &uv_indices.z, &normal_indices.z);
                 }
-                else if (vertex_ptrs->uv_count > 0)
+                else if (with_uvs)
                 {
                     sscanf(buffer, "f %hd/%d %hd/%d %hd/%d", &face.indices[0], &uv_indices.x, &face.indices[1], &uv_indices.y, &face.indices[2], &uv_indices.z);
                 }
@@ -2846,7 +2883,7 @@ namespace rendering
 		return counts;
 	}
 
-	static OBJ_ObjectInfo load_obj(Renderer *renderer, const char *file_path, rendering::ShaderHandle shader_handle)
+	static OBJ_ObjectInfo load_obj(Renderer *renderer, const char *file_path, rendering::ShaderHandle shader_no_uvs_handle, rendering::ShaderHandle shader_with_uvs_handle)
 	{
 		OBJ_ObjectInfo obj_info = {};
 		
@@ -2911,7 +2948,7 @@ namespace rendering
 
                     dir[index] = 0;
                     char *material_file_path = concat(dir, mtl_file_name, &renderer->temp_arena);
-                    load_materials_from_mtl(shader_handle, mat_pairs, &mat_pair_count, material_file_path, renderer);
+                    load_materials_from_mtl(shader_no_uvs_handle, shader_with_uvs_handle, mat_pairs, &mat_pair_count, material_file_path, renderer);
 
 					end_temporary_memory(temp_block);
                 }
