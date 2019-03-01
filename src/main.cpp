@@ -863,13 +863,13 @@ int main(int argc, char **args)
     make_queue(&fmod_queue, 1, &fmod_thread);
     platform.add_entry(&fmod_queue, init_audio_fmod_thread, &sound_device);
 
-    SoundSystem sound_system = {};
+    sound::SoundSystem sound_system = {};
     sound_system.command_count = 0;
     sound_system.sound_count = 0;
-    sound_system.commands = push_array(&sound_system.arena, global_max_sound_commands, SoundCommand);
-    sound_system.sounds = push_array(&sound_system.arena, global_max_sounds, SoundHandle);
-    sound_system.audio_sources = push_array(&sound_system.arena, global_max_audio_sources, AudioSource);
-    sound_system.channel_groups = push_array(&sound_system.arena, global_max_channel_groups, ChannelGroup);
+    sound_system.commands = push_array(&sound_system.arena, global_max_sound_commands, sound::SoundCommand);
+    sound_system.sounds = push_array(&sound_system.arena, global_max_sounds, sound::SoundHandle);
+    sound_system.audio_sources = push_array(&sound_system.arena, global_max_audio_sources, sound::AudioSource);
+    sound_system.channel_groups = push_array(&sound_system.arena, global_max_channel_groups, sound::ChannelGroup);
     sound_system.sfx_volume = core.config_data.sfx_volume;
     sound_system.music_volume = core.config_data.music_volume;
     sound_system.master_volume = core.config_data.master_volume;
