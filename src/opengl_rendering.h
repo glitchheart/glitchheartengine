@@ -6,6 +6,7 @@
 struct ShaderGL
 {
 	GLuint program;
+    int handle;
 	
 	GLuint vert_program;
     GLuint geo_program;

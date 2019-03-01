@@ -294,7 +294,12 @@ extern PlatformApi platform;
 
 struct MemoryArena;
 struct InputController;
-struct SoundSystem;
+
+namespace sound
+{
+    struct SoundSystem;
+}
+
 struct Renderer;
 struct RenderState;
 
@@ -310,7 +315,7 @@ struct Core
     Renderer* renderer;
     InputController* input_controller;
     TimerController* timer_controller;
-    SoundSystem* sound_system;
+    sound::SoundSystem* sound_system;
     scene::SceneManager *scene_manager;
     r64 delta_time;
     r64 current_time;
