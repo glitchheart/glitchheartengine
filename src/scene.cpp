@@ -2065,6 +2065,7 @@ namespace scene
         new_template.render.material_handle = obj_data.material;
         new_template.render.mesh_scale = obj_data.mesh_scale;
         new_template.render.bounding_box = obj_data.bounding_box;
+        new_template.render.shader_handles[0] = obj_data.shader;
 
         template_state.templates[template_state.template_count++] = new_template;
         return { template_state.template_count };
@@ -2079,7 +2080,8 @@ namespace scene
 		rendering::OBJ_ObjectInfo obj_info;
         obj_info.object_count = 0;
         
-        rendering::ShaderHandle shader_handle = { 0 };
+        rendering::ShaderHandle shader_with_uvs_handle = { 0 };
+        rendering::ShaderHandle shader_no_uvs_handle = { 0 };
         
         FILE *file = fopen(path, "r");
         
@@ -2149,7 +2151,7 @@ namespace scene
                     
                     while(fgets(buffer, 256, file) && !starts_with(buffer, "-"))
                     {
-                        if(starts_with(buffer, "shd:"))
+                        if(starts_with(buffer, "shd"))
                         {
                             if(starts_with(buffer, "shd_pass"))
                             {
@@ -2171,14 +2173,39 @@ namespace scene
                             }
                             else
                             {
-                                char shader_file[256];
-                                sscanf(buffer, "shd: %s", shader_file);
+                                if(starts_with(buffer, "shd::uvs:"))
+                                {
+                                    char shader_file[256];
+                                    sscanf(buffer, "shd::uvs: %s", shader_file);
+                                    shader_with_uvs_handle = rendering::load_shader(scene.renderer, shader_file);
+
+                                    // // Add the pass information
+                                    strncpy(templ->render.render_pass_names[0], STANDARD_PASS, strlen(STANDARD_PASS) + 1);
+                                    templ->render.shader_handles[0] = shader_with_uvs_handle;
+									templ->render.render_pass_count = 1;
+								}
+                                else if(starts_with(buffer, "shd::no_uvs:"))
+                                {
+                                    char shader_file[256];
+                                    sscanf(buffer, "shd::no_uvs: %s", shader_file);
+                                    shader_no_uvs_handle = rendering::load_shader(scene.renderer, shader_file);
+                                    
+                                    strncpy(templ->render.render_pass_names[0], STANDARD_PASS, strlen(STANDARD_PASS) + 1);
+                                    templ->render.shader_handles[0] = shader_no_uvs_handle;
+									templ->render.render_pass_count = 1;
+                                }
+                                else if(starts_with(buffer, "shd:"))
+                                {
+                                    char shader_file[256];
+                                    sscanf(buffer, "shd: %s", shader_file);
                                 
-                                shader_handle = rendering::load_shader(scene.renderer, shader_file);
-                                
-                                // Add the pass information
-                                strncpy(templ->render.render_pass_names[templ->render.render_pass_count], STANDARD_PASS, strlen(STANDARD_PASS) + 1);
-                                templ->render.shader_handles[templ->render.render_pass_count++] = shader_handle;
+                                    shader_no_uvs_handle = rendering::load_shader(scene.renderer, shader_file);
+                                    shader_with_uvs_handle = rendering::load_shader(scene.renderer, shader_file);
+                                    
+                                    // Add the pass information
+                                    strncpy(templ->render.render_pass_names[templ->render.render_pass_count], STANDARD_PASS, strlen(STANDARD_PASS) + 1);
+                                    templ->render.shader_handles[templ->render.render_pass_count++] = shader_no_uvs_handle;
+                                }
                             }
                         }
                         else if(starts_with(buffer, "ignore depth"))
@@ -2204,7 +2231,7 @@ namespace scene
                             char obj_file[256];
                             sscanf(buffer, "obj: %s", obj_file);
                            
-                            obj_info = rendering::load_obj(scene.renderer, obj_file, shader_handle);
+                            obj_info = rendering::load_obj(scene.renderer, obj_file, shader_no_uvs_handle, shader_with_uvs_handle);
                             templ->render.buffer_handle = obj_info.data[0].buffer;
                             templ->render.material_handle = obj_info.data[0].material;
 
@@ -2235,7 +2262,7 @@ namespace scene
                         {
 							if (templ->render.material_handle.handle == -1)
 							{
-								templ->render.material_handle = create_material(scene.renderer, shader_handle);
+								templ->render.material_handle = create_material(scene.renderer, shader_with_uvs_handle);
 							}
 
                             char mtl_file[256];
@@ -2538,7 +2565,7 @@ namespace scene
             log_error("ERROR in template loading: Could not find file %s", path);
             assert(false);
         }
-
+        
         if(obj_info.object_count > 1)
         {
             for(i32 i = 0; i < obj_info.object_count; i++)
