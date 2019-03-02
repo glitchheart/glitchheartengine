@@ -1090,6 +1090,12 @@ namespace math
         m21(m21), m22(m22), m23(m23), m24(m24),
         m31(m31), m32(m32), m33(m33), m34(m34),
         m41(m41), m42(m42), m43(m43), m44(m44) {}
+
+    Mat4(Vec4 v1, Vec4 v2, Vec4 v3, Vec4 v4) :
+            m11(v1.x), m12(v1.y), m13(v1.z), m14(v1.w),
+            m21(v2.x), m22(v2.y), m23(v2.z), m24(v2.w),
+            m31(v3.x), m32(v3.y), m33(v3.z), m34(v3.w),
+            m41(v4.x), m42(v4.y), m43(v4.z), m44(v4.w) {}
         
         Mat4(r32 m0[4], r32 m1[4], r32 m2[4], r32 m3[4]) : 
         m0 {m0[0],m0[1],m0[2],m0[3]}, 
@@ -2115,7 +2121,6 @@ namespace math
     inline Mat4 translate(Mat4 in, Vec3 translation)
     {
         Mat4 result(1.0f);
-        
         result[0][3] += translation.x;
         result[1][3] += translation.y;
         result[2][3] += translation.z;
@@ -2299,7 +2304,7 @@ namespace math
         Mat4 result(1.0f);
         result.m11 = 2.0f/(right - left);
         result.m22 = 2.0f/(top - bottom);
-        result.m33 = (-2.0f)/(far - near);
+        result.m33 = -2.0f/(far - near);
         result.m34 = -((far + near)/(far - near));
         result.m14 = -((right + left)/(right - left));
         result.m24 = -((top + bottom)/(top - bottom));
@@ -2311,14 +2316,14 @@ namespace math
     inline Mat4 look_at(Vec3 forward, Vec3 eye)
     {
         Vec3 right = normalize(cross(Vec3(0, 1, 0), forward));
-        Vec3 up = cross(forward, right);
+        Vec3 up = normalize(cross(forward, right));
         
         Mat4 result(right.x,    right.y,     right.z,    0,
                     up.x,       up.y,        up.z,       0,
                     -forward.x, -forward.y,  -forward.z, 0,
                     0,          0,           0,          1);
         
-        auto translation = result * Vec4(-eye, 1.0f);
+        Vec4 translation = result * Vec4(-eye, 1.0f);
         result[0][3] = translation.x;
         result[1][3] = translation.y;
         result[2][3] = translation.z;

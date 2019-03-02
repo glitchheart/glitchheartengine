@@ -164,7 +164,7 @@ static void reset_callbacks(AnimationNode& node)
     }
 }
 
-static void tick_animation_controllers(Renderer *renderer, SoundSystem* sound_system, InputController* input_controller, TimerController& timer_controller,  r64 delta_time)
+static void tick_animation_controllers(Renderer *renderer, sound::SoundSystem* sound_system, InputController* input_controller, TimerController& timer_controller,  r64 delta_time)
 {
     for(i32 index = 0; index < renderer->animation_controller_count; index++)
     {
