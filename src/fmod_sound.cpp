@@ -16,8 +16,6 @@ void fmod_error_check(FMOD_RESULT result)
 static void load_sound_async(WorkQueue *work_queue, void* data_ptr)
 {
     SoundWorkData *work_data = (SoundWorkData*)data_ptr;
-    debug("path: %s\n", work_data->path);
-    //@Incomplete: Find out the exact parameters for a sound
     auto result = FMOD_System_CreateSound(work_data->device->system, work_data->path, FMOD_NONBLOCKING, nullptr, &work_data->sound);
     if(result != FMOD_OK)
     {
@@ -30,13 +28,8 @@ static void load_sound(const char* file_path, SoundDevice* sound_device, SoundWo
     assert(sound_device->sound_count + 1 < global_max_sounds);
     FMOD_SOUND* sound = nullptr;
     work_data.sound = sound;
-    platform.add_entry(sound_device->work_queue, load_sound_async, &work_data);
-    // //@Incomplete: Find out the exact parameters for a sound
-    // auto result = FMOD_System_CreateSound(sound_device->system, file_path, FMOD_DEFAULT, nullptr, &sound_device->sounds[sound_device->sound_count++]);
-    // if(result != FMOD_OK)
-    // {
-    //     FMOD_DEBUG(result);
-    // }
+    sound_device->threading.sounds_being_loaded++;
+    platform.add_entry(sound_device->threading.work_queue, load_sound_async, &work_data);
 }
 
 static void cleanup_sound(SoundDevice* sound_device)
@@ -308,7 +301,7 @@ static void update_sound_commands(SoundDevice *device, sound::SoundSystem *syste
             {
             case sound::SoundCommandType::SC_LOAD_SOUND:
             {
-                SoundWorkData& work_data = device->work_data[work_data_count++];
+                SoundWorkData& work_data = device->threading.work_data[work_data_count++];
                 work_data.device = device;
                 strncpy(work_data.path, command.load_sound.file_path, strlen(command.load_sound.file_path) + 1);
             }
@@ -320,16 +313,27 @@ static void update_sound_commands(SoundDevice *device, sound::SoundSystem *syste
         
         for(i32 i = 0; i < work_data_count; i++)
         {
-            SoundWorkData& work_data = device->work_data[i];
+            SoundWorkData& work_data = device->threading.work_data[i];
             load_sound(work_data.path, work_data.device, work_data);
         }
         
-        platform.complete_all_work(device->work_queue);
+        platform.complete_all_work(device->threading.work_queue);
 
-        for(i32 i = 0; i < work_data_count; i++)
+        while(device->threading.sounds_being_loaded > 0)
         {
-            SoundWorkData& work_data = device->work_data[i];
-            device->sounds[device->sound_count++] = work_data.sound;
+            for(i32 i = 0; i < work_data_count; i++)
+            {
+                SoundWorkData& work_data = device->threading.work_data[i];
+                FMOD_OPENSTATE state;
+                FMOD_Sound_GetOpenState(work_data.sound, &state, 0, 0, 0);
+                if(state == FMOD_OPENSTATE_READY)
+                {
+                    device->sounds[device->sound_count++] = work_data.sound;
+                    device->threading.work_data[i] = device->threading.work_data[work_data_count - 1];
+                    work_data_count--;
+                    device->threading.sounds_being_loaded--;
+                }
+            }
         }
 
         for(i32 i = 0; i < system->command_count; i++)
@@ -448,11 +452,11 @@ static void init_audio_fmod(SoundDevice* device)
     device->channel_positions = push_array(&device->total_arena, global_max_channels, u32);
     device->channels = push_array(&device->total_arena, global_max_channels, FMOD_CHANNEL*);
     device->sounds = push_array(&device->total_arena, global_max_sounds, FMOD_SOUND*);
-    device->work_queue = push_struct(&device->total_arena, WorkQueue);
-    device->work_data = push_array(&device->total_arena, 128, SoundWorkData);
-    platform.make_queue(device->work_queue, device->thread_info_count, device->thread_infos);
-    device->thread_info_count = 128;
-    device->thread_infos = push_array(&device->total_arena, device->thread_info_count, ThreadInfo);
+    device->threading.work_queue = push_struct(&device->total_arena, WorkQueue);
+    device->threading.work_data = push_array(&device->total_arena, 128, SoundWorkData);
+    platform.make_queue(device->threading.work_queue, device->threading.thread_info_count, device->threading.thread_infos);
+    device->threading.thread_info_count = 128;
+    device->threading.thread_infos = push_array(&device->total_arena, device->threading.thread_info_count, ThreadInfo);
 
     FMOD_System_CreateChannelGroup(device->system, "Music", &device->music_channel_group);
     FMOD_System_CreateChannelGroup(device->system, "SFX", &device->sfx_channel_group);

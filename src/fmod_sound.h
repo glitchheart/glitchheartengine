@@ -14,10 +14,15 @@ struct SoundWorkData
 
 struct SoundDevice
 {
-    WorkQueue *work_queue;
-    SoundWorkData* work_data;
-    i32 thread_info_count;
-    ThreadInfo *thread_infos;
+    struct
+    {
+        WorkQueue *work_queue;
+        SoundWorkData* work_data;
+        i32 thread_info_count;
+        ThreadInfo *thread_infos;
+        i32 sounds_being_loaded;
+    } threading;
+
     
     b32 is_initialized;
     

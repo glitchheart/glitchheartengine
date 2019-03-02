@@ -1005,13 +1005,13 @@ namespace rendering
     static void calculate_light_space_matrices(Renderer *renderer, Camera camera, math::Vec3 direction)
     {
         direction = math::normalize(direction);
-        math::Vec3 right = math::cross(direction, math::Vec3(0, 1, 0));
+        math::Vec3 right = math::normalize(math::cross(math::Vec3(0, 1, 0), direction));
         math::Vec3 up = math::normalize(math::cross(direction, right));
 
-        r32 z_near = -5.0f;
+        r32 z_near = -2.0f;
         r32 z_far = 60.0f;
 
-        r32 fov = 35.0f;
+        r32 fov = 40.0f;
         r32 half_fov = fov * 0.5f;
         
         r32 tan_fov = tan(DEGREE_IN_RADIANS * half_fov);
@@ -1022,8 +1022,8 @@ namespace rendering
         r32 height_far = 2 * tan_fov * z_far;
         r32 width_far = height_far * aspect_ratio;
 
-        math::Vec3 center_near = camera.position + camera.forward * z_near;
-        math::Vec3 center_far = camera.position + camera.forward * z_far;
+        math::Vec3 center_near = camera.position + (camera.forward * z_near);
+        math::Vec3 center_far = camera.position + (camera.forward * z_far);
 
         math::Vec3 near_top_left = center_near + up * (height_near * 0.5f) - right * (width_near * 0.5f);
         math::Vec3 near_top_right = center_near + up * (height_near * 0.5f) + right * (width_near * 0.5f);
@@ -1035,8 +1035,8 @@ namespace rendering
         math::Vec3 far_bottom_left = center_far - up * (height_far * 0.5f) - right * (width_far * 0.5f);
         math::Vec3 far_bottom_right = center_far - up * (height_far * 0.5f) + right * (width_far * 0.5f);
 
-        math::Mat4 r = math::Mat4(math::Vec4(right, 0.0f), math::Vec4(up, 0.0f),
-                                  math::Vec4(direction, 0.0f), math::Vec4(0.0f, 0.0f, 0.0f, 1.0f));
+        math::Mat4 light_view_matrix = math::Mat4(math::Vec4(right, 0.0f), math::Vec4(up, 0.0f),
+                                                  math::Vec4(direction, 0.0f), math::Vec4(0.0f, 0.0f, 0.0f, 1.0f));
         // math::Mat4 r = math::Mat4(1.0f);
         // r.v1 = math::Vec4(right, 0.0f);
         // r.v2 = math::Vec4(up, 0.0f);
@@ -1044,14 +1044,14 @@ namespace rendering
 
         math::Vec3 points[8];
 
-        points[0] = r * near_top_left;
-        points[1] = r * near_top_right;
-        points[2] = r * near_bottom_left;
-        points[3] = r * near_bottom_right;
-        points[4] = r * far_top_left;
-        points[5] = r * far_top_right;
-        points[6] = r * far_bottom_left;
-        points[7] = r * far_bottom_right;
+        points[0] = light_view_matrix * near_top_left;
+        points[1] = light_view_matrix * near_top_right;
+        points[2] = light_view_matrix * near_bottom_left;
+        points[3] = light_view_matrix * near_bottom_right;
+        points[4] = light_view_matrix * far_top_left;
+        points[5] = light_view_matrix * far_top_right;
+        points[6] = light_view_matrix * far_bottom_left;
+        points[7] = light_view_matrix * far_bottom_right;
 
         r32 min_x = points[0].x;
         r32 max_x = points[0].x;
@@ -1095,11 +1095,11 @@ namespace rendering
         projection.m11 = 2.0f / (max_x - min_x);
         projection.m22 = 2.0f / (max_y - min_y);
         projection.m33 = 2.0f / (max_z - min_z);
-        projection.m14 = -(max_x + min_x)/(max_x - min_x);
-        projection.m24 = -(max_y + min_y)/(max_y - min_y);
-        projection.m34 = -(max_z + min_z)/(max_z - min_z);
+        projection.m14 = -((max_x + min_x)/(max_x - min_x));
+        projection.m24 = -((max_y + min_y)/(max_y - min_y));
+        projection.m34 = -((max_z + min_z)/(max_z - min_z));
                 
-        rendering::set_light_space_matrices(renderer, projection, r);
+        rendering::set_light_space_matrices(renderer, projection, light_view_matrix);
     }
         
     static inline Material &get_material_instance(MaterialInstanceHandle handle, Renderer *renderer)
