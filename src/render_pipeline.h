@@ -380,7 +380,7 @@ namespace rendering
 		RegisterBufferInfo() {}
 	};
 
-#define MAX_OBJ_OBJECTS 32
+#define MAX_OBJ_OBJECTS 64
 
     struct OBJ_ObjectData
     {

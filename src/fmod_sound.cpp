@@ -28,7 +28,7 @@ static void load_sound_async(WorkQueue *work_queue, void* data_ptr)
 static void load_sound(const char* file_path, SoundDevice* sound_device, SoundWorkData& work_data)
 {
     assert(sound_device->sound_count + 1 < global_max_sounds);
-    FMOD_SOUND* sound;
+    FMOD_SOUND* sound = nullptr;
     work_data.sound = sound;
     platform.add_entry(sound_device->work_queue, load_sound_async, &work_data);
     // //@Incomplete: Find out the exact parameters for a sound

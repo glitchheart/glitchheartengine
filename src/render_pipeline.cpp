@@ -1036,7 +1036,7 @@ namespace rendering
         math::Vec3 far_bottom_right = center_far - up * (height_far * 0.5f) + right * (width_far * 0.5f);
 
         math::Mat4 r = math::Mat4(math::Vec4(right, 0.0f), math::Vec4(up, 0.0f),
-                                  math::Vec4(camera.forward, 0.0f), math::Vec4(0.0f, 0.0f, 0.0f, 1.0f));
+                                  math::Vec4(direction, 0.0f), math::Vec4(0.0f, 0.0f, 0.0f, 1.0f));
         // math::Mat4 r = math::Mat4(1.0f);
         // r.v1 = math::Vec4(right, 0.0f);
         // r.v2 = math::Vec4(up, 0.0f);
