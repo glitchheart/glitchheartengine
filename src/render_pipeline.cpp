@@ -1008,10 +1008,11 @@ namespace rendering
         math::Vec3 right = math::normalize(math::cross(math::Vec3(0, 1, 0), direction));
         math::Vec3 up = math::normalize(math::cross(direction, right));
 
-        r32 z_near = -2.0f;
-        r32 z_far = 60.0f;
+        r32 z_near = renderer->render.shadow_settings.z_near;
+        r32 z_far = renderer->render.shadow_settings.z_far;
+        r32 fov = renderer->render.shadow_settings.fov;
+        r32 light_offset = renderer->render.shadow_settings.light_offset;
 
-        r32 fov = 40.0f;
         r32 half_fov = fov * 0.5f;
         
         r32 tan_fov = tan(DEGREE_IN_RADIANS * half_fov);
@@ -1037,6 +1038,7 @@ namespace rendering
 
         math::Mat4 light_view_matrix = math::Mat4(math::Vec4(right, 0.0f), math::Vec4(up, 0.0f),
                                                   math::Vec4(direction, 0.0f), math::Vec4(0.0f, 0.0f, 0.0f, 1.0f));
+        light_view_matrix = math::translate(light_view_matrix, -direction * light_offset);
         // math::Mat4 r = math::Mat4(1.0f);
         // r.v1 = math::Vec4(right, 0.0f);
         // r.v2 = math::Vec4(up, 0.0f);
