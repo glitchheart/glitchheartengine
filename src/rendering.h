@@ -626,6 +626,14 @@ struct Renderer
 
         struct
         {
+            r32 z_near;
+            r32 z_far;
+            r32 fov;
+            r32 light_offset;
+        } shadow_settings;
+
+        struct
+        {
             // All instance buffers
             r32 *float_buffers[MAX_INSTANCE_BUFFERS];
             math::Vec2 *float2_buffers[MAX_INSTANCE_BUFFERS];

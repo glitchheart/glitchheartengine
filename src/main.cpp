@@ -498,6 +498,11 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     rendering::RenderPassHandle shadow_pass = rendering::create_render_pass(SHADOW_PASS, shadow_fbo, renderer, rendering::RenderPassSettings::FRONTFACE_CULLING);
     renderer->render.shadow_pass = shadow_pass;
     renderer->render.shadow_framebuffer = shadow_fbo;
+
+    renderer->render.shadow_settings.z_near = -2.0f;
+    renderer->render.shadow_settings.z_far = 60.0f;
+    renderer->render.shadow_settings.fov = 40.0f;
+    renderer->render.shadow_settings.light_offset = 1.0f;
     
     // Final framebuffer
     rendering::FramebufferInfo final_info = rendering::generate_framebuffer_info();
