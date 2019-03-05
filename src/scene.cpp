@@ -1387,12 +1387,11 @@ namespace scene
                     }
                 }
                 break;
-                case Gizmos::NONE:
-                    return;
+                default:
+                break;
                 }
             }
         }
-            
     }
 
     static void _select_gizmo(SceneHandle handle, EntityHandle gizmo)

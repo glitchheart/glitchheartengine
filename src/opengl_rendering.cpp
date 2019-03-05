@@ -784,6 +784,11 @@ static void create_new_framebuffer(rendering::FramebufferInfo &info, Framebuffer
     framebuffer.width = info.width;
     framebuffer.height = info.height;
 
+    for(i32 i = 0; i < 4; i++)
+    {
+         framebuffer.tex_color_buffer_handles[i] = 0;       
+    }
+
     glGenFramebuffers(1, &framebuffer.buffer_handle);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
 

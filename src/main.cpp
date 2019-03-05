@@ -946,14 +946,6 @@ int main(int argc, char **args)
         
         swap_buffers(render_state);
 
-#if defined(__APPLE__)
-        static b32 first_load = true;
-        if (first_load)
-        {
-            mojave_workaround(render_state);
-            first_load = false;
-        }
-#endif
         frames++;
         r64 end_counter = get_time();
         if (end_counter - last_second_check >= 1.0)
