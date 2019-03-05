@@ -413,14 +413,6 @@ enum TextureFormat
     RED
 };
 
-struct ShadowMapMatrices
-{
-	math::Mat4 depth_rojection_matrix;
-	math::Mat4 depth_model_matrix;
-	math::Mat4 depth_view_matrix;
-	math::Mat4 depth_bias_matrix;
-};
-
 struct Resolution
 {
 	i32 width;
@@ -532,9 +524,6 @@ struct Renderer
         ParticleApi *api;
 	} particles;
     
-	// Shadow map
-	ShadowMapMatrices shadow_map_matrices;
-    
 	i32 current_camera_handle;
     
 	AnimationController* animation_controllers;
@@ -637,6 +626,14 @@ struct Renderer
 
         struct
         {
+            r32 z_near;
+            r32 z_far;
+            r32 fov;
+            r32 light_offset;
+        } shadow_settings;
+
+        struct
+        {
             // All instance buffers
             r32 *float_buffers[MAX_INSTANCE_BUFFERS];
             math::Vec2 *float2_buffers[MAX_INSTANCE_BUFFERS];
@@ -730,7 +727,7 @@ struct Renderer
         i32 point_light_count;
 
         math::Mat4 light_space_matrix;
-        
+        math::Mat4 light_view_matrix;
         math::Vec3 shadow_view_position;
 
         struct
@@ -747,8 +744,11 @@ struct Renderer
         } hdr;
 
         rendering::FramebufferHandle final_framebuffer;
+        rendering::FramebufferHandle shadow_framebuffer;
         rendering::RenderPassHandle emissive_pass;
         rendering::RenderPassHandle standard_pass;
+        rendering::RenderPassHandle shadow_pass;
+        rendering::MaterialHandle shadow_map_material;
         
 	} render;
 };
