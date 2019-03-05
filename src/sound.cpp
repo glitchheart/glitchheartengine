@@ -1,4 +1,7 @@
 
+namespace sound
+{
+
 static ChannelAttributes get_default_channel_attributes()
 {
     ChannelAttributes attributes = {};
@@ -144,7 +147,13 @@ static void set_position_audio_source(SoundSystem *system, AudioSourceHandle as_
 
 static AudioSource *get_audio_source(SoundSystem *system, AudioSourceHandle as_handle)
 {
+    if(as_handle.handle == 0 || as_handle.handle - 1 > system->audio_source_count)
+    {
+        return nullptr;
+    }
+
     assert(as_handle.handle != 0 && as_handle.handle - 1 < system->audio_source_count);
-    
     return &system->audio_sources[as_handle.handle - 1];
+}
+
 }

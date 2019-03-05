@@ -24,6 +24,28 @@ static void show_mouse_cursor(RenderState &render_state, b32 show)
     // }
 }
 
+static void debug_vao()
+{
+    int vab, eabb, eabbs, mva, is_on, vaabb;
+    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &vab);
+    glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &eabb);
+    glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &eabbs);
+
+    debug(" VAO: %d\n", vab);
+    debug(" IBO: %d, size: %d\n", eabb, eabbs);
+
+    glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &mva);
+    for(i32 i = 0; i < mva; i++)
+    {
+        glGetVertexAttribiv(i, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &is_on);
+        if(is_on)
+        {
+            glGetVertexAttribiv(i, GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING, &vaabb);
+            debug(" attrib #%d: VBO=%d\n", i, vaabb);
+        }
+    }
+}
+
 #define error_gl() _error_gl(__LINE__, __FILE__)
 void _error_gl(i32 line, const char *file)
 {
@@ -686,8 +708,8 @@ static void _create_framebuffer_depth_texture_attachment(rendering::DepthAttachm
         glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
         // Prevent shadows outside of the shadow map
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
@@ -763,12 +785,7 @@ static void create_shadow_map(Framebuffer &framebuffer, i32 width, i32 height)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
-    float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, framebuffer.shadow_map_handle, 0);
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
@@ -968,8 +985,6 @@ static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
 
     glfwGetFramebufferSize(render_state->window, &render_state->framebuffer_width, &render_state->framebuffer_height);
 
-    create_shadow_map(render_state->shadow_map_buffer, 2048, 2048);
-
     setup_quad(*render_state, render_state->perm_arena);
     
     render_state->total_delta = 0.0f;
@@ -987,6 +1002,7 @@ static void load_new_shaders(RenderState &render_state, Renderer *renderer)
     {
         rendering::Shader &shader = renderer->render.shaders[index];
         ShaderGL &gl_shader = render_state.gl_shaders[index];
+        gl_shader.handle = index;
         gl_shader.location_count = 0;
 
         if (shader.loaded)
@@ -1842,8 +1858,12 @@ static void set_uniform(rendering::Transform transform, const rendering::RenderP
         case rendering::UniformMappingType::SHADOW_MAP:
         {
             set_int_uniform(gl_shader.program, location, *texture_count);
-            glActiveTexture(GL_TEXTURE0 + *texture_count++);
-            glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
+            
+            rendering::TextureHandle handle = rendering::get_depth_texture_from_framebuffer(0, renderer->render.shadow_framebuffer, renderer);
+
+            Texture *texture = renderer->render.textures[handle.handle - 1];
+            set_texture_uniform(gl_shader.program, texture->handle, *texture_count);
+            (*texture_count++);
         }
         break;
         case rendering::UniformMappingType::SHADOW_VIEW_POSITION:
@@ -2010,6 +2030,7 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
     if (shader)
     {
         gl_shader = *shader;
+        shader_info = renderer->render.shaders[gl_shader.handle];
     }
     else
     {
@@ -2058,6 +2079,8 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
 
     i32 texture_count = 0;
 
+    // assert(gl_shader.location_count == material.uniform_value_count);
+    
     for (i32 i = 0; i < material.uniform_value_count; i++)
     {
         rendering::UniformValue &uniform_value = material.uniform_values[i];
@@ -2073,7 +2096,6 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
                 {
                     rendering::UniformValue &value = entry.values[k];
                     set_uniform(transform, render_pass, value, gl_shader, camera, &texture_count, render_state, renderer);
-
                 }
             }
         }
@@ -2088,6 +2110,8 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
         setup_instanced_vertex_attribute_buffers(material.instanced_vertex_attributes, material.instanced_vertex_attribute_count, shader_info, render_state, renderer);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
+        // debug_vao();
+                            
         glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void *)nullptr, count);
     }
     else
@@ -2322,6 +2346,17 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
         {
             Framebuffer &framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
 
+            if(pass.settings & rendering::RenderPassSettings::BACKFACE_CULLING)
+            {
+                glEnable(GL_CULL_FACE);
+                glCullFace(GL_BACK);
+            }
+            else if(pass.settings & rendering::RenderPassSettings::FRONTFACE_CULLING)
+            {
+                glEnable(GL_CULL_FACE);
+                glCullFace(GL_FRONT);
+            }
+
             glViewport(0, 0, framebuffer.width, framebuffer.height);
             glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
 
@@ -2345,13 +2380,27 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
             for (i32 i = 0; i < pass.commands.render_command_count; i++)
             {
                 rendering::RenderCommand &command = pass.commands.render_commands[i];
-                rendering::Material &material = get_material_instance(command.material, renderer);
+                rendering::Material material = get_material_instance(command.material, renderer);
+                ShaderGL *shader = &render_state.gl_shaders[command.pass.shader_handle.handle];
 
+                //assert(material.shader.handle == command.pass.shader_handle.handle);
+                
                 switch(command.type)
                 {
                 case rendering::RenderCommandType::BUFFER:
                 {
-                    render_buffer(command.buffer.primitive_type, command.transform, command.buffer.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
+                    if(pass_index == renderer->render.shadow_pass.handle - 1)
+                    {
+                        material = renderer->render.materials[renderer->render.shadow_map_material.handle];
+                        if(rendering::VertexAttributeInstanced* original_mapping = rendering::get_attrib_mapping(command.material, rendering::VertexAttributeMappingType::MODEL, renderer))
+                        {
+                            rendering::VertexAttributeInstanced* mapping = rendering::attrib_mapping(material, rendering::VertexAttributeMappingType::MODEL);
+
+                            mapping->instance_buffer_handle = original_mapping->instance_buffer_handle;
+                        }
+                    }
+
+                    render_buffer(command.buffer.primitive_type, command.transform, command.buffer.buffer, pass, render_state, renderer, material, pass.camera, command.count, shader);
                 }
                 break;
                 case rendering::RenderCommandType::LINE:
@@ -2388,6 +2437,7 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
         
             pass.commands.render_command_count = 0;
             pass.commands.depth_free_command_count = 0;
+            glDisable(GL_CULL_FACE);
         }
         else if(pass.type == rendering::RenderPassType::READ_DRAW)
         {
@@ -2504,7 +2554,7 @@ static void render(RenderState &render_state, Renderer *renderer, r64 delta_time
     if (should_render)
     {
         // Render through all passes
-        render_shadows(render_state, renderer, render_state.shadow_map_buffer);
+        // render_shadows(render_state, renderer, render_state.shadow_map_buffer);
         render_all_passes(render_state, renderer);
         render_post_processing_passes(render_state, renderer);
         render_ui_pass(render_state, renderer);

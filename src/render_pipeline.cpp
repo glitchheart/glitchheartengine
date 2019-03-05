@@ -233,6 +233,7 @@ namespace rendering
     static void set_shadow_map_shader(Renderer *renderer, const char *path)
     {
         renderer->render.shadow_map_shader = load_shader(renderer, path);
+        renderer->render.shadow_map_material = rendering::create_material(renderer, renderer->render.shadow_map_shader);
     }
 
     static void set_wireframe_shader(Renderer *renderer, const char *path)
@@ -599,7 +600,7 @@ namespace rendering
     }
     
     // @Note: Creates a RenderPass with the specified FramebufferHandle
-    static RenderPassHandle create_render_pass(const char *name, FramebufferHandle framebuffer, Renderer *renderer)
+    static RenderPassHandle create_render_pass(const char *name, FramebufferHandle framebuffer, Renderer *renderer, u64 settings = 0)
     {
         RenderPass &pass = renderer->render.passes[renderer->render.pass_count];
         pass.has_clear_color = false;
@@ -608,6 +609,7 @@ namespace rendering
         pass.use_scene_camera = true;
         pass.clipping_planes.type = ClippingPlaneType::NONE;
         pass.clipping_planes.plane = math::Vec4(0, 0, 0, 0);
+        pass.settings = settings;
         
         strncpy(pass.name, name, strlen(name) + 1);
         pass.commands.render_commands = push_array(&renderer->render.render_pass_arena, global_max_render_commands, RenderCommand);
@@ -993,13 +995,115 @@ namespace rendering
         renderer->render.final_framebuffer = framebuffer;
     }
 
-    static void set_light_space_matrices(Renderer *renderer, math::Mat4 projection_matrix, math::Vec3 view_position, math::Vec3 target)
+    static void set_light_space_matrices(Renderer *renderer, math::Mat4 projection_matrix, math::Mat4 view_matrix)
     {
-        math::Mat4 view_matrix = math::look_at_with_target(view_position, target);
-        renderer->render.shadow_view_position = view_position;
+        renderer->render.shadow_view_position = math::translation(view_matrix);
         renderer->render.light_space_matrix = projection_matrix * view_matrix;
+        renderer->render.light_view_matrix = view_matrix;
     }
 
+    static void calculate_light_space_matrices(Renderer *renderer, Camera camera, math::Vec3 direction)
+    {
+        direction = math::normalize(direction);
+        math::Vec3 right = math::normalize(math::cross(math::Vec3(0, 1, 0), direction));
+        math::Vec3 up = math::normalize(math::cross(direction, right));
+
+        r32 z_near = renderer->render.shadow_settings.z_near;
+        r32 z_far = renderer->render.shadow_settings.z_far;
+        r32 fov = renderer->render.shadow_settings.fov;
+        r32 light_offset = renderer->render.shadow_settings.light_offset;
+
+        r32 half_fov = fov * 0.5f;
+        
+        r32 tan_fov = tan(DEGREE_IN_RADIANS * half_fov);
+        r32 aspect_ratio = (float)renderer->framebuffer_width / (float)renderer->framebuffer_height;
+
+        r32 height_near = 2 * tan_fov * z_near;
+        r32 width_near = height_near * aspect_ratio;
+        r32 height_far = 2 * tan_fov * z_far;
+        r32 width_far = height_far * aspect_ratio;
+
+        math::Vec3 center_near = camera.position + (camera.forward * z_near);
+        math::Vec3 center_far = camera.position + (camera.forward * z_far);
+
+        math::Vec3 near_top_left = center_near + up * (height_near * 0.5f) - right * (width_near * 0.5f);
+        math::Vec3 near_top_right = center_near + up * (height_near * 0.5f) + right * (width_near * 0.5f);
+        math::Vec3 near_bottom_left = center_near - up * (height_near * 0.5f) - right * (width_near * 0.5f);
+        math::Vec3 near_bottom_right = center_near - up * (height_near * 0.5f) + right * (width_near * 0.5f);
+
+        math::Vec3 far_top_left = center_far + up * (height_far * 0.5f) - right * (width_far * 0.5f);
+        math::Vec3 far_top_right = center_far + up * (height_far * 0.5f) + right * (width_far * 0.5f);
+        math::Vec3 far_bottom_left = center_far - up * (height_far * 0.5f) - right * (width_far * 0.5f);
+        math::Vec3 far_bottom_right = center_far - up * (height_far * 0.5f) + right * (width_far * 0.5f);
+
+        math::Mat4 light_view_matrix = math::Mat4(math::Vec4(right, 0.0f), math::Vec4(up, 0.0f),
+                                                  math::Vec4(direction, 0.0f), math::Vec4(0.0f, 0.0f, 0.0f, 1.0f));
+        light_view_matrix = math::translate(light_view_matrix, -direction * light_offset);
+        // math::Mat4 r = math::Mat4(1.0f);
+        // r.v1 = math::Vec4(right, 0.0f);
+        // r.v2 = math::Vec4(up, 0.0f);
+        // r.v3 = math::Vec4(camera.forward, 0.0f);
+
+        math::Vec3 points[8];
+
+        points[0] = light_view_matrix * near_top_left;
+        points[1] = light_view_matrix * near_top_right;
+        points[2] = light_view_matrix * near_bottom_left;
+        points[3] = light_view_matrix * near_bottom_right;
+        points[4] = light_view_matrix * far_top_left;
+        points[5] = light_view_matrix * far_top_right;
+        points[6] = light_view_matrix * far_bottom_left;
+        points[7] = light_view_matrix * far_bottom_right;
+
+        r32 min_x = points[0].x;
+        r32 max_x = points[0].x;
+        r32 min_y = points[0].y;
+        r32 max_y = points[0].y;
+        r32 min_z = points[0].z;
+        r32 max_z = points[0].z;
+        
+        for(i32 i = 1; i < 8; i++)
+        {
+            if(points[i].x < min_x)
+            {
+                min_x = points[i].x;
+            }
+            else if(points[i].x > max_x)
+            {
+                max_x = points[i].x;
+            }
+
+            if(points[i].y < min_y)
+            {
+                min_y = points[i].y;
+            }
+            else if(points[i].y > max_y)
+            {
+                max_y = points[i].y;
+            }
+
+            if(points[i].z < min_z)
+            {
+                min_z = points[i].z;
+            }
+            else if(points[i].z > max_z)
+            {
+                max_z = points[i].z;
+            }
+        }
+
+        math::Mat4 projection = math::Mat4(1.0f);
+
+        projection.m11 = 2.0f / (max_x - min_x);
+        projection.m22 = 2.0f / (max_y - min_y);
+        projection.m33 = 2.0f / (max_z - min_z);
+        projection.m14 = -((max_x + min_x)/(max_x - min_x));
+        projection.m24 = -((max_y + min_y)/(max_y - min_y));
+        projection.m34 = -((max_z + min_z)/(max_z - min_z));
+                
+        rendering::set_light_space_matrices(renderer, projection, light_view_matrix);
+    }
+        
     static inline Material &get_material_instance(MaterialInstanceHandle handle, Renderer *renderer)
     {
         i32 real_handle = renderer->render._internal_material_instance_handles[handle.handle - 1];
@@ -2314,12 +2418,31 @@ namespace rendering
     {
         char name[32];
         rendering::MaterialHandle material;
+        rendering::ShaderHandle shader;
     };
 
-    
-    static void load_materials_from_mtl(rendering::ShaderHandle shader_handle, _MaterialPair *pairs, i32 *mat_pair_count, const char *file_path, Renderer *renderer)
+    static b32 mtl_has_texture(char *source)
     {
-         size_t index = 0;
+        char buffer[256];
+
+        while (read_line(buffer, 256, &source))
+        {
+            if(starts_with(buffer, "newmtl"))
+            {
+                return false;
+            }
+            if(starts_with(buffer, "map_Kd"))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+    
+    static void load_materials_from_mtl(rendering::ShaderHandle shader_no_uvs_handle, rendering::ShaderHandle shader_with_uvs_handle, _MaterialPair *pairs, i32 *mat_pair_count, const char *file_path, Renderer *renderer)
+    {
+        size_t index = 0;
         for (size_t i = 0; i < strlen(file_path); i++)
         {
             if (file_path[i] == '/')
@@ -2336,28 +2459,45 @@ namespace rendering
         dir[index] = 0;
         
         FILE *file = fopen(file_path, "r");
-
+        
         if(file)
         {
             char buffer[256];
 
             _MaterialPair *current = nullptr;
             Material *material = nullptr;
+            rendering::ShaderHandle shader_handle = { -1 };
+            char *source = read_file_into_buffer(file);
             
-            while (fgets(buffer, sizeof(buffer), file))
+            while (read_line(buffer, 256, &source))
             {
                 if (starts_with(buffer, "newmtl"))
                 {
+                    char *ptr = source;
+                    
+                    b32 has_texture = mtl_has_texture(ptr);
+
+                    if(has_texture)
+                    {
+                        shader_handle = shader_with_uvs_handle;
+                    }
+                    else
+                    {
+                        shader_handle = shader_no_uvs_handle;
+                    }
+                    
                     MaterialHandle handle = create_material(renderer, shader_handle);
                     material = &renderer->render.materials[handle.handle];
 
                     _MaterialPair pair;
                     pair.material = handle;
                     sscanf(buffer, "newmtl %[^\n]", pair.name);
+            
 
                     pairs[(*mat_pair_count)++] = pair;
                     
                     current = &pairs[*mat_pair_count - 1];
+                    current->shader = shader_handle;
                     
                     if (UniformValue *u = mapping(*material, UniformMappingType::DIFFUSE_COLOR))
                     {
@@ -2555,6 +2695,7 @@ namespace rendering
                         if(strcmp(pair.name, name) == 0)
                         {
                             obj_data->material = pair.material;
+                            obj_data->shader = pair.shader;
                             break;
                         }
                     }
@@ -2595,11 +2736,11 @@ namespace rendering
                 math::Vec3i normal_indices = {};
                 math::Vec3i uv_indices = {};
 
-                if (with_uvs && vertex_ptrs->normal_count > 0)
+                if (with_uvs && with_normals)
                 {
                     sscanf(buffer, "f %hd/%d/%d %hd/%d/%d %hd/%d/%d", &face.indices[0], &uv_indices.x, &normal_indices.x, &face.indices[1], &uv_indices.y, &normal_indices.y, &face.indices[2], &uv_indices.z, &normal_indices.z);
                 }
-                else if (vertex_ptrs->uv_count > 0)
+                else if (with_uvs)
                 {
                     sscanf(buffer, "f %hd/%d %hd/%d %hd/%d", &face.indices[0], &uv_indices.x, &face.indices[1], &uv_indices.y, &face.indices[2], &uv_indices.z);
                 }
@@ -2744,7 +2885,7 @@ namespace rendering
 		return counts;
 	}
 
-	static OBJ_ObjectInfo load_obj(Renderer *renderer, const char *file_path, rendering::ShaderHandle shader_handle)
+	static OBJ_ObjectInfo load_obj(Renderer *renderer, const char *file_path, rendering::ShaderHandle shader_no_uvs_handle, rendering::ShaderHandle shader_with_uvs_handle)
 	{
 		OBJ_ObjectInfo obj_info = {};
 		
@@ -2809,7 +2950,7 @@ namespace rendering
 
                     dir[index] = 0;
                     char *material_file_path = concat(dir, mtl_file_name, &renderer->temp_arena);
-                    load_materials_from_mtl(shader_handle, mat_pairs, &mat_pair_count, material_file_path, renderer);
+                    load_materials_from_mtl(shader_no_uvs_handle, shader_with_uvs_handle, mat_pairs, &mat_pair_count, material_file_path, renderer);
 
 					end_temporary_memory(temp_block);
                 }
@@ -3676,15 +3817,6 @@ namespace rendering
     {
     }
 
-    static void push_instanced_buffer_to_shadow_pass(Renderer *renderer, i32 count, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle)
-    {
-        ShadowCommand shadow_command = {};
-        shadow_command.material = material_instance_handle;
-        shadow_command.count = count;
-        shadow_command.buffer = buffer_handle;
-        renderer->render.shadow_commands[renderer->render.shadow_command_count++] = shadow_command;
-    }
-
     static math::Vec2 get_relative_size(Renderer *renderer, math::Vec2 size, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
     {
         math::Vec2i resolution_scale = get_scale(renderer);
@@ -4067,24 +4199,25 @@ namespace rendering
     {
         CreateUICommandInfo scaled_info = info;
         math::Vec2i resolution_scale = get_scale(renderer);
+        math::Vec2 absolute_scale = math::Vec2(ABS(info.transform.scale.x), ABS(info.transform.scale.y));
 
         if(info.anchor_flag & UIAlignment::LEFT)
         {
-            if(info.transform.position.x + info.transform.scale.x < 0.0f || info.transform.position.x > 1000.0f)
+            if(info.transform.position.x + (absolute_scale.x) < 0.0f || info.transform.position.x > 1000.0f)
             {
                 return;
             }
         }
         else if(info.anchor_flag & UIAlignment::RIGHT)
         {
-            if(info.transform.position.x < 0.0f || info.transform.position.x + info.transform.scale.x > 1000.0f)
+            if(info.transform.position.x < 0.0f || info.transform.position.x - (absolute_scale.x) < 0.0f)
             {
                 return;
             }
         }
         else
         {
-            if(info.transform.position.x - info.transform.scale.x / 2.0f < 0.0f || info.transform.position.x + info.transform.scale.x / 2.0f > 1000.0f)
+            if(info.transform.position.x - (absolute_scale.x / 2.0f) < 0.0f || info.transform.position.x + (absolute_scale.x / 2.0f) > 1000.0f)
             {
                 return;
             }
@@ -4092,21 +4225,21 @@ namespace rendering
         
         if(info.anchor_flag & UIAlignment::TOP)
         {
-            if(info.transform.position.y - info.transform.scale.y > 1000.0f || info.transform.position.y < 0.0f)
+            if(info.transform.position.y - (absolute_scale.y) > 1000.0f || info.transform.position.y < 0.0f)
             {
                 return;
             }
         }
         else if(info.anchor_flag & UIAlignment::BOTTOM)
         {
-            if(info.transform.position.y + info.transform.scale.y < 0.0f || info.transform.position.y > 1000.0f)
+            if(info.transform.position.y + (absolute_scale.y) < 0.0f || info.transform.position.y > 1000.0f)
             {
                 return;
             }
         }
         else
         {
-            if(info.transform.position.y - info.transform.scale.y / 2.0f < 0.0f || info.transform.position.y + info.transform.scale.y / 2.0f > 1000.0f)
+            if(info.transform.position.y - (absolute_scale.y) / 2.0f < 0.0f || info.transform.position.y + (absolute_scale.y / 2.0f) > 1000.0f)
             {
                 return;
             }
@@ -4119,7 +4252,7 @@ namespace rendering
         scaled_info.transform.position = pos;
         scaled_info.z_layer = info.z_layer;
 
-        scaled_info.transform.scale = get_relative_size(renderer, info.transform.scale, info.scaling_flag);
+        scaled_info.transform.scale = get_relative_size(renderer, absolute_scale, info.scaling_flag);
         scaled_info.clip_rect = scale_clip_rect(renderer, info.clip_rect, 0);
 
         if(scaled_info.clip_rect.width == 0.0f || scaled_info.clip_rect.height == 0.0f)

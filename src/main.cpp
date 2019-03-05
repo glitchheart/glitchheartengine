@@ -447,15 +447,17 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     rendering::set_bounding_box_shader(renderer, "../engine_assets/standard_shaders/bounding_box.shd");
     rendering::set_debug_line_shader(renderer, "../engine_assets/standard_shaders/line.shd");
     rendering::set_shadow_map_shader(renderer, "../engine_assets/standard_shaders/shadow_map.shd");
-    rendering::set_light_space_matrices(renderer, math::ortho(-15, 15, -15, 15, 1, 20.0f), math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0.0f, 0.0f, 0.0f));
+    // // rendering::set_light_space_matrices(renderer, math::ortho(-15, 15, -15, 15, 1, 20.0f), math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0.0f, 0.0f, 0.0f));
+    // rendering::calculate_light_space_matrices(renderer, );
 
     rendering::set_bloom_shader(renderer, "../engine_assets/standard_shaders/bloom.shd");
     rendering::set_blur_shader(renderer, "../engine_assets/standard_shaders/blur.shd");
     rendering::set_hdr_shader(renderer, "../engine_assets/standard_shaders/hdr.shd");
 
+    
     rendering::ShaderHandle blur_shader = renderer->render.blur_shader;
     rendering::ShaderHandle bloom_shader = renderer->render.bloom_shader;
-    
+
     // Create the framebuffers
     rendering::FramebufferInfo standard_resolve_info = rendering::generate_framebuffer_info();
     standard_resolve_info.width = renderer->framebuffer_width;
@@ -480,10 +482,27 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     rendering::RenderPassHandle standard = rendering::create_render_pass(STANDARD_PASS, standard_framebuffer, renderer);
     
     renderer->render.standard_pass = standard;
-
+   
     //rendering::RenderPassHandle read_draw_pass = rendering::create_render_pass("read_draw", standard_framebuffer, renderer);
 
     rendering::set_read_draw_render_passes(standard, standard_resolve, renderer);
+
+    // Create shadow pass
+    rendering::FramebufferInfo shadow_pass_info = rendering::generate_framebuffer_info();
+    shadow_pass_info.width = 4096;
+    shadow_pass_info.height = 4096;
+
+    rendering::add_depth_attachment(rendering::AttachmentType::TEXTURE, 0, shadow_pass_info);
+
+    rendering::FramebufferHandle shadow_fbo = rendering::create_framebuffer(shadow_pass_info, renderer);
+    rendering::RenderPassHandle shadow_pass = rendering::create_render_pass(SHADOW_PASS, shadow_fbo, renderer, rendering::RenderPassSettings::FRONTFACE_CULLING);
+    renderer->render.shadow_pass = shadow_pass;
+    renderer->render.shadow_framebuffer = shadow_fbo;
+
+    renderer->render.shadow_settings.z_near = -2.0f;
+    renderer->render.shadow_settings.z_far = 60.0f;
+    renderer->render.shadow_settings.fov = 40.0f;
+    renderer->render.shadow_settings.light_offset = 1.0f;
     
     // Final framebuffer
     rendering::FramebufferInfo final_info = rendering::generate_framebuffer_info();
@@ -849,13 +868,13 @@ int main(int argc, char **args)
     make_queue(&fmod_queue, 1, &fmod_thread);
     platform.add_entry(&fmod_queue, init_audio_fmod_thread, &sound_device);
 
-    SoundSystem sound_system = {};
+    sound::SoundSystem sound_system = {};
     sound_system.command_count = 0;
     sound_system.sound_count = 0;
-    sound_system.commands = push_array(&sound_system.arena, global_max_sound_commands, SoundCommand);
-    sound_system.sounds = push_array(&sound_system.arena, global_max_sounds, SoundHandle);
-    sound_system.audio_sources = push_array(&sound_system.arena, global_max_audio_sources, AudioSource);
-    sound_system.channel_groups = push_array(&sound_system.arena, global_max_channel_groups, ChannelGroup);
+    sound_system.commands = push_array(&sound_system.arena, global_max_sound_commands, sound::SoundCommand);
+    sound_system.sounds = push_array(&sound_system.arena, global_max_sounds, sound::SoundHandle);
+    sound_system.audio_sources = push_array(&sound_system.arena, global_max_audio_sources, sound::AudioSource);
+    sound_system.channel_groups = push_array(&sound_system.arena, global_max_channel_groups, sound::ChannelGroup);
     sound_system.sfx_volume = core.config_data.sfx_volume;
     sound_system.music_volume = core.config_data.music_volume;
     sound_system.master_volume = core.config_data.master_volume;
