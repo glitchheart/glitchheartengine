@@ -888,9 +888,9 @@ namespace rendering
             // fclose(shd);
 #endif
 
-            // fclose(file);
-            // shader.loaded = shader.vert_shader && shader.frag_shader;
-            // set_last_loaded(shader);
+            fclose(file);
+            shader.loaded = shader.vert_shader && shader.frag_shader;
+            set_last_loaded(shader);
         }
         else
         {
