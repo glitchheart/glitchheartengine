@@ -357,7 +357,7 @@ struct BatchedCommand
     b32 casts_shadows;
 
     rendering::RenderPassHandle passes[8];
-    rendering::ShaderHandle shader_handles[8];
+    rendering::MaterialInstanceHandle material_handles[8];
     i32 pass_count;
 };
 

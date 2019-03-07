@@ -330,7 +330,34 @@ namespace rendering
 		Material () {}
     };
 
+    enum class PassType
+    {
+        NONE,
+        STANDARD,
+        NO_UVS,
+        WITH_UVS,
+        SHADOWS,
+        SHADOWS_WITH_UVS
+    };
     
+    struct PassMaterial
+    {
+        PassType pass_type;
+        char pass_name[256];
+        
+        Material material;
+    };    
+
+    struct MaterialPair
+    {
+        char name[32];
+        b32 has_texture;
+        
+        char pass_names[8][32];
+        rendering::MaterialHandle passes[8];
+        i32 pass_count;
+    };
+
 	HANDLE(Buffer);
     HANDLE(InternalBuffer);
 
@@ -382,18 +409,26 @@ namespace rendering
 
 #define MAX_OBJ_OBJECTS 64
 
-    struct OBJ_ObjectData
+    struct MeshObjectData
     {
-        rendering::MaterialHandle material;
-        rendering::ShaderHandle shader;
+        b32 use_material;
+        b32 use_one_material;
+        char material_name[256];
+
+        MaterialPair pair;
+        
         rendering::BufferHandle buffer;
         math::Vec3 mesh_scale;
         math::BoundingBox bounding_box;
     };
     
-    struct OBJ_ObjectInfo
+    struct MeshObjectInfo
     {
-        OBJ_ObjectData data[MAX_OBJ_OBJECTS];
+        b32 has_mtl;
+        char mtl_file_name[32];
+        char mtl_file_path[256];
+        
+        MeshObjectData data[MAX_OBJ_OBJECTS];
         i32 object_count;
     };
     
@@ -434,7 +469,6 @@ namespace rendering
         struct
         {
             rendering::RenderPassHandle pass_handle;
-            rendering::ShaderHandle shader_handle;
         } pass;
 
         union
