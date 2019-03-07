@@ -2734,15 +2734,6 @@ namespace scene
             }
 
             ps_comp.render_pass = rendering::get_render_pass_handle_for_name(STANDARD_PASS, scene.renderer);
-                
-            // if(templ.particles.attributes.play_on_awake)
-            // {
-            //     scene.renderer->particles.api->start_particle_system(ps_comp.handle, scene.renderer);
-            // }
-            // else
-            // {
-            //     scene.renderer->particles.api->pause_particle_system(ps_comp.handle, scene.renderer, true);
-            // }
         }
 
         if(templ.comp_flags & COMP_LIGHT)
