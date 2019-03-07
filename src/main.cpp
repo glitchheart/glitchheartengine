@@ -338,6 +338,7 @@ static void check_shader_files(WorkQueue *queue, void *data)
     {
         Renderer *renderer = (Renderer *)data;
         rendering::check_for_shader_file_changes(renderer);
+		sleep_ms(100);
     }
 }
 
@@ -489,8 +490,8 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
 
     // Create shadow pass
     rendering::FramebufferInfo shadow_pass_info = rendering::generate_framebuffer_info();
-    shadow_pass_info.width = 4096;
-    shadow_pass_info.height = 4096;
+    shadow_pass_info.width = 2048;
+    shadow_pass_info.height = 2048;
 
     rendering::add_depth_attachment(rendering::AttachmentType::TEXTURE, 0, shadow_pass_info);
 
@@ -499,10 +500,9 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     renderer->render.shadow_pass = shadow_pass;
     renderer->render.shadow_framebuffer = shadow_fbo;
 
-    renderer->render.shadow_settings.z_near = -2.0f;
-    renderer->render.shadow_settings.z_far = 60.0f;
-    renderer->render.shadow_settings.fov = 40.0f;
-    renderer->render.shadow_settings.light_offset = 1.0f;
+    renderer->render.shadow_settings.z_near = -4.0f;
+    renderer->render.shadow_settings.z_far = 20.0f;
+    renderer->render.shadow_settings.fov = 80.0f;
     
     // Final framebuffer
     rendering::FramebufferInfo final_info = rendering::generate_framebuffer_info();

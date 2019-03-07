@@ -801,10 +801,10 @@ static void create_new_framebuffer(rendering::FramebufferInfo &info, Framebuffer
     framebuffer.width = info.width;
     framebuffer.height = info.height;
 
-    for(i32 i = 0; i < 4; i++)
-    {
-         framebuffer.tex_color_buffer_handles[i] = 0;       
-    }
+    // for(i32 i = 0; i < 4; i++)
+    // {
+    //      framebuffer.tex_color_buffer_handles[i] = 0;       
+    // }
 
     glGenFramebuffers(1, &framebuffer.buffer_handle);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
@@ -1338,8 +1338,8 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
 
     //@Incomplete: Figure something out here. Ask for compatible version etc
 #ifdef _WIN32
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 #elif __linux
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
@@ -2336,6 +2336,7 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
     // @Incomplete: Create a better way for enabling/disabling the clipping planes
     // Check if we have clipping planes
     glEnable(GL_CLIP_PLANE0);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Go backwards through the array to enable easy render pass adding
     for (i32 pass_index = renderer->render.pass_count - 1; pass_index >= 0; pass_index--)
@@ -2380,6 +2381,16 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
             for (i32 i = 0; i < pass.commands.render_command_count; i++)
             {
                 rendering::RenderCommand &command = pass.commands.render_commands[i];
+
+                if(command.blend_mode == rendering::BlendMode::ONE_MINUS_SOURCE)
+                {
+                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                }
+                else if(command.blend_mode == rendering::BlendMode::ONE)
+                {
+                    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+                }
+                
                 rendering::Material material = get_material_instance(command.material, renderer);
                 ShaderGL *shader = &render_state.gl_shaders[command.pass.shader_handle.handle];
 
@@ -2417,6 +2428,15 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
             {
                 rendering::RenderCommand &command = pass.commands.depth_free_commands[i];
                 rendering::Material &material = get_material_instance(command.material, renderer);
+
+                if(command.blend_mode == rendering::BlendMode::ONE_MINUS_SOURCE)
+                {
+                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                }
+                else if(command.blend_mode == rendering::BlendMode::ONE)
+                {
+                    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+                }
 
                 switch(command.type)
                 {
@@ -2474,6 +2494,8 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
         renderer->render.instancing.float4_buffer_counts[i] = 0;
         renderer->render.instancing.mat4_buffer_counts[i] = 0;
     }
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 static void swap_buffers(RenderState &render_state)
