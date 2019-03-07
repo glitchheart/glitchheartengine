@@ -46,7 +46,7 @@ namespace rendering
         return -1;
     }
 
-        static void set_shader_values(Material &material, Shader &shader, Renderer *renderer)
+    static void set_shader_values(Material &material, Shader &shader, Renderer *renderer)
     {
         material.array_count = 0;
         memcpy(material.instanced_vertex_attributes, shader.instanced_vertex_attributes, sizeof(VertexAttributeInstanced) * shader.instanced_vertex_attribute_count);
@@ -170,6 +170,12 @@ namespace rendering
         renderer->render.materials[renderer->render.material_count] = renderer->render.materials[material_handle.handle];
         return { renderer->render.material_count++ };
     }
+
+    static MaterialHandle create_material(Renderer *renderer, const Material &to_copy)
+    {
+        renderer->render.materials[renderer->render.material_count] = to_copy;
+        return {renderer->render.material_count++};
+    }
     
     static MaterialHandle create_material(Renderer *renderer, ShaderHandle shader_handle)
     {
@@ -179,8 +185,18 @@ namespace rendering
         Shader &shader = renderer->render.shaders[shader_handle.handle];
 
         set_shader_values(material, shader, renderer);
-
+        
         return {renderer->render.material_count++};
+    }
+
+    static Material create_material_copyable(Renderer *renderer, ShaderHandle shader_handle)
+    {
+        Material material;
+        material.shader = shader_handle;
+
+        Shader &shader = renderer->render.shaders[shader_handle.handle];
+        set_shader_values(material, shader, renderer);
+        return material;
     }
     
     static MaterialInstanceHandle create_material_instance(Renderer *renderer, MaterialHandle material_handle)
@@ -1679,7 +1695,7 @@ namespace rendering
         info.stride += size_for_type(type);
     }
 
-    static void load_material_from_mtl(Renderer *renderer, MaterialHandle material_handle, const char *file_path)
+    static void load_material_from_mtl(Renderer *renderer, Material &material, const char *file_path)
     {
         // @Incomplete: We need a better way to do this!
         // Find the directory of the file
@@ -1704,7 +1720,6 @@ namespace rendering
         {
             char buffer[256];
 
-            Material &material = renderer->render.materials[material_handle.handle];
             if (UniformValue *u = mapping(material, UniformMappingType::DIFFUSE_COLOR))
             {
                 u->float4_val = math::Rgba(1, 1, 1, 1);
@@ -2413,14 +2428,7 @@ namespace rendering
 
         return current_size;
     }
-
-    struct _MaterialPair
-    {
-        char name[32];
-        rendering::MaterialHandle material;
-        rendering::ShaderHandle shader;
-    };
-
+    
     static b32 mtl_has_texture(char *source)
     {
         char buffer[256];
@@ -2440,7 +2448,21 @@ namespace rendering
         return false;
     }
     
-    static void load_materials_from_mtl(rendering::ShaderHandle shader_no_uvs_handle, rendering::ShaderHandle shader_with_uvs_handle, _MaterialPair *pairs, i32 *mat_pair_count, const char *file_path, Renderer *renderer)
+	static b32 has_new_mtl(char *source)
+	{
+		char buffer[256];
+		while (read_line(buffer, 256, &source))
+		{
+			if (starts_with(buffer, "newmtl"))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+    static void load_materials_from_mtl(PassMaterial *pass_materials, i32 pass_material_count, MaterialPair *pairs, i32 *mat_pair_count, const char *file_path, Renderer *renderer)
     {
         size_t index = 0;
         for (size_t i = 0; i < strlen(file_path); i++)
@@ -2462,169 +2484,259 @@ namespace rendering
         
         if(file)
         {
-            char buffer[256];
-
-            _MaterialPair *current = nullptr;
-            Material *material = nullptr;
-            rendering::ShaderHandle shader_handle = { -1 };
-            char *source = read_file_into_buffer(file);
+            MaterialPair *current = nullptr;
             
+            char *source = read_file_into_buffer(file);
+			char *copy = source;
+
+			b32 has_newmtl = has_new_mtl(copy);
+			
+			if (!has_newmtl)
+			{
+			}
+
+			char buffer[256];
             while (read_line(buffer, 256, &source))
             {
-                if (starts_with(buffer, "newmtl"))
+                if (starts_with(buffer, "newmtl") || !has_newmtl)
                 {
+					if (!has_newmtl)
+						source = copy;
+					
                     char *ptr = source;
                     
                     b32 has_texture = mtl_has_texture(ptr);
 
-                    if(has_texture)
+                    MaterialPair pair;
+                    pair.has_texture = has_texture;
+
+                    pair.pass_count = 0;
+                    
+                    for(i32 i = 0; i < pass_material_count; i++)
                     {
-                        shader_handle = shader_with_uvs_handle;
-                    }
-                    else
-                    {
-                        shader_handle = shader_no_uvs_handle;
+                        PassMaterial &pass = pass_materials[i];
+                        switch(pass.pass_type)
+                        {
+                        case PassType::NONE:
+                        case PassType::STANDARD:
+                        {
+                            pair.passes[pair.pass_count] = create_material(renderer, pass.material);
+                            strcpy(pair.pass_names[pair.pass_count], pass.pass_name);
+                            pair.pass_count++;
+                        }
+                        break;
+                        case PassType::SHADOWS:
+                        case PassType::NO_UVS:
+                        {
+                            if(!has_texture)
+                            {
+                                pair.passes[pair.pass_count] = create_material(renderer, pass.material);
+                                strcpy(pair.pass_names[pair.pass_count], pass.pass_name);
+                                pair.pass_count++;
+                            }
+                        }
+                        break;
+                        case PassType::SHADOWS_WITH_UVS:
+                        case PassType::WITH_UVS:
+                        {
+                            if(has_texture)
+                            {
+                                pair.passes[pair.pass_count] = create_material(renderer, pass.material);
+                                strcpy(pair.pass_names[pair.pass_count], pass.pass_name);
+                                pair.pass_count++;
+                            }
+                        }
+                        break;
+                        }
                     }
                     
-                    MaterialHandle handle = create_material(renderer, shader_handle);
-                    material = &renderer->render.materials[handle.handle];
-
-                    _MaterialPair pair;
-                    pair.material = handle;
-                    sscanf(buffer, "newmtl %[^\n]", pair.name);
-            
+					if (!has_newmtl)
+						strcpy(pair.name, "glitch_default");
+					else
+						sscanf(buffer, "newmtl %[^\n]", pair.name);
+					
+					has_newmtl = true;
 
                     pairs[(*mat_pair_count)++] = pair;
                     
                     current = &pairs[*mat_pair_count - 1];
-                    current->shader = shader_handle;
-                    
-                    if (UniformValue *u = mapping(*material, UniformMappingType::DIFFUSE_COLOR))
-                    {
-                        u->float4_val = math::Rgba(1, 1, 1, 1);
-                    }
 
-                    if (UniformValue *u = mapping(*material, UniformMappingType::SPECULAR_COLOR))
+                    for(i32 i = 0; i < pass_material_count; i++)
                     {
-                        u->float4_val = math::Rgba(0, 0, 0, 1);
-                    }
+                        rendering::MaterialHandle &pass = current->passes[i];
+                        rendering::Material &material = renderer->render.materials[pass.handle];
+                        
+                        if (UniformValue *u = mapping(material, UniformMappingType::DIFFUSE_COLOR))
+                        {
+                            u->float4_val = math::Rgba(1, 1, 1, 1);
+                        }
 
-                    if (UniformValue *u = mapping(*material, UniformMappingType::AMBIENT_COLOR))
-                    {
-                        u->float4_val = math::Rgba(0.0f);
-                    }
+                        if (UniformValue *u = mapping(material, UniformMappingType::SPECULAR_COLOR))
+                        {
+                            u->float4_val = math::Rgba(0, 0, 0, 1);
+                        }
 
-                    if (UniformValue *u = mapping(*material, UniformMappingType::SPECULAR_EXPONENT))
-                    {
-                        u->float_val = 1000;
+                        if (UniformValue *u = mapping(material, UniformMappingType::AMBIENT_COLOR))
+                        {
+                            u->float4_val = math::Rgba(0.0f);
+                        }
+
+                        if (UniformValue *u = mapping(material, UniformMappingType::SPECULAR_EXPONENT))
+                        {
+                            u->float_val = 1000;
+                        }
                     }
-                    
                 }
                 else if (starts_with(buffer, "illum")) // illumination
                 {
                 }
                 else if (starts_with(buffer, "Ka")) // ambient color
                 {
-					assert(material);
-                    if (UniformValue *u = mapping(*material, UniformMappingType::AMBIENT_COLOR))
+                    for(i32 i = 0; i < pass_material_count; i++)
                     {
-                        sscanf(buffer, "Ka %f %f %f", &u->float4_val.r, &u->float4_val.g, &u->float4_val.b);
-                        u->float4_val.a = 1.0f;
+                        rendering::MaterialHandle &pass = current->passes[i];
+                        rendering::Material &material = renderer->render.materials[pass.handle];
+                        
+                        if (UniformValue *u = mapping(material, UniformMappingType::AMBIENT_COLOR))
+                        {
+                            sscanf(buffer, "Ka %f %f %f", &u->float4_val.r, &u->float4_val.g, &u->float4_val.b);
+                            u->float4_val.a = 1.0f;
+                        }
                     }
                 }
                 else if (starts_with(buffer, "Kd")) // diffuse color
                 {
-					assert(material);
-					if (UniformValue *u = mapping(*material, UniformMappingType::DIFFUSE_COLOR))
+                    for(i32 i = 0; i < pass_material_count; i++)
                     {
-                        sscanf(buffer, "Kd %f %f %f", &u->float4_val.r, &u->float4_val.g, &u->float4_val.b);
-                        u->float4_val.a = 1.0f;
-                    }
-                    else if(VertexAttributeInstanced *va = attrib_mapping(*material, VertexAttributeMappingType::DIFFUSE_COLOR))
-                    {
-                        sscanf(buffer, "Kd %f %f %f", &va->attribute.float4_val.r, &va->attribute.float4_val.g, &va->attribute.float4_val.b);
-                        va->attribute.float4_val.a = 1.0f;
+                        rendering::MaterialHandle &pass = current->passes[i];
+                        rendering::Material &material = renderer->render.materials[pass.handle];
+                        
+                        if (UniformValue *u = mapping(material, UniformMappingType::DIFFUSE_COLOR))
+                        {
+                            sscanf(buffer, "Kd %f %f %f", &u->float4_val.r, &u->float4_val.g, &u->float4_val.b);
+                            u->float4_val.a = 1.0f;
+                        }
+                        else if(VertexAttributeInstanced *va = attrib_mapping(material, VertexAttributeMappingType::DIFFUSE_COLOR))
+                        {
+                            sscanf(buffer, "Kd %f %f %f", &va->attribute.float4_val.r, &va->attribute.float4_val.g, &va->attribute.float4_val.b);
+                            va->attribute.float4_val.a = 1.0f;
+                        }
                     }
                 }
                 else if (starts_with(buffer, "Ks")) // specular color
                 {
-					assert(material);
-					if (UniformValue *u = mapping(*material, UniformMappingType::SPECULAR_COLOR))
+                    for(i32 i = 0; i < pass_material_count; i++)
                     {
-                        sscanf(buffer, "Ks %f %f %f", &u->float4_val.r, &u->float4_val.g, &u->float4_val.b);
-                        u->float4_val.a = 1.0f;
+                        rendering::MaterialHandle &pass = current->passes[i];
+                        rendering::Material &material = renderer->render.materials[pass.handle];
+                        
+                        if (UniformValue *u = mapping(material, UniformMappingType::SPECULAR_COLOR))
+                        {
+                            sscanf(buffer, "Ks %f %f %f", &u->float4_val.r, &u->float4_val.g, &u->float4_val.b);
+                            u->float4_val.a = 1.0f;
+                        }
                     }
                 }
                 else if (starts_with(buffer, "Ns")) // specular exponent
                 {
-					assert(material);
-					if (UniformValue *u = mapping(*material, UniformMappingType::SPECULAR_EXPONENT))
+                    for(i32 i = 0; i < pass_material_count; i++)
                     {
-                        sscanf(buffer, "Ns %f", &u->float_val);
+                        rendering::MaterialHandle &pass = current->passes[i];
+                        rendering::Material &material = renderer->render.materials[pass.handle];
+                        
+                        if (UniformValue *u = mapping(material, UniformMappingType::SPECULAR_EXPONENT))
+                        {
+                            sscanf(buffer, "Ns %f", &u->float_val);
+                        }
                     }
                 }
                 else if (starts_with(buffer, "d"))
                 {
-					assert(material);
-					if (UniformValue *u = mapping(*material, UniformMappingType::DISSOLVE))
+                    for(i32 i = 0; i < pass_material_count; i++)
                     {
-                        sscanf(buffer, "d %f", &u->float_val);
+                        rendering::MaterialHandle &pass = current->passes[i];
+                        rendering::Material &material = renderer->render.materials[pass.handle];
+                        
+                        if (UniformValue *u = mapping(material, UniformMappingType::DISSOLVE))
+                        {
+                            sscanf(buffer, "d %f", &u->float_val);
+                        }
                     }
                 }
                 else if (starts_with(buffer, "map_Ka")) // ambient map
                 {
-					assert(material);
-					if (UniformValue *u = mapping(*material, UniformMappingType::AMBIENT_TEX))
+                    for(i32 i = 0; i < pass_material_count; i++)
                     {
-                        char name[64];
-                        sscanf(buffer, "map_Ka %s", name);
+                        rendering::MaterialHandle &pass = current->passes[i];
+                        rendering::Material &material = renderer->render.materials[pass.handle];
+                        
+                        if (UniformValue *u = mapping(material, UniformMappingType::AMBIENT_TEX))
+                        {
+                            char name[64];
+                            sscanf(buffer, "map_Ka %s", name);
 
-                        if (name[0] == '.' || name[1] == ':')
-                            load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
-                        else
-                            load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                            if (name[0] == '.' || name[1] == ':')
+                                load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                            else
+                                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                        }
                     }
                 }
                 else if (starts_with(buffer, "map_Kd")) // diffuse map
                 {
-					assert(material);
-                    if (UniformValue *u = mapping(*material, UniformMappingType::DIFFUSE_TEX))
+                    for(i32 i = 0; i < pass_material_count; i++)
                     {
-                        char name[64];
-                        sscanf(buffer, "map_Kd %s", name);
+                        rendering::MaterialHandle &pass = current->passes[i];
+                        rendering::Material &material = renderer->render.materials[pass.handle];
+                        
+                        if (UniformValue *u = mapping(material, UniformMappingType::DIFFUSE_TEX))
+                        {
+                            char name[64];
+                            sscanf(buffer, "map_Kd %s", name);
 
-                        if (name[0] == '.' || name[1] == ':')
-                            load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
-                        else
-                            load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                            if (name[0] == '.' || name[1] == ':')
+                                load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                            else
+                                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                        }
                     }
                 }
                 else if (starts_with(buffer, "map_Ks")) // specular map
                 {
-					assert(material);
-                    if (UniformValue *u = mapping(*material, UniformMappingType::SPECULAR_TEX))
+                    for(i32 i = 0; i < pass_material_count; i++)
                     {
-                        char name[64];
-                        sscanf(buffer, "map_Ks %s", name);
+                        rendering::MaterialHandle &pass = current->passes[i];
+                        rendering::Material &material = renderer->render.materials[pass.handle];
+                        
+                        if (UniformValue *u = mapping(material, UniformMappingType::SPECULAR_TEX))
+                        {
+                            char name[64];
+                            sscanf(buffer, "map_Ks %s", name);
 
-                        if (name[0] == '.' || name[1] == ':')
-                            load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
-                        else
-                            load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                            if (name[0] == '.' || name[1] == ':')
+                                load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                            else
+                                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                        }
                     }
                 }
                 else if (starts_with(buffer, "map_Ns")) // specular intensity map
                 {
-					assert(material);
-					if (UniformValue *u = mapping(*material, UniformMappingType::SPECULAR_INTENSITY_TEX))
+                    for(i32 i = 0; i < pass_material_count; i++)
                     {
-                        char name[64];
-                        sscanf(buffer, "map_Ns %s", name);
+                        rendering::MaterialHandle &pass = current->passes[i];
+                        rendering::Material &material = renderer->render.materials[pass.handle];
+                        
+                        if (UniformValue *u = mapping(material, UniformMappingType::SPECULAR_INTENSITY_TEX))
+                        {
+                            char name[64];
+                            sscanf(buffer, "map_Ns %s", name);
 
-                        if (name[0] == '.' || name[1] == ':')
-                            load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
-                        else
-                            load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                            if (name[0] == '.' || name[1] == ':')
+                                load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                            else
+                                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                        }
                     }
                 }
             }
@@ -2654,7 +2766,7 @@ namespace rendering
 		i32 uv_count;
 	};
 
-	static void parse_obj_object(const char *geometry_name, _VertexPtrs *vertex_ptrs, char **source, OBJ_ObjectData *obj_data, _MaterialPair *pairs, i32 mat_count, Renderer *renderer)
+	static void parse_obj_object(const char *geometry_name, _VertexPtrs *vertex_ptrs, char **source, MeshObjectData *obj_data, MaterialPair *pairs, i32 mat_count, Renderer *renderer)
     {
         b32 with_uvs = false;
         b32 with_normals = false;
@@ -2689,16 +2801,15 @@ namespace rendering
                     char name[32];
                     sscanf(buffer, "usemtl %[^\n\r]", name);
                     
-                    for(i32 i = 0; i < mat_count; i++)
-                    {
-                        const _MaterialPair &pair = pairs[i];
-                        if(strcmp(pair.name, name) == 0)
-                        {
-                            obj_data->material = pair.material;
-                            obj_data->shader = pair.shader;
-                            break;
-                        }
-                    }
+                    // for(i32 i = 0; i < mat_count; i++)
+                    // {
+                    //     const MaterialPair &pair = pairs[i];
+                    //     if(strcmp(pair.name, name) == 0)
+                    //     {
+                    //         obj_data->pair_index = i;
+                    //         break;
+                    //     }
+                    // }
                 }
             }
             else if (starts_with(buffer, "vn")) // vertex normal
@@ -2847,8 +2958,188 @@ namespace rendering
         obj_data->bounding_box = box;
         obj_data->buffer = create_buffers_from_mesh(renderer, mesh, 0, with_normals, with_uvs);
     }
+
+    static void parse_obj_object(const char *geometry_name, _VertexPtrs *vertex_ptrs, char **source, MeshObjectData *obj_data, Renderer *renderer)
+    {
+        b32 with_uvs = false;
+        b32 with_normals = false;
+
+        r32 min_x = 10000;
+        r32 min_y = 10000;
+        r32 min_z = 10000;
+        r32 max_x = -10000;
+        r32 max_y = -10000;
+        r32 max_z = -10000;
+        
+        char buffer[256];
+
+        char *last_ptr = *source;
+        
+        while (read_line_from_buffer(buffer, 256, source))
+        {
+            if(starts_with(buffer, "g"))
+            {
+                char name[256];
+                sscanf(buffer, "g %[^\n]", name);
+                if(strcmp(name, geometry_name) != 0) 
+                {
+                    *source = last_ptr;
+                    break;
+                }
+            }
+            else if (starts_with(buffer, "usemtl")) // Used material for geometry
+            {
+                obj_data->use_material = true;
+                sscanf(buffer, "usemtl %[^\n\r]", obj_data->material_name);
+            }
+            else if (starts_with(buffer, "vn")) // vertex normal
+            {
+                with_normals = true;
+                math::Vec3 normal(0.0f);
+                sscanf(buffer, "vn %f %f %f", &normal.x, &normal.y, &normal.z);
+                vertex_ptrs->normals[vertex_ptrs->normal_count++] = normal;
+            }
+            else if (starts_with(buffer, "vt")) // vertex uv
+            {
+                with_uvs = true;
+                math::Vec2 uv(0.0f);
+                sscanf(buffer, "vt %f %f", &uv.x, &uv.y);
+                uv.y = 1.0f - uv.y;
+                vertex_ptrs->uvs[vertex_ptrs->uv_count++] = uv;
+            }
+			else if (starts_with(buffer, "v ")) // vertex
+			{
+				Vertex vertex = {};
+				sscanf(buffer, "v %f %f %f", &vertex.position.x, &vertex.position.y, &vertex.position.z);
+
+				min_x = MIN(min_x, vertex.position.x);
+				min_y = MIN(min_y, vertex.position.y);
+				min_z = MIN(min_z, vertex.position.z);
+				max_x = MAX(max_x, vertex.position.x);
+				max_y = MAX(max_y, vertex.position.y);
+				max_z = MAX(max_z, vertex.position.z);
+
+				vertex_ptrs->vertices[vertex_ptrs->vertex_count++] = vertex;
+			}
+            else if (starts_with(buffer, "f")) // face
+            {
+                Face face = {};
+                math::Vec3i normal_indices = {};
+                math::Vec3i uv_indices = {};
+
+                if (with_uvs && with_normals)
+                {
+                    sscanf(buffer, "f %hd/%d/%d %hd/%d/%d %hd/%d/%d", &face.indices[0], &uv_indices.x, &normal_indices.x, &face.indices[1], &uv_indices.y, &normal_indices.y, &face.indices[2], &uv_indices.z, &normal_indices.z);
+                }
+                else if (with_uvs)
+                {
+                    sscanf(buffer, "f %hd/%d %hd/%d %hd/%d", &face.indices[0], &uv_indices.x, &face.indices[1], &uv_indices.y, &face.indices[2], &uv_indices.z);
+                }
+
+                else if (with_normals)
+                {
+                    sscanf(buffer, "f %hd//%d %hd//%d %hd//%d", &face.indices[0], &normal_indices.x, &face.indices[1], &normal_indices.y, &face.indices[2], &normal_indices.z);
+                }
+
+                // The obj-format was made by geniuses and therefore the indices are not 0-indexed. Such wow.
+                face.indices[0] -= 1;
+                face.indices[1] -= 1;
+                face.indices[2] -= 1;
+
+                b32 should_add = false;
+                Vertex v1 = vertex_ptrs->vertices[face.indices[0]];
+                math::Vec2 uv1(0.0f);
+                math::Vec3 n1(0.0f);
+
+                if (with_uvs)
+                {
+                    uv1 = vertex_ptrs->uvs[uv_indices.x - 1];
+                }
+
+                if (with_normals)
+                {
+                    n1 = vertex_ptrs->normals[normal_indices.x - 1];
+                }
+
+                face.indices[0] = (u16)check_for_identical_vertex(v1, uv1, n1, with_normals, with_uvs, vertex_ptrs->final_vertices, vertex_ptrs->final_vertex_count, &should_add);
+
+                if (should_add)
+                {
+					vertex_ptrs->final_vertices[vertex_ptrs->final_vertex_count++] = v1;
+                }
+
+                should_add = false;
+                Vertex &v2 = vertex_ptrs->vertices[face.indices[1]];
+                math::Vec2 uv2(0.0f);
+                math::Vec3 n2(0.0f);
+
+                if (with_uvs)
+                {
+                    uv2 = vertex_ptrs->uvs[uv_indices.y - 1];
+                }
+
+                if (with_normals)
+                {
+                    n2 = vertex_ptrs->normals[normal_indices.y - 1];
+                }
+
+                face.indices[1] = (u16)check_for_identical_vertex(v2, uv2, n2, with_normals, with_uvs, vertex_ptrs->final_vertices, vertex_ptrs->final_vertex_count, &should_add);
+
+                if (should_add)
+                {
+                    vertex_ptrs->final_vertices[vertex_ptrs->final_vertex_count++] = v2;
+                }
+
+                should_add = false;
+                Vertex &v3 = vertex_ptrs->vertices[face.indices[2]];
+
+                math::Vec2 uv3(0.0f);
+                math::Vec3 n3(0.0f);
+
+                if (with_uvs)
+                {
+                    uv3 = vertex_ptrs->uvs[uv_indices.z - 1];
+                }
+
+                if (with_normals)
+                {
+                    n3 = vertex_ptrs->normals[normal_indices.z - 1];
+                }
+
+                face.indices[2] = (u16)check_for_identical_vertex(v3, uv3, n3, with_normals, with_uvs, vertex_ptrs->final_vertices, vertex_ptrs->final_vertex_count, &should_add);
+
+                if (should_add)
+                {
+					vertex_ptrs->final_vertices[vertex_ptrs->final_vertex_count++] = v3;
+                }
+
+				vertex_ptrs->faces[vertex_ptrs->face_count++] = face;
+            }
+
+            last_ptr = *source;
+        }
+
+        Mesh mesh;
+        mesh.vertices = push_array(&renderer->mesh_arena, vertex_ptrs->final_vertex_count, Vertex);
+        mesh.faces = push_array(&renderer->mesh_arena, vertex_ptrs->face_count, Face);
+        mesh.vertex_count = vertex_ptrs->final_vertex_count;
+        mesh.face_count = vertex_ptrs->face_count;
+
+        memcpy(mesh.vertices, vertex_ptrs->final_vertices, mesh.vertex_count * sizeof(Vertex));
+        memcpy(mesh.faces, vertex_ptrs->faces, mesh.face_count * sizeof(Face));
+
+		vertex_ptrs->final_vertex_count = 0;
+		vertex_ptrs->face_count = 0;
+
+        obj_data->mesh_scale = math::Vec3(max_x - min_x, max_y - min_y, max_z - min_z);
+        math::BoundingBox box = {};
+        box.min = math::Vec3(min_x, min_y, min_z);
+        box.max = math::Vec3(max_x, max_y, max_z);
+        obj_data->bounding_box = box;
+        obj_data->buffer = create_buffers_from_mesh(renderer, mesh, 0, with_normals, with_uvs);
+    }
     
-	struct _OBJ_DataCounts
+	struct MeshDataCounts
 	{
 		i32 vertex_count;
 		i32 normal_count;
@@ -2856,9 +3147,9 @@ namespace rendering
 		i32 face_count;
 	};
 
-	static _OBJ_DataCounts get_data_counts(char *source)
+	static MeshDataCounts get_data_counts(char *source)
 	{
-		_OBJ_DataCounts counts = {};
+		MeshDataCounts counts = {};
 		
 		char buffer[256];
 
@@ -2885,28 +3176,34 @@ namespace rendering
 		return counts;
 	}
 
-	static OBJ_ObjectInfo load_obj(Renderer *renderer, const char *file_path, rendering::ShaderHandle shader_no_uvs_handle, rendering::ShaderHandle shader_with_uvs_handle)
+	static MeshObjectInfo load_obj(Renderer *renderer, const char *file_path, rendering::PassMaterial *pass_materials, i32 pass_material_count, rendering::MaterialPair *pairs = nullptr, i32 count = 0)
 	{
-		OBJ_ObjectInfo obj_info = {};
-		
-		for (i32 i = 0; i < MAX_OBJ_OBJECTS; i++)
-		{
-			obj_info.data[i].material = { -1 };
-		}
-
+		MeshObjectInfo obj_info = {};
+	    
         obj_info.object_count = 0;
         
         FILE *file = fopen(file_path, "rb");
 
         if(file)
         {
-			_MaterialPair mat_pairs[64];
-			i32 mat_pair_count = 0;
+            MaterialPair std_pairs[64];
+            i32 pair_count = count;
+            
+            MaterialPair *mat_pairs;
+            
+            if(count > 0)
+            {
+                mat_pairs = pairs;
+            }
+            else
+            {
+                mat_pairs = std_pairs;
+            }
             
             char *source = read_file_into_buffer(file);
 			char *source_copy = source;
 
-			_OBJ_DataCounts data_counts = get_data_counts(source_copy);
+			MeshDataCounts data_counts = get_data_counts(source_copy);
 			_VertexPtrs ptrs;
 
 			ptrs.vertex_count = 0;
@@ -2950,7 +3247,7 @@ namespace rendering
 
                     dir[index] = 0;
                     char *material_file_path = concat(dir, mtl_file_name, &renderer->temp_arena);
-                    load_materials_from_mtl(shader_no_uvs_handle, shader_with_uvs_handle, mat_pairs, &mat_pair_count, material_file_path, renderer);
+                    load_materials_from_mtl(pass_materials, pass_material_count, mat_pairs, &pair_count, material_file_path, renderer);
 
 					end_temporary_memory(temp_block);
                 }
@@ -2960,7 +3257,93 @@ namespace rendering
                     sscanf(buffer, "g %[^\n]", name);
                     //read_line(buffer, 256, &source);
                     
-                    parse_obj_object(name, &ptrs, &source, &obj_info.data[obj_info.object_count++], mat_pairs, mat_pair_count, renderer);
+                    parse_obj_object(name, &ptrs, &source, &obj_info.data[obj_info.object_count++], mat_pairs, pair_count, renderer);
+                }
+            }
+
+            free(source_copy);
+            free(ptrs.vertices);
+			free(ptrs.final_vertices);
+			free(ptrs.normals);
+			free(ptrs.uvs);
+			free(ptrs.faces);
+        }
+        else
+        {
+            debug("File '%s' could not be loaded\n", file_path);
+        }
+
+        return obj_info;
+    }
+
+    
+	static MeshObjectInfo load_obj(Renderer *renderer, const char *file_path)
+	{
+		MeshObjectInfo obj_info = {};
+        obj_info.object_count = 0;
+        
+        FILE *file = fopen(file_path, "rb");
+
+        if(file)
+        {
+            char *source = read_file_into_buffer(file);
+			char *source_copy = source;
+
+			MeshDataCounts data_counts = get_data_counts(source_copy);
+			_VertexPtrs ptrs;
+
+			ptrs.vertex_count = 0;
+			ptrs.final_vertex_count = 0;
+			ptrs.normal_count = 0;
+			ptrs.uv_count = 0;
+			ptrs.face_count = 0;
+
+			ptrs.vertices = (Vertex*)malloc(sizeof(Vertex) * data_counts.vertex_count);
+			
+			ptrs.normals = (math::Vec3*)malloc(sizeof(math::Vec3) * data_counts.normal_count);
+			ptrs.uvs = (math::Vec2*)malloc(sizeof(math::Vec2) * data_counts.uv_count);
+			ptrs.faces = (Face*)malloc(sizeof(Face) * data_counts.face_count);
+            ptrs.final_vertices = (Vertex*)malloc(sizeof(Vertex) * 3 * data_counts.face_count);
+            
+			char buffer[256];
+            
+            while (read_line(buffer, 256, &source))
+            {
+                if (starts_with(buffer, "mtllib")) // Material file
+                {
+                    char mtl_file_name[32];
+                    
+                    // Read the material file-name
+                    sscanf(buffer, "mtllib %s", mtl_file_name);
+
+                    // Find the directory of the file
+                    size_t index = 0;
+                    for (size_t i = 0; i < strlen(file_path); i++)
+                    {
+                        if (file_path[i] == '/')
+                        {
+                            index = i + 1;
+                        }
+                    }
+
+                    auto temp_block = begin_temporary_memory(&renderer->temp_arena);
+
+                    char *dir = push_string(temp_block.arena, index);
+                    strncpy(dir, file_path, index);
+
+                    dir[index] = 0;
+                    char *material_file_path = concat(dir, mtl_file_name, &renderer->temp_arena);
+
+                    obj_info.has_mtl = true;
+                    strcpy(obj_info.mtl_file_path, material_file_path);
+                    
+					end_temporary_memory(temp_block);
+                }
+                else if (starts_with(buffer, "g")) // we're starting with new geometry
+                {
+                    char name[256];
+                    sscanf(buffer, "g %[^\n]", name);
+                    parse_obj_object(name, &ptrs, &source, &obj_info.data[obj_info.object_count++], renderer);
                 }
             }
 
@@ -3755,7 +4138,7 @@ namespace rendering
         renderer->render.shadow_commands[renderer->render.shadow_command_count++] = shadow_command;
     }
 
-    static void push_line_to_render_pass(Renderer *renderer, math::Vec3 p0, math::Vec3 p1, r32 thickness, math::Vec3 color, Transform transform, MaterialInstanceHandle material_instance_handle, ShaderHandle shader_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH)
+    static void push_line_to_render_pass(Renderer *renderer, math::Vec3 p0, math::Vec3 p1, r32 thickness, math::Vec3 color, Transform transform, MaterialInstanceHandle material_instance_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH)
     {
         RenderPass &pass = renderer->render.passes[render_pass_handle.handle - 1];
         assert(pass.commands.render_command_count < global_max_render_commands);
@@ -3763,7 +4146,6 @@ namespace rendering
         RenderCommand render_command = {};
         render_command.type = RenderCommandType::LINE;
         render_command.material = material_instance_handle;
-        render_command.pass.shader_handle = shader_handle;
         render_command.transform = transform;
 
         render_command.line.p0 = p0;
@@ -3777,7 +4159,7 @@ namespace rendering
             pass.commands.depth_free_commands[pass.commands.depth_free_command_count++] = render_command;
     }
 
-    static void push_buffer_to_render_pass(Renderer *renderer, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, Transform &transform, ShaderHandle shader_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH, PrimitiveType primitive_type = PrimitiveType::TRIANGLES)
+    static void push_buffer_to_render_pass(Renderer *renderer, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, Transform &transform, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH, PrimitiveType primitive_type = PrimitiveType::TRIANGLES)
     {
         RenderPass &pass = renderer->render.passes[render_pass_handle.handle - 1];
         assert(pass.commands.render_command_count < global_max_render_commands);
@@ -3788,7 +4170,6 @@ namespace rendering
         render_command.buffer.buffer = buffer_handle;
         render_command.material = material_instance_handle;
         render_command.transform = transform;
-        render_command.pass.shader_handle = shader_handle;
 
         if(type == CommandType::WITH_DEPTH)
             pass.commands.render_commands[pass.commands.render_command_count++] = render_command;
@@ -3796,7 +4177,7 @@ namespace rendering
             pass.commands.depth_free_commands[pass.commands.depth_free_command_count++] = render_command;
     }
 
-    static void push_instanced_buffer_to_render_pass(Renderer *renderer, i32 count, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, ShaderHandle shader_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH, PrimitiveType primitive_type = PrimitiveType::TRIANGLES)
+    static void push_instanced_buffer_to_render_pass(Renderer *renderer, i32 count, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH, PrimitiveType primitive_type = PrimitiveType::TRIANGLES)
     {
         RenderCommand render_command = {};
         render_command.type = RenderCommandType::BUFFER;
@@ -3804,7 +4185,7 @@ namespace rendering
         render_command.count = count;
         render_command.buffer.buffer = buffer_handle;
         render_command.material = material_instance_handle;
-        render_command.pass.shader_handle = shader_handle;
+
         RenderPass &pass = renderer->render.passes[render_pass_handle.handle - 1];
 
         if(type == CommandType::WITH_DEPTH)
@@ -3813,7 +4194,7 @@ namespace rendering
             pass.commands.depth_free_commands[pass.commands.depth_free_command_count++] = render_command;
     }
 
-    static void push_instanced_buffer_to_render_pass(Renderer *renderer, i32 count, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, ShaderHandle shader_handle, RenderPassHandle render_pass_handle)
+    static void push_instanced_buffer_to_render_pass(Renderer *renderer, i32 count, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, RenderPassHandle render_pass_handle)
     {
     }
 

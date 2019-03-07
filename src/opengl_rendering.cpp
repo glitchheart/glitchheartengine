@@ -801,10 +801,10 @@ static void create_new_framebuffer(rendering::FramebufferInfo &info, Framebuffer
     framebuffer.width = info.width;
     framebuffer.height = info.height;
 
-    for(i32 i = 0; i < 4; i++)
-    {
-         framebuffer.tex_color_buffer_handles[i] = 0;       
-    }
+    // for(i32 i = 0; i < 4; i++)
+    // {
+    //      framebuffer.tex_color_buffer_handles[i] = 0;       
+    // }
 
     glGenFramebuffers(1, &framebuffer.buffer_handle);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
@@ -2326,7 +2326,8 @@ static void render_line(rendering::RenderCommand& command, rendering::Material& 
     rendering::set_uniform_value(renderer, material, "color", command.line.color);
     rendering::set_uniform_value(renderer, material, "miter_limit", 0.1f);
 
-    render_buffer(rendering::PrimitiveType::LINES, command.transform, renderer->render.line_buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
+    
+    render_buffer(rendering::PrimitiveType::LINES, command.transform, renderer->render.line_buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[material.shader.handle]);
 }
 
 static void render_all_passes(RenderState &render_state, Renderer *renderer)
@@ -2381,7 +2382,7 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
             {
                 rendering::RenderCommand &command = pass.commands.render_commands[i];
                 rendering::Material material = get_material_instance(command.material, renderer);
-                ShaderGL *shader = &render_state.gl_shaders[command.pass.shader_handle.handle];
+                ShaderGL *shader = &render_state.gl_shaders[material.shader.handle];
 
                 //assert(material.shader.handle == command.pass.shader_handle.handle);
                 
@@ -2392,6 +2393,7 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
                     if(pass_index == renderer->render.shadow_pass.handle - 1)
                     {
                         material = renderer->render.materials[renderer->render.shadow_map_material.handle];
+                        
                         if(rendering::VertexAttributeInstanced* original_mapping = rendering::get_attrib_mapping(command.material, rendering::VertexAttributeMappingType::MODEL, renderer))
                         {
                             rendering::VertexAttributeInstanced* mapping = rendering::attrib_mapping(material, rendering::VertexAttributeMappingType::MODEL);
@@ -2422,7 +2424,7 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
                 {
                 case rendering::RenderCommandType::BUFFER:
                 {
-                    render_buffer(command.buffer.primitive_type, command.transform, command.buffer.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
+                    render_buffer(command.buffer.primitive_type, command.transform, command.buffer.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[material.shader.handle]);
                 }
                 break;
                 case rendering::RenderCommandType::LINE:
