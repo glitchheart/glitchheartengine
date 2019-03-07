@@ -931,7 +931,11 @@ namespace scene
         Scene &scene = get_scene(handle);                
         for(i32 i = 0; i < scene.particle_system_component_count; i++)
         {
-            handle.manager->renderer->particles.api->start_particle_system(scene.particle_system_components[i].handle, scene.renderer);
+            ParticleSystemInfo* ps = handle.manager->renderer->particles.api->get_particle_system_info(scene.particle_system_components[i].handle, handle.manager->renderer);
+            if(ps->attributes.play_on_awake)
+            {
+                handle.manager->renderer->particles.api->start_particle_system(scene.particle_system_components[i].handle, scene.renderer);
+            }
             handle.manager->renderer->particles.api->pause_particle_system(scene.particle_system_components[i].handle, scene.renderer, false);
         }
     }
@@ -1987,6 +1991,12 @@ namespace scene
         assert(info);
         
         info->attributes = attributes;
+
+        if(attributes.play_on_awake)
+        {
+            scene.renderer->particles.api->start_particle_system(comp.handle, scene.renderer);
+            scene.renderer->particles.api->pause_particle_system(comp.handle, scene.renderer, false);
+        }
         
         return(comp);
     }
@@ -2307,9 +2317,9 @@ namespace scene
                             // Add the pass information
                             templ->particles.shader_handle = shader_handle;
                         }
-                        else if(starts_with(buffer, "started"))
+                        else if(starts_with(buffer, "play_on_awake"))
                         {
-                            sscanf(buffer, "started: %d", &templ->particles.started);
+                            sscanf(buffer, "play_on_awake: %d", &attributes.play_on_awake);
                         }
                         else if(starts_with(buffer, "start_size"))
                         {
@@ -2398,29 +2408,29 @@ namespace scene
                             {
                                 attributes.emission_module.emitter_func_type = EmissionFuncType::DIRECTION;
                             }
-                            else if(starts_with(func_name, "square"))
-                            {
-                                attributes.emission_module.emitter_func_type = EmissionFuncType::SQUARE;
-                            }
                             else if(starts_with(func_name, "square_random"))
                             {
                                 attributes.emission_module.emitter_func_type = EmissionFuncType::SQUARE_RANDOM;
                             }
-                            else if(starts_with(func_name, "disc"))
+                            else if(starts_with(func_name, "square"))
                             {
-                                attributes.emission_module.emitter_func_type = EmissionFuncType::DISC;
+                                attributes.emission_module.emitter_func_type = EmissionFuncType::SQUARE;
                             }
                             else if(starts_with(func_name, "disc_random"))
                             {
                                 attributes.emission_module.emitter_func_type = EmissionFuncType::DISC_RANDOM;
                             }
-                            else if(starts_with(func_name, "circle"))
+                            else if(starts_with(func_name, "disc"))
                             {
-                                attributes.emission_module.emitter_func_type = EmissionFuncType::CIRCLE;
+                                attributes.emission_module.emitter_func_type = EmissionFuncType::DISC;
                             }
                             else if(starts_with(func_name, "circle_random"))
                             {
                                 attributes.emission_module.emitter_func_type = EmissionFuncType::CIRCLE_RANDOM;
+                            }
+                            else if(starts_with(func_name, "circle"))
+                            {
+                                attributes.emission_module.emitter_func_type = EmissionFuncType::CIRCLE;
                             }
                         }
                         else if(starts_with(buffer, "emission_min"))
@@ -2724,11 +2734,15 @@ namespace scene
             }
 
             ps_comp.render_pass = rendering::get_render_pass_handle_for_name(STANDARD_PASS, scene.renderer);
-            
-            if(templ.particles.started)
-            {
-                    scene.renderer->particles.api->start_particle_system(ps_comp.handle, scene.renderer);
-            }
+                
+            // if(templ.particles.attributes.play_on_awake)
+            // {
+            //     scene.renderer->particles.api->start_particle_system(ps_comp.handle, scene.renderer);
+            // }
+            // else
+            // {
+            //     scene.renderer->particles.api->pause_particle_system(ps_comp.handle, scene.renderer, true);
+            // }
         }
 
         if(templ.comp_flags & COMP_LIGHT)
@@ -3543,8 +3557,7 @@ namespace scene
             // Push the command to the correct render passes
             for (i32 pass_index = 0; pass_index < first_command.pass_count; pass_index++)
             {
-                rendering::push_instanced_buffer_to_render_pass(renderer, queued_command.count, queued_command.buffer_handle, first_command.material_handle,
-                                                                first_command.shader_handles[pass_index], first_command.passes[pass_index], queued_command.ignore_depth ? rendering::CommandType::NO_DEPTH : rendering::CommandType::WITH_DEPTH);
+                rendering::push_instanced_buffer_to_render_pass(renderer, queued_command.count, queued_command.buffer_handle, first_command.material_handle, first_command.shader_handles[pass_index], first_command.passes[pass_index], queued_command.ignore_depth ? rendering::CommandType::NO_DEPTH : rendering::CommandType::WITH_DEPTH);
             }
         }
     
@@ -3556,7 +3569,7 @@ namespace scene
 
             rendering::BufferHandle buffer = system.attributes.buffer.handle != 0 ? system.attributes.buffer : (system.attributes.texture_handle.handle != 0 ? renderer->particles.textured_quad_buffer : renderer->particles.quad_buffer);
 
-            rendering::push_instanced_buffer_to_render_pass(renderer, system.particle_count, buffer, system.material_handle, particle_material.shader, renderer->render.standard_pass, rendering::CommandType::WITH_DEPTH);
+            rendering::push_instanced_buffer_to_render_pass(renderer, system.particle_count, buffer, system.material_handle, particle_material.shader, renderer->render.standard_pass, rendering::CommandType::WITH_DEPTH, rendering::PrimitiveType::TRIANGLES);
         }
 
         draw_gizmos(scene.scene_manager);

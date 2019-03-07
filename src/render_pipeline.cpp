@@ -1,5 +1,9 @@
 namespace rendering
 {
+    static void push_line_to_render_pass(Renderer *renderer, math::Vec3 p0, math::Vec3 p1, r32 thickness, math::Vec3 color, Transform transform, MaterialInstanceHandle material_instance_handle, ShaderHandle shader_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH);
+    static Transform create_transform(Transform t);
+    static Transform create_transform(math::Vec3 position, math::Vec3 scale, math::Vec3 rotation);
+    
     static i32 _find_next_internal_handle(i32 start, i32 max, i32 *indices)
     {
         for(i32 i = start; i < max; i++)
@@ -1002,47 +1006,48 @@ namespace rendering
         renderer->render.light_view_matrix = view_matrix;
     }
 
+    static math::Vec3 projection_to_view_space(math::Mat4 p, math::Vec3 position)
+    {
+        r32 s_x = p.m11;
+        r32 s_y = p.m22;
+        r32 s_z = p.m33;
+        r32 t_z = p.m34;
+
+        r32 z = t_z / (position.z - s_z);
+        r32 x = (position.x * z) / s_x;
+        r32 y = (position.y * z) / s_y;
+
+        return math::Vec3(x, y, z);
+    }
+
     static void calculate_light_space_matrices(Renderer *renderer, Camera camera, math::Vec3 direction)
     {
         direction = math::normalize(direction);
         math::Vec3 right = math::normalize(math::cross(math::Vec3(0, 1, 0), direction));
         math::Vec3 up = math::normalize(math::cross(direction, right));
+        
+        math::Mat4 light_view_matrix = math::Mat4(math::Vec4(right, 0.0f), math::Vec4(up, 0.0f),
+                                                  math::Vec4(direction, 0.0f), math::Vec4(0.0f, 0.0f, 0.0f, 1.0f));
 
         r32 z_near = renderer->render.shadow_settings.z_near;
         r32 z_far = renderer->render.shadow_settings.z_far;
         r32 fov = renderer->render.shadow_settings.fov;
-        r32 light_offset = renderer->render.shadow_settings.light_offset;
 
-        r32 half_fov = fov * 0.5f;
-        
-        r32 tan_fov = tan(DEGREE_IN_RADIANS * half_fov);
+        math::Mat4 inv_view = math::inverse(camera.view_matrix);
         r32 aspect_ratio = (float)renderer->framebuffer_width / (float)renderer->framebuffer_height;
+        
+        math::Mat4 p = math::perspective(aspect_ratio, DEGREE_IN_RADIANS * fov, z_near, z_far);
 
-        r32 height_near = 2 * tan_fov * z_near;
-        r32 width_near = height_near * aspect_ratio;
-        r32 height_far = 2 * tan_fov * z_far;
-        r32 width_far = height_far * aspect_ratio;
+        // @Note: NDC Corners in OpenGL
+        math::Vec3 near_top_left = inv_view * projection_to_view_space(p, math::Vec3(-1, 1, -1));
+        math::Vec3 near_top_right = inv_view * projection_to_view_space(p, math::Vec3(1, 1, -1));
+        math::Vec3 near_bottom_left = inv_view * projection_to_view_space(p, math::Vec3(-1, -1, -1));
+        math::Vec3 near_bottom_right = inv_view * projection_to_view_space(p, math::Vec3(1, -1, -1));
 
-        math::Vec3 center_near = camera.position + (camera.forward * z_near);
-        math::Vec3 center_far = camera.position + (camera.forward * z_far);
-
-        math::Vec3 near_top_left = center_near + up * (height_near * 0.5f) - right * (width_near * 0.5f);
-        math::Vec3 near_top_right = center_near + up * (height_near * 0.5f) + right * (width_near * 0.5f);
-        math::Vec3 near_bottom_left = center_near - up * (height_near * 0.5f) - right * (width_near * 0.5f);
-        math::Vec3 near_bottom_right = center_near - up * (height_near * 0.5f) + right * (width_near * 0.5f);
-
-        math::Vec3 far_top_left = center_far + up * (height_far * 0.5f) - right * (width_far * 0.5f);
-        math::Vec3 far_top_right = center_far + up * (height_far * 0.5f) + right * (width_far * 0.5f);
-        math::Vec3 far_bottom_left = center_far - up * (height_far * 0.5f) - right * (width_far * 0.5f);
-        math::Vec3 far_bottom_right = center_far - up * (height_far * 0.5f) + right * (width_far * 0.5f);
-
-        math::Mat4 light_view_matrix = math::Mat4(math::Vec4(right, 0.0f), math::Vec4(up, 0.0f),
-                                                  math::Vec4(direction, 0.0f), math::Vec4(0.0f, 0.0f, 0.0f, 1.0f));
-        light_view_matrix = math::translate(light_view_matrix, -direction * light_offset);
-        // math::Mat4 r = math::Mat4(1.0f);
-        // r.v1 = math::Vec4(right, 0.0f);
-        // r.v2 = math::Vec4(up, 0.0f);
-        // r.v3 = math::Vec4(camera.forward, 0.0f);
+        math::Vec3 far_top_left = inv_view * projection_to_view_space(p, math::Vec3(-1, 1, 1));
+        math::Vec3 far_top_right = inv_view * projection_to_view_space(p, math::Vec3(1, 1, 1));
+        math::Vec3 far_bottom_left = inv_view * projection_to_view_space(p, math::Vec3(-1, -1, 1));
+        math::Vec3 far_bottom_right = inv_view * projection_to_view_space(p, math::Vec3(1, -1, 1));
 
         math::Vec3 points[8];
 
@@ -3755,7 +3760,7 @@ namespace rendering
         renderer->render.shadow_commands[renderer->render.shadow_command_count++] = shadow_command;
     }
 
-    static void push_line_to_render_pass(Renderer *renderer, math::Vec3 p0, math::Vec3 p1, r32 thickness, math::Vec3 color, Transform transform, MaterialInstanceHandle material_instance_handle, ShaderHandle shader_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH)
+    static void push_line_to_render_pass(Renderer *renderer, math::Vec3 p0, math::Vec3 p1, r32 thickness, math::Vec3 color, Transform transform, MaterialInstanceHandle material_instance_handle, ShaderHandle shader_handle, RenderPassHandle render_pass_handle, CommandType type)
     {
         RenderPass &pass = renderer->render.passes[render_pass_handle.handle - 1];
         assert(pass.commands.render_command_count < global_max_render_commands);
@@ -3777,7 +3782,7 @@ namespace rendering
             pass.commands.depth_free_commands[pass.commands.depth_free_command_count++] = render_command;
     }
 
-    static void push_buffer_to_render_pass(Renderer *renderer, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, Transform &transform, ShaderHandle shader_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH, PrimitiveType primitive_type = PrimitiveType::TRIANGLES)
+    static void push_buffer_to_render_pass(Renderer *renderer, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, Transform &transform, ShaderHandle shader_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH, PrimitiveType primitive_type = PrimitiveType::TRIANGLES, rendering::BlendMode blend_mode = rendering::BlendMode::ONE_MINUS_SOURCE)
     {
         RenderPass &pass = renderer->render.passes[render_pass_handle.handle - 1];
         assert(pass.commands.render_command_count < global_max_render_commands);
@@ -3789,6 +3794,7 @@ namespace rendering
         render_command.material = material_instance_handle;
         render_command.transform = transform;
         render_command.pass.shader_handle = shader_handle;
+        render_command.blend_mode = blend_mode;
 
         if(type == CommandType::WITH_DEPTH)
             pass.commands.render_commands[pass.commands.render_command_count++] = render_command;
@@ -3796,7 +3802,7 @@ namespace rendering
             pass.commands.depth_free_commands[pass.commands.depth_free_command_count++] = render_command;
     }
 
-    static void push_instanced_buffer_to_render_pass(Renderer *renderer, i32 count, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, ShaderHandle shader_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH, PrimitiveType primitive_type = PrimitiveType::TRIANGLES)
+    static void push_instanced_buffer_to_render_pass(Renderer *renderer, i32 count, BufferHandle buffer_handle, MaterialInstanceHandle material_instance_handle, ShaderHandle shader_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH, PrimitiveType primitive_type = PrimitiveType::TRIANGLES, rendering::BlendMode blend_mode = rendering::BlendMode::ONE_MINUS_SOURCE)
     {
         RenderCommand render_command = {};
         render_command.type = RenderCommandType::BUFFER;
@@ -3805,6 +3811,7 @@ namespace rendering
         render_command.buffer.buffer = buffer_handle;
         render_command.material = material_instance_handle;
         render_command.pass.shader_handle = shader_handle;
+        render_command.blend_mode = blend_mode;
         RenderPass &pass = renderer->render.passes[render_pass_handle.handle - 1];
 
         if(type == CommandType::WITH_DEPTH)

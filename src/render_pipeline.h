@@ -422,12 +422,19 @@ namespace rendering
         BUFFER,
         LINE,
     };
+
+    enum BlendMode
+    {
+        ONE_MINUS_SOURCE,
+        ONE
+    };
     
     struct RenderCommand
     {
         RenderCommandType type;
 		MaterialInstanceHandle material;
         Transform transform;
+        BlendMode blend_mode;
         
         i32 count;
 
