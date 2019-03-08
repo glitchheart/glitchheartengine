@@ -965,13 +965,17 @@ namespace scene
             handle.manager->renderer->particles.api->stop_particle_system(scene.particle_system_components[i].handle, scene.renderer);
         }
     }
-    
+
     static void activate_particle_systems(SceneHandle handle)
     {
-        Scene &scene = get_scene(handle);                
+        Scene &scene = get_scene(handle);
         for(i32 i = 0; i < scene.particle_system_component_count; i++)
         {
-            handle.manager->renderer->particles.api->start_particle_system(scene.particle_system_components[i].handle, scene.renderer);
+            ParticleSystemInfo* ps = handle.manager->renderer->particles.api->get_particle_system_info(scene.particle_system_components[i].handle, handle.manager->renderer);
+            if(ps->attributes.play_on_awake)
+            {
+                handle.manager->renderer->particles.api->start_particle_system(scene.particle_system_components[i].handle, scene.renderer);
+            }
             handle.manager->renderer->particles.api->pause_particle_system(scene.particle_system_components[i].handle, scene.renderer, false);
         }
     }
@@ -2033,6 +2037,12 @@ namespace scene
         assert(info);
         
         info->attributes = attributes;
+
+        if(attributes.play_on_awake)
+        {
+            scene.renderer->particles.api->start_particle_system(comp.handle, scene.renderer);
+            scene.renderer->particles.api->pause_particle_system(comp.handle, scene.renderer, false);
+        }
         
         return(comp);
     }
@@ -2467,9 +2477,9 @@ namespace scene
                             // Add the pass information
                             templ->particles.shader_handle = shader_handle;
                         }
-                        else if(starts_with(buffer, "started"))
+                        else if(starts_with(buffer, "play_on_awake"))
                         {
-                            sscanf(buffer, "started: %d", &templ->particles.started);
+                            sscanf(buffer, "play_on_awake: %d", &attributes.play_on_awake);
                         }
                         else if(starts_with(buffer, "start_size"))
                         {
@@ -2881,11 +2891,6 @@ namespace scene
             }
 
             ps_comp.render_pass = rendering::get_render_pass_handle_for_name(STANDARD_PASS, scene.renderer);
-            
-            if(templ.particles.started)
-            {
-                    scene.renderer->particles.api->start_particle_system(ps_comp.handle, scene.renderer);
-            }
         }
 
         if(templ.comp_flags & COMP_LIGHT)
