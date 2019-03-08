@@ -350,15 +350,11 @@ struct Mesh
 	i32 instance_scale_buffer_handle;
 };
 
-struct BatchedCommand
+struct CombinedCommand
 {
     rendering::MaterialInstanceHandle material_handle;
     rendering::Transform transform;
     b32 casts_shadows;
-
-    rendering::RenderPassHandle passes[8];
-    rendering::MaterialInstanceHandle material_handles[8];
-    i32 pass_count;
 };
 
 struct QueuedRenderCommand
@@ -366,8 +362,8 @@ struct QueuedRenderCommand
     rendering::BufferHandle buffer_handle;
     rendering::MaterialHandle original_material;
     b32 ignore_depth;
-    
-    BatchedCommand commands[1024];
+
+    CombinedCommand commands[1024];
     i32 count;
 };
 
@@ -479,6 +475,13 @@ struct GraphicsAPI
 };
 
 struct ParticleApi;
+
+struct Pass
+{
+    rendering::RenderPassHandle pass_handle;
+    QueuedRenderCommand queued_commands[256];
+    i32 command_count;
+};
 
 struct Renderer
 {
@@ -712,6 +715,8 @@ struct Renderer
         
         QueuedRenderCommand *queued_commands;
         i32 queued_command_count;
+
+        Pass *pass_commands;
 
 #define MAX_CUSTOM_UNIFORM_MAPPINGS 64
         rendering::CustomUniformMapping *custom_mappings;

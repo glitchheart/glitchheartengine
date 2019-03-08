@@ -130,10 +130,8 @@ namespace scene
     
     struct RenderComponent
     {
-        rendering::MaterialHandle original_material_handle;
         rendering::BufferHandle buffer_handle;
         rendering::BufferHandle bounding_box_buffer;
-        rendering::MaterialInstanceHandle material_handle;
         
         b32 casts_shadows;
         math::Vec3 mesh_scale;
@@ -146,6 +144,7 @@ namespace scene
         // @Note: All the render passes this component should be rendered in
         rendering::RenderPassHandle render_passes[8];
         rendering::MaterialInstanceHandle material_handles[8];
+        rendering::MaterialHandle original_materials[8];
         
         i32 render_pass_count;
     };
@@ -338,6 +337,7 @@ namespace scene
     typedef void (*OnLoad)(SceneHandle scene);
     typedef void (*OnSave)(SceneHandle scene);
     typedef void (*OnSceneWillBeFreed)(SceneHandle scene);
+    typedef void (*OnSceneWillLoad)(SceneHandle scene);
     typedef void (*OnSceneLoaded)(SceneHandle scene);
     typedef void (*OnEntityUpdated)(EntityHandle entity, SceneHandle scene);
     typedef void (*OnEntitySelected)(EntityHandle entity, SceneHandle scene);
@@ -459,6 +459,7 @@ namespace scene
             OnLoad on_load;
             OnSave on_save;
             OnSceneWillBeFreed on_scene_will_be_freed;
+            OnSceneWillLoad on_scene_will_load;
             OnSceneLoaded on_scene_loaded;
             OnEntityUpdated on_entity_updated;
             OnEntitySelected on_entity_selected;

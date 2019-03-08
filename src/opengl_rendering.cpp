@@ -1,4 +1,4 @@
-static void bind_vertex_array(GLuint vao, RenderState &render_state)
+ static void bind_vertex_array(GLuint vao, RenderState &render_state)
 {
     if (vao != render_state.current_state.vao)
     {
@@ -2390,7 +2390,7 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
                 {
                 case rendering::RenderCommandType::BUFFER:
                 {
-                    if(pass_index == renderer->render.shadow_pass.handle - 1)
+                    /*if(pass_index == renderer->render.shadow_pass.handle - 1)
                     {
                         material = renderer->render.materials[renderer->render.shadow_map_material.handle];
                         
@@ -2400,7 +2400,7 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
 
                             mapping->instance_buffer_handle = original_mapping->instance_buffer_handle;
                         }
-                    }
+                    }*/
 
                     render_buffer(command.buffer.primitive_type, command.transform, command.buffer.buffer, pass, render_state, renderer, material, pass.camera, command.count, shader);
                 }

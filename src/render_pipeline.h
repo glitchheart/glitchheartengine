@@ -354,7 +354,7 @@ namespace rendering
         b32 has_texture;
         
         char pass_names[8][32];
-        rendering::MaterialHandle passes[8];
+        i32 passes[8];
         i32 pass_count;
     };
 
