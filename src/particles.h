@@ -73,6 +73,7 @@ struct ParticleSystemAttributes
 {
     b32 looping;
     r64 duration;
+    b32 play_on_awake;
 
     b32 prewarm;
 
