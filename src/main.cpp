@@ -387,7 +387,7 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     //renderer.render.render_commands = push_array(&renderer.command_arena, global_max_render_commands, rendering::RenderCommand);
     //renderer.render.depth_free_commands = push_array(&renderer.command_arena, global_max_depth_free_commands, rendering::RenderCommand);
     renderer->render.shadow_commands = push_array(&renderer->command_arena, global_max_shadow_commands, rendering::ShadowCommand);
-    renderer->render.queued_commands = push_array(&renderer->command_arena, global_max_render_commands, QueuedRenderCommand);
+    renderer->render.pass_commands = push_array(&renderer->command_arena, 16, Pass);
     renderer->tt_font_infos = push_array(&renderer->font_arena, global_max_fonts, TrueTypeFontInfo);
     
     // NEW RENDER PIPELINE

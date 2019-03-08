@@ -215,51 +215,75 @@ namespace scene
 	static void set_uniform_value(EntityHandle handle, const char* name, r32 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(scene.manager->renderer, render.material_handle, name, value);
+        for(i32 i = 0; i < render.render_pass_count; i++)
+        {
+            rendering::set_uniform_value(scene.manager->renderer, render.material_handles[i], name, value);
+        }
 	}
 
 	static void set_uniform_value(EntityHandle handle, const char* name, math::Vec2 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(scene.manager->renderer, render.material_handle, name, value);
+        for(i32 i = 0; i < render.render_pass_count; i++)
+        {
+            rendering::set_uniform_value(scene.manager->renderer, render.material_handles[i], name, value);
+        }
 	}
 
 	static void set_uniform_value(EntityHandle handle, const char* name, math::Vec3 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(scene.manager->renderer, render.material_handle, name, value);
+        for(i32 i = 0; i < render.render_pass_count; i++)
+        {
+            rendering::set_uniform_value(scene.manager->renderer, render.material_handles[i], name, value);
+        }
 	}
 
 	static void set_uniform_value(EntityHandle handle, const char* name, math::Vec4 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(scene.manager->renderer, render.material_handle, name, value);
+        for(i32 i = 0; i < render.render_pass_count; i++)
+        {
+            rendering::set_uniform_value(scene.manager->renderer, render.material_handles[i], name, value);
+        }
 	}
 
 	static void set_uniform_value(EntityHandle handle, const char* name, i32 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(scene.manager->renderer, render.material_handle, name, value);
+        for(i32 i = 0; i < render.render_pass_count; i++)
+        {
+            rendering::set_uniform_value(scene.manager->renderer, render.material_handles[i], name, value);
+        }
 	}
 
 	static void set_uniform_value(EntityHandle handle, const char* name, math::Mat4 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(scene.manager->renderer, render.material_handle, name, value);
+        for(i32 i = 0; i < render.render_pass_count; i++)
+        {
+            rendering::set_uniform_value(scene.manager->renderer, render.material_handles[i], name, value);
+        }
 	}
 
 	static void set_uniform_value(EntityHandle handle, const char* name, rendering::TextureHandle value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
         assert(value.handle != 0);
-        rendering::set_uniform_value(scene.manager->renderer, render.material_handle, name, value);
+        for(i32 i = 0; i < render.render_pass_count; i++)
+        {
+            rendering::set_uniform_value(scene.manager->renderer, render.material_handles[i], name, value);
+        }
 	}
 
     static void set_uniform_value(EntityHandle handle, const char* name, rendering::MSTextureHandle value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
         assert(value.handle != 0);
-        rendering::set_uniform_value(scene.manager->renderer, render.material_handle, name, value);
+        for(i32 i = 0; i < render.render_pass_count; i++)
+        {
+            rendering::set_uniform_value(scene.manager->renderer, render.material_handles[i], name, value);
+        }
 	}
 
     static i32 _find_next_free_internal_handle(SceneManager *scene_manager)
@@ -759,7 +783,8 @@ namespace scene
         rendering::MaterialHandle material_handle;
         rendering::BufferHandle buffer_handle;
         rendering::MaterialInstanceHandle material_instances[1024];
-        i32 count;
+		rendering::RenderPassHandle pass_handle;
+		i32 count;
 
         rendering::VertexAttribute attributes[8];
         i32 attribute_count;
@@ -767,7 +792,7 @@ namespace scene
     
     static void allocate_instance_buffers(Scene &scene)
     {
-        InstancePair instance_pairs[64];
+        InstancePair *instance_pairs = (InstancePair*)malloc(sizeof(InstancePair) * 256);
         i32 pair_count = 0;
         
         Renderer *renderer = scene.renderer;
@@ -776,37 +801,46 @@ namespace scene
         for(i32 i = 0; i < scene.render_component_count; i++)
         {
             RenderComponent &comp = scene.render_components[i];
-            rendering::Material &material_instance = rendering::get_material_instance(comp.material_handle, renderer);
 
-            if(material_instance.instanced_vertex_attribute_count > 0)
+            for(i32 pass_index = 0; pass_index < comp.render_pass_count; pass_index++)
             {
-                b32 found = false;
-            
-                for(i32 j = 0; j < pair_count; j++)
+				rendering::RenderPassHandle pass_handle = comp.render_passes[pass_index];
+                rendering::MaterialInstanceHandle instance_handle = comp.material_handles[pass_index];
+                rendering::Material &material_instance = rendering::get_material_instance(instance_handle, renderer);
+
+                if(material_instance.instanced_vertex_attribute_count > 0)
                 {
-                    InstancePair &pair = instance_pairs[j];
-                    if(pair.buffer_handle.handle == comp.buffer_handle.handle && pair.material_handle.handle ==  material_instance.source_material.handle)
+                    b32 found = false;
+            
+                    for(i32 j = 0; j < pair_count; j++)
                     {
-                        found = true;
-                        pair.material_instances[pair.count++] = comp.material_handle;
+                        InstancePair &pair = instance_pairs[j];
+                        if(pair.pass_handle.handle == pass_handle.handle && pair.buffer_handle.handle == comp.buffer_handle.handle && pair.material_handle.handle == comp.original_materials[pass_index].handle)
+                        {
+                            found = true;
+                            pair.material_instances[pair.count++] = instance_handle;
+                        }
+                    }
+
+                    if(!found)
+                    {
+                        InstancePair &pair = instance_pairs[pair_count++];
+                        pair.attribute_count = 0;
+                        pair.count = 0;
+                        pair.buffer_handle = comp.buffer_handle;
+                        pair.material_handle = material_instance.source_material;
+						pair.pass_handle = pass_handle;
+
+                        for(i32 j = 0; j < material_instance.instanced_vertex_attribute_count; j++)
+                        {
+                            pair.attributes[pair.attribute_count++] = material_instance.instanced_vertex_attributes[j].attribute;
+                        }
+                    
+                        pair.material_instances[pair.count++] = instance_handle;
                     }
                 }
 
-                if(!found)
-                {
-                    InstancePair &pair = instance_pairs[pair_count++];
-                    pair.attribute_count = 0;
-                    pair.count = 0;
-                    pair.buffer_handle = comp.buffer_handle;
-                    pair.material_handle = material_instance.source_material;
-                    
-                    for(i32 j = 0; j < material_instance.instanced_vertex_attribute_count; j++)
-                    {
-                        pair.attributes[pair.attribute_count++] = material_instance.instanced_vertex_attributes[j].attribute;
-                    }
-                    
-                    pair.material_instances[pair.count++] = comp.material_handle;
-                }
+                comp.material_handles[pass_index] = instance_handle;
             }
         }
 
@@ -837,6 +871,8 @@ namespace scene
             scene.instance_buffer_data[scene.instance_buffer_data_count++] = data;
             assert(scene.instance_buffer_data_count < MAX_INSTANCE_BUFFER_HANDLES);
         }
+
+		free(instance_pairs);
     }
 
     static void free_instance_buffers(Scene &scene)
@@ -1833,6 +1869,9 @@ namespace scene
 
         if(!scene->loaded)
         {
+            if(scene_manager->callbacks.on_scene_will_load)
+                scene_manager->callbacks.on_scene_will_load(handle);
+            
             allocate_instance_buffers(*scene);
             scene->loaded = true;
             
@@ -1902,34 +1941,36 @@ namespace scene
         return _add_render_component(scene, entity_handle, cast_shadows);
     }
 
-    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, rendering::MaterialInstanceHandle material, RenderComponent &comp)
+    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, rendering::MaterialInstanceHandle material, RenderComponent &comp, Renderer *renderer)
     {
         comp.render_passes[comp.render_pass_count] = render_pass_handle;
-        comp.material_handles[comp.render_pass_count] = material;
+        rendering::Material &instance = get_material_instance(material, renderer);
+        comp.original_materials[comp.render_pass_count] = instance.source_material;
+        comp.material_handles[comp.render_pass_count] = create_material_instance(renderer, instance.source_material);
         comp.render_pass_count++;
     }
 
     static void add_to_render_pass(const char *pass_name, rendering::MaterialInstanceHandle material, RenderComponent &comp, Renderer *renderer)
     {
         rendering::RenderPassHandle render_pass_handle = rendering::get_render_pass_handle_for_name(pass_name, renderer);
-        add_to_render_pass(render_pass_handle, material, comp);
+        add_to_render_pass(render_pass_handle, material, comp, renderer);
     }
 
-    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, RenderComponent &comp)
+    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, RenderComponent &comp, Renderer *renderer)
     {
-        add_to_render_pass(render_pass_handle, comp.material_handles[0], comp);
+        add_to_render_pass(render_pass_handle, comp.material_handles[0], comp, renderer);
     }
 
     static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, EntityHandle entity, SceneHandle &scene)
     {
         RenderComponent &render_comp = get_render_comp(entity, scene);
-        add_to_render_pass(render_pass_handle, render_comp);
+        add_to_render_pass(render_pass_handle, render_comp, scene.manager->renderer);
     }
 
     static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, rendering::MaterialInstanceHandle material, EntityHandle entity, SceneHandle &scene)
     {
         RenderComponent &render_comp = get_render_comp(entity, scene);
-        add_to_render_pass(render_pass_handle, material, render_comp);
+        add_to_render_pass(render_pass_handle, material, render_comp, scene.manager->renderer);
     }
 
     static void add_all_to_render_pass(rendering::RenderPassHandle render_pass_handle, SceneHandle &handle)
@@ -1937,7 +1978,7 @@ namespace scene
         Scene &scene = scene::get_scene(handle);
         for(i32 i = 0; i < scene.render_component_count; i++)
         {
-            add_to_render_pass(render_pass_handle, scene.render_components[i]);
+            add_to_render_pass(render_pass_handle, scene.render_components[i], handle.manager->renderer);
         }
     }
 
@@ -1950,6 +1991,7 @@ namespace scene
             {
                 render_comp.render_passes[i] = render_comp.render_passes[render_comp.render_pass_count - 1];
                 render_comp.material_handles[i] = render_comp.material_handles[render_comp.render_pass_count - 1];
+				render_comp.original_materials[i] = render_comp.original_materials[render_comp.render_pass_count - 1];
                 render_comp.render_pass_count--;
                 break;
             }
@@ -2060,7 +2102,7 @@ namespace scene
         return _register_entity(comp_flags, scene, savable);
     }
     
-    static TemplateHandle _create_template_copy_with_new_render_data(EntityTemplate *template_to_copy, EntityTemplateState &template_state, const rendering::MeshObjectData &obj_data)
+    static TemplateHandle _create_template_copy_with_new_render_data(rendering::Material *temp_materials, EntityTemplate *template_to_copy, EntityTemplateState &template_state, Renderer *renderer, const rendering::MeshObjectData &obj_data)
     {
         EntityTemplate new_template = *template_to_copy;
         new_template.child_count = 0;
@@ -2072,7 +2114,7 @@ namespace scene
         
         for(i32 i = 0; i < pair.pass_count; i++)
         {
-            new_template.render.material_handles[i] = pair.passes[i];
+            new_template.render.material_handles[i] = create_material(renderer, temp_materials[pair.passes[i]]);
             strcpy(new_template.render.render_pass_names[i], pair.pass_names[i]);
         }
 
@@ -2161,10 +2203,10 @@ namespace scene
                         }
                     }
                 }
-                else if(starts_with(buffer, "-render"))
-                {
-                    templ->comp_flags |= COMP_RENDER;
-                    
+				else if (starts_with(buffer, "-render"))
+				{
+					templ->comp_flags |= COMP_RENDER;
+
 					while (fgets(buffer, 256, file) && !starts_with(buffer, "-"))
 					{
 						// FIRST PARSE ALL SHADER PASS INFORMATION
@@ -2174,6 +2216,7 @@ namespace scene
 							{
 								rendering::PassMaterial pass_mat = {};
 								pass_mat.pass_type = rendering::PassType::WITH_UVS;
+								strncpy(pass_mat.pass_name, STANDARD_PASS, strlen(STANDARD_PASS) + 1);
 
 								char shader_file[256];
 								sscanf(buffer, "shd::uvs: %s", shader_file);
@@ -2186,6 +2229,7 @@ namespace scene
 							{
 								rendering::PassMaterial pass_mat = {};
 								pass_mat.pass_type = rendering::PassType::NO_UVS;
+								strncpy(pass_mat.pass_name, STANDARD_PASS, strlen(STANDARD_PASS) + 1);
 
 								char shader_file[256];
 								sscanf(buffer, "shd::no_uvs: %s", shader_file);
@@ -2198,7 +2242,7 @@ namespace scene
 							{
 								rendering::PassMaterial pass_mat = {};
 								pass_mat.pass_type = rendering::PassType::SHADOWS;
-                                strcpy(pass_mat.pass_name, SHADOW_PASS);
+								strcpy(pass_mat.pass_name, SHADOW_PASS);
 
 								char shader_file[256];
 								sscanf(buffer, "shd::shadows: %s", shader_file);
@@ -2211,7 +2255,7 @@ namespace scene
 							{
 								rendering::PassMaterial pass_mat = {};
 								pass_mat.pass_type = rendering::PassType::SHADOWS_WITH_UVS;
-                                strcpy(pass_mat.pass_name, SHADOW_PASS);
+								strcpy(pass_mat.pass_name, SHADOW_PASS);
 
 								char shader_file[256];
 								sscanf(buffer, "shd::shadows_uvs: %s", shader_file);
@@ -2266,7 +2310,6 @@ namespace scene
 
 							if (starts_with(prim_type, "cube"))
 							{
-								templ->render.is_new_version = true;
 								obj_info.data[0].buffer = rendering::create_cube(scene.renderer, &templ->render.mesh_scale, &templ->render.bounding_box);
 								obj_info.data[0].use_one_material = true;
 								obj_info.data[0].use_material = true;
@@ -2274,9 +2317,7 @@ namespace scene
 							}
 							else if (starts_with(prim_type, "plane"))
 							{
-								templ->render.is_new_version = true;
-								templ->render.buffer_handle = rendering::create_plane(scene.renderer, &templ->render.mesh_scale, &templ->render.bounding_box);
-								obj_info.data[0].buffer = rendering::create_cube(scene.renderer, &templ->render.mesh_scale, &templ->render.bounding_box);
+								obj_info.data[0].buffer = rendering::create_plane(scene.renderer, &templ->render.mesh_scale, &templ->render.bounding_box);
 								obj_info.data[0].use_one_material = true;
 								obj_info.data[0].use_material = true;
 								obj_info.object_count++;
@@ -2301,24 +2342,28 @@ namespace scene
 						}
 					}
 
-                    b32 has_shadow_shader = false;
+					b32 has_shadow_shader = false;
 
-                    for(i32 i = 0; i < pass_material_count; i++)
-                    {
-                        if(pass_materials[i].pass_type == rendering::PassType::SHADOWS || pass_materials[i].pass_type == rendering::PassType::SHADOWS_WITH_UVS)
-                        {
-                            has_shadow_shader = true;
-                            break;
-                        }
-                    }
+					for (i32 i = 0; i < pass_material_count; i++)
+					{
+						if (pass_materials[i].pass_type == rendering::PassType::SHADOWS || pass_materials[i].pass_type == rendering::PassType::SHADOWS_WITH_UVS)
+						{
+							has_shadow_shader = true;
+							break;
+						}
+					}
 
-                    rendering::Material shadow_material = scene.renderer->render.materials[scene.renderer->render.shadow_map_material.handle];
+					if (!has_shadow_shader)
+					{
+						rendering::Material shadow_material = scene.renderer->render.materials[scene.renderer->render.shadow_map_material.handle];
 
-                    rendering::PassMaterial pass;
-                    pass.pass_type = rendering::PassType::SHADOWS;
-                    pass.material = shadow_material;
-                    strcpy(pass.pass_name, SHADOW_PASS);
-                    pass_materials[pass_material_count++] = pass;
+						rendering::PassMaterial pass;
+						pass.pass_type = rendering::PassType::SHADOWS;
+						pass.material = shadow_material;
+						strcpy(pass.pass_name, SHADOW_PASS);
+						strcpy(pass.pass_name, SHADOW_PASS);
+						pass_materials[pass_material_count++] = pass;
+					}
                         
                     // PARSE YOUR ANUS!
                     assert(obj_info.has_mtl);
@@ -2326,7 +2371,10 @@ namespace scene
                     rendering::MaterialPair mat_pairs[64];
                     i32 mat_pair_count = 0;
                         
-                    load_materials_from_mtl(pass_materials, pass_material_count, mat_pairs, &mat_pair_count, obj_info.mtl_file_path, scene.renderer);
+					rendering::Material *temp = (rendering::Material*)malloc(sizeof(rendering::Material) * 128);
+					i32 temp_count = 0;
+
+                    load_materials_from_mtl(temp, &temp_count, pass_materials, pass_material_count, mat_pairs, &mat_pair_count, obj_info.mtl_file_path, scene.renderer);
 
                     for(i32 i = 0; i < obj_info.object_count; i++)
                     {
@@ -2344,26 +2392,29 @@ namespace scene
                                 }
                             }
                         }
-                    }
+						else
+						{
+							for (i32 j = 0; j < mat_pair_count; j++)
+							{
+								rendering::MaterialPair &pair = mat_pairs[j];
 
-                        
-                        
-                    // @Incomplete: SHADOWS
-                    // strncpy(templ->render.render_pass_names[templ->render.render_pass_count], SHADOW_PASS, strlen(SHADOW_PASS) + 1);
-                                
-                    //         // if(shadow_handle.handle != -1)
-                    //         //     templ->render.shader_handles[templ->render.render_pass_count++] = shadow_handle;
-                    //         // else
-                    //             templ->render.material_handles[templ->render.render_pass_count++] = scene.renderer->render.shadow_map_material;
+								if (strcmp(pair.name, "glitch_default") == 0)
+								{
+									data.pair = pair;
+								}
+							}
+						}
+                    }
 
                     rendering::MaterialPair pair = obj_info.data[0].pair;
-                        
+                    templ->render.buffer_handle = obj_info.data[0].buffer;
+                    
                     for(i32 i = 0; i < pair.pass_count; i++)
                     {
-                        templ->render.material_handles[i] = pair.passes[i];
+                        templ->render.material_handles[i] = create_material(scene.renderer, temp[pair.passes[i]]);
                         strcpy(templ->render.render_pass_names[i], pair.pass_names[i]);
                     }
-                     
+
 					templ->render.render_pass_count = pair.pass_count;
 
                     if(obj_info.object_count > 1)
@@ -2371,11 +2422,13 @@ namespace scene
                         for(i32 i = 0; i < obj_info.object_count; i++)
                         {
                             const rendering::MeshObjectData &data = obj_info.data[i];
-                            templ->child_handles[templ->child_count++] = _create_template_copy_with_new_render_data(templ, template_state, data);
+                            templ->child_handles[templ->child_count++] = _create_template_copy_with_new_render_data(temp, templ, template_state, scene.renderer, data);
                         }
             
                         templ->comp_flags = templ->comp_flags & ~ COMP_RENDER;
                     }
+
+					free(temp);
                 }
                 else if(starts_with(buffer, "-particles"))
                 {
@@ -2717,15 +2770,23 @@ namespace scene
             render.casts_shadows = templ.render.casts_shadows;
             render.mesh_scale = templ.render.mesh_scale;
             render.bounding_box = templ.render.bounding_box;
+
+            for(i32 i = 0; i < templ.render.render_pass_count; i++)
+            {
+                rendering::RenderPassHandle render_pass_handle = rendering::get_render_pass_handle_for_name(templ.render.render_pass_names[i], scene.renderer);
+                render.render_passes[i] = render_pass_handle;
+                render.original_materials[i] = templ.render.material_handles[i];
+                render.material_handles[i] = rendering::create_material_instance(scene.renderer, templ.render.material_handles[i]);
+            }
             
+			render.render_pass_count = templ.render.render_pass_count;
+
             if(scene.loaded)
             {
-                for(i32 i = 0; i < templ.render.render_pass_count; i++)
+                for(i32 pass_index = 0; pass_index < templ.render.render_pass_count; pass_index++)
                 {
-                    rendering::MaterialInstanceHandle instance_handle = rendering::create_material_instance(scene.renderer, templ.render.material_handles[i]);
-                
                     // We have to look for the right instance buffers or allocate them
-                    rendering::Material &material_instance = rendering::get_material_instance(instance_handle, scene.renderer);
+                    rendering::Material &material_instance = rendering::get_material_instance(render.material_handles[pass_index], scene.renderer);
                     
                     if(material_instance.instanced_vertex_attribute_count > 0)
                     {
@@ -2777,10 +2838,7 @@ namespace scene
                             }
                         }
                     }
-                    
-                    add_to_render_pass(templ.render.render_pass_names[i], instance_handle, render, scene.renderer);
                 }
-                
             }
         }
         
@@ -3257,10 +3315,13 @@ namespace scene
         return handle.manager->scenes[real_handle].camera;
     }
     
-#define SET_MAT_ARRAY_VALUE(type) static void set_uniform_array_value(EntityHandle handle, const char *array_name, i32 index, const char *variable_name, type value, SceneHandle &scene) \
+#define SET_MAT_ARRAY_VALUE(type) static void set_uniform_array_value(scene::EntityHandle handle, const char *array_name, i32 index, const char *variable_name, type value, scene::SceneHandle &scene) \
     {                                                                   \
-        RenderComponent &render = get_render_comp(handle, scene);       \
-        rendering::set_uniform_array_value(scene.manager->renderer, render.material_handle, array_name, index, variable_name, value); \
+    scene::RenderComponent &render = get_render_comp(handle, scene);    \
+        for(i32 i = 0; i < render.render_pass_count; i++) \
+        {\
+            rendering::set_uniform_array_value(scene.manager->renderer, render.material_handles[i], array_name, index, variable_name, value); \
+        } \
     }                                                                   \
 
     SET_MAT_ARRAY_VALUE(r32)
@@ -3386,9 +3447,9 @@ namespace scene
     
         renderer->render.dir_light_count = 0;
         renderer->render.point_light_count = 0;
-    
-        QueuedRenderCommand *queued_commands = renderer->render.queued_commands;
-        i32 normal_count = 0;
+
+		Pass *passes = renderer->render.pass_commands;
+		i32 pass_count = 0;
 
         i32 particles_to_push[64];
         i32 particles_count = 0;
@@ -3462,14 +3523,91 @@ namespace scene
 
                     for(i32 pass_index = 0; pass_index < render.render_pass_count; pass_index++)
                     {
-                        QueuedRenderCommand *command = nullptr;
-                        rendering::Material &instance = get_material_instance(render.material_handles[pass_index], renderer);
+						Pass *pass_command = nullptr;
+
+						for (i32 i = 0; i < pass_count; i++)
+						{
+							if (passes[i].pass_handle.handle == render.render_passes[pass_index].handle)
+							{
+								pass_command = &passes[i];
+							}
+						}
+
+						if (!pass_command)
+						{
+							pass_command = &passes[pass_count++];
+							pass_command->pass_handle = render.render_passes[pass_index];
+							pass_command->command_count = 0;
+						}
+
+						QueuedRenderCommand *command = nullptr;
+                        rendering::Material &mat_instance = get_material_instance(render.material_handles[pass_index], renderer);
                     
-                        for(i32 i = 0; i < normal_count; i++)
+						// We can make one call instead
+						for (i32 i = 0; i < mat_instance.instanced_vertex_attribute_count; i++)
+						{
+							rendering::VertexAttributeInstanced &va = mat_instance.instanced_vertex_attributes[i];
+							rendering::VertexAttribute &attr = va.attribute;
+
+							switch (attr.type)
+							{
+							case rendering::ValueType::FLOAT:
+								rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float_val, renderer);
+								break;
+							case rendering::ValueType::FLOAT2:
+								rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float2_val, renderer);
+								break;
+							case rendering::ValueType::FLOAT3:
+							{
+								math::Vec3 val = attr.float3_val;
+
+								if (va.mapping_type != rendering::VertexAttributeMappingType::NONE)
+								{
+									if (va.mapping_type == rendering::VertexAttributeMappingType::POSITION)
+									{
+										assert(false);
+										// val = render_command.transform.position;
+									}
+									else if (va.mapping_type == rendering::VertexAttributeMappingType::ROTATION)
+									{
+										assert(false);
+										// val = render_command.transform.rotation;
+									}
+									else if (va.mapping_type == rendering::VertexAttributeMappingType::SCALE)
+									{
+										assert(false);
+										// val = render_command.transform.scale;
+									}
+
+								}
+								rendering::add_instance_buffer_value(va.instance_buffer_handle, val, renderer);
+							}
+							break;
+							case rendering::ValueType::FLOAT4:
+								rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float4_val, renderer);
+								break;
+							case rendering::ValueType::MAT4:
+							{
+								math::Mat4 val = attr.mat4_val;
+
+								if (va.mapping_type == rendering::VertexAttributeMappingType::MODEL)
+								{
+									rendering::Transform &t = transform.transform;
+									val = math::transpose(t.model);
+								}
+								rendering::add_instance_buffer_value(va.instance_buffer_handle, val, renderer);
+							}
+							break;
+							default:
+								assert(false);
+							}
+						}
+
+                        for(i32 i = 0; i < pass_command->command_count; i++)
                         {
-                            QueuedRenderCommand &cmd = queued_commands[i];
+                            QueuedRenderCommand &cmd = pass_command->queued_commands[i];
                             if(cmd.buffer_handle.handle == render.buffer_handle.handle
-                               && cmd.original_material.handle == instance.source_material.handle && cmd.ignore_depth == render.ignore_depth)
+                               && cmd.original_material.handle == mat_instance.source_material.handle && cmd.ignore_depth == render.ignore_depth)
                             {
                                 // It's a doozy
                                 command = &cmd;
@@ -3479,10 +3617,10 @@ namespace scene
 
                         if(!command)
                         {
-                            command = &queued_commands[normal_count++];
+                            command = &pass_command->queued_commands[pass_command->command_count++];
                             command->ignore_depth = render.ignore_depth;
                             command->buffer_handle = render.buffer_handle;
-                            command->original_material = instance.source_material;
+                            command->original_material = mat_instance.source_material;
                             command->count = 0;
                         }
 
@@ -3503,14 +3641,11 @@ namespace scene
                             rendering::push_buffer_to_render_pass(renderer, render.bounding_box_buffer, renderer->render.bounding_box_material, box_transform, renderer->render.standard_pass, rendering::CommandType::WITH_DEPTH, rendering::PrimitiveType::LINE_LOOP);
                         }
                         
-                        BatchedCommand &batch_command = command->commands[command->count];
+                        CombinedCommand &batch_command = command->commands[command->count];
                         batch_command.transform = transform.transform;
-                        batch_command.material_handle = render.material_handle;
+                        batch_command.material_handle = render.material_handles[pass_index];
                         batch_command.casts_shadows = render.casts_shadows;
-                        batch_command.pass_count = 1;
-                        
-                        batch_command.passes[0] = render.render_passes[pass_index];
-                        batch_command.material_handles[0] = render.material_handles[pass_index];
+                        batch_command.material_handle = render.material_handles[pass_index];
                         
                         command->count++;
                     }
@@ -3547,100 +3682,35 @@ namespace scene
             }
         }
 
-        for(i32 index = 0; index < normal_count; index++)
+        for(i32 index = 0; index < pass_count; index++)
         {
-            QueuedRenderCommand &queued_command = queued_commands[index];
-        
-            BatchedCommand &first_command = queued_command.commands[0];
-            rendering::Material &material = get_material_instance(first_command.material_handle, renderer);
+            Pass &pass = passes[index];
 
-            if(material.lighting.receives_light)
-                update_lighting_for_material(first_command, renderer);
-
-            for(i32 batch_index = 0; batch_index < queued_command.count; batch_index++)
+            for(i32 i = 0; i < pass.command_count; i++)
             {
-                BatchedCommand &render_command = queued_command.commands[batch_index];
+                QueuedRenderCommand &queued_command = pass.queued_commands[i];
+                CombinedCommand &first_command = queued_command.commands[0];
 
-                rendering::Material &mat_instance = get_material_instance(render_command.material_handle, renderer);
+                rendering::Material &material = get_material_instance(first_command.material_handle, renderer);
+
+                if(material.lighting.receives_light)
+                    update_lighting_for_material(first_command, renderer);
+
+                for(i32 batch_index = 0; batch_index < queued_command.count; batch_index++)
+                {
+                    CombinedCommand &render_command = queued_command.commands[batch_index];
+
+                    rendering::Material &mat_instance = get_material_instance(render_command.material_handle, renderer);
                 
-                if (mat_instance.instanced_vertex_attribute_count == 0)
-                {
-                    // Just push the buffer as a normal draw call
-                    for (i32 pass_index = 0; pass_index < render_command.pass_count; pass_index++)
+                    if (mat_instance.instanced_vertex_attribute_count == 0)
                     {
-                        rendering::push_buffer_to_render_pass(renderer, queued_command.buffer_handle, render_command.material_handles[pass_index], render_command.transform, render_command.passes[pass_index], queued_command.ignore_depth ? rendering::CommandType::NO_DEPTH : rendering::CommandType::WITH_DEPTH);
-                    }
-                    continue;
-                }
-                else
-                {
-                    // We can make one call instead
-                    for (i32 i = 0; i < mat_instance.instanced_vertex_attribute_count; i++)
-                    {
-                        rendering::VertexAttributeInstanced &va = mat_instance.instanced_vertex_attributes[i];
-                        rendering::VertexAttribute &attr = va.attribute;
-                        
-                        switch (attr.type)
-                        {
-                        case rendering::ValueType::FLOAT:
-                        rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float_val, renderer);
-                        break;
-                        case rendering::ValueType::FLOAT2:
-                        rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float2_val, renderer);
-                        break;
-                        case rendering::ValueType::FLOAT3:
-                        {
-                            math::Vec3 val = attr.float3_val;
-                            
-                            if(va.mapping_type != rendering::VertexAttributeMappingType::NONE)
-                            {
-                                if(va.mapping_type == rendering::VertexAttributeMappingType::POSITION)
-                                {
-                                    assert(false);
-                                    // val = render_command.transform.position;
-                                }
-                                else if(va.mapping_type == rendering::VertexAttributeMappingType::ROTATION)
-                                {
-                                    assert(false);
-                                    // val = render_command.transform.rotation;
-                                }
-                                else if(va.mapping_type == rendering::VertexAttributeMappingType::SCALE)
-                                {
-                                    assert(false);
-                                    // val = render_command.transform.scale;
-                                }
-                                
-                            }
-                            rendering::add_instance_buffer_value(va.instance_buffer_handle, val, renderer);
-                        }
-                        break;
-                        case rendering::ValueType::FLOAT4:
-                        rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float4_val, renderer);
-                        break;
-                        case rendering::ValueType::MAT4:
-                        {
-                            math::Mat4 val = attr.mat4_val;
-                            
-                            if(va.mapping_type == rendering::VertexAttributeMappingType::MODEL)
-                            {
-                                rendering::Transform &transform = render_command.transform;
-                                val = math::transpose(transform.model);
-                            }
-                            rendering::add_instance_buffer_value(va.instance_buffer_handle, val, renderer);
-                        }
-                        break;
-                        default:
-                        assert(false);
-                        }
+                        rendering::push_buffer_to_render_pass(renderer, queued_command.buffer_handle, render_command.material_handle, render_command.transform, pass.pass_handle, queued_command.ignore_depth ? rendering::CommandType::NO_DEPTH : rendering::CommandType::WITH_DEPTH);
+                        continue;
                     }
                 }
-            }
-        
-            // Push the command to the correct render passes
-            for (i32 pass_index = 0; pass_index < first_command.pass_count; pass_index++)
-            {
-                rendering::push_instanced_buffer_to_render_pass(renderer, queued_command.count, queued_command.buffer_handle, first_command.material_handles[pass_index],
-                                                                first_command.passes[pass_index], queued_command.ignore_depth ? rendering::CommandType::NO_DEPTH : rendering::CommandType::WITH_DEPTH);
+
+                rendering::push_instanced_buffer_to_render_pass(renderer, queued_command.count, queued_command.buffer_handle, first_command.material_handle,
+                                                                pass.pass_handle, queued_command.ignore_depth ? rendering::CommandType::NO_DEPTH : rendering::CommandType::WITH_DEPTH);
             }
         }
     

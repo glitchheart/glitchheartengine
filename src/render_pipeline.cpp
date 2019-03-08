@@ -2462,7 +2462,13 @@ namespace rendering
 		return false;
 	}
 
-    static void load_materials_from_mtl(PassMaterial *pass_materials, i32 pass_material_count, MaterialPair *pairs, i32 *mat_pair_count, const char *file_path, Renderer *renderer)
+	static i32 _create_temp_material(Material *materials, i32 index, Material material)
+	{
+		materials[index] = material;
+		return index;
+	}
+
+    static void load_materials_from_mtl(Material *temp_materials, i32 *temp_count, PassMaterial *pass_materials, i32 pass_material_count, MaterialPair *pairs, i32 *mat_pair_count, const char *file_path, Renderer *renderer)
     {
         size_t index = 0;
         for (size_t i = 0; i < strlen(file_path); i++)
@@ -2520,8 +2526,9 @@ namespace rendering
                         case PassType::NONE:
                         case PassType::STANDARD:
                         {
-                            pair.passes[pair.pass_count] = create_material(renderer, pass.material);
-                            strcpy(pair.pass_names[pair.pass_count], pass.pass_name);
+                            pair.passes[pair.pass_count] = _create_temp_material(temp_materials, *temp_count, pass.material);
+							(*temp_count)++;
+							strcpy(pair.pass_names[pair.pass_count], pass.pass_name);
                             pair.pass_count++;
                         }
                         break;
@@ -2530,7 +2537,8 @@ namespace rendering
                         {
                             if(!has_texture)
                             {
-                                pair.passes[pair.pass_count] = create_material(renderer, pass.material);
+                                pair.passes[pair.pass_count] = _create_temp_material(temp_materials, *temp_count, pass.material);
+								(*temp_count)++;
                                 strcpy(pair.pass_names[pair.pass_count], pass.pass_name);
                                 pair.pass_count++;
                             }
@@ -2541,8 +2549,9 @@ namespace rendering
                         {
                             if(has_texture)
                             {
-                                pair.passes[pair.pass_count] = create_material(renderer, pass.material);
-                                strcpy(pair.pass_names[pair.pass_count], pass.pass_name);
+                                pair.passes[pair.pass_count] = _create_temp_material(temp_materials, *temp_count, pass.material);
+								(*temp_count)++;
+								strcpy(pair.pass_names[pair.pass_count], pass.pass_name);
                                 pair.pass_count++;
                             }
                         }
@@ -2561,10 +2570,10 @@ namespace rendering
                     
                     current = &pairs[*mat_pair_count - 1];
 
-                    for(i32 i = 0; i < pass_material_count; i++)
+                    for(i32 i = 0; i < pair.pass_count; i++)
                     {
-                        rendering::MaterialHandle &pass = current->passes[i];
-                        rendering::Material &material = renderer->render.materials[pass.handle];
+                        i32 handle = current->passes[i];
+                        rendering::Material &material = temp_materials[handle];
                         
                         if (UniformValue *u = mapping(material, UniformMappingType::DIFFUSE_COLOR))
                         {
@@ -2592,10 +2601,10 @@ namespace rendering
                 }
                 else if (starts_with(buffer, "Ka")) // ambient color
                 {
-                    for(i32 i = 0; i < pass_material_count; i++)
+                    for(i32 i = 0; i < current->pass_count; i++)
                     {
-                        rendering::MaterialHandle &pass = current->passes[i];
-                        rendering::Material &material = renderer->render.materials[pass.handle];
+                        i32 handle = current->passes[i];
+                        rendering::Material &material = temp_materials[handle];
                         
                         if (UniformValue *u = mapping(material, UniformMappingType::AMBIENT_COLOR))
                         {
@@ -2606,10 +2615,10 @@ namespace rendering
                 }
                 else if (starts_with(buffer, "Kd")) // diffuse color
                 {
-                    for(i32 i = 0; i < pass_material_count; i++)
+                    for(i32 i = 0; i < current->pass_count; i++)
                     {
-                        rendering::MaterialHandle &pass = current->passes[i];
-                        rendering::Material &material = renderer->render.materials[pass.handle];
+                        i32 handle = current->passes[i];
+                        rendering::Material &material = temp_materials[handle];
                         
                         if (UniformValue *u = mapping(material, UniformMappingType::DIFFUSE_COLOR))
                         {
@@ -2625,10 +2634,10 @@ namespace rendering
                 }
                 else if (starts_with(buffer, "Ks")) // specular color
                 {
-                    for(i32 i = 0; i < pass_material_count; i++)
+                    for(i32 i = 0; i < current->pass_count; i++)
                     {
-                        rendering::MaterialHandle &pass = current->passes[i];
-                        rendering::Material &material = renderer->render.materials[pass.handle];
+                        i32 handle = current->passes[i];
+                        rendering::Material &material = temp_materials[handle];
                         
                         if (UniformValue *u = mapping(material, UniformMappingType::SPECULAR_COLOR))
                         {
@@ -2639,10 +2648,10 @@ namespace rendering
                 }
                 else if (starts_with(buffer, "Ns")) // specular exponent
                 {
-                    for(i32 i = 0; i < pass_material_count; i++)
+                    for(i32 i = 0; i < current->pass_count; i++)
                     {
-                        rendering::MaterialHandle &pass = current->passes[i];
-                        rendering::Material &material = renderer->render.materials[pass.handle];
+                        i32 handle = current->passes[i];
+                        rendering::Material &material = temp_materials[handle];
                         
                         if (UniformValue *u = mapping(material, UniformMappingType::SPECULAR_EXPONENT))
                         {
@@ -2652,10 +2661,10 @@ namespace rendering
                 }
                 else if (starts_with(buffer, "d"))
                 {
-                    for(i32 i = 0; i < pass_material_count; i++)
+                    for(i32 i = 0; i < current->pass_count; i++)
                     {
-                        rendering::MaterialHandle &pass = current->passes[i];
-                        rendering::Material &material = renderer->render.materials[pass.handle];
+                        i32 handle = current->passes[i];
+                        rendering::Material &material = temp_materials[handle];
                         
                         if (UniformValue *u = mapping(material, UniformMappingType::DISSOLVE))
                         {
@@ -2665,10 +2674,10 @@ namespace rendering
                 }
                 else if (starts_with(buffer, "map_Ka")) // ambient map
                 {
-                    for(i32 i = 0; i < pass_material_count; i++)
+                    for(i32 i = 0; i < current->pass_count; i++)
                     {
-                        rendering::MaterialHandle &pass = current->passes[i];
-                        rendering::Material &material = renderer->render.materials[pass.handle];
+                        i32 handle = current->passes[i];
+                        rendering::Material &material = temp_materials[handle];
                         
                         if (UniformValue *u = mapping(material, UniformMappingType::AMBIENT_TEX))
                         {
@@ -2684,10 +2693,10 @@ namespace rendering
                 }
                 else if (starts_with(buffer, "map_Kd")) // diffuse map
                 {
-                    for(i32 i = 0; i < pass_material_count; i++)
+                    for(i32 i = 0; i < current->pass_count; i++)
                     {
-                        rendering::MaterialHandle &pass = current->passes[i];
-                        rendering::Material &material = renderer->render.materials[pass.handle];
+                        i32 handle = current->passes[i];
+                        rendering::Material &material = temp_materials[handle];
                         
                         if (UniformValue *u = mapping(material, UniformMappingType::DIFFUSE_TEX))
                         {
@@ -2703,10 +2712,10 @@ namespace rendering
                 }
                 else if (starts_with(buffer, "map_Ks")) // specular map
                 {
-                    for(i32 i = 0; i < pass_material_count; i++)
+                    for(i32 i = 0; i < current->pass_count; i++)
                     {
-                        rendering::MaterialHandle &pass = current->passes[i];
-                        rendering::Material &material = renderer->render.materials[pass.handle];
+                        i32 handle = current->passes[i];
+                        rendering::Material &material = temp_materials[handle];
                         
                         if (UniformValue *u = mapping(material, UniformMappingType::SPECULAR_TEX))
                         {
@@ -2722,10 +2731,10 @@ namespace rendering
                 }
                 else if (starts_with(buffer, "map_Ns")) // specular intensity map
                 {
-                    for(i32 i = 0; i < pass_material_count; i++)
+                    for(i32 i = 0; i < current->pass_count; i++)
                     {
-                        rendering::MaterialHandle &pass = current->passes[i];
-                        rendering::Material &material = renderer->render.materials[pass.handle];
+                        i32 handle = current->passes[i];
+                        rendering::Material &material = temp_materials[handle];
                         
                         if (UniformValue *u = mapping(material, UniformMappingType::SPECULAR_INTENSITY_TEX))
                         {
@@ -3246,8 +3255,8 @@ namespace rendering
                     strncpy(dir, file_path, index);
 
                     dir[index] = 0;
-                    char *material_file_path = concat(dir, mtl_file_name, &renderer->temp_arena);
-                    load_materials_from_mtl(pass_materials, pass_material_count, mat_pairs, &pair_count, material_file_path, renderer);
+                    //char *material_file_path = concat(dir, mtl_file_name, &renderer->temp_arena);
+                    //load_materials_from_mtl(pass_materials, pass_material_count, mat_pairs, &pair_count, material_file_path, renderer);
 
 					end_temporary_memory(temp_block);
                 }
