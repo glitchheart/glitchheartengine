@@ -208,7 +208,6 @@ namespace scene
             rendering::ShaderHandle shader_handle;
 
             i32 max_particles;
-            b32 started;
             
             struct
             {
