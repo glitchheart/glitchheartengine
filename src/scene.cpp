@@ -2353,26 +2353,46 @@ namespace scene
 					}
 
 					b32 has_shadow_shader = false;
+					b32 has_uv_shadow_shader = false;
 
 					for (i32 i = 0; i < pass_material_count; i++)
 					{
-						if (pass_materials[i].pass_type == rendering::PassType::SHADOWS || pass_materials[i].pass_type == rendering::PassType::SHADOWS_WITH_UVS)
+						if (pass_materials[i].pass_type == rendering::PassType::SHADOWS)
 						{
 							has_shadow_shader = true;
-							break;
+						}
+						else if (pass_materials[i].pass_type == rendering::PassType::SHADOWS_WITH_UVS)
+						{
+							has_uv_shadow_shader = true;
 						}
 					}
 
-					if (!has_shadow_shader)
+					if (templ->render.casts_shadows)
 					{
-						rendering::Material shadow_material = scene.renderer->render.materials[scene.renderer->render.shadow_map_material.handle];
+						if (!has_shadow_shader)
+						{
+							rendering::Material shadow_material = scene.renderer->render.materials[scene.renderer->render.shadow_map_material.handle];
 
-						rendering::PassMaterial pass;
-						pass.pass_type = rendering::PassType::SHADOWS;
-						pass.material = shadow_material;
-						strcpy(pass.pass_name, SHADOW_PASS);
-						strcpy(pass.pass_name, SHADOW_PASS);
-						pass_materials[pass_material_count++] = pass;
+							rendering::PassMaterial pass;
+							pass.pass_type = rendering::PassType::SHADOWS;
+							pass.material = shadow_material;
+							strcpy(pass.pass_name, SHADOW_PASS);
+							pass_materials[pass_material_count++] = pass;
+						}
+
+						if (!has_uv_shadow_shader)
+						{
+							if (!has_shadow_shader)
+							{
+								rendering::Material shadow_material = scene.renderer->render.materials[scene.renderer->render.shadow_map_material.handle];
+
+								rendering::PassMaterial pass;
+								pass.pass_type = rendering::PassType::SHADOWS_WITH_UVS;
+								pass.material = shadow_material;
+								strcpy(pass.pass_name, SHADOW_PASS);
+								pass_materials[pass_material_count++] = pass;
+							}
+						}
 					}
                         
                     // PARSE YOUR ANUS!
