@@ -270,7 +270,7 @@ namespace scene
         FREE_CURRENT_SCENE = 1 << 1
     };
 
-    #define MAX_INSTANCE_BUFFER_HANDLES 128
+    #define MAX_INSTANCE_BUFFER_HANDLES 256
     struct InstanceBufferData
     {
         rendering::BufferHandle buffer_handle;
