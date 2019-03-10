@@ -1592,6 +1592,11 @@ namespace scene
             manager->gizmos.active = false;
         }
     }
+    
+    static EntityHandle get_selected_entity(SceneManager *manager)
+    {
+        return manager->selected_entity;
+    }
 
     static void select_entity(EntityHandle entity, SceneManager *manager)
     {
@@ -3115,10 +3120,10 @@ namespace scene
                 
                 scene.active_entities[index] = scene.active_entities[index + 1];
             }
-            
+
             scene.entity_count--;
             
-            // We also have to update the internal handles if they were placed after the unregistered entity
+            //@Note: We also have to update the internal handles if they were placed after the unregistered entity
             for(i32 internal_index = 0; internal_index < scene.max_entity_count; internal_index++)
             {
                 i32 current_handle = scene._internal_handles[internal_index];
@@ -3145,6 +3150,7 @@ namespace scene
             TransformComponent &child_transform = get_transform_comp(transform.child_handles[i], handle);
             unregister_entity(child_transform.entity, handle);
         }
+        transform.child_count = 0;
     }
 
     static EntityHandle place_entity_from_template(math::Vec3 position, const char* path, SceneHandle scene, b32 savable = true, b32 select = false)
