@@ -1303,7 +1303,7 @@ static void set_window_mode(RenderState* render_state, Renderer* renderer, Resol
     }
 }
 
-static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char *title, MemoryArena *perm_arena, b32 *do_save_config)
+static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char *title, MemoryArena *perm_arena, b32 *do_save_config, b32 vsync_active)
 {
     renderer->api_functions.render_state = &render_state;
     renderer->api_functions.get_texture_size = &get_texture_size;
@@ -1404,7 +1404,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
     glfwSwapInterval(1);
-    render_state.vsync_active = true;
+    render_state.vsync_active = vsync_active;
 
     glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
     glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
@@ -1525,7 +1525,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
 
 static void initialize_opengl(RenderState &render_state, Renderer *renderer, ConfigData *config_data, MemoryArena *perm_arena, b32 *do_save_config)
 {
-    initialize_opengl(render_state, renderer, config_data->contrast, config_data->brightness, config_data->window_mode, config_data->screen_width, config_data->screen_height, config_data->title, perm_arena, do_save_config);
+    initialize_opengl(render_state, renderer, config_data->contrast, config_data->brightness, config_data->window_mode, config_data->screen_width, config_data->screen_height, config_data->title, perm_arena, do_save_config, config_data->vsync);
 }
 
 static void set_float_uniform(GLuint shader_handle, const char *uniform_name, r32 value)
