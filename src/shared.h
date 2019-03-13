@@ -230,4 +230,11 @@ inline void get_current_min(math::Vec3 v1, math::Vec3 v2, r32 val1, r32 val2, ma
         return handle;
     }
 
+/* #define offset_of(type, field_type, member)      \ */
+/*     inline size_t constexpr _offset_of(type field_type::*member)\ */
+/*     {\ */
+/*         constexpr field_type object {};         \ */
+/*         return size_t(&(object.*member)) - size_t(&object); \ */
+/*     } */
+
 #endif
