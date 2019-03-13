@@ -1,5 +1,7 @@
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #define VC_EXTRA_LEAN
+#endif
 
 #include "shared.h"
 
@@ -331,6 +333,7 @@ inline void load_config(const char *file_path, ConfigData *config_data, MemoryAr
     }
 }
 
+[[noreturn]]
 static void check_shader_files(WorkQueue *queue, void *data)
 {
     // @Incomplete: We might want to sleep
@@ -784,6 +787,17 @@ int main(int argc, char **args)
     RenderState *render_state_ptr = push_struct(&platform_state->perm_arena, RenderState);
     RenderState &render_state = *render_state_ptr;
     render_state = {};
+    render_state.v2 = {};
+
+    for(i32 j = 0; j < 32; j++)
+    {
+        Framebuffer &framebuffer = render_state.v2.framebuffers[j];
+        for(i32 i = 0; i < 4; i++)
+        {
+            framebuffer.tex_color_buffer_handles[i] = 0;       
+        }
+    }
+
     render_state.should_close = false;
     render_state.dpi_scale = 0;
     render_state.window = nullptr;
@@ -792,6 +806,7 @@ int main(int argc, char **args)
     render_state.string_arena = {};
     render_state.gl_shader_count = 0;
     render_state.gl_shaders = push_array(&platform_state->perm_arena, 64, ShaderGL);
+  
 
     Renderer *renderer_alloc = push_struct(&platform_state->perm_arena, Renderer);
     Renderer *renderer = renderer_alloc;

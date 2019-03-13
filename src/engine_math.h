@@ -2087,13 +2087,13 @@ namespace math
         // roll (x-axis rotation)
         r32 sinr_cosp = 2.0f * (q.w * q.x + q.y * q.z);
         r32 cosr_cosp = 1.0f - 2.0f * (q.x * q.x + q.y * q.y);
-        result.x = atan2(sinr_cosp, cosr_cosp);
+        result.x = (r32)atan2(sinr_cosp, cosr_cosp);
 
         // pitch (y-axis rotation)
         r32 sinp = 2.0f * (q.w * q.y - q.z * q.x);
         if (fabs(sinp) >= 1)
         {
-            result.y = copysign(PI / 2, sinp); // use 90 degrees if out of range
+            result.y = (r32)copysign(PI / 2, sinp); // use 90 degrees if out of range
         }
         else
         {
@@ -2103,7 +2103,7 @@ namespace math
         // yaw (z-axis rotation)
         r32 siny_cosp = +2.0f * (q.w * q.z + q.x * q.y);
         r32 cosy_cosp = +1.0f - 2.0f * (q.y * q.y + q.z * q.z);  
-        result.z = atan2(siny_cosp, cosy_cosp);
+        result.z = (r32)atan2(siny_cosp, cosy_cosp);
 
         return result;
     }

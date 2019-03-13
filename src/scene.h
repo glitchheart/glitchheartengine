@@ -475,7 +475,7 @@ namespace scene
         scene_manager->scene_loaded = false;
         scene_manager->editor.selection_enabled = true;
         scene_manager->editor.lock_camera = false;
-        scene_manager->loaded_scene = { -1 };
+        scene_manager->loaded_scene = { -1 , nullptr};
         scene_manager->scenes = push_array(arena, global_max_scenes, scene::Scene);
         scene_manager->_internal_scene_handles = push_array(arena, global_max_scenes, i32);
 

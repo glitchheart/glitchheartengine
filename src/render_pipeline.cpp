@@ -150,16 +150,6 @@ namespace rendering
         size_t size = buf_len(uniform_vals);
         size_t array_size = buf_len(arrays);
 
-        if (!material.uniform_values)
-        {
-            //material.uniform_values = push_array(&renderer->mesh_arena, size, UniformValue);
-        }
-
-        if (!material.arrays)
-        {
-            //material.arrays = push_array(&renderer->mesh_arena, array_size, UniformArray);
-        }
-
         material.uniform_value_count = (i32)size;
         memcpy(material.uniform_values, uniform_vals, size * sizeof(UniformValue));
         material.array_count = (i32)array_size;

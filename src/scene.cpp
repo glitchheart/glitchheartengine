@@ -450,9 +450,9 @@ namespace scene
                     if(type_info)
                     {
                         EntityData* data = entity.entity_data;
-                        for(i32 i = 0; i < type_info->field_count; i++)
+                        for(i32 j = 0; j < type_info->field_count; j++)
                         {
-                            Field& field = type_info->fields[i];
+                            Field& field = type_info->fields[j];
                             fprintf(file, "%s: ", field.name);
                             unsigned char *ptr = ((unsigned char *)data + field.offset);
                             switch(field.type)
@@ -500,8 +500,6 @@ namespace scene
                             {
                                 fprintf(file, "%s\n", (char*)(ptr));
                             }
-                            break;
-                            default:
                             break;
                             }
                         }
@@ -1866,7 +1864,7 @@ namespace scene
                 free_instance_buffers(get_scene(scene_manager->loaded_scene));
                 loaded_scene.loaded = false;
                 free_scene(scene_manager->loaded_scene);
-                scene_manager->loaded_scene = { -1 };
+                scene_manager->loaded_scene = { -1 , nullptr};
                 scene_manager->scene_loaded = false;
             }
         }
@@ -2845,15 +2843,15 @@ namespace scene
                             for(i32 i = 0; i < material_instance.instanced_vertex_attribute_count; i++)
                             {
                                 // We got a match!
-                                rendering::InstanceBufferHandle handle = data->instance_buffer_handles[i];
-                                i32 max = rendering::get_instance_buffer_max(handle, scene.renderer);
+                                rendering::InstanceBufferHandle instance_buffer_handle = data->instance_buffer_handles[i];
+                                i32 max = rendering::get_instance_buffer_max(instance_buffer_handle, scene.renderer);
                                 
-                                material_instance.instanced_vertex_attributes[i].instance_buffer_handle = handle;
+                                material_instance.instanced_vertex_attributes[i].instance_buffer_handle = instance_buffer_handle;
                                     
                                 if(data->max_count > max)
                                 {
                                     i32 new_max = math::next_power_of_two(max + 1);
-                                    realloc_instance_buffer(handle, new_max, scene.renderer);
+                                    realloc_instance_buffer(instance_buffer_handle, new_max, scene.renderer);
                                 }
                             }
                         }
@@ -2867,9 +2865,9 @@ namespace scene
                             
                             for(i32 i = 0; i < material_instance.instanced_vertex_attribute_count; i++)
                             {
-                                rendering::InstanceBufferHandle handle = rendering::allocate_instance_buffer(material_instance.instanced_vertex_attributes[i].attribute.type, math::next_power_of_two(1), scene.renderer);
-                                material_instance.instanced_vertex_attributes[i].instance_buffer_handle = handle;
-                                data->instance_buffer_handles[data->instance_buffer_count++] = handle;
+                                rendering::InstanceBufferHandle instance_buffer_handle = rendering::allocate_instance_buffer(material_instance.instanced_vertex_attributes[i].attribute.type, math::next_power_of_two(1), scene.renderer);
+                                material_instance.instanced_vertex_attributes[i].instance_buffer_handle = instance_buffer_handle;
+                                data->instance_buffer_handles[data->instance_buffer_count++] = instance_buffer_handle;
                             }
                         }
                     }
@@ -3139,7 +3137,7 @@ namespace scene
     {
         Scene &scene = get_scene(handle);
         
-        if(entity.handle > scene.entity_count || entity.handle == 0 || scene._internal_handles[entity.handle - 1] == -1 && scene._internal_handles[entity.handle - 1] < scene.entity_count)
+        if(entity.handle > scene.entity_count || entity.handle == 0 || (scene._internal_handles[entity.handle - 1] == -1 && scene._internal_handles[entity.handle - 1] < scene.entity_count))
             return;
         
         TransformComponent transform = get_transform_comp(entity, handle);
@@ -3664,9 +3662,9 @@ namespace scene
                         {
                             math::BoundingBox box = render.bounding_box;
                             math::Vec3 size = math::Vec3(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z);
-                            math::Vec3 position = math::Vec3((box.min.x + box.max.x) / 2.0f, (box.min.y + box.max.y) / 2.0f, (box.min.z + box.max.z) / 2.0f);
+                            math::Vec3 box_position = math::Vec3((box.min.x + box.max.x) / 2.0f, (box.min.y + box.max.y) / 2.0f, (box.min.z + box.max.z) / 2.0f);
                             
-                            rendering::Transform box_transform = rendering::create_transform(position, size, math::Quat());
+                            rendering::Transform box_transform = rendering::create_transform(box_position, size, math::Quat());
                             box_transform.model = transform.transform.model * box_transform.model;
 
                             rendering::push_buffer_to_render_pass(renderer, render.bounding_box_buffer, renderer->render.bounding_box_material, box_transform, renderer->render.standard_pass, rendering::CommandType::WITH_DEPTH, rendering::PrimitiveType::LINE_LOOP);
