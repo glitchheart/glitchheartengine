@@ -239,6 +239,8 @@ static GLint link_program(MemoryArena *arena, const char *program_name, GLuint p
 
         log_error("Program linking error - %s\n", program_name);
         log_error("%s", error_log);
+
+        end_temporary_memory(temp_mem);
     }
     return is_linked;
 }
@@ -257,13 +259,13 @@ static void set_all_uniform_locations(rendering::Shader &shader, ShaderGL &gl_sh
             {
                 rendering::Structure &structure = shader.structures[uniform.structure_index];
 
-                for (i32 i = 0; i < uniform.array_size; i++)
+                for (i32 k = 0; k < uniform.array_size; k++)
                 {
                     for (i32 j = 0; j < structure.uniform_count; j++)
                     {
                         rendering::Uniform struct_uni = structure.uniforms[j];
                         char char_buf[256];
-                        sprintf(char_buf, "%s[%d].%s", uniform.name, i, struct_uni.name);
+                        sprintf(char_buf, "%s[%d].%s", uniform.name, k, struct_uni.name);
                         GLint location = glGetUniformLocation(gl_shader.program, char_buf);
                         gl_shader.uniform_locations[gl_shader.location_count++] = location;
                     }
@@ -271,10 +273,10 @@ static void set_all_uniform_locations(rendering::Shader &shader, ShaderGL &gl_sh
             }
             else
             {
-                for (i32 i = 0; i < uniform.array_size; i++)
+                for (i32 k = 0; k < uniform.array_size; k++)
                 {
                     char char_buf[256];
-                    sprintf(char_buf, "%s[%d]", uniform.name, i);
+                    sprintf(char_buf, "%s[%d]", uniform.name, k);
 
                     GLint location = glGetUniformLocation(gl_shader.program, char_buf);
                     gl_shader.uniform_locations[gl_shader.location_count++] = location;
@@ -521,6 +523,8 @@ static void create_buffer(Buffer *buffer, rendering::RegisterBufferInfo info, Re
         }
         break;
         case rendering::ValueType::TEXTURE:
+        case rendering::ValueType::MS_TEXTURE:
+        case rendering::ValueType::STRUCTURE:
         case rendering::ValueType::INVALID:
         {
             assert(false);
@@ -800,11 +804,6 @@ static void create_new_framebuffer(rendering::FramebufferInfo &info, Framebuffer
 {
     framebuffer.width = info.width;
     framebuffer.height = info.height;
-
-    // for(i32 i = 0; i < 4; i++)
-    // {
-    //      framebuffer.tex_color_buffer_handles[i] = 0;       
-    // }
 
     glGenFramebuffers(1, &framebuffer.buffer_handle);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
@@ -1712,6 +1711,7 @@ static void set_uniform(RenderState &render_state, Renderer *renderer, GLuint pr
     }
     break;
     case rendering::ValueType::INVALID:
+    case rendering::ValueType::STRUCTURE:
         assert(false);
         break;
     }
@@ -1722,181 +1722,192 @@ static void set_uniform(rendering::Transform transform, const rendering::RenderP
     rendering::Uniform &uniform = uniform_value.uniform;
 
     GLuint location = gl_shader.uniform_locations[uniform_value.uniform.location_index];
-    if (location != -1)
+    switch (uniform.mapping_type)
     {
-        switch (uniform.mapping_type)
+    case rendering::UniformMappingType::CUSTOM:
+    {
+        rendering::CustomUniformMapping mapping = renderer->render.custom_mappings[uniform.custom_mapping.handle];
+        switch(mapping.type)
         {
-        case rendering::UniformMappingType::CUSTOM:
+        case rendering::ValueType::FLOAT:
         {
-            rendering::CustomUniformMapping mapping = renderer->render.custom_mappings[uniform.custom_mapping.handle];
-            switch(mapping.type)
-            {
-            case rendering::ValueType::FLOAT:
-            {
-                set_float_uniform(gl_shader.program, location, mapping.float_val);
-            }
-            break;
-            case rendering::ValueType::FLOAT2:
-            {
-                set_vec2_uniform(gl_shader.program, location, mapping.float2_val);
-            }
-            break;
-            case rendering::ValueType::FLOAT3:
-            {
-                set_vec3_uniform(gl_shader.program, location, mapping.float3_val);
+            set_float_uniform(gl_shader.program, location, mapping.float_val);
+        }
+        break;
+        case rendering::ValueType::FLOAT2:
+        {
+            set_vec2_uniform(gl_shader.program, location, mapping.float2_val);
+        }
+        break;
+        case rendering::ValueType::FLOAT3:
+        {
+            set_vec3_uniform(gl_shader.program, location, mapping.float3_val);
 
-            }
-            break;
-            case rendering::ValueType::FLOAT4:
-            {
-                set_vec4_uniform(gl_shader.program, location, mapping.float4_val);
-            }
-            break;
-            case rendering::ValueType::INTEGER:
-            {
-                set_int_uniform(gl_shader.program, location, mapping.integer_val);
-            }
-            break;
-            case rendering::ValueType::BOOL:
-            {
-                set_bool_uniform(gl_shader.program, location, mapping.boolean_val);
-            }
-            break;
-            case rendering::ValueType::MAT4:
-            {
-                set_mat4_uniform(gl_shader.program, location, mapping.mat4_val);
-            }
-            break;
-            case rendering::ValueType::TEXTURE:
-            {
-                if(mapping.texture.handle == 0)
-                    return;
+        }
+        break;
+        case rendering::ValueType::FLOAT4:
+        {
+            set_vec4_uniform(gl_shader.program, location, mapping.float4_val);
+        }
+        break;
+        case rendering::ValueType::INTEGER:
+        {
+            set_int_uniform(gl_shader.program, location, mapping.integer_val);
+        }
+        break;
+        case rendering::ValueType::BOOL:
+        {
+            set_bool_uniform(gl_shader.program, location, mapping.boolean_val);
+        }
+        break;
+        case rendering::ValueType::MAT4:
+        {
+            set_mat4_uniform(gl_shader.program, location, mapping.mat4_val);
+        }
+        break;
+        case rendering::ValueType::TEXTURE:
+        {
+            if(mapping.texture.handle == 0)
+                return;
                 
-                Texture *texture = renderer->render.textures[mapping.texture.handle - 1];
-                set_texture_uniform(gl_shader.program, texture->handle, *texture_count);
-                (*texture_count)++;
-            }
-            break;
-            case rendering::ValueType::MS_TEXTURE:
-            {
-                if(mapping.ms_texture.handle == 0)
-                    return;
-                
-                Texture *texture = renderer->render.textures[mapping.ms_texture.handle - 1];
-                set_ms_texture_uniform(gl_shader.program, texture->handle, *texture_count);
-                (*texture_count)++;
-            }
-            break;
-            }            
-        }
-        break;
-        case rendering::UniformMappingType::NONE:
-        case rendering::UniformMappingType::DIFFUSE_TEX:
-        case rendering::UniformMappingType::DIFFUSE_COLOR:
-        case rendering::UniformMappingType::SPECULAR_TEX:
-        case rendering::UniformMappingType::SPECULAR_COLOR:
-        case rendering::UniformMappingType::SPECULAR_EXPONENT:
-        case rendering::UniformMappingType::AMBIENT_COLOR:
-        case rendering::UniformMappingType::AMBIENT_TEX:
-        case rendering::UniformMappingType::DIRECTIONAL_LIGHT_COUNT:
-        case rendering::UniformMappingType::POINT_LIGHT_COUNT:
-        case rendering::UniformMappingType::POINT_LIGHT_POSITION:
-        case rendering::UniformMappingType::DIRECTIONAL_LIGHT_DIRECTION:
-        case rendering::UniformMappingType::DIRECTIONAL_LIGHT_AMBIENT:
-        case rendering::UniformMappingType::DIRECTIONAL_LIGHT_DIFFUSE:
-        case rendering::UniformMappingType::DIRECTIONAL_LIGHT_SPECULAR:
-        case rendering::UniformMappingType::POINT_LIGHT_AMBIENT:
-        case rendering::UniformMappingType::POINT_LIGHT_DIFFUSE:
-        case rendering::UniformMappingType::POINT_LIGHT_SPECULAR:
-        case rendering::UniformMappingType::POINT_LIGHT_CONSTANT:
-        case rendering::UniformMappingType::POINT_LIGHT_LINEAR:
-        case rendering::UniformMappingType::POINT_LIGHT_QUADRATIC:
-        {
-            set_uniform(render_state, renderer, gl_shader.program, uniform_value, location, texture_count);
-        }
-        break;
-        case rendering::UniformMappingType::CAMERA_UP:
-        {
-            set_vec3_uniform(gl_shader.program, location, math::up(camera.view_matrix));
-        }
-        break;
-        case rendering::UniformMappingType::CAMERA_RIGHT:
-        {
-            set_vec3_uniform(gl_shader.program, location, math::right(camera.view_matrix));
-        }
-        break;
-        case rendering::UniformMappingType::CAMERA_FORWARD:
-        {
-            set_vec3_uniform(gl_shader.program, location, math::forward(camera.view_matrix));
-        }
-        break;
-        case rendering::UniformMappingType::FRAMEBUFFER_WIDTH:
-        {
-            set_int_uniform(gl_shader.program, location, renderer->window_width);
-        }
-        break;
-        case rendering::UniformMappingType::FRAMEBUFFER_HEIGHT:
-        {
-            set_int_uniform(gl_shader.program, location, renderer->window_height);
-        }
-        break;
-        case rendering::UniformMappingType::TIME:
-        {
-            set_float_uniform(gl_shader.program, location, (r32)glfwGetTime());
-        }
-        break;
-        case rendering::UniformMappingType::CLIPPING_PLANE:
-        {
-            set_vec4_uniform(gl_shader.program, location, render_pass.clipping_planes.plane);
-        }
-        break;
-        case rendering::UniformMappingType::LIGHT_SPACE_MATRIX:
-        {
-            set_mat4_uniform(gl_shader.program, location, renderer->render.light_space_matrix);
-        }
-        break;
-        case rendering::UniformMappingType::SHADOW_MAP:
-        {
-            set_int_uniform(gl_shader.program, location, *texture_count);
-            
-            rendering::TextureHandle handle = rendering::get_depth_texture_from_framebuffer(0, renderer->render.shadow_framebuffer, renderer);
-
-            Texture *texture = renderer->render.textures[handle.handle - 1];
+            Texture *texture = renderer->render.textures[mapping.texture.handle - 1];
             set_texture_uniform(gl_shader.program, texture->handle, *texture_count);
-            (*texture_count++);
+            (*texture_count)++;
         }
         break;
-        case rendering::UniformMappingType::SHADOW_VIEW_POSITION:
+        case rendering::ValueType::MS_TEXTURE:
         {
-            set_vec3_uniform(gl_shader.program, location, renderer->render.shadow_view_position);
+            if(mapping.ms_texture.handle == 0)
+                return;
+                
+            Texture *texture = renderer->render.textures[mapping.ms_texture.handle - 1];
+            set_ms_texture_uniform(gl_shader.program, texture->handle, *texture_count);
+            (*texture_count)++;
         }
         break;
-        case rendering::UniformMappingType::VIEWPORT_SIZE:
+        case rendering::ValueType::STRUCTURE:
+        case rendering::ValueType::INVALID:
         {
-            set_vec2_uniform(gl_shader.program, location, math::Vec2(renderer->framebuffer_width, renderer->framebuffer_height));
-        }
-        break;
-        case rendering::UniformMappingType::MODEL:
-        {
-            set_mat4_uniform(gl_shader.program, location, transform.model);
-        }
-        break;
-        case rendering::UniformMappingType::VIEW:
-        {
-            set_mat4_uniform(gl_shader.program, location, camera.view_matrix);
-        }
-        break;
-        case rendering::UniformMappingType::PROJECTION:
-        {
-            set_mat4_uniform(gl_shader.program, location, camera.projection_matrix);
-        }
-        break;
-        case rendering::UniformMappingType::CAMERA_POSITION:
-        {
-            set_vec3_uniform(gl_shader.program, location, camera.position);
+            assert(false);
         }
         break;
         }
+    }
+    break;
+    case rendering::UniformMappingType::NONE:
+    case rendering::UniformMappingType::DIFFUSE_TEX:
+    case rendering::UniformMappingType::DIFFUSE_COLOR:
+    case rendering::UniformMappingType::SPECULAR_TEX:
+    case rendering::UniformMappingType::SPECULAR_COLOR:
+    case rendering::UniformMappingType::SPECULAR_EXPONENT:
+    case rendering::UniformMappingType::SPECULAR_INTENSITY_TEX:
+    case rendering::UniformMappingType::AMBIENT_COLOR:
+    case rendering::UniformMappingType::AMBIENT_TEX:
+    case rendering::UniformMappingType::DIRECTIONAL_LIGHT_COUNT:
+    case rendering::UniformMappingType::POINT_LIGHT_COUNT:
+    case rendering::UniformMappingType::POINT_LIGHT_POSITION:
+    case rendering::UniformMappingType::DIRECTIONAL_LIGHT_DIRECTION:
+    case rendering::UniformMappingType::DIRECTIONAL_LIGHT_AMBIENT:
+    case rendering::UniformMappingType::DIRECTIONAL_LIGHT_DIFFUSE:
+    case rendering::UniformMappingType::DIRECTIONAL_LIGHT_SPECULAR:
+    case rendering::UniformMappingType::POINT_LIGHT_AMBIENT:
+    case rendering::UniformMappingType::POINT_LIGHT_DIFFUSE:
+    case rendering::UniformMappingType::POINT_LIGHT_SPECULAR:
+    case rendering::UniformMappingType::POINT_LIGHT_CONSTANT:
+    case rendering::UniformMappingType::POINT_LIGHT_LINEAR:
+    case rendering::UniformMappingType::POINT_LIGHT_QUADRATIC:
+    {
+        set_uniform(render_state, renderer, gl_shader.program, uniform_value, location, texture_count);
+    }
+    break;
+    case rendering::UniformMappingType::CAMERA_UP:
+    {
+        set_vec3_uniform(gl_shader.program, location, math::up(camera.view_matrix));
+    }
+    break;
+    case rendering::UniformMappingType::CAMERA_RIGHT:
+    {
+        set_vec3_uniform(gl_shader.program, location, math::right(camera.view_matrix));
+    }
+    break;
+    case rendering::UniformMappingType::CAMERA_FORWARD:
+    {
+        set_vec3_uniform(gl_shader.program, location, math::forward(camera.view_matrix));
+    }
+    break;
+    case rendering::UniformMappingType::FRAMEBUFFER_WIDTH:
+    {
+        set_int_uniform(gl_shader.program, location, renderer->window_width);
+    }
+    break;
+    case rendering::UniformMappingType::FRAMEBUFFER_HEIGHT:
+    {
+        set_int_uniform(gl_shader.program, location, renderer->window_height);
+    }
+    break;
+    case rendering::UniformMappingType::TIME:
+    {
+        set_float_uniform(gl_shader.program, location, (r32)glfwGetTime());
+    }
+    break;
+    case rendering::UniformMappingType::CLIPPING_PLANE:
+    {
+        set_vec4_uniform(gl_shader.program, location, render_pass.clipping_planes.plane);
+    }
+    break;
+    case rendering::UniformMappingType::LIGHT_SPACE_MATRIX:
+    {
+        set_mat4_uniform(gl_shader.program, location, renderer->render.light_space_matrix);
+    }
+    break;
+    case rendering::UniformMappingType::SHADOW_MAP:
+    {
+        set_int_uniform(gl_shader.program, location, *texture_count);
+            
+        rendering::TextureHandle handle = rendering::get_depth_texture_from_framebuffer(0, renderer->render.shadow_framebuffer, renderer);
+
+        Texture *texture = renderer->render.textures[handle.handle - 1];
+        set_texture_uniform(gl_shader.program, texture->handle, *texture_count);
+        (*texture_count++);
+    }
+    break;
+    case rendering::UniformMappingType::SHADOW_VIEW_POSITION:
+    {
+        set_vec3_uniform(gl_shader.program, location, renderer->render.shadow_view_position);
+    }
+    break;
+    case rendering::UniformMappingType::VIEWPORT_SIZE:
+    {
+        set_vec2_uniform(gl_shader.program, location, math::Vec2(renderer->framebuffer_width, renderer->framebuffer_height));
+    }
+    break;
+    case rendering::UniformMappingType::MODEL:
+    {
+        set_mat4_uniform(gl_shader.program, location, transform.model);
+    }
+    break;
+    case rendering::UniformMappingType::VIEW:
+    {
+        set_mat4_uniform(gl_shader.program, location, camera.view_matrix);
+    }
+    break;
+    case rendering::UniformMappingType::PROJECTION:
+    {
+        set_mat4_uniform(gl_shader.program, location, camera.projection_matrix);
+    }
+    break;
+    case rendering::UniformMappingType::CAMERA_POSITION:
+    {
+        set_vec3_uniform(gl_shader.program, location, camera.position);
+    }
+    break;
+    case rendering::UniformMappingType::DISSOLVE:
+    case rendering::UniformMappingType::POINT_LIGHTS:
+    case rendering::UniformMappingType::DIRECTIONAL_LIGHTS:
+    // @Incomplete: Handle these?
+    break;
+    default:
+    break;
     }
 }
 
@@ -2012,6 +2023,15 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             glVertexAttribDivisor(array_num + 2, 1);
             glVertexAttribDivisor(array_num + 3, 1);
         }
+        break;
+        case rendering::ValueType::INTEGER:
+        case rendering::ValueType::BOOL:
+        case rendering::ValueType::TEXTURE:
+        case rendering::ValueType::MS_TEXTURE:
+        case rendering::ValueType::STRUCTURE:
+        case rendering::ValueType::INVALID:
+        debug_log("Value type not supported\n");
+        assert(false);
         break;
         }
     }
@@ -2510,8 +2530,6 @@ static void render_post_processing_passes(RenderState &render_state, Renderer *r
     glDisable(GL_DEPTH_TEST);
 
     bind_vertex_array(render_state.framebuffer_quad_vao, render_state);
-
-    Framebuffer final_buffer = render_state.v2.framebuffers[renderer->render.final_framebuffer.handle - 1];
 
     for (i32 pass_index = 0; pass_index < renderer->render.post_processing_pass_count; pass_index++)
     {

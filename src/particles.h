@@ -323,7 +323,7 @@ struct ParticleApi
     RemoveAllParticleSystems remove_all_particle_systems;
     ParticleSystemIsRunning particle_system_is_running;
 
-    GetDefaultAttributes get_default_attributes;;
+    GetDefaultAttributes get_default_attributes;
     CreateParticleSystem create_particle_system;
     RemoveParticleSystem remove_particle_system;
     UpdateParticleSystem update_particle_system;

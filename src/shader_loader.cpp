@@ -367,7 +367,7 @@ namespace rendering
             }
             else
             {
-                uniform.array_size = strtol(*rest, rest, 10);
+                uniform.array_size = (i32)strtol(*rest, rest, 10);
             }
         }
     }
@@ -706,7 +706,7 @@ namespace rendering
                         if (rest[0] == '=')
                         {
                             rest++;
-                            vertex_attribute->location = strtol(rest, &rest, 10);
+                            vertex_attribute->location = (i32)strtol(rest, &rest, 10);
 
                             while (rest[0] == ' ' || rest[0] == ')')
                                 rest++;

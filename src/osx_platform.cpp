@@ -295,7 +295,6 @@ PLATFORM_GET_ALL_FILES_WITH_EXTENSION(osx_get_all_files_with_extension)
             }
         }
     }
-    
     closedir(dr);    
 }
 

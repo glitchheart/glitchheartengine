@@ -96,6 +96,9 @@ union r32_4x
     {
         p = _mm_set1_ps(0.0f);
     }
+
+    r32_4x(const r32_4x& other) = default;
+    
     
     r32_4x(r32 _p) 
     {
@@ -225,6 +228,8 @@ union h64_4x
             r64 e[2];
         };
     };
+
+    h64_4x(const h64_4x& other) = default;
     
     h64_4x(r64 _p) 
     {
@@ -336,7 +341,8 @@ union r64_4x
     };
     r64 e[4];
     u64 u[4];
-    
+
+    r64_4x(const r64_4x& other) = default;
     
 explicit    r64_4x(r64 v)
     {
@@ -1029,6 +1035,8 @@ union Vec2_4x
         y = r32_4x(_y);
     }
 
+    Vec2_4x(const Vec2_4x& other) = default;
+
     Vec2_4x(r32_4x _x, r32_4x _y)
     {
         x = _x;
@@ -1214,13 +1222,15 @@ union Vec3_4x
     u32 u[12];
     
     Vec3_4x() : Vec3_4x(0.0f) {}
+
+    Vec3_4x(const Vec3_4x& v) = default;
     
     Vec3_4x(r32 _x, r32 _y, r32 _z)
     {
         x = r32_4x(_x);
         y = r32_4x(_y);
         z = r32_4x(_z);
-    }
+    }    
     
     Vec3_4x(Vec2_4x v)
     {
@@ -1494,6 +1504,8 @@ union Vec4_4x
     __m128 p[4];
     r32 e[16];
     u32 u[16];
+
+    Vec4_4x(const Vec4_4x& v) = default;
     
     Vec4_4x(r32 _x, r32 _y, r32 _z, r32 _w)
     {
