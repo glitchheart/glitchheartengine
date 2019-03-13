@@ -61,7 +61,7 @@ namespace scene
         scene_manager->registered_types[scene_manager->registered_type_count++] = registered;
     }
 
-#define register_member(registered, entity_type, field, field_type) _register_member(registered, offsetof(entity_type, field), #field, field_type)
+#define register_member(registered, entity_type, field, field_type) _register_member(registered, offset_of(entity_type, field), #field, field_type)
     static void _register_member(RegisteredEntityType& registered, size_t offset, char* name, FieldType type)
     {
         strcpy(registered.fields[registered.field_count].name, name);
@@ -557,7 +557,7 @@ namespace scene
                         entity_data = scene.manager->callbacks.on_load_entity_of_type(handle, type_info->type_id, scene);
                         if(entity_data)
                         {
-                            entity_data->handle = handle;
+                            entity_data->handle.handle = handle.handle;
                             Entity& entity = get_entity(handle, scene);
                             entity.savable = true;
                             entity.entity_data = entity_data;

@@ -789,7 +789,7 @@ int main(int argc, char **args)
     render_state = {};
     render_state.v2 = {};
 
-    for(i32 j = 0; j < 32; j++)
+    for(i32 j = 0; j < MAX_FRAMEBUFFERS; j++)
     {
         Framebuffer &framebuffer = render_state.v2.framebuffers[j];
         for(i32 i = 0; i < 4; i++)
