@@ -2350,6 +2350,149 @@ static void render_line(rendering::RenderCommand& command, rendering::Material& 
     render_buffer(rendering::PrimitiveType::LINES, command.transform, renderer->render.line_buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[material.shader.handle]);
 }
 
+static void render_pass(RenderState &render_state, Renderer *renderer, rendering::RenderPass &pass)
+{
+    if(pass.type == rendering::RenderPassType::NORMAL)
+    {
+        Framebuffer &framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
+
+        if(pass.settings & rendering::RenderPassSettings::BACKFACE_CULLING)
+        {
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_BACK);
+        }
+        else if(pass.settings & rendering::RenderPassSettings::FRONTFACE_CULLING)
+        {
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_FRONT);
+        }
+
+        glViewport(0, 0, framebuffer.width, framebuffer.height);
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
+
+        // @Incomplete: Not all framebuffers should have depth testing or clear both bits
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+            
+        if(pass.has_clear_color)
+            glClearColor(pass.clear_color.r, pass.clear_color.g, pass.clear_color.b, pass.clear_color.a);
+        else
+            glClearColor(renderer->clear_color.r, renderer->clear_color.g, renderer->clear_color.b, renderer->clear_color.a);
+            
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        if(framebuffer.tex_color_buffer_count > 1)
+        {
+            static const float transparent[] = { 0, 0, 0, 0 };
+            glClearBufferfv(GL_COLOR, 1, transparent);
+        }
+            
+        for (i32 i = 0; i < pass.commands.render_command_count; i++)
+        {
+            rendering::RenderCommand &command = pass.commands.render_commands[i];
+
+            if(command.blend_mode == rendering::BlendMode::ONE_MINUS_SOURCE)
+            {
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            }
+            else if(command.blend_mode == rendering::BlendMode::ONE)
+            {
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+            }
+                
+            rendering::Material material = get_material_instance(command.material, renderer);
+            ShaderGL *shader = &render_state.gl_shaders[material.shader.handle];
+
+            //assert(material.shader.handle == command.pass.shader_handle.handle);
+                
+            switch(command.type)
+            {
+            case rendering::RenderCommandType::BUFFER:
+            {
+                /*if(pass_index == renderer->render.shadow_pass.handle - 1)
+                  {
+                  material = renderer->render.materials[renderer->render.shadow_map_material.handle];
+                        
+                  if(rendering::VertexAttributeInstanced* original_mapping = rendering::get_attrib_mapping(command.material, rendering::VertexAttributeMappingType::MODEL, renderer))
+                  {
+                  rendering::VertexAttributeInstanced* mapping = rendering::attrib_mapping(material, rendering::VertexAttributeMappingType::MODEL);
+
+                  mapping->instance_buffer_handle = original_mapping->instance_buffer_handle;
+                  }
+                  }*/
+
+                render_buffer(command.buffer.primitive_type, command.transform, command.buffer.buffer, pass, render_state, renderer, material, pass.camera, command.count, shader);
+            }
+            break;
+            case rendering::RenderCommandType::LINE:
+            {
+                render_line(command, material, pass, renderer, render_state);
+            }
+            break;
+            }
+        }
+
+        glDisable(GL_DEPTH_TEST);
+        
+        for (i32 i = 0; i < pass.commands.depth_free_command_count; i++)
+        {
+            rendering::RenderCommand &command = pass.commands.depth_free_commands[i];
+            rendering::Material &material = get_material_instance(command.material, renderer);
+
+            if(command.blend_mode == rendering::BlendMode::ONE_MINUS_SOURCE)
+            {
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            }
+            else if(command.blend_mode == rendering::BlendMode::ONE)
+            {
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+            }
+
+            switch(command.type)
+            {
+            case rendering::RenderCommandType::BUFFER:
+            {
+                render_buffer(command.buffer.primitive_type, command.transform, command.buffer.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[material.shader.handle]);
+            }
+            break;
+            case rendering::RenderCommandType::LINE:
+            {
+                render_line(command, material, pass, renderer, render_state);
+            }
+            break;
+            }
+        }
+
+        glEnable(GL_DEPTH_TEST);
+        
+        pass.commands.render_command_count = 0;
+        pass.commands.depth_free_command_count = 0;
+        glDisable(GL_CULL_FACE);
+    }
+    else if(pass.type == rendering::RenderPassType::READ_DRAW)
+    {
+        Framebuffer &read_framebuffer = render_state.v2.framebuffers[pass.read_framebuffer.handle - 1];
+        Framebuffer &draw_framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
+            
+        glViewport(0, 0, draw_framebuffer.width, draw_framebuffer.height);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, read_framebuffer.buffer_handle);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, draw_framebuffer.buffer_handle);
+
+        for(i32 i = 0; i < read_framebuffer.tex_color_buffer_count; i++)
+        {
+            glReadBuffer(GL_COLOR_ATTACHMENT0 + i);
+            glDrawBuffer(GL_COLOR_ATTACHMENT0 + i);
+            
+            glBlitFramebuffer(0, 0, draw_framebuffer.width, draw_framebuffer.height, 0, 0, draw_framebuffer.width, draw_framebuffer.height, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+        }
+            
+        glReadBuffer(GL_COLOR_ATTACHMENT0);
+        glDrawBuffer(GL_COLOR_ATTACHMENT0);
+                
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+}
+
 static void render_all_passes(RenderState &render_state, Renderer *renderer)
 {
     bind_vertex_array(0, render_state);
@@ -2359,150 +2502,17 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
     glEnable(GL_CLIP_PLANE0);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    rendering::RenderPass &pass = renderer->render.passes[renderer->render.shadow_pass.handle - 1];
+    render_pass(render_state, renderer, pass);
+        
     // Go backwards through the array to enable easy render pass adding
     for (i32 pass_index = renderer->render.pass_count - 1; pass_index >= 0; pass_index--)
     {
+        if(pass_index == renderer->render.shadow_pass.handle - 1)
+            continue;
+        
         rendering::RenderPass &pass = renderer->render.passes[pass_index];
-       
-        if(pass.type == rendering::RenderPassType::NORMAL)
-        {
-            Framebuffer &framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
-
-            if(pass.settings & rendering::RenderPassSettings::BACKFACE_CULLING)
-            {
-                glEnable(GL_CULL_FACE);
-                glCullFace(GL_BACK);
-            }
-            else if(pass.settings & rendering::RenderPassSettings::FRONTFACE_CULLING)
-            {
-                glEnable(GL_CULL_FACE);
-                glCullFace(GL_FRONT);
-            }
-
-            glViewport(0, 0, framebuffer.width, framebuffer.height);
-            glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
-
-            // @Incomplete: Not all framebuffers should have depth testing or clear both bits
-            glEnable(GL_DEPTH_TEST);
-            glDepthFunc(GL_LESS);
-            
-            if(pass.has_clear_color)
-                glClearColor(pass.clear_color.r, pass.clear_color.g, pass.clear_color.b, pass.clear_color.a);
-            else
-                glClearColor(renderer->clear_color.r, renderer->clear_color.g, renderer->clear_color.b, renderer->clear_color.a);
-            
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            if(framebuffer.tex_color_buffer_count > 1)
-            {
-                static const float transparent[] = { 0, 0, 0, 0 };
-                glClearBufferfv(GL_COLOR, 1, transparent);
-            }
-            
-            for (i32 i = 0; i < pass.commands.render_command_count; i++)
-            {
-                rendering::RenderCommand &command = pass.commands.render_commands[i];
-
-                if(command.blend_mode == rendering::BlendMode::ONE_MINUS_SOURCE)
-                {
-                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-                }
-                else if(command.blend_mode == rendering::BlendMode::ONE)
-                {
-                    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-                }
-                
-                rendering::Material material = get_material_instance(command.material, renderer);
-                ShaderGL *shader = &render_state.gl_shaders[material.shader.handle];
-
-                //assert(material.shader.handle == command.pass.shader_handle.handle);
-                
-                switch(command.type)
-                {
-                case rendering::RenderCommandType::BUFFER:
-                {
-                    /*if(pass_index == renderer->render.shadow_pass.handle - 1)
-                    {
-                        material = renderer->render.materials[renderer->render.shadow_map_material.handle];
-                        
-                        if(rendering::VertexAttributeInstanced* original_mapping = rendering::get_attrib_mapping(command.material, rendering::VertexAttributeMappingType::MODEL, renderer))
-                        {
-                            rendering::VertexAttributeInstanced* mapping = rendering::attrib_mapping(material, rendering::VertexAttributeMappingType::MODEL);
-
-                            mapping->instance_buffer_handle = original_mapping->instance_buffer_handle;
-                        }
-                    }*/
-
-                    render_buffer(command.buffer.primitive_type, command.transform, command.buffer.buffer, pass, render_state, renderer, material, pass.camera, command.count, shader);
-                }
-                break;
-                case rendering::RenderCommandType::LINE:
-                {
-                    render_line(command, material, pass, renderer, render_state);
-                }
-                break;
-                }
-            }
-
-            glDisable(GL_DEPTH_TEST);
-        
-            for (i32 i = 0; i < pass.commands.depth_free_command_count; i++)
-            {
-                rendering::RenderCommand &command = pass.commands.depth_free_commands[i];
-                rendering::Material &material = get_material_instance(command.material, renderer);
-
-                if(command.blend_mode == rendering::BlendMode::ONE_MINUS_SOURCE)
-                {
-                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-                }
-                else if(command.blend_mode == rendering::BlendMode::ONE)
-                {
-                    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-                }
-
-                switch(command.type)
-                {
-                case rendering::RenderCommandType::BUFFER:
-                {
-                    render_buffer(command.buffer.primitive_type, command.transform, command.buffer.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[material.shader.handle]);
-                }
-                break;
-                case rendering::RenderCommandType::LINE:
-                {
-                    render_line(command, material, pass, renderer, render_state);
-                }
-                break;
-                }
-            }
-
-            glEnable(GL_DEPTH_TEST);
-        
-            pass.commands.render_command_count = 0;
-            pass.commands.depth_free_command_count = 0;
-            glDisable(GL_CULL_FACE);
-        }
-        else if(pass.type == rendering::RenderPassType::READ_DRAW)
-        {
-            Framebuffer &read_framebuffer = render_state.v2.framebuffers[pass.read_framebuffer.handle - 1];
-            Framebuffer &draw_framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
-            
-            glViewport(0, 0, draw_framebuffer.width, draw_framebuffer.height);
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, read_framebuffer.buffer_handle);
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, draw_framebuffer.buffer_handle);
-
-            for(i32 i = 0; i < read_framebuffer.tex_color_buffer_count; i++)
-            {
-                glReadBuffer(GL_COLOR_ATTACHMENT0 + i);
-                glDrawBuffer(GL_COLOR_ATTACHMENT0 + i);
-            
-                 glBlitFramebuffer(0, 0, draw_framebuffer.width, draw_framebuffer.height, 0, 0, draw_framebuffer.width, draw_framebuffer.height, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-            }
-            
-            glReadBuffer(GL_COLOR_ATTACHMENT0);
-            glDrawBuffer(GL_COLOR_ATTACHMENT0);
-                
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        }
+        render_pass(render_state, renderer, pass);
     }
 
     //glBindFramebuffer(GL_FRAMEBUFFER, 0);
