@@ -124,6 +124,7 @@ namespace rendering
 		AMBIENT_COLOR,
 
 		AMBIENT_TEX,
+        BUMP_TEX,
 
 		DISSOLVE,
 	

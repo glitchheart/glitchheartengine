@@ -2686,6 +2686,25 @@ namespace rendering
                         }
                     }
                 }
+                else if (starts_with(buffer, "map_bump")) // ambient map
+                {
+                    for(i32 i = 0; i < current->pass_count; i++)
+                    {
+                        i32 handle = current->passes[i];
+                        rendering::Material &material = temp_materials[handle];
+                        
+                        if (UniformValue *u = mapping(material, UniformMappingType::BUMP_TEX))
+                        {
+                            char name[64];
+                            sscanf(buffer, "map_bump %s", name);
+
+                            if (name[0] == '.' || name[1] == ':')
+                                load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                            else
+                                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                        }
+                    }
+                }
                 else if (starts_with(buffer, "map_Kd")) // diffuse map
                 {
                     for(i32 i = 0; i < current->pass_count; i++)
