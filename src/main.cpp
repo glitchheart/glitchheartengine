@@ -504,8 +504,8 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     renderer->render.shadow_framebuffer = shadow_fbo;
 
     renderer->render.shadow_settings.z_near = -8.0f;
-    renderer->render.shadow_settings.z_far = 40.0f;
-    renderer->render.shadow_settings.fov = 80.0f;
+    renderer->render.shadow_settings.z_far = 50.0f;
+    renderer->render.shadow_settings.fov = 110.0f;
     
     // Final framebuffer
     rendering::FramebufferInfo final_info = rendering::generate_framebuffer_info();
