@@ -1803,6 +1803,7 @@ static void set_uniform(rendering::Transform transform, const rendering::RenderP
     case rendering::UniformMappingType::SPECULAR_INTENSITY_TEX:
     case rendering::UniformMappingType::AMBIENT_COLOR:
     case rendering::UniformMappingType::AMBIENT_TEX:
+    case rendering::UniformMappingType::BUMP_TEX:
     case rendering::UniformMappingType::DIRECTIONAL_LIGHT_COUNT:
     case rendering::UniformMappingType::POINT_LIGHT_COUNT:
     case rendering::UniformMappingType::POINT_LIGHT_POSITION:
