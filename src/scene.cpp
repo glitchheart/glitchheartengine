@@ -1536,22 +1536,22 @@ namespace scene
             return;
 
         // Update camera
-        if(KEY(Key_W))
+        if(KEY(Key_Up))
         {
             translate_forward(camera, (r32)delta_time * 10.0f);
         }
 
-        if(KEY(Key_S))
+        if(KEY(Key_Down))
         {
             translate_forward(camera, (r32)-delta_time * 10.0f);
         }
 
-        if(KEY(Key_A))
+        if(KEY(Key_Left))
         {
             translate_right(camera, (r32)-delta_time * 10.0f);
         }
 
-        if(KEY(Key_D))
+        if(KEY(Key_Right))
         {
             translate_right(camera, (r32)delta_time * 10.0f);
         }

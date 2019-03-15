@@ -479,7 +479,7 @@ struct ParticleApi;
 struct Pass
 {
     rendering::RenderPassHandle pass_handle;
-    QueuedRenderCommand queued_commands[32];
+    QueuedRenderCommand queued_commands[64];
     i32 command_count;
 };
 
