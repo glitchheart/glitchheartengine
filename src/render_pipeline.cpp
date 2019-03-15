@@ -1102,6 +1102,15 @@ namespace rendering
                 max_z = points[i].z;
             }
         }
+        r32 increment = 15.0f;
+
+        min_x -= increment;
+        min_y -= increment;
+        min_z -= increment;
+
+        max_x += increment;
+        max_y += increment;
+        max_z += increment;
 
         math::Mat4 projection = math::Mat4(1.0f);
 
