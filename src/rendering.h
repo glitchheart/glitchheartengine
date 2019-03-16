@@ -599,6 +599,7 @@ struct Renderer
         rendering::ShaderHandle ui_quad_shader;
         rendering::ShaderHandle textured_ui_quad_shader;
         rendering::ShaderHandle font_shader;
+        rendering::ShaderHandle font3d_shader;
         
         rendering::MaterialInstanceHandle line_material;
         rendering::ShaderHandle line_shader;
@@ -708,6 +709,7 @@ struct Renderer
             rendering::MaterialHandle textured_material;
 
             rendering::MaterialHandle font_material;
+            rendering::MaterialHandle font3d_material;
             rendering::BufferHandle font_buffer;
         } ui;
 
