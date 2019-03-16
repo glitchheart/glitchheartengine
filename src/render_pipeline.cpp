@@ -4515,20 +4515,40 @@ namespace rendering
         command.text_length = strlen(text);
 
         assert(info.z_layer < Z_LAYERS);
-        
-        // @Incomplete: Set material?
-        command.material = renderer->render.materials[renderer->render.ui.font_material.handle];
 
-        set_uniform_value(renderer, command.material, "color", info.color);
-        set_uniform_value(renderer, command.material, "z", (r32)info.z_layer);
-        set_uniform_value(renderer, command.material, "tex", font_info.texture);
+        if(info.has_world_position)
+        {
+            command.material = renderer->render.materials[renderer->render.ui.font3d_material.handle];
 
-        pass.ui.text_z_layers[info.z_layer][pass.ui.text_z_layer_counts[info.z_layer]++] = pass.ui.text_command_count;
+            set_uniform_value(renderer, command.material, "color", info.color);
+            set_uniform_value(renderer, command.material, "z", (r32)info.z_layer);
+            set_uniform_value(renderer, command.material, "tex", font_info.texture);
+            set_uniform_value(renderer, command.material, "projection", info.projection_matrix);
+            set_uniform_value(renderer, command.material, "view", info.view_matrix);
+            set_uniform_value(renderer, command.material, "position", info.world_position);
 
-        command.shader_handle = command.material.shader;
+            pass.ui.text_z_layers[info.z_layer][pass.ui.text_z_layer_counts[info.z_layer]++] = pass.ui.text_command_count;
+
+            command.shader_handle = command.material.shader;
+        }
+        else
+        {
+            command.material = renderer->render.materials[renderer->render.ui.font_material.handle];
+
+            set_uniform_value(renderer, command.material, "color", info.color);
+            set_uniform_value(renderer, command.material, "z", (r32)info.z_layer);
+            set_uniform_value(renderer, command.material, "tex", font_info.texture);
+
+            pass.ui.text_z_layers[info.z_layer][pass.ui.text_z_layer_counts[info.z_layer]++] = pass.ui.text_command_count;
+
+            command.shader_handle = command.material.shader;
+        }
 
         CharacterData *coords = pass.ui.coords[pass.ui.text_command_count];
 
+        if(info.has_world_position)
+            pos = math::Vec2(0.0f);
+        
         generate_text_coordinates(renderer, text, font_info, pos, info.alignment_flags, *framebuffer, &coords);
 
         command.buffer = {pass.ui.text_command_count++};

@@ -536,6 +536,11 @@ namespace rendering
         b32 clip;
 
         u64 alignment_flags;
+
+        b32 has_world_position;
+        math::Vec3 world_position;
+        math::Mat4 projection_matrix;
+        math::Mat4 view_matrix;
     };
 
     struct CharacterData
