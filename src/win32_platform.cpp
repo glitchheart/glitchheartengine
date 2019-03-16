@@ -173,7 +173,7 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
     sprintf(path, "%s*", directory_path);
     h_find = FindFirstFile(path, &find_file);
     
-    if(h_find != INVALID_HANDLE_VALUE)
+    if(h_find != INVALID_HANDLE_VALUE && with_sub_directories)
     {
         do
         {
@@ -192,11 +192,6 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
         
         while(FindNextFile(h_find, &find_file));
         FindClose(h_find);
-    }
-    else
-    {
-        debug("No files with extension %s found in %s\n", extension, directory_path);
-        return;
     }
     
     //Process files
