@@ -190,7 +190,6 @@ PLATFORM_DEALLOCATE_MEMORY(linux_deallocate_memory)
         memory_state.blocks--;
         memory_state.size_allocated -= (block->size + sizeof(MemoryBlock));
         
-        
         MemoryBlock *new_block =  ((MemoryBlock*)block);
         munmap(new_block, block->size + sizeof(MemoryBlock));
     }
@@ -218,6 +217,10 @@ static PLATFORM_OPEN_FILE(linux_open_file)
     }
     
     result.handle = open(path, flags);
+    if(result.handle == -1)
+    {
+        log_error("ERROR in open file: %s", strerror(errno));
+    }
     
     return(result);
 }
@@ -291,12 +294,23 @@ PLATFORM_GET_ALL_FILES_WITH_EXTENSION(linux_get_all_files_with_extension)
 
     if(dr == nullptr)
     {
-        printf("Could not open current directory");
+        log_error("Could not open current directory");
+        return;
     }
 
     while((de = readdir(dr)) != nullptr)
     {
-        if(de->d_type == DT_REG)
+        if(with_sub_directories && de->d_type == DT_DIR)
+        {
+            if(strcmp(de->d_name, ".") != 0 &&
+               strcmp(de->d_name, "..") != 0)
+            {
+                char sub_path[2048];
+                sprintf(sub_path, "%s%s/", directory_path, de->d_name);
+                linux_get_all_files_with_extension(sub_path, "gsc", directory_data, true);
+            }
+        }
+        else if(de->d_type == DT_REG)
         {
             const char *ext = strrchr(de->d_name, '.');
 
@@ -305,7 +319,7 @@ PLATFORM_GET_ALL_FILES_WITH_EXTENSION(linux_get_all_files_with_extension)
                 if(strcmp((++ext), extension) == 0)
                 {
                     char sub_path[2048];
-                    sprintf(sub_path, "%s%s/", directory_path, de->d_name);
+                    sprintf(sub_path, "%s%s", directory_path, de->d_name);
 
                     char *file_name = strtok(de->d_name, ".");
 
@@ -314,7 +328,7 @@ PLATFORM_GET_ALL_FILES_WITH_EXTENSION(linux_get_all_files_with_extension)
                     directory_data->file_count++;
                 }
             }
-        }
+        }        
     }
     closedir(dr);    
 }
