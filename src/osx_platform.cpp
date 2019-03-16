@@ -275,7 +275,17 @@ PLATFORM_GET_ALL_FILES_WITH_EXTENSION(osx_get_all_files_with_extension)
     
     while((de = readdir(dr)) != nullptr)
     {
-        if(de->d_type == DT_REG)
+        if(with_sub_directories && de->d_type == DT_DIR)
+        {
+            if(strcmp(de->d_name, ".") != 0 &&
+               strcmp(de->d_name, "..") != 0)
+            {
+                char sub_path[2048];
+                sprintf(sub_path, "%s%s/", directory_path, de->d_name);
+                osx_get_all_files_with_extension(sub_path, "gsc", directory_data, true);
+            }
+        }
+        else if(de->d_type == DT_REG)
         {
             const char *ext = strrchr(de->d_name,'.');
             
@@ -284,7 +294,7 @@ PLATFORM_GET_ALL_FILES_WITH_EXTENSION(osx_get_all_files_with_extension)
                 if(strcmp((++ext), extension) == 0)
                 {
                     char sub_path[2048];
-                    sprintf(sub_path, "%s%s/", directory_path, de->d_name);
+                    sprintf(sub_path, "%s%s", directory_path, de->d_name);
 
                     char* file_name = strtok(de->d_name, ".");
                     
@@ -293,7 +303,7 @@ PLATFORM_GET_ALL_FILES_WITH_EXTENSION(osx_get_all_files_with_extension)
                     directory_data->file_count++;
                 }
             }
-        }
+        }        
     }
     closedir(dr);    
 }
