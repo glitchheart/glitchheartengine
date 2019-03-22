@@ -131,10 +131,12 @@ namespace scene
         rendering::BufferHandle buffer_handle;
         rendering::BufferHandle bounding_box_buffer;
         
-        b32 casts_shadows;
         math::Vec3 mesh_scale;
         math::BoundingBox bounding_box;
 
+        b32 is_pushed;
+        b32 is_static;
+        b32 casts_shadows;
         b32 wireframe_enabled;
         b32 bounding_box_enabled;
         b32 ignore_depth;
@@ -187,6 +189,7 @@ namespace scene
         } transform;
         struct
         {
+            b32 is_static;
             b32 ignore_depth;
             b32 casts_shadows;
             math::Vec3 mesh_scale;

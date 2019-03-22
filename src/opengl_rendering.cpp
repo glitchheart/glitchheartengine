@@ -426,10 +426,10 @@ static void create_instance_buffer(Buffer *buffer, size_t buffer_size, rendering
         glGenBuffers(1, &buffer->vbo);
     }
 
-    GLenum usage = get_usage(buffer_usage);
-
+    buffer->usage = get_usage(buffer_usage);
+    
     glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)buffer_size, nullptr, usage);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)buffer_size, nullptr, buffer->usage);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -457,9 +457,9 @@ static void create_buffer(Buffer *buffer, rendering::RegisterBufferInfo info, Re
     glGenBuffers(1, &buffer->vbo);
     glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
 
-    GLenum usage = get_usage(info.usage);
+    buffer->usage = get_usage(info.usage);
 
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)info.data.vertex_buffer_size, info.data.vertex_buffer, usage);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)info.data.vertex_buffer_size, info.data.vertex_buffer, buffer->usage);
 
     size_t offset = 0;
 
@@ -541,7 +541,7 @@ static void create_buffer(Buffer *buffer, rendering::RegisterBufferInfo info, Re
     {
         glGenBuffers(1, &buffer->ibo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->ibo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, info.data.index_buffer_size, info.data.index_buffer, usage);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, info.data.index_buffer_size, info.data.index_buffer, buffer->usage);
     }
 
     bind_vertex_array(0, *render_state);
@@ -2521,11 +2521,30 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
 
     for (i32 i = 0; i < MAX_INSTANCE_BUFFERS; i++)
     {
-        renderer->render.instancing.float_buffer_counts[i] = 0;
-        renderer->render.instancing.float2_buffer_counts[i] = 0;
-        renderer->render.instancing.float3_buffer_counts[i] = 0;
-        renderer->render.instancing.float4_buffer_counts[i] = 0;
-        renderer->render.instancing.mat4_buffer_counts[i] = 0;
+        if(renderer->render.instancing.internal_float_buffers[i]->usage == rendering::BufferUsage::DYNAMIC)
+        {
+            renderer->render.instancing.float_buffer_counts[i] = 0;
+        }
+
+        if(renderer->render.instancing.internal_float2_buffers[i]->usage == rendering::BufferUsage::DYNAMIC)
+        {
+            renderer->render.instancing.float2_buffer_counts[i] = 0;
+        }
+
+        if(renderer->render.instancing.internal_float3_buffers[i]->usage == rendering::BufferUsage::DYNAMIC)
+        {
+            renderer->render.instancing.float3_buffer_counts[i] = 0;
+        }
+
+        if(renderer->render.instancing.internal_float4_buffers[i]->usage == rendering::BufferUsage::DYNAMIC)
+        {
+            renderer->render.instancing.float4_buffer_counts[i] = 0;
+        }
+
+        if(renderer->render.instancing.internal_mat4_buffers[i]->usage == rendering::BufferUsage::DYNAMIC)
+        {
+            renderer->render.instancing.mat4_buffer_counts[i] = 0;
+        }
     }
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

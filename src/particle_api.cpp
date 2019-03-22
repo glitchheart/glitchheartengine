@@ -142,10 +142,10 @@ static void _allocate_particle_system(Renderer *renderer, ParticleSystemInfo& sy
     system_info.speed_over_lifetime.keys = nullptr;
     system_info.angle_over_lifetime.keys = nullptr;
 
-    system_info.color_buffer_handle = rendering::allocate_instance_buffer(rendering::ValueType::FLOAT4, max_particles, renderer);
-    system_info.size_buffer_handle = rendering::allocate_instance_buffer(rendering::ValueType::FLOAT2, max_particles, renderer);
-    system_info.offset_buffer_handle = rendering::allocate_instance_buffer(rendering::ValueType::FLOAT3, max_particles, renderer);
-    system_info.angle_buffer_handle = rendering::allocate_instance_buffer(rendering::ValueType::FLOAT, max_particles, renderer);
+    system_info.color_buffer_handle = rendering::allocate_instance_buffer(rendering::ValueType::FLOAT4, max_particles, rendering::BufferUsage::DYNAMIC, renderer);
+    system_info.size_buffer_handle = rendering::allocate_instance_buffer(rendering::ValueType::FLOAT2, max_particles, rendering::BufferUsage::DYNAMIC, renderer);
+    system_info.offset_buffer_handle = rendering::allocate_instance_buffer(rendering::ValueType::FLOAT3, max_particles, rendering::BufferUsage::DYNAMIC, renderer);
+    system_info.angle_buffer_handle = rendering::allocate_instance_buffer(rendering::ValueType::FLOAT, max_particles, rendering::BufferUsage::DYNAMIC, renderer);
 
     rendering::Material& material = rendering::get_material_instance(system_info.material_handle, renderer);
     
