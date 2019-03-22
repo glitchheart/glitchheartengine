@@ -438,7 +438,8 @@ typedef void (*SetWindowCursor)(RenderState* render_state, CursorType cursor);
 typedef math::Vec2i (*GetTextureSize)(Texture* texture);
 typedef void (*LoadTexture)(Texture* texture, TextureFiltering filtering, TextureWrap wrap, TextureFormat format, i32 width, i32 height, unsigned char* image_data, RenderState* render_state, Renderer* renderer);
 typedef void (*CreateFramebuffer)(rendering::FramebufferInfo &framebuffer_info, RenderState *render_state, Renderer *renderer);
-typedef void (*CreateInstanceBuffer)(Buffer *buffer, size_t buffer_size, rendering::BufferUsage usage, RenderState *render_state, Renderer *renderer);
+typedef void(*CreateInstanceBuffer)(Buffer *buffer, size_t buffer_size, rendering::BufferUsage usage, RenderState *render_state, Renderer *renderer);
+typedef rendering::BufferUsage (*GetBufferUsage)(Buffer *buffer);
 typedef void (*DeleteInstanceBuffer)(Buffer *buffer, RenderState *render_state, Renderer *renderer);
 typedef void (*DeleteAllInstanceBuffers)(RenderState *render_state, Renderer *renderer);
 typedef void (*UpdateBuffer)(Buffer *buffer, rendering::BufferType buffer_type, void *data, size_t count, size_t size, rendering::BufferUsage buffer_usage, RenderState *render_state, Renderer *renderer);
@@ -456,7 +457,8 @@ struct GraphicsAPI
     GetTextureSize get_texture_size;
     LoadTexture load_texture;
     CreateFramebuffer create_framebuffer;
-    CreateInstanceBuffer create_instance_buffer;
+	CreateInstanceBuffer create_instance_buffer;
+	GetBufferUsage get_buffer_usage;
     DeleteInstanceBuffer delete_instance_buffer;
     DeleteAllInstanceBuffers delete_all_instance_buffers;
 
