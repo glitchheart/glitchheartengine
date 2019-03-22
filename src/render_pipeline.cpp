@@ -577,6 +577,7 @@ namespace rendering
         assert(buffer_handle.type == ValueType::FLOAT);
         i32 index = buffer_handle.handle - 1;
         i32 *count = &renderer->render.instancing.float_buffer_counts[index];
+        assert(*count < renderer->render.instancing.float_buffer_max[index]);
         renderer->render.instancing.float_buffers[index][(*count)++] = value;
         renderer->render.instancing.dirty_float_buffers[index] = true;
     }
@@ -586,6 +587,7 @@ namespace rendering
         assert(buffer_handle.type == ValueType::FLOAT2);
         i32 index = buffer_handle.handle - 1;
         i32 *count = &renderer->render.instancing.float2_buffer_counts[index];
+        assert(*count < renderer->render.instancing.float2_buffer_max[index]);
         renderer->render.instancing.float2_buffers[index][(*count)++] = value;
         renderer->render.instancing.dirty_float2_buffers[index] = true;
     }
@@ -595,6 +597,7 @@ namespace rendering
         assert(buffer_handle.type == ValueType::FLOAT3);
         i32 index = buffer_handle.handle - 1;
         i32 *count = &renderer->render.instancing.float3_buffer_counts[index];
+        assert(*count < renderer->render.instancing.float3_buffer_max[index]);
         renderer->render.instancing.float3_buffers[index][(*count)++] = value;
         renderer->render.instancing.dirty_float3_buffers[index] = true;
     }
@@ -604,6 +607,7 @@ namespace rendering
         assert(buffer_handle.type == ValueType::FLOAT4);
         i32 index = buffer_handle.handle - 1;
         i32 *count = &renderer->render.instancing.float4_buffer_counts[index];
+        assert(*count < renderer->render.instancing.float4_buffer_max[index]);
         renderer->render.instancing.float4_buffers[index][(*count)++] = value;
         renderer->render.instancing.dirty_float4_buffers[index] = true;
     }
@@ -613,6 +617,7 @@ namespace rendering
         assert(buffer_handle.type == ValueType::MAT4);
         i32 index = buffer_handle.handle - 1;
         i32 *count = &renderer->render.instancing.mat4_buffer_counts[index];
+        assert(*count < renderer->render.instancing.mat4_buffer_max[index]);
         renderer->render.instancing.mat4_buffers[index][(*count)++] = value;
         renderer->render.instancing.dirty_mat4_buffers[index] = true;
     }
