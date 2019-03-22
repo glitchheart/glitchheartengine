@@ -134,7 +134,6 @@ namespace scene
         math::Vec3 mesh_scale;
         math::BoundingBox bounding_box;
 
-        b32 is_pushed;
         b32 is_static;
         b32 casts_shadows;
         b32 wireframe_enabled;
@@ -145,6 +144,7 @@ namespace scene
         rendering::RenderPassHandle render_passes[8];
         rendering::MaterialInstanceHandle material_handles[8];
         rendering::MaterialHandle original_materials[8];
+        b32 is_pushed[8];
         
         i32 render_pass_count;
     };

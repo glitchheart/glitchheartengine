@@ -433,6 +433,11 @@ static void create_instance_buffer(Buffer *buffer, size_t buffer_size, rendering
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+static rendering::BufferUsage get_buffer_usage(Buffer *buffer)
+{
+	return buffer->usage == GL_DYNAMIC_DRAW ? rendering::BufferUsage::DYNAMIC : rendering::BufferUsage::STATIC;
+}
+
 static void delete_buffer(Buffer *buffer, RenderState *render_state, Renderer *renderer)
 {
     glDeleteBuffers(1, &buffer->vbo);
@@ -1308,7 +1313,8 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     renderer->api_functions.get_texture_size = &get_texture_size;
     renderer->api_functions.load_texture = &load_texture;
     renderer->api_functions.create_framebuffer = &create_framebuffer;
-    renderer->api_functions.create_instance_buffer = &create_instance_buffer;
+	renderer->api_functions.create_instance_buffer = &create_instance_buffer;
+	renderer->api_functions.get_buffer_usage = &get_buffer_usage;
     renderer->api_functions.delete_instance_buffer = &delete_instance_buffer;
     renderer->api_functions.create_buffer = &create_buffer;
     renderer->api_functions.delete_buffer = &delete_buffer;
@@ -2521,31 +2527,31 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
 
     for (i32 i = 0; i < MAX_INSTANCE_BUFFERS; i++)
     {
-        if(renderer->render.instancing.internal_float_buffers[i]->usage == rendering::BufferUsage::DYNAMIC)
-        {
-            renderer->render.instancing.float_buffer_counts[i] = 0;
-        }
+		if (renderer->render.instancing.internal_float_buffers[i]->usage == GL_DYNAMIC_DRAW)
+		{
+			renderer->render.instancing.float_buffer_counts[i] = 0;
+		}
 
-        if(renderer->render.instancing.internal_float2_buffers[i]->usage == rendering::BufferUsage::DYNAMIC)
+        if(renderer->render.instancing.internal_float2_buffers[i]->usage == GL_DYNAMIC_DRAW)
         {
             renderer->render.instancing.float2_buffer_counts[i] = 0;
         }
 
-        if(renderer->render.instancing.internal_float3_buffers[i]->usage == rendering::BufferUsage::DYNAMIC)
+        if(renderer->render.instancing.internal_float3_buffers[i]->usage == GL_DYNAMIC_DRAW)
         {
             renderer->render.instancing.float3_buffer_counts[i] = 0;
         }
 
-        if(renderer->render.instancing.internal_float4_buffers[i]->usage == rendering::BufferUsage::DYNAMIC)
+        if(renderer->render.instancing.internal_float4_buffers[i]->usage == GL_DYNAMIC_DRAW)
         {
             renderer->render.instancing.float4_buffer_counts[i] = 0;
         }
 
-        if(renderer->render.instancing.internal_mat4_buffers[i]->usage == rendering::BufferUsage::DYNAMIC)
+        if(renderer->render.instancing.internal_mat4_buffers[i]->usage == GL_DYNAMIC_DRAW)
         {
             renderer->render.instancing.mat4_buffer_counts[i] = 0;
         }
-    }
+	}
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }

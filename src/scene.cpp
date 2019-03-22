@@ -2250,13 +2250,13 @@ namespace scene
 					while (fgets(buffer, 256, file) && !starts_with(buffer, "-"))
 					{
 						// FIRST PARSE ALL SHADER PASS INFORMATION
-						if (starts_with(buffer, "shd"))
+                        if(starts_with(buffer, "static:"))
+                        {
+                            sscanf(buffer, "static: %d", &templ->render.is_static);
+                        } 
+                        else if (starts_with(buffer, "shd"))
 						{
-                            if(starts_with(buffer, "static:"))
-                            {
-                                sscanf(buffer, "static: %d", &templ->render.is_static);
-                            } 
-							else if (starts_with(buffer, "shd::uvs:"))
+							if (starts_with(buffer, "shd::uvs:"))
 							{
 								rendering::PassMaterial pass_mat = {};
 								pass_mat.pass_type = rendering::PassType::WITH_UVS;
@@ -3600,11 +3600,11 @@ namespace scene
 						QueuedRenderCommand *command = nullptr;
                         rendering::Material &mat_instance = get_material_instance(render.material_handles[pass_index], renderer);
 
-                        if(!render.is_static || !render.is_pushed)
+                        if(!render.is_static || !render.is_pushed[pass_index])
                         {
                             if(render.is_static)
                             {
-                                render.is_pushed = true;
+                                render.is_pushed[pass_index] = true;
                             }
                             
                             // We can make one call instead

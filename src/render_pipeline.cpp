@@ -336,8 +336,11 @@ namespace rendering
         break;
         }
         
-        renderer->api_functions.delete_instance_buffer(buffer, renderer->api_functions.render_state, renderer);
-        renderer->api_functions.create_instance_buffer(buffer, type_size * new_instance_max, BufferUsage::DYNAMIC, renderer->api_functions.render_state, renderer);
+		rendering::BufferUsage usage = renderer->api_functions.get_buffer_usage(buffer);
+
+		renderer->api_functions.delete_instance_buffer(buffer, renderer->api_functions.render_state, renderer);
+
+        renderer->api_functions.create_instance_buffer(buffer, type_size * new_instance_max, usage, renderer->api_functions.render_state, renderer);
         
         *max = new_instance_max;
     }
