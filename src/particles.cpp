@@ -623,10 +623,15 @@ void update_particles(Renderer *renderer, ParticleSystemInfo &particle_system, r
     *size_count = 0;
     *color_count = 0;
 
+    i32 total_particles = 0;
+    
     for(i32 t = 0; t < threads; t++)
     {
         ParticleWorkData &work_data = particle_system.work_datas[t];
 
+        total_particles += work_data.particle_count;
+        assert(total_particles < particle_system.max_particles);
+        
         for(i32 i = 0; i < work_data.particle_count; i++)
         {
             angle_buffer[*angle_count] = work_data.angle_buffer[i];
