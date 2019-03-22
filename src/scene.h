@@ -88,6 +88,8 @@ namespace scene
         Field fields[32];
         i32 field_count;
     };
+
+    #define MAX_CHILDREN 64
     
     struct Entity
     {
@@ -111,20 +113,16 @@ namespace scene
         RenderComponentHandle render_handle;
         ParticleSystemComponentHandle particle_system_handle;
         LightComponentHandle light_handle;
-    };
 
-    #define MAX_CHILDREN 64
+        EntityHandle parent;
+        
+        EntityHandle children[MAX_CHILDREN];
+        i32 child_count;
+    };
     
     struct TransformComponent
     {
         rendering::Transform transform;
-
-		TransformComponentHandle parent_handle;
-
-        // Remember the child's handle to be able to quickly remove the childs parent handle if the parent is removed
-		TransformComponentHandle child_handles[MAX_CHILDREN];
-        i32 child_count;
-
         EntityHandle entity;
 	};
     

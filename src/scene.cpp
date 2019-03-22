@@ -20,6 +20,7 @@ namespace scene
     static EntityHandle register_entity_from_template_file(const char *path, SceneHandle scene, b32 savable);
     static void set_active(EntityHandle handle, b32 active, SceneHandle scene);
     static void set_hide_in_ui(EntityHandle handle, b32 hide, SceneHandle scene_handle);
+    static TransformComponent& get_transform_comp(EntityHandle handle, Scene &scene);
     static TransformComponent& get_transform_comp(EntityHandle handle, SceneHandle scene);
     static TransformComponent& get_transform_comp(TransformComponentHandle handle, SceneHandle scene);
     static RenderComponent& get_render_comp(EntityHandle handle, SceneHandle scene);
@@ -27,6 +28,7 @@ namespace scene
     static LightComponent &get_light_comp(EntityHandle handle, SceneHandle scene);
     static Camera & get_scene_camera(SceneHandle handle);
     static EntityHandle pick_entity(i32 mouse_x, i32 mouse_y);
+    static Entity& get_entity(EntityHandle handle, Scene &scene);
     static Entity& get_entity(EntityHandle handle, SceneHandle& scene_handle);
     static RegisteredEntityType * get_registered_type(u32 type_id, SceneManager *manager);
     static b32 has_light_component(EntityHandle entity_handle, SceneHandle& scene);
@@ -354,13 +356,9 @@ namespace scene
             scene._internal_handles[index] = -1;
             scene.active_entities[index] = true;
             scene.transform_components[index].transform = rendering::create_transform(math::Vec3(0, 0, 0), math::Vec3(1, 1, 1), math::Vec3(0.0f));
-            scene.transform_components[index].parent_handle = EMPTY_COMP_HANDLE;
-
-            for(i32 i = 0; i < MAX_CHILDREN; i++)
-            {
-                scene.transform_components[index].child_handles[i] = EMPTY_COMP_HANDLE;
-            }
             
+            scene.entities[index].child_count = 0;
+            scene.entities[index].parent = EMPTY_ENTITY_HANDLE;
         }
     }
     
@@ -1058,23 +1056,20 @@ namespace scene
         manager->gizmos.active = false;
     }
 
-    static EntityHandle get_root_entity(TransformComponent &current_transform, Scene &scene)
+    static EntityHandle get_root_entity(EntityHandle handle, Scene &scene)
     {
-        if(IS_COMP_HANDLE_VALID(current_transform.parent_handle))
+        Entity &entity = get_entity(handle, scene);
+
+        if(IS_ENTITY_HANDLE_VALID(entity.parent))
         {
-            TransformComponent& parent_transform = scene.transform_components[current_transform.parent_handle.handle];
-            return get_root_entity(parent_transform, scene);
+            return get_root_entity(entity.parent, scene);
         }
         else
         {
-            i32 internal_handle = scene._internal_handles[current_transform.entity.handle - 1];
-            assert(internal_handle > -1);
-            Entity &entity = scene.entities[internal_handle];
-            
             if(!entity.selection_enabled)
                 return { -1 };
             else
-                return current_transform.entity;
+                return handle;
         }
     }
     
@@ -1117,7 +1112,7 @@ namespace scene
                     scene::RenderComponent &render_comp = scene.render_components[ent.render_handle.handle];
 
                     // Ignore the entity if it is not selectable and it has no parent
-                    if(!ent.selection_enabled && !IS_COMP_HANDLE_VALID(transform.parent_handle))
+                    if(!ent.selection_enabled && !IS_ENTITY_HANDLE_VALID(ent.parent))
                         continue;
                         
                     math::BoundingBox box;
@@ -1136,7 +1131,7 @@ namespace scene
                             // Look for selectable parents
                             if(!ent.selection_enabled)
                             {
-                                EntityHandle parent = get_root_entity(transform, scene);
+                                EntityHandle parent = get_root_entity(entity_handle, scene);
 
                                 // If a selectable parent was found
                                 if(IS_ENTITY_HANDLE_VALID(parent))
@@ -1188,13 +1183,23 @@ namespace scene
         return (b32)(entity.comp_flags & COMP_LIGHT);
     }
     
-    static void set_wireframe_enabled(b32 enabled, EntityHandle entity_handle, SceneHandle &handle)
+    static void set_wireframe_enabled(b32 enabled, EntityHandle entity_handle, SceneHandle &handle, b32 update_children = true)
     {
         Scene &scene = get_scene(handle);
         if(has_render_component(entity_handle, handle))
         {
             RenderComponent &render_comp = _get_render_comp(entity_handle, scene);
             render_comp.wireframe_enabled = enabled;            
+        }
+
+        if(update_children)
+        {
+            Entity &entity = get_entity(entity_handle, handle);
+        
+            for(i32 i = 0; i < entity.child_count; i++)
+            {
+                scene::set_wireframe_enabled(enabled, entity.children[i], handle);
+            }
         }
     }
 
@@ -1473,10 +1478,8 @@ namespace scene
         set_selection_enabled(!scene_manager->editor.selection_enabled, scene_manager);
     }
 
-    static Entity& get_entity(EntityHandle handle, SceneHandle& scene_handle)
+    static Entity& get_entity(EntityHandle handle, Scene &scene)
     {
-        Scene& scene = get_scene(scene_handle);
-        assert(handle.handle != 0);
         i32 internal_handle = scene._internal_handles[handle.handle - 1];
         assert(internal_handle > -1);
         
@@ -1487,17 +1490,23 @@ namespace scene
         return entity;
     }
     
+    static Entity& get_entity(EntityHandle handle, SceneHandle& scene_handle)
+    {
+        Scene& scene = get_scene(scene_handle);
+        assert(handle.handle != 0);
+        return get_entity(handle, scene);
+    }
+    
     static void delete_entity(EntityHandle handle, SceneManager *manager)
     {
         if(manager->callbacks.on_entity_will_be_deleted)
             manager->callbacks.on_entity_will_be_deleted(handle, manager->loaded_scene);
+
+        Entity &entity = get_entity(handle, manager->loaded_scene);
         
-        TransformComponent &transform = get_transform_comp(handle, manager->loaded_scene);
-        
-        for(i32 i = 0; i < transform.child_count; i ++)
+        for(i32 i = 0; i < entity.child_count; i++)
         {
-            TransformComponent &child_transform = get_transform_comp(transform.child_handles[i], manager->loaded_scene);
-            delete_entity(child_transform.entity, manager);
+            delete_entity(entity.children[i], manager);
         }
         
         unregister_entity(handle, manager->loaded_scene);
@@ -1602,8 +1611,8 @@ namespace scene
         {
             // Deselect the previously selected entity
             if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
-                scene::set_wireframe_enabled(false, manager->selected_entity, manager->loaded_scene);                        
-
+                scene::set_wireframe_enabled(false, manager->selected_entity, manager->loaded_scene);                 
+            
             manager->selected_entity = entity;
             manager->gizmos.active = true;
 
@@ -2012,8 +2021,6 @@ namespace scene
         entity.transform_handle = { scene.transform_component_count++ };
 
         scene::TransformComponent &comp = scene.transform_components[entity.transform_handle.handle];
-        comp.parent_handle = { -1 };
-        comp.child_count = 0;
         
         comp.transform = rendering::create_transform(math::Vec3(0.0f), math::Vec3(0.0f), math::Vec3(0.0f));
         comp.entity = entity_handle;
@@ -3133,22 +3140,23 @@ namespace scene
         }
     }
 
-    static void unregister_entity(EntityHandle entity, SceneHandle handle)
+    static void unregister_entity(EntityHandle handle, SceneHandle scene_handle)
     {
-        Scene &scene = get_scene(handle);
+        Scene &scene = get_scene(scene_handle);
         
-        if(entity.handle > scene.entity_count || entity.handle == 0 || (scene._internal_handles[entity.handle - 1] == -1 && scene._internal_handles[entity.handle - 1] < scene.entity_count))
+        if(handle.handle == 0 || (scene._internal_handles[handle.handle - 1] == -1 && scene._internal_handles[handle.handle - 1] < scene.entity_count))
             return;
-        
-        TransformComponent transform = get_transform_comp(entity, handle);
-        _unregister_entity(entity, scene);
 
-        for(i32 i = 0; i < transform.child_count; i++)
+        Entity entity = get_entity(handle, scene_handle);
+            
+        _unregister_entity(handle, scene);
+
+        for(i32 i = 0; i < entity.child_count; i++)
         {
-            TransformComponent &child_transform = get_transform_comp(transform.child_handles[i], handle);
-            unregister_entity(child_transform.entity, handle);
+            unregister_entity(entity.children[i], scene_handle);
         }
-        transform.child_count = 0;
+        
+        entity.child_count = 0;
     }
 
     static EntityHandle place_entity_from_template(math::Vec3 position, const char* path, SceneHandle scene, b32 savable = true, b32 select = false)
@@ -3252,10 +3260,15 @@ namespace scene
         return entity.name;
     }
 
+    static TransformComponent & get_transform_comp(TransformComponentHandle handle, Scene &scene)
+    {
+        return scene.transform_components[handle.handle];
+    }
+    
     static TransformComponent & get_transform_comp(TransformComponentHandle handle, SceneHandle scene_handle)
     {
         Scene &scene = get_scene(scene_handle);
-        return scene.transform_components[handle.handle];
+        return get_transform_comp(handle, scene);
     }
     
     // Returns a direct pointer to the TransformComponent of the specified entity
@@ -3273,10 +3286,15 @@ namespace scene
         return(comp);
     }
 
+    static TransformComponent& get_transform_comp(EntityHandle entity, Scene &scene)
+    {
+        return _get_transform_comp(entity, scene);
+    }
+     
     static TransformComponent& get_transform_comp(EntityHandle entity, SceneHandle handle)
     {
         Scene &scene = get_scene(handle);
-        return _get_transform_comp(entity, scene);
+        return get_transform_comp(entity, scene);
     }
      
     // @Note(Daniel): Should we really return a pointer here? A reference might suffice, since we don't ever use the null-value for anything....
@@ -3365,100 +3383,79 @@ namespace scene
     static void recompute_transforms(TransformComponent& root, Scene& scene)
     {
         rendering::recompute_transform(root.transform);
-        if(root.parent_handle.handle != -1)
+        Entity &entity = get_entity(root.entity, scene);
+        
+        if(IS_ENTITY_HANDLE_VALID(entity.parent))
         {
-            math::Mat4 parent_model = scene.transform_components[root.parent_handle.handle].transform.model;
+            scene::TransformComponent &parent_trans = get_transform_comp(entity.parent, scene);
+            math::Mat4 parent_model = parent_trans.transform.model;
             root.transform.model = parent_model * root.transform.model;
         }
 
-        for(i32 i = 0; i < root.child_count; i++)
+        for(i32 i = 0; i < entity.child_count; i++)
         {
-            TransformComponent& child = scene.transform_components[root.child_handles[i].handle];
+            TransformComponent& child = get_transform_comp(entity.children[i], scene);
             recompute_transforms(child, scene);
         }
-    }
-
-    static void add_child(TransformComponentHandle parent_handle, TransformComponentHandle child_handle, SceneHandle& scene_handle)
-    {
-        Scene& scene = get_scene(scene_handle);
-        TransformComponent& parent = scene.transform_components[parent_handle.handle];
-        assert(parent.child_count + 1 < MAX_CHILDREN);
-        parent.child_handles[parent.child_count++] = child_handle;
-        parent.transform.dirty = true;
-
-        TransformComponent& child = scene.transform_components[child_handle.handle];
-        child.parent_handle = parent_handle;
-
-        child.transform.position -= parent.transform.position;
-        child.transform.euler_angles -= parent.transform.euler_angles;
-        child.transform.scale /= parent.transform.scale;
-        child.transform.dirty = true;
     }
 
     static void add_child(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
     {
         assert(parent_handle.handle != child_handle.handle);
+
         Entity& parent = get_entity(parent_handle, scene);
         Entity& child = get_entity(child_handle, scene);
-        add_child(parent.transform_handle, child.transform_handle, scene);
-    }
-
-    static void remove_child(TransformComponentHandle parent_handle, TransformComponentHandle child_handle, SceneHandle& scene_handle)
-    {
-        Scene& scene = get_scene(scene_handle);
-        TransformComponent& parent = scene.transform_components[parent_handle.handle];
-        parent.transform.dirty = true;
         
+        TransformComponent &parent_transform = get_transform_comp(parent_handle, scene);
+        TransformComponent &child_transform = get_transform_comp(child_handle, scene);
+
         assert(parent.child_count + 1 < MAX_CHILDREN);
-
-        for(i32 i = 0; i < parent.child_count; i++)
-        {
-            if(parent.child_handles[i].handle == child_handle.handle)
-            {
-                TransformComponent& child = scene.transform_components[child_handle.handle];
-                child.parent_handle = {0};
-
-                child.transform.position += parent.transform.position;
-                child.transform.euler_angles += parent.transform.euler_angles;
-                child.transform.scale *= parent.transform.scale;
-                child.transform.dirty = true;
-                
-                parent.child_handles[i] = parent.child_handles[parent.child_count - 1];
-                parent.child_count--;
-                break;
-            }
-        }
+        assert(parent_handle.handle != child_handle.handle);
+        
+        parent.children[parent.child_count++] = child_handle;
+        child.parent = parent_handle;
+        
+        child_transform.transform.position -= parent_transform.transform.position;
+        child_transform.transform.euler_angles -= parent_transform.transform.euler_angles;
+        child_transform.transform.scale /= parent_transform.transform.scale;
+        child_transform.transform.dirty = true;
     }
 
     static void remove_child(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
     {
         Entity& parent = get_entity(parent_handle, scene);
         Entity& child = get_entity(child_handle, scene);
-        remove_child(parent.transform_handle, child.transform_handle, scene);
-    }
+        TransformComponent &parent_transform = get_transform_comp(parent_handle, scene);
+        TransformComponent &child_transform = get_transform_comp(child_handle, scene);
+        
+        for(i32 i = 0; i < parent.child_count; i++)
+        {
+            if(parent.children[i].handle == child_handle.handle)
+            {
+                child.parent = EMPTY_ENTITY_HANDLE;
 
-    static void add_parent(TransformComponentHandle child_handle, TransformComponentHandle parent_handle, SceneHandle& scene)
-    {
-        add_child(parent_handle, child_handle, scene);
+                child_transform.transform.position += parent_transform.transform.position;
+                child_transform.transform.euler_angles += parent_transform.transform.euler_angles;
+                child_transform.transform.scale *= parent_transform.transform.scale;
+                child_transform.transform.dirty = true;
+                
+                parent.children[i] = parent.children[parent.child_count - 1];
+                parent.child_count--;
+                break;
+            }
+        }
     }
 
     static void add_parent(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
     {
-        Entity& parent = get_entity(parent_handle, scene);
         Entity& child = get_entity(child_handle, scene);
-        add_parent(parent.transform_handle, child.transform_handle, scene);
+        child.parent = parent_handle;
     }
 
-    static void remove_parent(TransformComponentHandle child_handle, TransformComponentHandle parent_handle, SceneHandle& scene)
-    {
-        remove_child(parent_handle, child_handle, scene);
-    }
-    
     static void remove_parent(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
     {
-        Entity& parent = get_entity(parent_handle, scene);
         Entity& child = get_entity(child_handle, scene);
-        remove_parent(parent.transform_handle, child.transform_handle, scene);
+        child.parent = EMPTY_ENTITY_HANDLE;
     }
     
     static void push_scene_for_rendering(scene::Scene &scene, Renderer *renderer)
@@ -3485,20 +3482,23 @@ namespace scene
 
         for(i32 ent_index = 0; ent_index < scene.entity_count; ent_index++)
         {
-            const scene::Entity &ent = scene.entities[ent_index];
-
+            const scene::Entity *ent = &scene.entities[ent_index];
+            
             if(scene.active_entities[ent_index])
             {
-                TransformComponent* start_component = &scene.transform_components[ent.transform_handle.handle];
+                TransformComponent* start_component = &scene.transform_components[ent->transform_handle.handle];
                 
                 if(start_component->transform.dirty)
                 {
-                    while(start_component->parent_handle.handle != -1)
+                    while(IS_ENTITY_HANDLE_VALID(ent->parent))
                     {
-                        TransformComponent& parent = scene.transform_components[start_component->parent_handle.handle];
-                        if(parent.transform.dirty)
+                        Entity *parent = &get_entity(ent->parent, scene);
+                        TransformComponent& parent_transform = get_transform_comp(ent->parent, scene);
+                        
+                        if(parent_transform.transform.dirty)
                         {
-                            start_component = &parent;
+                            ent = parent;
+                            start_component = &parent_transform;
                         }
                         else
                         {
