@@ -565,18 +565,6 @@ void update_particles(Renderer *renderer, ParticleSystemInfo &particle_system, r
 
     particle_system.particle_count = 0;
 
-    r32* angle_buffer = rendering::get_float_buffer_pointer(particle_system.angle_buffer_handle, renderer);
-    i32* angle_count = rendering::get_float_buffer_count_pointer(particle_system.angle_buffer_handle, renderer);
-        
-    math::Vec3* offset_buffer = rendering::get_float3_buffer_pointer(particle_system.offset_buffer_handle, renderer);
-    i32* offset_count = rendering::get_float3_buffer_count_pointer(particle_system.offset_buffer_handle, renderer);
-        
-    math::Vec2* size_buffer = rendering::get_float2_buffer_pointer(particle_system.size_buffer_handle, renderer);
-    i32* size_count = rendering::get_float2_buffer_count_pointer(particle_system.size_buffer_handle, renderer);
-        
-    math::Rgba* color_buffer = rendering::get_float4_buffer_pointer(particle_system.color_buffer_handle, renderer);
-    i32* color_count = rendering::get_float4_buffer_count_pointer(particle_system.color_buffer_handle, renderer);
-
     i32 threads = *emitted_this_frame / PARTICLE_DATA_SIZE;
     i32 count = *emitted_this_frame - threads * PARTICLE_DATA_SIZE;
     if(count > 0)
@@ -617,12 +605,6 @@ void update_particles(Renderer *renderer, ParticleSystemInfo &particle_system, r
         platform.complete_all_work(particle_system.work_queue);
     }
 
-    // merge_work_data(work_datas, threads);
-    *angle_count = 0;
-    *offset_count = 0;
-    *size_count = 0;
-    *color_count = 0;
-
     i32 total_particles = 0;
     
     for(i32 t = 0; t < threads; t++)
@@ -634,23 +616,25 @@ void update_particles(Renderer *renderer, ParticleSystemInfo &particle_system, r
         
         for(i32 i = 0; i < work_data.particle_count; i++)
         {
-            angle_buffer[*angle_count] = work_data.angle_buffer[i];
-            offset_buffer[*offset_count] = work_data.offset_buffer[i];
-            size_buffer[*size_count] = work_data.size_buffer[i];
-            color_buffer[*color_count] = work_data.color_buffer[i];
-
-            (*angle_count)++;
-            (*offset_count)++;
-            (*size_count)++;
-            (*color_count)++;
+            rendering::add_instance_buffer_value(particle_system.angle_buffer_handle, work_data.angle_buffer[i], renderer);
+            rendering::add_instance_buffer_value(particle_system.offset_buffer_handle, work_data.offset_buffer[i], renderer);
+            rendering::add_instance_buffer_value(particle_system.size_buffer_handle, work_data.size_buffer[i], renderer);
+            rendering::add_instance_buffer_value(particle_system.color_buffer_handle, work_data.color_buffer[i], renderer);
         }
 
-        memcpy(next_frame_buf + *next_frame_count, &work_data.next_frame_buffer[0], sizeof(i32) * work_data.next_frame_count);
+        memcpy(next_frame_buf + (*next_frame_count), &work_data.next_frame_buffer[0], sizeof(i32) * work_data.next_frame_count);
+        if(!next_frame_count)
+        {
+            assert(false);
+        }
         *next_frame_count += work_data.next_frame_count;
         memcpy(particle_system.dead_particles + particle_system.dead_particle_count, &work_data.dead_particle_indices[0], sizeof(i32) * work_data.dead_particle_count);
         particle_system.dead_particle_count += work_data.dead_particle_count;
         particle_system.particle_count += work_data.particle_count;
     }
+
+    
+    
 	*emitted_this_frame = 0;
 }
 

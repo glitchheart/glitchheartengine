@@ -376,7 +376,7 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     }
 
     renderer->particles.particle_system_count = 0;
-    renderer->animation_controllers = push_array(&renderer->animation_arena, 64, AnimationController);
+    renderer->animation_controllers = push_array(&renderer->animation_arena, global_max_animation_controllers, AnimationController);
     renderer->spritesheet_animations = push_array(&renderer->animation_arena, global_max_spritesheet_animations, SpritesheetAnimation);
     
     renderer->render.textures = push_array(&renderer->texture_arena, global_max_textures, Texture*);
@@ -493,8 +493,8 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
 
     // Create shadow pass
     rendering::FramebufferInfo shadow_pass_info = rendering::generate_framebuffer_info();
-    shadow_pass_info.width = 4096;
-    shadow_pass_info.height = 4096;
+    shadow_pass_info.width = 2048;
+    shadow_pass_info.height = 2048;
     shadow_pass_info.size_ratio = 0;
 
     rendering::add_depth_attachment(rendering::AttachmentType::TEXTURE, 0, shadow_pass_info);
@@ -634,6 +634,30 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     renderer->render.instancing.internal_float3_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
     renderer->render.instancing.internal_float4_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
     renderer->render.instancing.internal_mat4_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
+
+    renderer->render.instancing.dirty_float_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);
+    renderer->render.instancing.dirty_float2_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);
+    renderer->render.instancing.dirty_float3_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);
+    renderer->render.instancing.dirty_float4_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);
+    renderer->render.instancing.dirty_mat4_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);
+
+    renderer->render.instancing.free_float_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);
+    renderer->render.instancing.free_float2_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);
+    renderer->render.instancing.free_float3_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);
+    renderer->render.instancing.free_float4_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);
+    renderer->render.instancing.free_mat4_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);
+
+    renderer->render.instancing.float_buffer_counts = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, i32);
+    renderer->render.instancing.float2_buffer_counts = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, i32);
+    renderer->render.instancing.float3_buffer_counts = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, i32);
+    renderer->render.instancing.float4_buffer_counts = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, i32);
+    renderer->render.instancing.mat4_buffer_counts = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, i32);
+
+    renderer->render.instancing.float_buffer_max = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, i32);
+    renderer->render.instancing.float2_buffer_max = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, i32);
+    renderer->render.instancing.float3_buffer_max = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, i32);
+    renderer->render.instancing.float4_buffer_max = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, i32);
+    renderer->render.instancing.mat4_buffer_max = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, i32);
 
     for(i32 i = 0; i < MAX_INSTANCE_BUFFERS; i++)
     {
