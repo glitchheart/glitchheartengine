@@ -1144,7 +1144,7 @@ static void load_texture(Texture* texture, TextureFiltering filtering, TextureWr
 
     glGenerateMipmap(GL_TEXTURE_2D);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, -1);
+    //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, -1);
 }
 
 static math::Vec2i get_texture_size(Texture* texture)
@@ -2046,10 +2046,6 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
                 glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), &((math::Mat4*)buf_ptr)[0]);
                 renderer->render.instancing.dirty_mat4_buffers[handle] = false;
             }
-			else
-			{
-				int bitch = 0;
-			}
 
             glVertexAttribPointer(array_num, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)0);
             glVertexAttribPointer(array_num + 1, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)(vec4_size));

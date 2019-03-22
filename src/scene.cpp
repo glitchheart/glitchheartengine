@@ -2105,6 +2105,8 @@ namespace scene
         entity.selection_enabled = true;
         entity.handle = handle;
         entity.comp_flags = comp_flags;
+        entity.child_count = 0;
+        entity.parent = EMPTY_ENTITY_HANDLE;
         
         if(comp_flags & COMP_TRANSFORM)
         {
@@ -2343,10 +2345,15 @@ namespace scene
 
 							obj_info = rendering::load_obj(scene.renderer, obj_file);
 
-							if (obj_info.object_count == 0)
+							if (obj_info.object_count > 0)
 							{
 								templ->render.bounding_box_buffer = rendering::create_bounding_box_buffer(scene.renderer);
 							}
+
+                            if(obj_info.object_count == 1)
+                            {
+                                templ->render.mesh_scale = obj_info.data[0].mesh_scale;
+                            }
 						}
 						else if (starts_with(buffer, "prim"))
 						{

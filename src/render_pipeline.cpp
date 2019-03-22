@@ -2344,7 +2344,7 @@ namespace rendering
 
         if(scale)
         {
-            *scale = math::Vec3(max_x - min_x, max_y - min_y, max_z - min_z); 
+            *scale = math::Vec3(max_x - min_x, 0.00001f, max_z - min_z); 
         }
 
         if(box)
