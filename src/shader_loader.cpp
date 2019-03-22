@@ -916,7 +916,7 @@ namespace rendering
     
     static ShaderHandle load_shader(Renderer *renderer, const char *file_path)
     {
-        assert(renderer->render.shader_count + 1 < 64);
+        assert(renderer->render.shader_count + 1 < global_max_shaders);
 
         ShaderHandle handle = get_shader_by_path(renderer, file_path);
         if(handle.handle != -1)

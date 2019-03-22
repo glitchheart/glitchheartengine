@@ -1943,7 +1943,6 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
 
             Buffer *buffer = renderer->render.instancing.internal_float_buffers[handle];
             
-            glEnableVertexAttribArray(array_num);
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
 
             if(renderer->render.instancing.dirty_float_buffers[handle])
@@ -1951,7 +1950,8 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
                 glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
                 renderer->render.instancing.dirty_float_buffers[handle] = false;
             }
-
+            
+            glEnableVertexAttribArray(array_num);
             glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
             glVertexAttribDivisor(array_num, 1);
         }
@@ -1964,8 +1964,6 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             count = renderer->render.instancing.float2_buffer_counts[handle];
 
             Buffer *buffer = renderer->render.instancing.internal_float2_buffers[handle];
-
-            glEnableVertexAttribArray(array_num);
             
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
 
@@ -1975,6 +1973,7 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
                 renderer->render.instancing.dirty_float2_buffers[handle] = false;
             }
 
+            glEnableVertexAttribArray(array_num);
             glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
             glVertexAttribDivisor(array_num, 1);
         }
@@ -1988,9 +1987,7 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
 
             Buffer *buffer = renderer->render.instancing.internal_float3_buffers[handle];
 
-            glEnableVertexAttribArray(array_num);
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-
             
             if(renderer->render.instancing.dirty_float3_buffers[handle])
             {
@@ -1998,6 +1995,7 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
                 renderer->render.instancing.dirty_float3_buffers[handle] = false;
             }
 
+            glEnableVertexAttribArray(array_num);
             glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
             glVertexAttribDivisor(array_num, 1);
         }
@@ -2011,7 +2009,6 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
 
             Buffer *buffer = renderer->render.instancing.internal_float4_buffers[handle];
             
-            glEnableVertexAttribArray(array_num);
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
 
             if(renderer->render.instancing.dirty_float4_buffers[handle])
@@ -2019,7 +2016,8 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
                 glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
                 renderer->render.instancing.dirty_float4_buffers[handle] = false;
             }
-         
+            
+            glEnableVertexAttribArray(array_num);         
             glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
             glVertexAttribDivisor(array_num, 1);
         }
@@ -2046,10 +2044,6 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
                 glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), &((math::Mat4*)buf_ptr)[0]);
                 renderer->render.instancing.dirty_mat4_buffers[handle] = false;
             }
-			else
-			{
-				int bitch = 0;
-			}
 
             glVertexAttribPointer(array_num, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)0);
             glVertexAttribPointer(array_num + 1, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)(vec4_size));
@@ -2383,7 +2377,6 @@ static void render_line(rendering::RenderCommand& command, rendering::Material& 
     rendering::set_uniform_value(renderer, material, "thickness", command.line.thickness);
     rendering::set_uniform_value(renderer, material, "color", command.line.color);
     rendering::set_uniform_value(renderer, material, "miter_limit", 0.1f);
-
     
     render_buffer(rendering::PrimitiveType::LINES, command.transform, renderer->render.line_buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[material.shader.handle]);
 }
@@ -2393,7 +2386,10 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
     if(pass.type == rendering::RenderPassType::NORMAL)
     {
         Framebuffer &framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
-
+        
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
+        
         if(pass.settings & rendering::RenderPassSettings::BACKFACE_CULLING)
         {
             glEnable(GL_CULL_FACE);

@@ -95,8 +95,10 @@ r32 plane_vertices[] =
 
 u16 plane_indices[] = 
 {
-    0, 1, 2,
-    3, 4, 5
+    /* 0, 1, 2, */
+    /* 3, 4, 5 */
+    2, 1, 0,
+    5, 4, 3
 };
 
 r32 plane_normals[] =
@@ -640,11 +642,11 @@ struct Renderer
 
         struct
         {
-            b32 dirty_float_buffers[MAX_INSTANCE_BUFFERS];
-            b32 dirty_float2_buffers[MAX_INSTANCE_BUFFERS];
-            b32 dirty_float3_buffers[MAX_INSTANCE_BUFFERS];
-            b32 dirty_float4_buffers[MAX_INSTANCE_BUFFERS];
-            b32 dirty_mat4_buffers[MAX_INSTANCE_BUFFERS];
+            b32 *dirty_float_buffers;
+            b32 *dirty_float2_buffers;
+            b32 *dirty_float3_buffers;
+            b32 *dirty_float4_buffers;
+            b32 *dirty_mat4_buffers;
             
             // All instance buffers
             r32 *float_buffers[MAX_INSTANCE_BUFFERS];
@@ -661,25 +663,25 @@ struct Renderer
             Buffer **internal_mat4_buffers;
 
             // Flags to keep track of all free buffers
-            b32 free_float_buffers[MAX_INSTANCE_BUFFERS];
-            b32 free_float2_buffers[MAX_INSTANCE_BUFFERS];
-            b32 free_float3_buffers[MAX_INSTANCE_BUFFERS];
-            b32 free_float4_buffers[MAX_INSTANCE_BUFFERS];
-            b32 free_mat4_buffers[MAX_INSTANCE_BUFFERS];
+            b32 *free_float_buffers;
+            b32 *free_float2_buffers;
+            b32 *free_float3_buffers;
+            b32 *free_float4_buffers;
+            b32 *free_mat4_buffers;
 
             // The current count
-            i32 float_buffer_counts[MAX_INSTANCE_BUFFERS];
-            i32 float2_buffer_counts[MAX_INSTANCE_BUFFERS];
-            i32 float3_buffer_counts[MAX_INSTANCE_BUFFERS];
-            i32 float4_buffer_counts[MAX_INSTANCE_BUFFERS];
-            i32 mat4_buffer_counts[MAX_INSTANCE_BUFFERS];
+            i32 *float_buffer_counts;
+            i32 *float2_buffer_counts;
+            i32 *float3_buffer_counts;
+            i32 *float4_buffer_counts;
+            i32 *mat4_buffer_counts;
 
             // The allocated max count
-            i32 float_buffer_max[MAX_INSTANCE_BUFFERS];
-            i32 float2_buffer_max[MAX_INSTANCE_BUFFERS];
-            i32 float3_buffer_max[MAX_INSTANCE_BUFFERS];
-            i32 float4_buffer_max[MAX_INSTANCE_BUFFERS];
-            i32 mat4_buffer_max[MAX_INSTANCE_BUFFERS];
+            i32 *float_buffer_max;
+            i32 *float2_buffer_max;
+            i32 *float3_buffer_max;
+            i32 *float4_buffer_max;
+            i32 *mat4_buffer_max;
 
             // The internal handle last used + 1
             i32 current_internal_float_handle;
