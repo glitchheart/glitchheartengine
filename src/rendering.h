@@ -640,6 +640,12 @@ struct Renderer
 
         struct
         {
+            b32 dirty_float_buffers[MAX_INSTANCE_BUFFERS];
+            b32 dirty_float2_buffers[MAX_INSTANCE_BUFFERS];
+            b32 dirty_float3_buffers[MAX_INSTANCE_BUFFERS];
+            b32 dirty_float4_buffers[MAX_INSTANCE_BUFFERS];
+            b32 dirty_mat4_buffers[MAX_INSTANCE_BUFFERS];
+            
             // All instance buffers
             r32 *float_buffers[MAX_INSTANCE_BUFFERS];
             math::Vec2 *float2_buffers[MAX_INSTANCE_BUFFERS];

@@ -578,6 +578,7 @@ namespace rendering
         i32 index = buffer_handle.handle - 1;
         i32 *count = &renderer->render.instancing.float_buffer_counts[index];
         renderer->render.instancing.float_buffers[index][(*count)++] = value;
+        renderer->render.instancing.dirty_float_buffers[index] = true;
     }
 
     static void add_instance_buffer_value(InstanceBufferHandle buffer_handle, math::Vec2 value, Renderer *renderer)
@@ -586,6 +587,7 @@ namespace rendering
         i32 index = buffer_handle.handle - 1;
         i32 *count = &renderer->render.instancing.float2_buffer_counts[index];
         renderer->render.instancing.float2_buffers[index][(*count)++] = value;
+        renderer->render.instancing.dirty_float2_buffers[index] = true;
     }
     
     static void add_instance_buffer_value(InstanceBufferHandle buffer_handle, math::Vec3 value, Renderer *renderer)
@@ -594,6 +596,7 @@ namespace rendering
         i32 index = buffer_handle.handle - 1;
         i32 *count = &renderer->render.instancing.float3_buffer_counts[index];
         renderer->render.instancing.float3_buffers[index][(*count)++] = value;
+        renderer->render.instancing.dirty_float3_buffers[index] = true;
     }
     
     static void add_instance_buffer_value(InstanceBufferHandle buffer_handle, math::Vec4 value, Renderer *renderer)
@@ -602,6 +605,7 @@ namespace rendering
         i32 index = buffer_handle.handle - 1;
         i32 *count = &renderer->render.instancing.float4_buffer_counts[index];
         renderer->render.instancing.float4_buffers[index][(*count)++] = value;
+        renderer->render.instancing.dirty_float4_buffers[index] = true;
     }
 
     static void add_instance_buffer_value(InstanceBufferHandle buffer_handle, math::Mat4 value, Renderer *renderer)
@@ -610,6 +614,7 @@ namespace rendering
         i32 index = buffer_handle.handle - 1;
         i32 *count = &renderer->render.instancing.mat4_buffer_counts[index];
         renderer->render.instancing.mat4_buffers[index][(*count)++] = value;
+        renderer->render.instancing.dirty_mat4_buffers[index] = true;
     }
     
     // @Note: Creates a RenderPass with the specified FramebufferHandle

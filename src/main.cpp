@@ -642,6 +642,12 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
         renderer->render.instancing.free_float3_buffers[i] = true;
         renderer->render.instancing.free_float4_buffers[i] = true;
         renderer->render.instancing.free_mat4_buffers[i] = true;
+        
+        renderer->render.instancing.dirty_float_buffers[i] = false;
+        renderer->render.instancing.dirty_float2_buffers[i] = false;
+        renderer->render.instancing.dirty_float3_buffers[i] = false;
+        renderer->render.instancing.dirty_float4_buffers[i] = false;
+        renderer->render.instancing.dirty_mat4_buffers[i] = false;
 
         renderer->render.instancing.internal_float_buffers[i] = push_struct(&renderer->buffer_arena, Buffer);
         renderer->render.instancing.internal_float2_buffers[i] = push_struct(&renderer->buffer_arena, Buffer);

@@ -1945,7 +1945,12 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             
             glEnableVertexAttribArray(array_num);
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
+
+            if(renderer->render.instancing.dirty_float_buffers[handle])
+            {
+                glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
+                renderer->render.instancing.dirty_float_buffers[handle] = false;
+            }
 
             glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
             glVertexAttribDivisor(array_num, 1);
@@ -1961,8 +1966,14 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             Buffer *buffer = renderer->render.instancing.internal_float2_buffers[handle];
 
             glEnableVertexAttribArray(array_num);
+            
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
+
+            if(renderer->render.instancing.dirty_float2_buffers[handle])
+            {
+                glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
+                renderer->render.instancing.dirty_float2_buffers[handle] = false;
+            }
 
             glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
             glVertexAttribDivisor(array_num, 1);
@@ -1979,7 +1990,13 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
 
             glEnableVertexAttribArray(array_num);
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
+
+            
+            if(renderer->render.instancing.dirty_float3_buffers[handle])
+            {
+                glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
+                renderer->render.instancing.dirty_float3_buffers[handle] = false;
+            }
 
             glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
             glVertexAttribDivisor(array_num, 1);
@@ -1996,7 +2013,12 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             
             glEnableVertexAttribArray(array_num);
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
+
+            if(renderer->render.instancing.dirty_float4_buffers[handle])
+            {
+                glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
+                renderer->render.instancing.dirty_float4_buffers[handle] = false;
+            }
          
             glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
             glVertexAttribDivisor(array_num, 1);
@@ -2018,7 +2040,16 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             glEnableVertexAttribArray(array_num + 3);
 
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), &((math::Mat4*)buf_ptr)[0]);
+
+            if(renderer->render.instancing.dirty_mat4_buffers[handle])
+            {
+                glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), &((math::Mat4*)buf_ptr)[0]);
+                renderer->render.instancing.dirty_mat4_buffers[handle] = false;
+            }
+			else
+			{
+				int bitch = 0;
+			}
 
             glVertexAttribPointer(array_num, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)0);
             glVertexAttribPointer(array_num + 1, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)(vec4_size));
