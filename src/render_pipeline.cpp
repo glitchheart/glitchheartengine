@@ -1,6 +1,6 @@
 namespace rendering
 {
-	static void push_line_to_render_pass(Renderer *renderer, math::Vec3 p0, math::Vec3 p1, r32 thickness, math::Vec3 color, Transform transform, MaterialInstanceHandle material_instance_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH);
+	static void push_line_to_render_pass(Renderer *renderer, math::Vec3 p0, math::Vec3 p1, r32 thickness, math::Rgba color, Transform transform, MaterialInstanceHandle material_instance_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH);
     static Transform create_transform(Transform t);
     static Transform create_transform(math::Vec3 position, math::Vec3 scale, math::Vec3 rotation);
     
@@ -3586,6 +3586,17 @@ namespace rendering
 
     static void set_uniform_value(Renderer *renderer, Material &material, const char *name, math::Vec3 value)
     {
+		for (i32 i = 0; i < material.instanced_vertex_attribute_count; i++)
+		{
+			VertexAttribute& va = material.instanced_vertex_attributes[i].attribute;
+			if (strcmp(va.name, name) == 0)
+			{
+				assert(va.type == ValueType::FLOAT3);
+				va.float3_val = value;
+				return;
+			}
+		}
+
         for (i32 i = 0; i < material.uniform_value_count; i++)
         {
             UniformValue &u_v = material.uniform_values[i];
@@ -4170,7 +4181,7 @@ namespace rendering
         renderer->render.shadow_commands[renderer->render.shadow_command_count++] = shadow_command;
     }
 
-    static void push_line_to_render_pass(Renderer *renderer, math::Vec3 p0, math::Vec3 p1, r32 thickness, math::Vec3 color, Transform transform, MaterialInstanceHandle material_instance_handle, RenderPassHandle render_pass_handle, CommandType type)
+    static void push_line_to_render_pass(Renderer *renderer, math::Vec3 p0, math::Vec3 p1, r32 thickness, math::Rgba color, Transform transform, MaterialInstanceHandle material_instance_handle, RenderPassHandle render_pass_handle, CommandType type)
     {
         RenderPass &pass = renderer->render.passes[render_pass_handle.handle - 1];
         assert(pass.commands.render_command_count < global_max_render_commands);

@@ -374,7 +374,8 @@ static void set_invalid_keys()
         }
         input_controller.keys_up[key_code] = false;
         input_controller.ignore_key[key_code] = false;
-    } 
+    }
+    input_controller.ignore_all_keys = false;
     input_controller.current_character = 0x0;
 }
 

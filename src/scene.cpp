@@ -525,6 +525,7 @@ namespace scene
         EntityHandle handle = { -1 };
         
         char buffer[256];
+        b32 hide_in_ui = false;
 
         RegisteredEntityType *type_info = nullptr;
         EntityData* entity_data = nullptr;
@@ -543,6 +544,10 @@ namespace scene
                 char template_path[256];
                 sscanf(buffer, "template: %[^\n]", template_path);
                 handle = register_entity_from_template_file(template_path, scene, true);
+            }
+            else if(starts_with(buffer, "hide_in_ui"))
+            {
+                sscanf(buffer, "hide_in_ui: %d", &hide_in_ui);
             }
             else if(starts_with(buffer, "type"))
             {
@@ -728,6 +733,8 @@ namespace scene
                 
                 load_entity_field(name, val, entity_data, *type_info);
             }
+
+            set_hide_in_ui(handle, hide_in_ui, scene);
         }
     }
     
@@ -1269,16 +1276,16 @@ namespace scene
             r32 line_thickness = 5.0f;
 
             // X
-            rendering::set_uniform_value(manager->renderer, manager->gizmos.x_material, "color", c == TranslationConstraint::X ? yellow : math::Vec3(1.0f, 0.0f, 0.0f));
-            math::Vec3 color = c == TranslationConstraint::X ? yellow : math::Vec3(1.0f, 0.0f, 0.0f);
+            rendering::set_uniform_value(manager->renderer, manager->gizmos.x_material, "color", c == TranslationConstraint::X ? math::Rgba(yellow, 1.0f) : math::Rgba(1.0f, 0.0f, 0.0f, 1.0f));
+            math::Rgba color = c == TranslationConstraint::X ? math::Rgba(yellow, 1.0f) : math::Rgba(1.0f, 0.0f, 0.0f, 1.0f);
 
-            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color,t, manager->gizmos.x_material,  manager->renderer->render.standard_pass, rendering::CommandType::NO_DEPTH);
+            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.x_material,  manager->renderer->render.standard_pass, rendering::CommandType::NO_DEPTH);
 
             // Y
             v1 = math::Vec3(0.0f, 0.0f, 0.0f);
             v2 = math::Vec3(0.0f, manager->gizmos.current_distance_to_camera, 0.0f);
 
-            color = c == TranslationConstraint::Y ? yellow : math::Vec3(0.0f, 1.0f, 0.0f);
+            color = c == TranslationConstraint::Y ? math::Rgba(yellow, 1.0f) : math::Rgba(0.0f, 1.0f, 0.0f, 1.0f);
 
             rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.y_material, manager->renderer->render.standard_pass, rendering::CommandType::NO_DEPTH);
 
@@ -1286,7 +1293,7 @@ namespace scene
             v1 = math::Vec3(0.0f, 0.0f, 0.0f);
             v2 = math::Vec3(0.0f, 0.0f, manager->gizmos.current_distance_to_camera);
 
-            color = c == TranslationConstraint::Z ? yellow : math::Vec3(0.0f, 0.0f, 1.0f);
+            color = c == TranslationConstraint::Z ? math::Rgba(yellow, 1.0f) : math::Rgba(0.0f, 0.0f, 1.0f, 1.0f);
 
             rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.z_material, manager->renderer->render.standard_pass, rendering::CommandType::NO_DEPTH);
         }
@@ -2182,10 +2189,16 @@ namespace scene
             
             char buffer[256];
 
+            templ->hide_in_ui = false;
+
             while(fgets(buffer, 256, file))
             {
                 if(starts_with(buffer, "v2"))
                 {
+                }
+                else if(starts_with(buffer, "hide_in_ui"))
+                {
+                    sscanf(buffer, "hide_in_ui: %d", &templ->hide_in_ui);
                 }
                 else if(starts_with(buffer, "-transform"))
                 {
@@ -2784,6 +2797,7 @@ namespace scene
         EntityHandle handle = _register_entity(templ.comp_flags, scene, savable);
         _set_entity_name(handle, templ.name, scene);
         _set_entity_template_path(handle, templ.file_path, scene);
+        set_hide_in_ui(handle, templ.hide_in_ui, scene.handle);
         
         if(templ.comp_flags & COMP_TRANSFORM)
         {

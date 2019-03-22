@@ -491,7 +491,7 @@ namespace rendering
                 math::Vec3 p0;
                 math::Vec3 p1;
                 r32 thickness;
-                math::Vec3 color;
+                math::Rgba color;
             } line;
         };
     };
