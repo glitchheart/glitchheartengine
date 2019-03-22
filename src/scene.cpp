@@ -791,6 +791,8 @@ namespace scene
 
         rendering::VertexAttribute attributes[8];
         i32 attribute_count;
+
+        b32 is_static;
     };
     
     static void allocate_instance_buffers(Scene &scene)
@@ -830,6 +832,7 @@ namespace scene
                         InstancePair &pair = instance_pairs[pair_count++];
                         pair.attribute_count = 0;
                         pair.count = 0;
+                        pair.is_static = comp.is_static;
                         pair.buffer_handle = comp.buffer_handle;
                         pair.material_handle = material_instance.source_material;
 						pair.pass_handle = pass_handle;
@@ -851,6 +854,9 @@ namespace scene
         for(i32 i = 0; i < pair_count; i++)
         {
             InstancePair &pair = instance_pairs[i];
+
+            rendering::BufferUsage usage = pair.is_static ? rendering::BufferUsage::STATIC : rendering::BufferUsage::DYNAMIC;
+            
             InstanceBufferData data = {};
             data.buffer_handle = pair.buffer_handle;
             data.source_material_handle = pair.material_handle;
@@ -858,7 +864,7 @@ namespace scene
             // Allocate all buffers
             for(i32 j = 0; j < pair.attribute_count; j++)
             {
-                rendering::InstanceBufferHandle instance_buffer_handle = rendering::allocate_instance_buffer(pair.attributes[j].type, math::next_power_of_two(pair.count), renderer);
+                rendering::InstanceBufferHandle instance_buffer_handle = rendering::allocate_instance_buffer(pair.attributes[j].type, math::next_power_of_two(pair.count), usage, renderer);
 
                 data.instance_buffer_handles[data.instance_buffer_count++] = instance_buffer_handle;
                 
@@ -2239,13 +2245,18 @@ namespace scene
 				else if (starts_with(buffer, "-render"))
 				{
 					templ->comp_flags |= COMP_RENDER;
+                    templ->render.is_static = false;
 
 					while (fgets(buffer, 256, file) && !starts_with(buffer, "-"))
 					{
 						// FIRST PARSE ALL SHADER PASS INFORMATION
 						if (starts_with(buffer, "shd"))
 						{
-							if (starts_with(buffer, "shd::uvs:"))
+                            if(starts_with(buffer, "static:"))
+                            {
+                                sscanf(buffer, "static: %d", &templ->render.is_static);
+                            } 
+							else if (starts_with(buffer, "shd::uvs:"))
 							{
 								rendering::PassMaterial pass_mat = {};
 								pass_mat.pass_type = rendering::PassType::WITH_UVS;
@@ -2824,6 +2835,7 @@ namespace scene
             render.casts_shadows = templ.render.casts_shadows;
             render.mesh_scale = templ.render.mesh_scale;
             render.bounding_box = templ.render.bounding_box;
+            render.is_static = templ.render.is_static;
 
             for(i32 i = 0; i < templ.render.render_pass_count; i++)
             {
@@ -2835,6 +2847,8 @@ namespace scene
             
 			render.render_pass_count = templ.render.render_pass_count;
 
+            rendering::BufferUsage usage = render.is_static ? rendering::BufferUsage::STATIC : rendering::BufferUsage::DYNAMIC;
+            
             if(scene.loaded)
             {
                 for(i32 pass_index = 0; pass_index < templ.render.render_pass_count; pass_index++)
@@ -2886,7 +2900,7 @@ namespace scene
                             
                             for(i32 i = 0; i < material_instance.instanced_vertex_attribute_count; i++)
                             {
-                                rendering::InstanceBufferHandle instance_buffer_handle = rendering::allocate_instance_buffer(material_instance.instanced_vertex_attributes[i].attribute.type, math::next_power_of_two(1), scene.renderer);
+                                rendering::InstanceBufferHandle instance_buffer_handle = rendering::allocate_instance_buffer(material_instance.instanced_vertex_attributes[i].attribute.type, math::next_power_of_two(1), usage, scene.renderer);
                                 material_instance.instanced_vertex_attributes[i].instance_buffer_handle = instance_buffer_handle;
                                 data->instance_buffer_handles[data->instance_buffer_count++] = instance_buffer_handle;
                             }
@@ -3585,68 +3599,76 @@ namespace scene
 
 						QueuedRenderCommand *command = nullptr;
                         rendering::Material &mat_instance = get_material_instance(render.material_handles[pass_index], renderer);
-                    
-						// We can make one call instead
-						for (i32 i = 0; i < mat_instance.instanced_vertex_attribute_count; i++)
-						{
-							rendering::VertexAttributeInstanced &va = mat_instance.instanced_vertex_attributes[i];
-							rendering::VertexAttribute &attr = va.attribute;
 
-							switch (attr.type)
-							{
-							case rendering::ValueType::FLOAT:
+                        if(!render.is_static || !render.is_pushed)
+                        {
+                            if(render.is_static)
+                            {
+                                render.is_pushed = true;
+                            }
+                            
+                            // We can make one call instead
+                            for (i32 i = 0; i < mat_instance.instanced_vertex_attribute_count; i++)
+                            {
+                                rendering::VertexAttributeInstanced &va = mat_instance.instanced_vertex_attributes[i];
+                                rendering::VertexAttribute &attr = va.attribute;
+
+                                switch (attr.type)
+                                {
+                                case rendering::ValueType::FLOAT:
 								rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float_val, renderer);
 								break;
-							case rendering::ValueType::FLOAT2:
+                                case rendering::ValueType::FLOAT2:
 								rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float2_val, renderer);
 								break;
-							case rendering::ValueType::FLOAT3:
-							{
-								math::Vec3 val = attr.float3_val;
+                                case rendering::ValueType::FLOAT3:
+                                {
+                                    math::Vec3 val = attr.float3_val;
 
-								if (va.mapping_type != rendering::VertexAttributeMappingType::NONE)
-								{
-									if (va.mapping_type == rendering::VertexAttributeMappingType::POSITION)
-									{
-										assert(false);
-										// val = render_command.transform.position;
-									}
-									else if (va.mapping_type == rendering::VertexAttributeMappingType::ROTATION)
-									{
-										assert(false);
-										// val = render_command.transform.rotation;
-									}
-									else if (va.mapping_type == rendering::VertexAttributeMappingType::SCALE)
-									{
-										assert(false);
-										// val = render_command.transform.scale;
-									}
+                                    if (va.mapping_type != rendering::VertexAttributeMappingType::NONE)
+                                    {
+                                        if (va.mapping_type == rendering::VertexAttributeMappingType::POSITION)
+                                        {
+                                            assert(false);
+                                            // val = render_command.transform.position;
+                                        }
+                                        else if (va.mapping_type == rendering::VertexAttributeMappingType::ROTATION)
+                                        {
+                                            assert(false);
+                                            // val = render_command.transform.rotation;
+                                        }
+                                        else if (va.mapping_type == rendering::VertexAttributeMappingType::SCALE)
+                                        {
+                                            assert(false);
+                                            // val = render_command.transform.scale;
+                                        }
 
-								}
-								rendering::add_instance_buffer_value(va.instance_buffer_handle, val, renderer);
-							}
-							break;
-							case rendering::ValueType::FLOAT4:
+                                    }
+                                    rendering::add_instance_buffer_value(va.instance_buffer_handle, val, renderer);
+                                }
+                                break;
+                                case rendering::ValueType::FLOAT4:
 								rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float4_val, renderer);
 								break;
-							case rendering::ValueType::MAT4:
-							{
-								math::Mat4 val = attr.mat4_val;
+                                case rendering::ValueType::MAT4:
+                                {
+                                    math::Mat4 val = attr.mat4_val;
 
-								if (va.mapping_type == rendering::VertexAttributeMappingType::MODEL)
-								{
-									rendering::Transform &t = transform.transform;
-									val = math::transpose(t.model);
-								}
-								rendering::add_instance_buffer_value(va.instance_buffer_handle, val, renderer);
-							}
-							break;
-							default:
+                                    if (va.mapping_type == rendering::VertexAttributeMappingType::MODEL)
+                                    {
+                                        rendering::Transform &t = transform.transform;
+                                        val = math::transpose(t.model);
+                                    }
+                                    rendering::add_instance_buffer_value(va.instance_buffer_handle, val, renderer);
+                                }
+                                break;
+                                default:
 								assert(false);
-							}
-						}
-
-                        for(i32 i = 0; i < pass_command->command_count; i++)
+                                }
+                            }
+                        }
+                        
+					    for(i32 i = 0; i < pass_command->command_count; i++)
                         {
                             QueuedRenderCommand &cmd = pass_command->queued_commands[i];
                             if(cmd.buffer_handle.handle == render.buffer_handle.handle

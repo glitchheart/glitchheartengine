@@ -343,7 +343,7 @@ namespace rendering
     }
 
     // Allocates a new instance buffer with the specified max count
-    static InstanceBufferHandle allocate_instance_buffer(ValueType type, i32 instance_max, Renderer *renderer)
+    static InstanceBufferHandle allocate_instance_buffer(ValueType type, i32 instance_max, BufferUsage usage, Renderer *renderer)
     {
         InstanceBufferHandle handle;
         handle.type = type;
@@ -397,7 +397,7 @@ namespace rendering
         }
         break;
         case ValueType::MAT4:
-        { 
+        {
             i32 index = _find_and_update_next_free_buffer_index(&renderer->render.instancing.current_internal_mat4_handle, renderer->render.instancing.free_mat4_buffers);
             type_size = sizeof(r32) * 16;
             buf_ptr = (void **)&renderer->render.instancing.mat4_buffers[index];
@@ -412,7 +412,7 @@ namespace rendering
         
         *max = instance_max;
         *buf_ptr = malloc(type_size * instance_max);
-        renderer->api_functions.create_instance_buffer(buffer, type_size * instance_max, BufferUsage::DYNAMIC, renderer->api_functions.render_state, renderer);
+        renderer->api_functions.create_instance_buffer(buffer, type_size * instance_max, usage, renderer->api_functions.render_state, renderer);
 
         return handle;
     }
