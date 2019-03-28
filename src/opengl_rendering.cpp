@@ -1086,7 +1086,7 @@ static void create_framebuffer(rendering::FramebufferInfo &info, RenderState *re
 
 static void load_texture(Texture* texture, TextureFiltering filtering, TextureWrap wrap, TextureFormat format, i32 width, i32 height, unsigned char* image_data, RenderState* render_state, Renderer* renderer)
 {
-    if (texture->handle == 0)
+   if (texture->handle == 0)
     {
         glGenTextures(1, &texture->handle);
     }
@@ -2382,11 +2382,18 @@ static void render_line(rendering::RenderCommand& command, rendering::Material& 
 }
 
 static void render_pass(RenderState &render_state, Renderer *renderer, rendering::RenderPass &pass)
-{
+{    
     if(pass.type == rendering::RenderPassType::NORMAL)
     {
+        if(pass.commands.render_command_count == 0 && pass.commands.depth_free_command_count == 0)
+        {
+            pass.commands.render_command_count = 0;
+            pass.commands.depth_free_command_count = 0;
+            return;
+        }
+
         Framebuffer &framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
-        
+
         glEnable(GL_CULL_FACE);
         glCullFace(GL_FRONT);
         

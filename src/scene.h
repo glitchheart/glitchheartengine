@@ -89,12 +89,18 @@ namespace scene
         i32 field_count;
     };
 
+#define MAX_ENTITY_TAGS 8
+    struct Tags
+    {
+        char tags[MAX_ENTITY_TAGS][32];
+        i32 tag_count;
+    };
+
     #define MAX_CHILDREN 64
-    
     struct Entity
     {
         char name[256];
-        char tag[32];
+        Tags tags;
         
         u32 type; // The entity type can be used to map the saved entities to game-specific logic
         RegisteredEntityType type_info;

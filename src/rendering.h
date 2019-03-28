@@ -694,13 +694,15 @@ struct Renderer
         Texture **textures;
         i32 texture_count;
 
-        rendering::RenderPass passes[16];
+        #define MAX_RENDERPASSES 64
+        rendering::RenderPass *passes;
         i32 pass_count;
 
         rendering::RenderPass post_processing_passes[16];
         i32 post_processing_pass_count;
 
-        rendering::FramebufferInfo framebuffers[32];
+        #define MAX_FRAMEBUFFERS 64
+        rendering::FramebufferInfo *framebuffers;
         i32 framebuffer_count;
 
         struct

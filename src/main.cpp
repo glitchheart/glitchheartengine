@@ -399,6 +399,9 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     renderer->render.queued_commands = push_array(&renderer->command_arena, global_max_render_commands, QueuedRenderCommand);
     
     renderer->render.material_count = 0;
+
+    renderer->render.passes = push_array(&renderer->render.render_pass_arena, MAX_RENDERPASSES, rendering::RenderPass);
+    renderer->render.framebuffers = push_array(&renderer->render.render_pass_arena, MAX_FRAMEBUFFERS, rendering::FramebufferInfo);
     
     //@Incomplete: Make these dynamically allocated?
 

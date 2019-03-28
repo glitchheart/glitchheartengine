@@ -36,6 +36,8 @@ namespace scene
     static b32 has_render_component(EntityHandle entity_handle, SceneHandle& scene);
     static b32 has_transform_component(EntityHandle entity_handle, SceneHandle& scene);
     static void add_child(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene);
+    static b32 has_tag(const char* tag_name, EntityHandle entity_handle, SceneHandle scene_handle);
+    static void set_entity_tag(const char *tag, EntityHandle entity_handle, SceneHandle scene_handle);
     
     // @Deprecated
     static RenderComponent& _add_render_component(Scene &scene, EntityHandle entity_handle, b32 cast_shadows);
@@ -546,6 +548,33 @@ namespace scene
             else if(starts_with(buffer, "hide_in_ui"))
             {
                 sscanf(buffer, "hide_in_ui: %d", &hide_in_ui);
+            }
+            else if(starts_with(buffer, "tags"))
+            {
+                char tag_buf[256];
+                sscanf(buffer, "tags: %[^\n]", tag_buf);
+
+                char tag[64];
+                i32 tag_index = 0;
+                
+                for(size_t i = 0; i < strlen(tag_buf) + 1; i++)
+                {
+                    char c = tag_buf[i];
+                    if(c == ',' || c == '\n' || c == '\r' || c == '\0')
+                    {
+                        tag[tag_index] = '\0';
+                        tag_index = 0;
+                        set_entity_tag(tag, handle, scene);
+                    }
+                    else if(c == ' ')
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        tag[tag_index++] = c;
+                    }
+                }
             }
             else if(starts_with(buffer, "type"))
             {
@@ -2002,12 +2031,27 @@ namespace scene
         add_to_render_pass(render_pass_handle, material, render_comp, scene.manager->renderer);
     }
 
-    static void add_all_to_render_pass(rendering::RenderPassHandle render_pass_handle, SceneHandle &handle)
+    static void add_all_to_render_pass(rendering::RenderPassHandle render_pass_handle, SceneHandle handle)
     {
         Scene &scene = scene::get_scene(handle);
         for(i32 i = 0; i < scene.render_component_count; i++)
         {
             add_to_render_pass(render_pass_handle, scene.render_components[i], handle.manager->renderer);
+        }
+    }
+
+    static void add_all_with_tag_to_render_pass(rendering::RenderPassHandle render_pass_handle, const char* tag, SceneHandle handle)
+    {
+        Scene &scene = scene::get_scene(handle);
+        for(i32 i = 0; i < scene.entity_count; i++)
+        {
+            Entity& entity = scene.entities[i];
+            if(has_render_component(entity.handle, handle) && has_tag(tag, entity.handle, handle))
+            {
+                RenderComponent& render_comp = get_render_comp(entity.handle, handle);
+                add_to_render_pass(render_pass_handle, render_comp, handle.manager->renderer);
+            }
+
         }
     }
 
@@ -3269,7 +3313,6 @@ namespace scene
         return EMPTY_ENTITY_HANDLE;
     }
 
-
     static void set_entity_tag(const char *tag, EntityHandle entity_handle, SceneHandle scene_handle)
     {
         Scene &scene = get_scene(scene_handle);
@@ -3277,17 +3320,44 @@ namespace scene
         assert(internal_handle > -1);
         
         Entity &entity = scene.entities[internal_handle];
-        strcpy(entity.tag, tag);
+        assert(entity.tags.tag_count < MAX_ENTITY_TAGS);
+
+        for(i32 i = 0; i < entity.tags.tag_count; i++)
+        {
+            if(strcmp(entity.tags.tags[i], tag) == 0)
+            {
+                return;
+            }
+        }
+
+        strncpy(entity.tags.tags[entity.tags.tag_count++], tag, strlen(tag) + 1);
     }
 
-    static const char * get_entity_tag(EntityHandle entity_handle, SceneHandle scene_handle)
+    static const Tags& get_entity_tags(EntityHandle entity_handle, SceneHandle scene_handle)
     {
         Scene &scene = get_scene(scene_handle);
         i32 internal_handle = scene._internal_handles[entity_handle.handle - 1];
         assert(internal_handle > -1);
         
         const Entity &entity = scene.entities[internal_handle];
-        return entity.tag;
+        return entity.tags;
+    }
+
+    static b32 has_tag(const char* tag_name, EntityHandle entity_handle, SceneHandle scene_handle)
+    {
+        Scene &scene = get_scene(scene_handle);
+        i32 internal_handle = scene._internal_handles[entity_handle.handle - 1];
+        assert(internal_handle > -1);
+        
+        const Entity &entity = scene.entities[internal_handle];
+        for(i32 i = 0; i < entity.tags.tag_count; i++)
+        {
+            if(strcmp(entity.tags.tags[i], tag_name) == 0)
+            {
+                return true;
+            }
+        }
+        return false;        
     }
     
     static void set_entity_name(const char *name, EntityHandle entity_handle, SceneHandle scene_handle)
