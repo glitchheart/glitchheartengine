@@ -3255,6 +3255,21 @@ namespace scene
         entity.selection_enabled = enabled;
     }
 
+    static EntityHandle find_entity_by_name(const char* name, SceneHandle scene_handle)
+    {
+        Scene &scene = get_scene(scene_handle);
+        for(i32 i = 0; i < scene.entity_count; i++)
+        {
+            Entity& e = scene.entities[i];
+            if(strcmp(e.name, name) == 0)
+            {
+                return e.handle;
+            }
+        }
+        return EMPTY_ENTITY_HANDLE;
+    }
+
+
     static void set_entity_tag(const char *tag, EntityHandle entity_handle, SceneHandle scene_handle)
     {
         Scene &scene = get_scene(scene_handle);
