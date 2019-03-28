@@ -3481,10 +3481,9 @@ namespace scene
         }
     }
 
-    static void add_parent(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
+    static void add_parent(EntityHandle child_handle, EntityHandle parent_handle, SceneHandle& scene)
     {
-        Entity& child = get_entity(child_handle, scene);
-        child.parent = parent_handle;
+        add_child(parent_handle, child_handle, scene);
     }
 
     static void remove_parent(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
