@@ -72,7 +72,7 @@ static char *read_file_into_buffer(FILE *file, size_t *out_size = nullptr)
 		*out_size = (size_t)size;
 	}
 	    
-	char* source = (char*)malloc((size_t)size + 1);
+	char* source = (char*)malloc(sizeof(char) * ((size_t)size + 1));
 	fread(source, sizeof(char), (size_t)size, file);
     source[size] = '\0';
 
@@ -98,16 +98,21 @@ static char* read_file_into_buffer(MemoryArena* arena, FILE* file, size_t *out_s
 }
 
 // @Incomplete: This doesn't even work without a memory arena
-inline char* concat(const char *s1, const char *s2, MemoryArena* arena)
+inline char* concat(const char *s1, const char *s2, MemoryArena* arena = nullptr)
 {
     char* result = nullptr;
     if(arena)
     {
         result = push_string(arena, (u32)(strlen(s1) + strlen(s2) + 1));
     }
+    else
+    {
+        result = (char*)malloc(sizeof(char) * (strlen(s1) + strlen(s2) + 1));
+    }
     
     strcpy(result, s1);
     strcat(result, s2);
+    
     return result;
 }
 

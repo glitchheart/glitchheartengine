@@ -903,6 +903,7 @@ int main(int argc, char **args)
     
     SoundDevice sound_device = {};
     sound_device.system = nullptr;
+    
     debug_log("Initializing FMOD");
 
     sound_device.channel_count = 0;
@@ -911,11 +912,6 @@ int main(int argc, char **args)
     sound_device.music_volume = core.config_data.music_volume;
     sound_device.master_volume = core.config_data.master_volume;
     sound_device.muted = core.config_data.muted;
-
-    WorkQueue fmod_queue = {};
-    ThreadInfo fmod_thread = {};
-    make_queue(&fmod_queue, 1, &fmod_thread);
-    platform.add_entry(&fmod_queue, init_audio_fmod_thread, &sound_device);
 
     sound::SoundSystem sound_system = {};
     sound_system.command_count = 0;
@@ -928,6 +924,17 @@ int main(int argc, char **args)
     sound_system.music_volume = core.config_data.music_volume;
     sound_system.master_volume = core.config_data.master_volume;
     sound_system.muted = core.config_data.muted;
+
+    sound::SoundSystemData data;
+    data.device = &sound_device;
+    data.system = &sound_system;
+    
+    /*WorkQueue fmod_queue = {};
+    ThreadInfo fmod_thread = {};
+    make_queue(&fmod_queue, 1, &fmod_thread);
+    platform.add_entry(&fmod_queue, init_audio_fmod_thread, &data);
+*/
+	init_audio_fmod(&data);
 
     r64 last_second_check = get_time();
     i32 frames = 0;

@@ -491,18 +491,15 @@ namespace rendering
         total_buffer[i++] = '\0';
     }
 
-    static char *load_shader_text(Renderer *renderer, MemoryArena *arena, char *source, bool is_vertex_shader, Shader &shader, Uniform **uniforms_array, i32 *uniform_count, const char *file_path, size_t *file_size = nullptr)
+    static char *load_shader_text(Renderer *renderer, char *source, bool is_vertex_shader, Shader &shader, Uniform **uniforms_array, i32 *uniform_count, const char *file_path, size_t *file_size = nullptr)
     {
         size_t i = 0;
-
-        MemoryArena temp_arena = {};
-        auto temp_mem = begin_temporary_memory(&temp_arena);
 
         char *result;
         b32 instancing_enabled = false;
 
         size_t temp_current_size = strlen(source) * 15;
-        char *temp_result = push_string(&temp_arena, temp_current_size);
+        char *temp_result = (char*)malloc(temp_current_size);
 
         char buffer[256];
 
@@ -537,16 +534,15 @@ namespace rendering
                     }
                 }
 
-                char *included_path = concat("../assets/shaders/", include_name, &temp_arena);
-
+                char *included_path = concat("../assets/shaders/", include_name);
                 FILE *included_shd = fopen(included_path, "r");
 
                 if (included_shd)
                 {
-                    char *included_source = read_file_into_buffer(&temp_arena, included_shd);
-                    char *path = concat(concat(file_path, "<-", &temp_arena), included_path, &temp_arena);
+                    char *included_source = read_file_into_buffer(included_shd);
+                    char *path = concat(concat(file_path, "<-"), included_path);
 
-                    char *included_text = load_shader_text(renderer, &temp_arena, included_source, is_vertex_shader, shader, uniforms_array, uniform_count, path);
+                    char *included_text = load_shader_text(renderer, included_source, is_vertex_shader, shader, uniforms_array, uniform_count, path);
 
                     if (i + strlen(buffer) > temp_current_size)
                     {
@@ -562,6 +558,10 @@ namespace rendering
 
                     fclose(included_shd);
 
+                    free(included_source);
+                    free(path);
+                    free(included_text);
+                                    
                     continue;
                 }
                 else
@@ -570,22 +570,25 @@ namespace rendering
                     sprintf(err_buf, "Include file not found %s", included_path);
                     error(err_buf, file_path);
                 }
+
+                free(included_path);
+                free(included_shd);
             }
             else if (starts_with(buffer, "#include <"))
             {
                 // @Note: Engine shaders are included with <>
                 char include_name[256];
                 sscanf(buffer, "#include <%[^>]", include_name);
-                char *included_path = concat("../engine_assets/standard_shaders/", include_name, &temp_arena);
 
+                char *included_path = concat("../engine_assets/standard_shaders/", include_name);
                 FILE *included_shd = fopen(included_path, "r");
 
                 if (included_shd)
                 {
-                    char *included_source = read_file_into_buffer(&temp_arena, included_shd);
-                    char *path = concat(concat(file_path, "<-", &temp_arena), included_path, &temp_arena);
+                    char *included_source = read_file_into_buffer(included_shd);
+                    char *path = concat(concat(file_path, "<-"), included_path);
 
-                    char *included_text = load_shader_text(renderer, &temp_arena, included_source, is_vertex_shader, shader, uniforms_array, uniform_count, path);
+                    char *included_text = load_shader_text(renderer, included_source, is_vertex_shader, shader, uniforms_array, uniform_count, path);
 
                     if (i + strlen(buffer) > temp_current_size)
                     {
@@ -602,6 +605,10 @@ namespace rendering
 
                     fclose(included_shd);
 
+                    free(included_source);
+                    free(path);
+                    free(included_path);
+                    
                     continue;
                 }
                 else
@@ -776,10 +783,11 @@ namespace rendering
             }
         }
 
-        result = push_string(arena, i);
+        result = (char*)malloc(sizeof(char) * i) + 1;
+        result[i] = '\0';
         memcpy(result, temp_result, i);
 
-        end_temporary_memory(temp_mem);
+        free(temp_result);
 
         return result;
     }
@@ -832,7 +840,7 @@ namespace rendering
         if (file)
         {
             size_t size = 0;
-            char *source = read_file_into_buffer(&renderer->shader_arena, file, &size);
+            char *source = read_file_into_buffer(file, &size);
 
             shader.vert_shader = nullptr;
             shader.geo_shader = nullptr;
@@ -851,15 +859,15 @@ namespace rendering
             {
                 if (starts_with(&source[i], "#vert"))
                 {
-                    shader.vert_shader = load_shader_text(renderer, &renderer->shader_arena, &source[i + strlen("#vert") + 1], true, shader, &uniforms, &uniform_count, shader.path, &i);
+                    shader.vert_shader = load_shader_text(renderer, &source[i + strlen("#vert") + 1], true, shader, &uniforms, &uniform_count, shader.path, &i);
                 }
                 else if (starts_with(&source[i], "#geo"))
                 {
-                    shader.geo_shader = load_shader_text(renderer, &renderer->shader_arena, &source[i + strlen("#geo") + 1], false, shader, &uniforms, &uniform_count, shader.path, &i);
+                    shader.geo_shader = load_shader_text(renderer, &source[i + strlen("#geo") + 1], false, shader, &uniforms, &uniform_count, shader.path, &i);
                 }
                 else if (starts_with(&source[i], "#frag"))
                 {
-                    shader.frag_shader = load_shader_text(renderer, &renderer->shader_arena, &source[i + strlen("#frag") + 1], false, shader, &uniforms, &uniform_count, shader.path, &i);
+                    shader.frag_shader = load_shader_text(renderer, &source[i + strlen("#frag") + 1], false, shader, &uniforms, &uniform_count, shader.path, &i);
                 }
             }
 
@@ -882,19 +890,21 @@ namespace rendering
                 }
             }
 
-            char out_path[256];
+            //char out_path[256];
+            //sprintf(out_path, "../out/%s.shd", out_name);
 
-            sprintf(out_path, "../out/%s.shd", out_name);
-
-            // FILE *shd = fopen(out_path, "w");
-            // fwrite(shader.vert_shader, strlen(shader.vert_shader), 1, shd);
-            // fwrite(shader.frag_shader, strlen(shader.frag_shader), 1, shd);
-            // fclose(shd);
 #endif
 
             fclose(file);
             shader.loaded = shader.vert_shader && shader.frag_shader;
             set_last_loaded(shader);
+
+            renderer->api_functions.load_shader(renderer->api_functions.render_state, renderer, shader);
+
+            free(source);
+            
+            if(shader.geo_shader)
+                free(shader.geo_shader);
         }
         else
         {
