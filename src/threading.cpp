@@ -40,6 +40,16 @@ THREAD_PROC(thread_proc)
     }
 }
 
+static WorkQueue *request_queue()
+{
+    return (WorkQueue*)malloc(sizeof(WorkQueue*));
+}
+
+static ThreadInfo *request_thread_info()
+{
+    return (ThreadInfo*)malloc(sizeof(ThreadInfo*));
+}
+
 static void make_queue(WorkQueue *queue, u32 thread_count, ThreadInfo *thread_infos)
 {
     queue->completion_goal = 0;

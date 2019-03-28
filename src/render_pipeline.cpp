@@ -189,6 +189,7 @@ namespace rendering
         material.shader = shader_handle;
 
         Shader &shader = renderer->render.shaders[shader_handle.handle];
+        
         set_shader_values(material, shader, renderer);
         return material;
     }
@@ -196,7 +197,7 @@ namespace rendering
     static MaterialInstanceHandle create_material_instance(Renderer *renderer, MaterialHandle material_handle)
     {
         Material &material = renderer->render.materials[material_handle.handle];
-
+        
         i32 real_handle = renderer->render.material_instance_count++;
         i32 internal_index = _find_next_internal_handle(renderer->render.current_material_instance_index, global_max_material_instances, renderer->render._internal_material_instance_handles);
 

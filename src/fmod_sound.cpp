@@ -310,7 +310,7 @@ static void update_sound_commands(SoundDevice *device, sound::SoundSystem *syste
             break;
             }
         }
-        
+
         for(i32 i = 0; i < work_data_count; i++)
         {
             SoundWorkData& work_data = device->threading.work_data[i];
