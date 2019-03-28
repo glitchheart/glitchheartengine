@@ -49,50 +49,50 @@ static void debug_vao()
 #define error_gl() _error_gl(__LINE__, __FILE__)
 void _error_gl(i32 line, const char *file)
 {
-    GLenum err = glGetError();
-    switch (err)
-    {
-    case GL_INVALID_ENUM:
-    {
-        log_error("OpenGL Error: GL_INVALID_ENUM on line %d in file %s", line, file);
-    }
-    break;
-    case GL_INVALID_VALUE:
-    {
-        log_error("OpenGL Error: GL_INVALID_VALUE on line %d in file %s", line, file);
-    }
-    break;
-    case GL_INVALID_OPERATION:
-    {
-        log_error("OpenGL Error: GL_INVALID_OPERATION on line %d in file %s", line, file);
-    }
-    break;
-    case GL_STACK_OVERFLOW:
-    {
-        log_error("OpenGL Error: GL_STACK_OVERFLOW on line %d in file %s", line, file);
-    }
-    break;
-    case GL_OUT_OF_MEMORY:
-    {
-        log_error("OpenGL Error: GL_OUT_OF_MEMORY on line %d in file %s", line, file);
-    }
-    break;
-    case GL_INVALID_FRAMEBUFFER_OPERATION:
-    {
-        log_error("OpenGL Error: GL_INVALID_FRAMEBUFFER_OPERATION on line %d in file %s", line, file);
-    }
-    break;
-    case GL_CONTEXT_LOST:
-    {
-        log_error("OpenGL Error: GL_CONTEXT_LOST on line %d in file %sx", line, file);
-    }
-    break;
-    case GL_TABLE_TOO_LARGE:
-    {
-        log_error("OpenGL Error: GL_TABLE_TOO_LARGE on line %d in file %s", line, file);
-    }
-    break;
-    }
+    // GLenum err = glGetError();
+    // switch (err)
+    // {
+    // case GL_INVALID_ENUM:
+    // {
+    //     log_error("OpenGL Error: GL_INVALID_ENUM on line %d in file %s", line, file);
+    // }
+    // break;
+    // case GL_INVALID_VALUE:
+    // {
+    //     log_error("OpenGL Error: GL_INVALID_VALUE on line %d in file %s", line, file);
+    // }
+    // break;
+    // case GL_INVALID_OPERATION:
+    // {
+    //     log_error("OpenGL Error: GL_INVALID_OPERATION on line %d in file %s", line, file);
+    // }
+    // break;
+    // case GL_STACK_OVERFLOW:
+    // {
+    //     log_error("OpenGL Error: GL_STACK_OVERFLOW on line %d in file %s", line, file);
+    // }
+    // break;
+    // case GL_OUT_OF_MEMORY:
+    // {
+    //     log_error("OpenGL Error: GL_OUT_OF_MEMORY on line %d in file %s", line, file);
+    // }
+    // break;
+    // case GL_INVALID_FRAMEBUFFER_OPERATION:
+    // {
+    //     log_error("OpenGL Error: GL_INVALID_FRAMEBUFFER_OPERATION on line %d in file %s", line, file);
+    // }
+    // break;
+    // case GL_CONTEXT_LOST:
+    // {
+    //     log_error("OpenGL Error: GL_CONTEXT_LOST on line %d in file %sx", line, file);
+    // }
+    // break;
+    // case GL_TABLE_TOO_LARGE:
+    // {
+    //     log_error("OpenGL Error: GL_TABLE_TOO_LARGE on line %d in file %s", line, file);
+    // }
+    // break;
+    // }
 }
 
 void message_callback(GLenum source,
@@ -162,7 +162,8 @@ inline static void poll_events()
     glfwPollEvents();
 }
 
-[[noreturn]] static void close_window(RenderState &render_state)
+[[noreturn]]
+static void close_window(RenderState &render_state)
 {
     glfwDestroyWindow(render_state.window);
     glfwTerminate();
@@ -353,6 +354,9 @@ static GLuint load_shader(Renderer *renderer, rendering::Shader &shader, ShaderG
 
     set_all_uniform_locations(shader, gl_shader);
 
+	free(vert_shader);
+	free(frag_shader);
+
     return GL_TRUE;
 }
 
@@ -382,7 +386,6 @@ static void reload_shaders(RenderState &render_state, Renderer *renderer)
             ShaderGL &gl_shader = render_state.gl_shaders[index];
 
             delete_shader_program(gl_shader);
-            clear(&shader.arena);
             rendering::load_shader(renderer, shader);
             rendering::update_materials_with_shader(renderer, shader);
             load_shader(renderer, shader, gl_shader);
@@ -999,24 +1002,12 @@ static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
     glBlendEquation(GL_FUNC_ADD);
 }
 
-static void load_new_shaders(RenderState &render_state, Renderer *renderer)
+static void load_shader(RenderState *render_state, Renderer *renderer, rendering::Shader &shader)
 {
-    // @Note: Load the "new" shader system shaders
-    for (i32 index = render_state.gl_shader_count; index < renderer->render.shader_count; index++)
-    {
-        rendering::Shader &shader = renderer->render.shaders[index];
-        ShaderGL &gl_shader = render_state.gl_shaders[index];
-        gl_shader.handle = index;
-        gl_shader.location_count = 0;
-
-        if (shader.loaded)
-        {
-            load_shader(renderer, shader, gl_shader);
-        }
-    }
-
-    // @Note: Even if loading a shader fails, we don't want to continue to compile it
-    render_state.gl_shader_count = renderer->render.shader_count;
+    ShaderGL &gl_shader = render_state->gl_shaders[render_state->gl_shader_count];
+    gl_shader.handle = render_state->gl_shader_count++;
+    gl_shader.location_count = 0;
+    load_shader(renderer, shader, gl_shader);
 }
 
 static const GLFWvidmode *create_open_gl_window(RenderState &render_state, WindowMode window_mode, const char *title, i32 width, i32 height)
@@ -1325,6 +1316,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     renderer->api_functions.set_window_mode = &set_window_mode;
     renderer->api_functions.set_v_sync = &set_v_sync;
     renderer->api_functions.get_v_sync = &get_v_sync;
+    renderer->api_functions.load_shader = &load_shader;
 
     auto recreate_window = render_state.window != nullptr;
 
@@ -2648,12 +2640,8 @@ static void render_post_processing_passes(RenderState &render_state, Renderer *r
 
 static void render(RenderState &render_state, Renderer *renderer, r64 delta_time)
 {
-    load_new_shaders(render_state, renderer);
     reload_shaders(render_state, renderer);
     
-    // @Speed: Do we have to clear this every frame?
-    clear(&renderer->shader_arena);
-
     b32 should_render = renderer->window_width != 0;
 
     if (should_render)
