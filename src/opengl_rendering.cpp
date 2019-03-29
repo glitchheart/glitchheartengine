@@ -175,23 +175,25 @@ static b32 should_close_window(RenderState &render_state)
     return glfwWindowShouldClose(render_state.window);
 }
 
-static GLint compile_shader(MemoryArena *arena, const char *shader_name, GLuint shader)
+static GLint compile_shader(const char *shader_name, GLuint shader)
 {
     glCompileShader(shader);
     GLint is_compiled = 0;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &is_compiled);
     if (!is_compiled)
     {
-        TemporaryMemory temp_mem = begin_temporary_memory(arena);
         GLint max_length = 0;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &max_length);
 
         GLchar *error_log = nullptr;
         GLchar error_log_static[512];
 
+        b32 allocated = false;
+        
         if (max_length > 512)
         {
-            error_log = push_size(arena, max_length, GLchar);
+            error_log = (char *)malloc(max_length * sizeof(GLchar));
+            allocated = true;
         }
         else
         {
@@ -205,13 +207,14 @@ static GLint compile_shader(MemoryArena *arena, const char *shader_name, GLuint 
 
         glDeleteShader(shader);
 
-        end_temporary_memory(temp_mem);
+        if(allocated)
+            free(error_log);
     }
 
     return is_compiled;
 }
 
-static GLint link_program(MemoryArena *arena, const char *program_name, GLuint program)
+static GLint link_program(const char *program_name, GLuint program)
 {
     GLint is_linked = 0;
 
@@ -220,16 +223,18 @@ static GLint link_program(MemoryArena *arena, const char *program_name, GLuint p
 
     if (!is_linked)
     {
-        TemporaryMemory temp_mem = begin_temporary_memory(arena);
         GLint max_length = 0;
         glGetProgramiv(program, GL_INFO_LOG_LENGTH, &max_length);
 
         GLchar *error_log = nullptr;
         GLchar error_log_static[512];
 
+        b32 allocated = false;
+        
         if (max_length > 512)
         {
-            error_log = push_size(arena, max_length, GLchar);
+            error_log = (char *)malloc(max_length * sizeof(GLchar));
+            allocated = true;
         }
         else
         {
@@ -241,7 +246,8 @@ static GLint link_program(MemoryArena *arena, const char *program_name, GLuint p
         log_error("Program linking error - %s\n", program_name);
         log_error("%s", error_log);
 
-        end_temporary_memory(temp_mem);
+        if(allocated)
+            free(error_log);
     }
     return is_linked;
 }
@@ -300,7 +306,7 @@ static GLuint load_shader(Renderer *renderer, rendering::Shader &shader, ShaderG
     // @Incomplete: Think about common preamble stuff like #version 330 core and stuff
     glShaderSource(gl_shader.vert_program, 1, (GLchar **)&vert_shader, nullptr);
 
-    if (!compile_shader(&renderer->shader_arena, shader.path, gl_shader.vert_program))
+    if (!compile_shader(shader.path, gl_shader.vert_program))
     {
         log_error("Failed compilation of vertex shader: %s", shader.path);
         gl_shader.vert_program = 0;
@@ -314,7 +320,7 @@ static GLuint load_shader(Renderer *renderer, rendering::Shader &shader, ShaderG
 
         glShaderSource(gl_shader.geo_program, 1, (GLchar **)&geo_shader, nullptr);
 
-        if (!compile_shader(&renderer->shader_arena, shader.path, gl_shader.geo_program))
+        if (!compile_shader(shader.path, gl_shader.geo_program))
         {
             log_error("Failed compilation of geometry shader: %s", shader.path);
             gl_shader.geo_program = 0;
@@ -327,11 +333,11 @@ static GLuint load_shader(Renderer *renderer, rendering::Shader &shader, ShaderG
 
     glShaderSource(gl_shader.frag_program, 1, (GLchar **)&frag_shader, nullptr);
 
-    if (!compile_shader(&renderer->shader_arena, shader.path, gl_shader.frag_program))
+    if (!compile_shader(shader.path, gl_shader.frag_program))
     {
         log_error("Failed compilation of fragment shader: %s", shader.path);
         gl_shader.frag_program = 0;
-        return GL_FALSE;
+        return GL_FALSE;	
     }
 
     gl_shader.program = glCreateProgram();
@@ -343,7 +349,7 @@ static GLuint load_shader(Renderer *renderer, rendering::Shader &shader, ShaderG
     
     glAttachShader(gl_shader.program, gl_shader.frag_program);
 
-    if (!link_program(&renderer->shader_arena, shader.path, gl_shader.program))
+    if (!link_program(shader.path, gl_shader.program))
     {
         log_error("Failed linking of program: %s", shader.path);
         gl_shader.program = 0;
@@ -353,9 +359,6 @@ static GLuint load_shader(Renderer *renderer, rendering::Shader &shader, ShaderG
     }
 
     set_all_uniform_locations(shader, gl_shader);
-
-	free(vert_shader);
-	free(frag_shader);
 
     return GL_TRUE;
 }
@@ -1005,9 +1008,13 @@ static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
 static void load_shader(RenderState *render_state, Renderer *renderer, rendering::Shader &shader)
 {
     ShaderGL &gl_shader = render_state->gl_shaders[render_state->gl_shader_count];
-    gl_shader.handle = render_state->gl_shader_count++;
+    gl_shader.handle = render_state->gl_shader_count;
     gl_shader.location_count = 0;
-    load_shader(renderer, shader, gl_shader);
+
+	if(shader.loaded)
+		load_shader(renderer, shader, gl_shader);
+
+	render_state->gl_shader_count = renderer->render.shader_count;
 }
 
 static const GLFWvidmode *create_open_gl_window(RenderState &render_state, WindowMode window_mode, const char *title, i32 width, i32 height)
@@ -2641,7 +2648,9 @@ static void render_post_processing_passes(RenderState &render_state, Renderer *r
 static void render(RenderState &render_state, Renderer *renderer, r64 delta_time)
 {
     reload_shaders(render_state, renderer);
-    
+	
+	//clear(&renderer->shader_arena);
+
     b32 should_render = renderer->window_width != 0;
 
     if (should_render)

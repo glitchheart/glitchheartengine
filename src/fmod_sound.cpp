@@ -23,8 +23,6 @@ static void load_sound(const char* file_path, SoundDevice* device)
     {
         FMOD_DEBUG(result);
     }
-
-	device->sound_count++;
 }
 
 static void cleanup_sound(SoundDevice* sound_device)

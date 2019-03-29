@@ -4588,6 +4588,7 @@ namespace rendering
         {
             render_command.material = renderer->render.materials[renderer->render.ui.textured_material.handle];
             set_uniform_value(renderer, render_command.material, "tex0", info.texture_handle);
+            set_uniform_value(renderer, render_command.material, "color", info.color);
         }
         else
         {

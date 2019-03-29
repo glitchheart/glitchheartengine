@@ -209,6 +209,7 @@ struct SoundApi
 struct SoundSystem
 {
     SoundApi api_functions;
+    b32 update;
     
     MemoryArena arena;
     
