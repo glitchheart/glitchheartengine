@@ -2101,7 +2101,7 @@ namespace scene
                     if(child.child_count > 0)
                     {
                         debug_log("Warning: nested children not supported here");
-                        assert(false);
+                        continue;
                     }
                     
                     if(has_render_component(child.handle, handle))
@@ -2437,6 +2437,11 @@ namespace scene
 								char shader_file[256];
 								sscanf(buffer, "shd: %s", shader_file);
 
+                                if(strcmp(shader_file, "../assets/shaders/dissolve.shd") == 0)
+                                {
+                                    debug("Hey\n");
+                                }
+
 								rendering::ShaderHandle shader = rendering::load_shader(scene.renderer, shader_file);
 								pass_mat.material = create_material_copyable(scene.renderer, shader);
 								pass_materials[pass_material_count++] = pass_mat;
@@ -2734,30 +2739,30 @@ namespace scene
                             {
                                 attributes.emission_module.emitter_func_type = EmissionFuncType::DIRECTION;
                             }
-                            else if(starts_with(func_name, "square"))
-                            {
-                                attributes.emission_module.emitter_func_type = EmissionFuncType::SQUARE;
-                            }
                             else if(starts_with(func_name, "square_random"))
                             {
                                 attributes.emission_module.emitter_func_type = EmissionFuncType::SQUARE_RANDOM;
                             }
-                            else if(starts_with(func_name, "disc"))
+                            else if(starts_with(func_name, "square"))
                             {
-                                attributes.emission_module.emitter_func_type = EmissionFuncType::DISC;
+                                attributes.emission_module.emitter_func_type = EmissionFuncType::SQUARE;
                             }
                             else if(starts_with(func_name, "disc_random"))
                             {
                                 attributes.emission_module.emitter_func_type = EmissionFuncType::DISC_RANDOM;
                             }
-                            else if(starts_with(func_name, "circle"))
+                            else if(starts_with(func_name, "disc"))
                             {
-                                attributes.emission_module.emitter_func_type = EmissionFuncType::CIRCLE;
+                                attributes.emission_module.emitter_func_type = EmissionFuncType::DISC;
                             }
                             else if(starts_with(func_name, "circle_random"))
                             {
                                 attributes.emission_module.emitter_func_type = EmissionFuncType::CIRCLE_RANDOM;
                             }
+                            else if(starts_with(func_name, "circle"))
+                            {
+                                attributes.emission_module.emitter_func_type = EmissionFuncType::CIRCLE;
+                            }                            
                         }
                         else if(starts_with(buffer, "emission_min"))
                         {
