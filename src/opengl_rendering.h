@@ -109,7 +109,7 @@ struct RenderState
 
     struct
     {
-        Framebuffer framebuffers[MAX_FRAMEBUFFERS];
+        Framebuffer framebuffers[global_max_framebuffers];
         i32 framebuffer_count;
     } v2;
 

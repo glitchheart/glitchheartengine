@@ -288,7 +288,7 @@ static void update_sound_commands(SoundDevice *device, sound::SoundSystem *syste
         {
             device->sfx_volume = system->sfx_volume;
             device->music_volume = system->music_volume;
-	    device->master_volume = system->master_volume;
+            device->master_volume = system->master_volume;
             *save_config = true;
         }
 
