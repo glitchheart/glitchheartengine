@@ -296,6 +296,8 @@ struct PlatformApi
     PlatformAddEntry *add_entry;
     PlatformCompleteAllWork *complete_all_work;
     PlatformMakeQueue *make_queue;
+
+    WorkQueue *asset_queue;
 };
 
 extern PlatformApi platform;

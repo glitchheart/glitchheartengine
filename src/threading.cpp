@@ -17,7 +17,7 @@ static b32 do_next_work_queue_entry(WorkQueue *queue)
 			WorkQueueEntry entry = queue->entries[index];
 			entry.work_ptr(queue, entry.data);
 			interlocked_increment(&queue->completion_count);
-		}	
+		}
     }
     else
     {
@@ -42,12 +42,12 @@ THREAD_PROC(thread_proc)
 
 static WorkQueue *request_queue()
 {
-    return (WorkQueue*)malloc(sizeof(WorkQueue*));
+    return (WorkQueue*)calloc(1, sizeof(WorkQueue*));
 }
 
 static ThreadInfo *request_thread_info()
 {
-    return (ThreadInfo*)malloc(sizeof(ThreadInfo*));
+    return (ThreadInfo*)calloc(1, sizeof(ThreadInfo*));
 }
 
 static void make_queue(WorkQueue *queue, u32 thread_count, ThreadInfo *thread_infos)
