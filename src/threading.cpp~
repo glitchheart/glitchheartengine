@@ -1,40 +1,4 @@
-#ifndef THREADING_CPP
-#define THREADING_CPP
-
-THREAD_PROC(thread_proc)
-{
-    ThreadInfo *thread_info = (ThreadInfo*)parameters;
-	
-    printf("Thread started!\n");
-
-    for(;;)
-    {
-	if(osx_do_next_work_queue_entry(thread_info->queue))
-	{
-	    wait_for_semaphore(thread_info->queue->semaphore_handle);
-	}
-    }
-}
-
-static void make_queue(WorkQueue *queue, LONG thread_count, ThreadInfo *thread_infos)
-{
-    queue->completion_goal = 0;
-    queue->completion_count = 0;
-    queue->next_entry_to_write = 0;
-    queue->next_entry_to_read = 0;
-
-    i32 initial_count = 0;
-    queue->semaphore_handle = create_semaphore(initial_count, thread_count);
-
-    for(long index = 0; index < thread_count; index++)
-    {
-        ThreadInfo *thread_info = &thread_infos[index];
-        thread_info->queue = queue;
-	create_thread(thread_proc, (void*)thread_info);
-    }
-}
-
-static b32 osx_do_next_work_queue_entry(WorkQueue *queue)
+static b32 do_next_work_queue_entry(WorkQueue *queue)
 {
     b32 should_sleep = false;
 
@@ -46,24 +10,55 @@ static b32 osx_do_next_work_queue_entry(WorkQueue *queue)
     // make sure there is more work!
     if(original_next_entry_to_read != queue->next_entry_to_write)
     {
-	LONG index = InterlockedCompareExchange((LONG volatile *)&queue->next_entry_to_read, (LONG)new_next_entry_to_read, (LONG)original_next_entry_to_read);
+		u32 index = interlocked_compare_exchange(&queue->next_entry_to_read, new_next_entry_to_read, original_next_entry_to_read);
 	
-	if(index == (LONG)original_next_entry_to_read)
-	{
-	    WorkQueueEntry entry = queue->entries[index];
-	    entry.work_ptr(queue, entry.data);
-	    InterlockedIncrement(&queue->completion_count);
-	}	
+		if(index == original_next_entry_to_read)
+		{
+			WorkQueueEntry entry = queue->entries[index];
+			entry.work_ptr(queue, entry.data);
+			interlocked_increment(&queue->completion_count);
+		}	
     }
     else
     {
-	should_sleep = true;
+		should_sleep = true;
     }
 
     return(should_sleep);
 }
 
-static void osx_add_entry(WorkQueue *queue, WorkPtr work_ptr, void *data)
+THREAD_PROC(thread_proc)
+{
+    ThreadInfo *thread_info = (ThreadInfo*)parameters;
+	
+    for(;;)
+    {
+        if(do_next_work_queue_entry(thread_info->queue))
+        {
+            wait_for_semaphore(thread_info->queue->semaphore_handle);
+        }
+    }
+}
+
+static void make_queue(WorkQueue *queue, u32 thread_count, ThreadInfo *thread_infos)
+{
+    queue->completion_goal = 0;
+    queue->completion_count = 0;
+    queue->next_entry_to_write = 0;
+    queue->next_entry_to_read = 0;
+
+    u32 initial_count = 0;
+    queue->semaphore_handle = create_semaphore(initial_count, thread_count);
+
+    for(u32 index = 0; index < thread_count; index++)
+    {
+        ThreadInfo *thread_info = &thread_infos[index];
+        thread_info->queue = queue;
+		create_thread(thread_proc, (void*)thread_info);
+    }
+}
+
+static void add_entry(WorkQueue *queue, WorkPtr work_ptr, void *data)
 {
     u32 new_next_entry_to_write = (queue->next_entry_to_write + 1) % MAX_ENTRIES;
 
@@ -74,22 +69,19 @@ static void osx_add_entry(WorkQueue *queue, WorkPtr work_ptr, void *data)
     queue->entries[queue->next_entry_to_write].data = data;
     queue->completion_goal++;
 
-    _WriteBarrier();
-    _mm_sfence();
+    WRITE_BARRIER;
 
     queue->next_entry_to_write = new_next_entry_to_write;
-    ReleaseSemaphore(queue->semaphore_handle, 1, 0)
+    release_semaphore(queue->semaphore_handle);
 }
 
-static void osx_complete_all_work(WorkQueue *queue)
+static void complete_all_work(WorkQueue *queue)
 {
     while(queue->completion_goal != queue->completion_count)
     {
-	osx_do_next_work_queue_entry(queue);
+		do_next_work_queue_entry(queue);
     }
 
     queue->completion_goal = 0;
     queue->completion_count = 0;
 }
-
-#endif

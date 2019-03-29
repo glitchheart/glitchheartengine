@@ -251,6 +251,12 @@ struct WorkQueueEntry;
 struct ThreadInfo;
 typedef void (*WorkCallback)(WorkQueue *queue, void *data);
 
+#define PLATFORM_REQUEST_QUEUE(name) WorkQueue * name()
+typedef PLATFORM_REQUEST_QUEUE(PlatformRequestQueue);
+
+#define PLATFORM_REQUEST_THREAD_INFO(name) ThreadInfo * name()
+typedef PLATFORM_REQUEST_THREAD_INFO(PlatformRequestThreadInfo);
+
 #define PLATFORM_ADD_ENTRY(name) void name(WorkQueue *queue, WorkCallback work_ptr, void *data)
 typedef PLATFORM_ADD_ENTRY(PlatformAddEntry);
 
@@ -285,9 +291,13 @@ struct PlatformApi
     PlatformPrintFile *print_file;
     PlatformCreateDirectory *create_directory;
 
+    PlatformRequestQueue* request_queue;
+    PlatformRequestThreadInfo* request_thread_info;
     PlatformAddEntry *add_entry;
     PlatformCompleteAllWork *complete_all_work;
     PlatformMakeQueue *make_queue;
+
+    WorkQueue *asset_queue;
 };
 
 extern PlatformApi platform;

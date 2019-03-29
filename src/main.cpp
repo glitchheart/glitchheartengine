@@ -844,7 +844,6 @@ int main(int argc, char **args)
     render_state.gl_shader_count = 0;
     render_state.gl_shaders = push_array(&platform_state->perm_arena, 64, ShaderGL);
   
-
     Renderer *renderer_alloc = push_struct(&platform_state->perm_arena, Renderer);
     Renderer *renderer = renderer_alloc;
     *renderer = {};
@@ -899,6 +898,7 @@ int main(int argc, char **args)
     game.is_valid = false;
 
     load_game_code(game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
+    
     TimerController *timer_controller_ptr = (TimerController*)malloc(sizeof(TimerController));
     TimerController &timer_controller = *timer_controller_ptr;
     timer_controller.timer_count = 0;
@@ -906,6 +906,7 @@ int main(int argc, char **args)
     
     SoundDevice sound_device = {};
     sound_device.system = nullptr;
+    
     debug_log("Initializing FMOD");
 
     sound_device.channel_count = 0;
@@ -915,12 +916,8 @@ int main(int argc, char **args)
     sound_device.master_volume = core.config_data.master_volume;
     sound_device.muted = core.config_data.muted;
 
-    WorkQueue fmod_queue = {};
-    ThreadInfo fmod_thread = {};
-    make_queue(&fmod_queue, 1, &fmod_thread);
-    platform.add_entry(&fmod_queue, init_audio_fmod_thread, &sound_device);
-
     sound::SoundSystem sound_system = {};
+    sound_system.update = false;
     sound_system.command_count = 0;
     sound_system.sound_count = 0;
     sound_system.commands = push_array(&sound_system.arena, global_max_sound_commands, sound::SoundCommand);
@@ -932,6 +929,22 @@ int main(int argc, char **args)
     sound_system.master_volume = core.config_data.master_volume;
     sound_system.muted = core.config_data.muted;
 
+    sound::SoundSystemData data;
+    data.device = &sound_device;
+    data.system = &sound_system;
+    
+    /*WorkQueue fmod_queue = {};
+    ThreadInfo fmod_thread = {};
+    make_queue(&fmod_queue, 1, &fmod_thread);
+    platform.add_entry(&fmod_queue, init_audio_fmod_thread, &data);
+*/
+	init_audio_fmod(&data);
+
+    WorkQueue asset_queue = {};
+    ThreadInfo asset_thread = {};
+    make_queue(&asset_queue, 1, &asset_thread);
+    game_memory.platform_api.asset_queue = &asset_queue;
+    
     r64 last_second_check = get_time();
     i32 frames = 0;
 
@@ -999,7 +1012,9 @@ int main(int argc, char **args)
 
         tick_animation_controllers(renderer, &sound_system, &input_controller, timer_controller, delta_time);
         tick_timers(timer_controller, delta_time);
-        update_sound_commands(&sound_device, &sound_system, delta_time, &do_save_config);
+
+        if(sound_system.update)
+            update_sound_commands(&sound_device, &sound_system, delta_time, &do_save_config);
 
         render(render_state, renderer, delta_time);
         if (do_save_config)

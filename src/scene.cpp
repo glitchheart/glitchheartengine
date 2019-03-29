@@ -2121,6 +2121,8 @@ namespace scene
         {
             if(render_comp.render_passes[i].handle == render_pass_handle.handle)
             {
+                rendering::delete_material_instance(scene.manager->renderer, render_comp.material_handles[i]);
+                
                 render_comp.render_passes[i] = render_comp.render_passes[render_comp.render_pass_count - 1];
                 render_comp.material_handles[i] = render_comp.material_handles[render_comp.render_pass_count - 1];
 				render_comp.original_materials[i] = render_comp.original_materials[render_comp.render_pass_count - 1];

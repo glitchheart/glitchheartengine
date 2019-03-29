@@ -113,12 +113,12 @@ r32 plane_normals[] =
 
 r32 plane_uvs[] =
 {
-    0.0f, 1.0f,
     1.0f, 1.0f,
-    1.0f, 0.0f,
-    1.0f, 0.0f, 
+    0.0f, 1.0f,
+    0.0f, 0.0f,
     0.0f, 0.0f, 
-    0.0f, 1.0f
+    1.0f, 0.0f, 
+    1.0f, 1.0f
 };
 
 r32 cube_normals[] =
@@ -452,6 +452,7 @@ typedef b32 (*GetMouseLock)(RenderState *render_state);
 typedef void (*SetWindowMode)(RenderState* render_state, Renderer* renderer, Resolution resolution, WindowMode window_mode);
 typedef void (*SetVSync)(RenderState *render_state, b32 value);
 typedef b32 (*GetVSync)(RenderState *render_state);
+typedef void (*LoadShader)(RenderState *render_state, Renderer *renderer, rendering::Shader &shader);
 
 struct GraphicsAPI
 {
@@ -474,6 +475,8 @@ struct GraphicsAPI
     SetWindowMode set_window_mode;
     SetVSync set_v_sync;
     GetVSync get_v_sync;
+
+    LoadShader load_shader;
     
     RenderState *render_state;
 };
