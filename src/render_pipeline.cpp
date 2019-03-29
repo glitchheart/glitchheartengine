@@ -625,7 +625,7 @@ namespace rendering
     // @Note: Creates a RenderPass with the specified FramebufferHandle
     static RenderPassHandle create_render_pass(const char *name, FramebufferHandle framebuffer, Renderer *renderer, u64 settings = 0)
     {
-        assert(renderer->render.pass_count < MAX_RENDERPASSES);
+        assert(renderer->render.pass_count < global_max_render_commands);
         RenderPass &pass = renderer->render.passes[renderer->render.pass_count];
         pass.has_clear_color = false;
         pass.type = RenderPassType::NORMAL;
@@ -888,7 +888,7 @@ namespace rendering
     // The handle returned maps directly to the graphics API specific framebuffer index
     static FramebufferHandle create_framebuffer(FramebufferInfo &info, Renderer *renderer, char* name = "")
     {
-        assert(renderer->render.framebuffer_count < MAX_FRAMEBUFFERS);
+        assert(renderer->render.framebuffer_count < global_max_framebuffers);
         FramebufferHandle handle = { (renderer->render.framebuffer_count++) + 1 };
         strncpy(info.name, name, strlen(name) + 1);
         renderer->render.framebuffers[handle.handle - 1] = info;

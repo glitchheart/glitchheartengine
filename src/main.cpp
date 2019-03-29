@@ -400,8 +400,8 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     
     renderer->render.material_count = 0;
 
-    renderer->render.passes = push_array(&renderer->render.render_pass_arena, MAX_RENDERPASSES, rendering::RenderPass);
-    renderer->render.framebuffers = push_array(&renderer->render.render_pass_arena, MAX_FRAMEBUFFERS, rendering::FramebufferInfo);
+    renderer->render.passes = push_array(&renderer->render.render_pass_arena, global_max_render_commands, rendering::RenderPass);
+    renderer->render.framebuffers = push_array(&renderer->render.render_pass_arena, global_max_framebuffers, rendering::FramebufferInfo);
     
     //@Incomplete: Make these dynamically allocated?
 
@@ -826,7 +826,7 @@ int main(int argc, char **args)
     render_state = {};
     render_state.v2 = {};
 
-    for(i32 j = 0; j < MAX_FRAMEBUFFERS; j++)
+    for(i32 j = 0; j < global_max_framebuffers; j++)
     {
         Framebuffer &framebuffer = render_state.v2.framebuffers[j];
         for(i32 i = 0; i < 4; i++)
@@ -1012,7 +1012,6 @@ int main(int argc, char **args)
         set_invalid_keys();
         set_mouse_invalid_keys();
         
-
         update_log();
         
         swap_buffers(render_state);

@@ -96,6 +96,12 @@ namespace scene
         i32 tag_count;
     };
 
+    struct EntityList
+    {
+        EntityHandle handles[64];
+        i32 entity_count;
+    };
+
     #define MAX_CHILDREN 64
     struct Entity
     {
@@ -351,6 +357,7 @@ namespace scene
     typedef void (*OnEntityWillBeDeleted)(EntityHandle entity, SceneHandle scene);
     typedef void (*OnEntityRegisteredWithType)(EntityHandle entity, u32 type, SceneHandle scene);
     typedef EntityData* (*OnLoadEntityOfType)(EntityHandle entity, u32 type, SceneHandle scene);
+    typedef void (*OnLoadedEntityOfType)(EntityHandle entity, u32 type, SceneHandle scene);
 
     enum class SceneMode
     {
@@ -473,6 +480,7 @@ namespace scene
             OnEntityWillBeDeleted on_entity_will_be_deleted;
             OnEntityRegisteredWithType on_entity_registered_with_type;
             OnLoadEntityOfType on_load_entity_of_type;
+            OnLoadedEntityOfType on_loaded_entity_of_type;
         } callbacks;
     };
 
