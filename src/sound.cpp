@@ -1,4 +1,7 @@
 
+namespace sound
+{
+
 static ChannelAttributes get_default_channel_attributes()
 {
     ChannelAttributes attributes = {};
@@ -69,16 +72,13 @@ static void create_audio_source(SoundSystem *system, AudioSourceHandle *as_handl
 // Could just manually reuse audio sources or something
 static void destroy_audio_source(SoundSystem *system, AudioSourceHandle as_handle)
 {
-    
 }
 
 static void load_sound(SoundSystem *system, const char *file_path, SoundHandle *handle)
 {
     assert(system->sound_count + 1 < global_max_sounds);
     handle->handle = system->sound_count++ + 1;
-    SoundCommand *command = push_next_command(system);
-    command->type = SC_LOAD_SOUND;
-    strcpy(command->load_sound.file_path, file_path);
+    system->api_functions.load_sound(file_path, system->api_functions.device);
 }
 
 // @Note: play a one shot sound defaulted as sfx type
@@ -144,7 +144,13 @@ static void set_position_audio_source(SoundSystem *system, AudioSourceHandle as_
 
 static AudioSource *get_audio_source(SoundSystem *system, AudioSourceHandle as_handle)
 {
+    if(as_handle.handle == 0 || as_handle.handle - 1 > system->audio_source_count)
+    {
+        return nullptr;
+    }
+
     assert(as_handle.handle != 0 && as_handle.handle - 1 < system->audio_source_count);
-    
     return &system->audio_sources[as_handle.handle - 1];
+}
+
 }

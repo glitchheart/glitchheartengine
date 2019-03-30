@@ -1,4 +1,3 @@
-
 static ParticleSystemInfo* get_particle_system_info(ParticleSystemHandle handle, Renderer *renderer)
 {
     i32 _internal_handle = renderer->particles._internal_handles[handle.handle - 1];
@@ -59,7 +58,7 @@ static b32 particle_system_is_running(ParticleSystemHandle handle, Renderer *ren
     return(system.simulating);
 }
 
-static void set_rate_over_distanace(ParticleSystemInfo &particle_system, r32 rate_over_distance)
+static void set_rate_over_distance(ParticleSystemInfo &particle_system, r32 rate_over_distance)
 {
     particle_system.attributes.emission_module.rate_over_distance = rate_over_distance;
 }
@@ -97,6 +96,7 @@ static ParticleSystemAttributes get_default_particle_system_attributes()
 static void _allocate_particle_system(Renderer *renderer, ParticleSystemInfo& system_info, i32 max_particles)
 {
     MemoryArena* memory_arena = &system_info.arena;
+    MemoryArena* simd_arena = &system_info.simd_arena;
     clear(memory_arena);
     
     //@Note: For SIMD
@@ -117,25 +117,17 @@ static void _allocate_particle_system(Renderer *renderer, ParticleSystemInfo& sy
     system_info.alive0_particle_count = 0;
     system_info.alive1_particle_count = 0;
     
-    system_info.particles.position = push_array_simd(memory_arena, max_over_four, Vec3_4x);
-    system_info.particles.direction = push_array_simd(memory_arena, max_over_four, Vec3_4x);
-    system_info.particles.color = push_array_simd(memory_arena, max_over_four, Rgba_4x);
-    system_info.particles.angle = push_array_simd(memory_arena, max_over_four, r32_4x);
-    system_info.emitted_for_this_index = push_array(memory_arena, max_over_four, i32);
-    for(i32 i = 0; i < max_over_four; i++)
-    {
-        system_info.emitted_for_this_index[i] = 0;
-    }
+    system_info.particles.position = push_array_simd(simd_arena, max_over_four, Vec3_4x);
+    system_info.particles.direction = push_array_simd(simd_arena, max_over_four, Vec3_4x);
     
-    system_info.particles.size = push_array_simd(memory_arena, max_over_four, Vec2_4x);
-    system_info.particles.start_size = push_array_simd(memory_arena, max_over_four, Vec2_4x);
-    system_info.particles.start_life = push_array_simd(memory_arena, max_over_four, r64_4x);
-    system_info.particles.start_speed = push_array_simd(memory_arena, max_over_four, r32_4x);
-    system_info.particles.start_angle = push_array_simd(memory_arena, max_over_four, r32_4x);
-    system_info.particles.relative_position = push_array_simd(memory_arena, max_over_four, Vec3_4x);
+    system_info.particles.start_size = push_array_simd(simd_arena, max_over_four, Vec2_4x);
+    system_info.particles.start_life = push_array_simd(simd_arena, max_over_four, r64_4x);
+    system_info.particles.start_speed = push_array_simd(simd_arena, max_over_four, r32_4x);
     
-    system_info.particles.life = push_array_simd(memory_arena, max_over_four, r64_4x);
-    system_info.particles.texture_handle = push_array(memory_arena, system_info.max_particles, rendering::TextureHandle);
+    system_info.particles.start_angle = push_array_simd(simd_arena, max_over_four, r32_4x);
+    system_info.particles.relative_position = push_array_simd(simd_arena, max_over_four, Vec3_4x);
+
+    system_info.particles.life = push_array_simd(simd_arena, max_over_four, r64_4x);
     
     system_info.color_over_lifetime.value_count = 0;
     system_info.size_over_lifetime.value_count = 0;
@@ -150,10 +142,10 @@ static void _allocate_particle_system(Renderer *renderer, ParticleSystemInfo& sy
     system_info.speed_over_lifetime.keys = nullptr;
     system_info.angle_over_lifetime.keys = nullptr;
 
-    system_info.color_buffer_handle = rendering::allocate_instance_buffer(rendering::ValueType::FLOAT4, max_particles, renderer);
-    system_info.size_buffer_handle = rendering::allocate_instance_buffer(rendering::ValueType::FLOAT2, max_particles, renderer);
-    system_info.offset_buffer_handle = rendering::allocate_instance_buffer(rendering::ValueType::FLOAT3, max_particles, renderer);
-    system_info.angle_buffer_handle = rendering::allocate_instance_buffer(rendering::ValueType::FLOAT, max_particles, renderer);
+    system_info.color_buffer_handle = rendering::allocate_instance_buffer(rendering::ValueType::FLOAT4, max_particles * 2, rendering::BufferUsage::DYNAMIC, renderer);
+    system_info.size_buffer_handle = rendering::allocate_instance_buffer(rendering::ValueType::FLOAT2, max_particles * 2, rendering::BufferUsage::DYNAMIC, renderer);
+    system_info.offset_buffer_handle = rendering::allocate_instance_buffer(rendering::ValueType::FLOAT3, max_particles * 2, rendering::BufferUsage::DYNAMIC, renderer);
+    system_info.angle_buffer_handle = rendering::allocate_instance_buffer(rendering::ValueType::FLOAT, max_particles * 2, rendering::BufferUsage::DYNAMIC, renderer);
 
     rendering::Material& material = rendering::get_material_instance(system_info.material_handle, renderer);
     
@@ -190,27 +182,56 @@ static void _allocate_particle_system(Renderer *renderer, ParticleSystemInfo& sy
 
 i32 _find_unused_particle_system(Renderer *renderer)
 {
-    for(i32 index = renderer->particles._current_internal_handle; index < renderer->particles._max_particle_system_count; index++)
+    i32 handle = -1;
+
+    if(renderer->particles._internal_handles[renderer->particles._current_internal_handle] == -1)
     {
-        if(renderer->particles._internal_handles[index] == -1)
-        {
-            renderer->particles._current_internal_handle = index;
-            return index;
-        }
+        handle = renderer->particles._current_internal_handle;
     }
-    
-    for(i32 index = 0; index < renderer->particles._current_internal_handle; index++)
+    else
     {
-        if(renderer->particles._internal_handles[index] == -1)
+        i32 found_handle = _find_handle_in_range(renderer->particles._current_internal_handle, renderer->particles._max_particle_system_count, renderer->particles._internal_handles);
+        if(found_handle == -1)
         {
-            renderer->particles._current_internal_handle = index;
-            return index;
+            found_handle = _find_handle_in_range(0, renderer->particles._current_internal_handle, renderer->particles._internal_handles);
         }
+        handle = found_handle;
     }
-    
-    assert(false);
-    
-    return -1;
+
+    renderer->particles._current_internal_handle = handle + 1;
+    if(renderer->particles._current_internal_handle == renderer->particles._max_particle_system_count)
+    {
+        renderer->particles._current_internal_handle = 0;
+    }
+
+    return handle;
+}
+
+i32 _find_unused_work_queue(Renderer *renderer)
+{
+    i32 handle = -1;
+
+    if(renderer->particles._internal_work_queue_handles[renderer->particles._current_internal_work_queue_handle] == -1)
+    {
+        handle = renderer->particles._current_internal_work_queue_handle;
+    }
+    else
+    {
+        i32 found_handle = _find_handle_in_range(renderer->particles._current_internal_work_queue_handle, renderer->particles._max_particle_system_count, renderer->particles._internal_work_queue_handles);
+        if(found_handle == -1)
+        {
+            found_handle = _find_handle_in_range(0, renderer->particles._current_internal_work_queue_handle, renderer->particles._internal_work_queue_handles);
+        }
+        handle = found_handle;
+    }
+
+    renderer->particles._current_internal_work_queue_handle = handle + 1;
+    if(renderer->particles._current_internal_work_queue_handle == renderer->particles._max_particle_system_count)
+    {
+        renderer->particles._current_internal_work_queue_handle = 0;
+    }
+
+    return handle;
 }
 
 static ParticleSystemHandle create_particle_system(Renderer *renderer, i32 max_particles, rendering::MaterialHandle material, rendering::BufferHandle buffer = {0})
@@ -232,11 +253,27 @@ static ParticleSystemHandle create_particle_system(Renderer *renderer, i32 max_p
     system_info.transform = {};
     
     system_info.particle_count = 0;
-    system_info.last_used_particle = 0;
 
     system_info.material_handle = rendering::create_material_instance(renderer, material);
     
     _allocate_particle_system(renderer, system_info, max_particles);
+
+    u32 thread_count = (u32)max_particles / PARTICLE_DATA_SIZE;
+    i32 count = max_particles - thread_count * PARTICLE_DATA_SIZE;
+    if(count > 0)
+    {
+        thread_count++;
+    }
+    system_info.thread_info_count = thread_count;
+    system_info.thread_infos = push_array(&system_info.arena, system_info.thread_info_count, ThreadInfo);
+
+    i32 _work_queue_handle = _find_unused_work_queue(renderer);
+    assert(_work_queue_handle != -1);
+    
+    system_info.work_queue = &renderer->particles.work_queues[_work_queue_handle];
+    platform.make_queue(system_info.work_queue, system_info.thread_info_count, system_info.thread_infos);
+    system_info.work_datas = push_array(&system_info.arena, system_info.thread_info_count, ParticleWorkData);
+    system_info.work_data_count = system_info.thread_info_count;
     
     return handle;
 }
@@ -329,7 +366,7 @@ static void add_burst_over_time_key(ParticleSystemInfo &particle_system, r64 key
     particle_system.attributes.emission_module.burst_over_lifetime.value_count++;
 }
 
-static void add_angle_key(ParticleSystemInfo &particle_system, r64 key_time, r32 value)
+static i32 add_angle_key(ParticleSystemInfo &particle_system, r64 key_time, r32 value)
 {
     if(particle_system.angle_over_lifetime.value_count == 0)
     {
@@ -342,6 +379,7 @@ static void add_angle_key(ParticleSystemInfo &particle_system, r64 key_time, r32
     auto &keys = particle_system.angle_over_lifetime.keys;
     
     b32 replaced = false;
+    i32 new_index = -1;
     
     for(i32 i = 0; i < particle_system.angle_over_lifetime.value_count; i++)
     {
@@ -351,6 +389,7 @@ static void add_angle_key(ParticleSystemInfo &particle_system, r64 key_time, r32
             memmove(&values[i + 1], &values[i], sizeof(r32) * (particle_system.angle_over_lifetime.value_count - i));
             keys[i] = key_time;
             values[i] = value;
+            new_index = i;
             replaced = true;
             break;
         }
@@ -363,6 +402,8 @@ static void add_angle_key(ParticleSystemInfo &particle_system, r64 key_time, r32
     }
     
     particle_system.angle_over_lifetime.value_count++;
+
+    return new_index;
 }
 
 
@@ -416,7 +457,7 @@ static i32 add_color_key(ParticleSystemInfo &particle_system, r64 key_time, math
     {
         values[particle_system.color_over_lifetime.value_count] = value;
         keys[particle_system.color_over_lifetime.value_count] = key_time;
-        new_index = particle_system.color_over_lifetime.value_count;
+        // new_index = particle_system.color_over_lifetime.value_count;
     }
     
     particle_system.color_over_lifetime.value_count++;
@@ -441,7 +482,7 @@ static void remove_color_key(ParticleSystemInfo &particle_system, r64 key_time)
     }
 }
 
-static void add_size_key(ParticleSystemInfo &particle_system, r64 key_time, math::Vec2 value)
+static i32 add_size_key(ParticleSystemInfo &particle_system, r64 key_time, math::Vec2 value)
 {
     if(particle_system.size_over_lifetime.value_count == 0)
     {
@@ -454,6 +495,7 @@ static void add_size_key(ParticleSystemInfo &particle_system, r64 key_time, math
     auto &keys = particle_system.size_over_lifetime.keys;
     
     b32 replaced = false;
+    i32 new_index = -1;
     
     for(i32 i = 0; i < particle_system.size_over_lifetime.value_count; i++)
     {
@@ -464,6 +506,7 @@ static void add_size_key(ParticleSystemInfo &particle_system, r64 key_time, math
             keys[i] = key_time;
             values[i] = value;
             replaced = true;
+            new_index = i;
             break;
         }
     }
@@ -472,11 +515,13 @@ static void add_size_key(ParticleSystemInfo &particle_system, r64 key_time, math
     {
         values[particle_system.size_over_lifetime.value_count] = value;
         keys[particle_system.size_over_lifetime.value_count] = key_time;
+        new_index = particle_system.size_over_lifetime.value_count;
     }
     
     particle_system.size_over_lifetime.value_count++;
-}
 
+    return new_index;
+}
 
 static void remove_size_key(ParticleSystemInfo &particle_system, r64 key_time)
 {
@@ -495,7 +540,7 @@ static void remove_size_key(ParticleSystemInfo &particle_system, r64 key_time)
     }
 }
 
-static void add_speed_key(ParticleSystemInfo &particle_system, r64 key_time, r32 value)
+static i32 add_speed_key(ParticleSystemInfo &particle_system, r64 key_time, r32 value)
 {
     if(particle_system.speed_over_lifetime.value_count == 0)
     {
@@ -508,6 +553,7 @@ static void add_speed_key(ParticleSystemInfo &particle_system, r64 key_time, r32
     auto &keys = particle_system.speed_over_lifetime.keys;
     
     b32 replaced = false;
+    i32 new_index = -1;
     
     for(i32 i = 0; i < particle_system.speed_over_lifetime.value_count; i++)
     {
@@ -517,6 +563,7 @@ static void add_speed_key(ParticleSystemInfo &particle_system, r64 key_time, r32
             memmove(&keys[i + 1], &keys[i], sizeof(r64) * (particle_system.speed_over_lifetime.value_count - i));
             keys[i] = key_time;
             values[i] = value;
+            new_index = i;
             replaced = true;
             break;
         }
@@ -526,10 +573,13 @@ static void add_speed_key(ParticleSystemInfo &particle_system, r64 key_time, r32
     {
         values[particle_system.speed_over_lifetime.value_count] = value;
         keys[particle_system.speed_over_lifetime.value_count] = key_time;
+        new_index = particle_system.speed_over_lifetime.value_count;;
     }
     
     
     particle_system.speed_over_lifetime.value_count++;
+
+    return new_index;
 }
 
 

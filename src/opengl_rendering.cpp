@@ -1,5 +1,4 @@
-
-static void bind_vertex_array(GLuint vao, RenderState &render_state)
+ static void bind_vertex_array(GLuint vao, RenderState &render_state)
 {
     if (vao != render_state.current_state.vao)
     {
@@ -25,53 +24,75 @@ static void show_mouse_cursor(RenderState &render_state, b32 show)
     // }
 }
 
+static void debug_vao()
+{
+    int vab, eabb, eabbs, mva, is_on, vaabb;
+    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &vab);
+    glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &eabb);
+    glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &eabbs);
+
+    debug(" VAO: %d\n", vab);
+    debug(" IBO: %d, size: %d\n", eabb, eabbs);
+
+    glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &mva);
+    for(i32 i = 0; i < mva; i++)
+    {
+        glGetVertexAttribiv(i, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &is_on);
+        if(is_on)
+        {
+            glGetVertexAttribiv(i, GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING, &vaabb);
+            debug(" attrib #%d: VBO=%d\n", i, vaabb);
+        }
+    }
+}
+
 #define error_gl() _error_gl(__LINE__, __FILE__)
 void _error_gl(i32 line, const char *file)
 {
-    GLenum err = glGetError();
-    switch (err)
-    {
-    case GL_INVALID_ENUM:
-    {
-        log_error("OpenGL Error: GL_INVALID_ENUM on line %d in file %s", line, file);
-    }
-    break;
-    case GL_INVALID_VALUE:
-    {
-        log_error("OpenGL Error: GL_INVALID_VALUE on line %d in file %s", line, file);
-    }
-    break;
-    case GL_INVALID_OPERATION:
-    {
-        log_error("OpenGL Error: GL_INVALID_OPERATION on line %d in file %s", line, file);
-    }
-    break;
-    case GL_STACK_OVERFLOW:
-    {
-        log_error("OpenGL Error: GL_STACK_OVERFLOW on line %d in file %s", line, file);
-    }
-    break;
-    case GL_OUT_OF_MEMORY:
-    {
-        log_error("OpenGL Error: GL_OUT_OF_MEMORY on line %d in file %s", line, file);
-    }
-    break;
-    case GL_INVALID_FRAMEBUFFER_OPERATION:
-    {
-        log_error("OpenGL Error: GL_INVALID_FRAMEBUFFER_OPERATION on line %d in file %s", line, file);
-    }
-    break;
-    case GL_CONTEXT_LOST:
-    {
-        log_error("OpenGL Error: GL_CONTEXT_LOST on line %d in file %sx", line, file);
-    }
-    break;
-    case GL_TABLE_TOO_LARGE:
-    {
-        log_error("OpenGL Error: GL_TABLE_TOO_LARGE on line %d in file %s", line, file);
-    }
-    break;
-    }
+    // GLenum err = glGetError();
+    // switch (err)
+    // {
+    // case GL_INVALID_ENUM:
+    // {
+    //     log_error("OpenGL Error: GL_INVALID_ENUM on line %d in file %s", line, file);
+    // }
+    // break;
+    // case GL_INVALID_VALUE:
+    // {
+    //     log_error("OpenGL Error: GL_INVALID_VALUE on line %d in file %s", line, file);
+    // }
+    // break;
+    // case GL_INVALID_OPERATION:
+    // {
+    //     log_error("OpenGL Error: GL_INVALID_OPERATION on line %d in file %s", line, file);
+    // }
+    // break;
+    // case GL_STACK_OVERFLOW:
+    // {
+    //     log_error("OpenGL Error: GL_STACK_OVERFLOW on line %d in file %s", line, file);
+    // }
+    // break;
+    // case GL_OUT_OF_MEMORY:
+    // {
+    //     log_error("OpenGL Error: GL_OUT_OF_MEMORY on line %d in file %s", line, file);
+    // }
+    // break;
+    // case GL_INVALID_FRAMEBUFFER_OPERATION:
+    // {
+    //     log_error("OpenGL Error: GL_INVALID_FRAMEBUFFER_OPERATION on line %d in file %s", line, file);
+    // }
+    // break;
+    // case GL_CONTEXT_LOST:
+    // {
+    //     log_error("OpenGL Error: GL_CONTEXT_LOST on line %d in file %sx", line, file);
+    // }
+    // break;
+    // case GL_TABLE_TOO_LARGE:
+    // {
+    //     log_error("OpenGL Error: GL_TABLE_TOO_LARGE on line %d in file %s", line, file);
+    // }
+    // break;
+    // }
 }
 
 void message_callback(GLenum source,
@@ -141,7 +162,8 @@ inline static void poll_events()
     glfwPollEvents();
 }
 
-[[noreturn]] static void close_window(RenderState &render_state)
+[[noreturn]]
+static void close_window(RenderState &render_state)
 {
     glfwDestroyWindow(render_state.window);
     glfwTerminate();
@@ -153,23 +175,25 @@ static b32 should_close_window(RenderState &render_state)
     return glfwWindowShouldClose(render_state.window);
 }
 
-static GLint compile_shader(MemoryArena *arena, const char *shader_name, GLuint shader)
+static GLint compile_shader(const char *shader_name, GLuint shader)
 {
     glCompileShader(shader);
     GLint is_compiled = 0;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &is_compiled);
     if (!is_compiled)
     {
-        TemporaryMemory temp_mem = begin_temporary_memory(arena);
         GLint max_length = 0;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &max_length);
 
         GLchar *error_log = nullptr;
         GLchar error_log_static[512];
 
+        b32 allocated = false;
+        
         if (max_length > 512)
         {
-            error_log = push_size(arena, max_length, GLchar);
+            error_log = (char *)malloc(max_length * sizeof(GLchar));
+            allocated = true;
         }
         else
         {
@@ -183,13 +207,14 @@ static GLint compile_shader(MemoryArena *arena, const char *shader_name, GLuint 
 
         glDeleteShader(shader);
 
-        end_temporary_memory(temp_mem);
+        if(allocated)
+            free(error_log);
     }
 
     return is_compiled;
 }
 
-static GLint link_program(MemoryArena *arena, const char *program_name, GLuint program)
+static GLint link_program(const char *program_name, GLuint program)
 {
     GLint is_linked = 0;
 
@@ -198,16 +223,18 @@ static GLint link_program(MemoryArena *arena, const char *program_name, GLuint p
 
     if (!is_linked)
     {
-        TemporaryMemory temp_mem = begin_temporary_memory(arena);
         GLint max_length = 0;
         glGetProgramiv(program, GL_INFO_LOG_LENGTH, &max_length);
 
         GLchar *error_log = nullptr;
         GLchar error_log_static[512];
 
+        b32 allocated = false;
+        
         if (max_length > 512)
         {
-            error_log = push_size(arena, max_length, GLchar);
+            error_log = (char *)malloc(max_length * sizeof(GLchar));
+            allocated = true;
         }
         else
         {
@@ -218,6 +245,9 @@ static GLint link_program(MemoryArena *arena, const char *program_name, GLuint p
 
         log_error("Program linking error - %s\n", program_name);
         log_error("%s", error_log);
+
+        if(allocated)
+            free(error_log);
     }
     return is_linked;
 }
@@ -236,13 +266,13 @@ static void set_all_uniform_locations(rendering::Shader &shader, ShaderGL &gl_sh
             {
                 rendering::Structure &structure = shader.structures[uniform.structure_index];
 
-                for (i32 i = 0; i < uniform.array_size; i++)
+                for (i32 k = 0; k < uniform.array_size; k++)
                 {
                     for (i32 j = 0; j < structure.uniform_count; j++)
                     {
                         rendering::Uniform struct_uni = structure.uniforms[j];
                         char char_buf[256];
-                        sprintf(char_buf, "%s[%d].%s", uniform.name, i, struct_uni.name);
+                        sprintf(char_buf, "%s[%d].%s", uniform.name, k, struct_uni.name);
                         GLint location = glGetUniformLocation(gl_shader.program, char_buf);
                         gl_shader.uniform_locations[gl_shader.location_count++] = location;
                     }
@@ -250,10 +280,10 @@ static void set_all_uniform_locations(rendering::Shader &shader, ShaderGL &gl_sh
             }
             else
             {
-                for (i32 i = 0; i < uniform.array_size; i++)
+                for (i32 k = 0; k < uniform.array_size; k++)
                 {
                     char char_buf[256];
-                    sprintf(char_buf, "%s[%d]", uniform.name, i);
+                    sprintf(char_buf, "%s[%d]", uniform.name, k);
 
                     GLint location = glGetUniformLocation(gl_shader.program, char_buf);
                     gl_shader.uniform_locations[gl_shader.location_count++] = location;
@@ -276,7 +306,7 @@ static GLuint load_shader(Renderer *renderer, rendering::Shader &shader, ShaderG
     // @Incomplete: Think about common preamble stuff like #version 330 core and stuff
     glShaderSource(gl_shader.vert_program, 1, (GLchar **)&vert_shader, nullptr);
 
-    if (!compile_shader(&renderer->shader_arena, shader.path, gl_shader.vert_program))
+    if (!compile_shader(shader.path, gl_shader.vert_program))
     {
         log_error("Failed compilation of vertex shader: %s", shader.path);
         gl_shader.vert_program = 0;
@@ -290,7 +320,7 @@ static GLuint load_shader(Renderer *renderer, rendering::Shader &shader, ShaderG
 
         glShaderSource(gl_shader.geo_program, 1, (GLchar **)&geo_shader, nullptr);
 
-        if (!compile_shader(&renderer->shader_arena, shader.path, gl_shader.geo_program))
+        if (!compile_shader(shader.path, gl_shader.geo_program))
         {
             log_error("Failed compilation of geometry shader: %s", shader.path);
             gl_shader.geo_program = 0;
@@ -303,11 +333,11 @@ static GLuint load_shader(Renderer *renderer, rendering::Shader &shader, ShaderG
 
     glShaderSource(gl_shader.frag_program, 1, (GLchar **)&frag_shader, nullptr);
 
-    if (!compile_shader(&renderer->shader_arena, shader.path, gl_shader.frag_program))
+    if (!compile_shader(shader.path, gl_shader.frag_program))
     {
         log_error("Failed compilation of fragment shader: %s", shader.path);
         gl_shader.frag_program = 0;
-        return GL_FALSE;
+        return GL_FALSE;	
     }
 
     gl_shader.program = glCreateProgram();
@@ -319,7 +349,7 @@ static GLuint load_shader(Renderer *renderer, rendering::Shader &shader, ShaderG
     
     glAttachShader(gl_shader.program, gl_shader.frag_program);
 
-    if (!link_program(&renderer->shader_arena, shader.path, gl_shader.program))
+    if (!link_program(shader.path, gl_shader.program))
     {
         log_error("Failed linking of program: %s", shader.path);
         gl_shader.program = 0;
@@ -359,10 +389,15 @@ static void reload_shaders(RenderState &render_state, Renderer *renderer)
             ShaderGL &gl_shader = render_state.gl_shaders[index];
 
             delete_shader_program(gl_shader);
-            clear(&shader.arena);
-            rendering::load_shader(renderer, shader);
+
+			MemoryArena arena = {};
+
+            rendering::load_shader(renderer, shader, true, &arena);
             rendering::update_materials_with_shader(renderer, shader);
             load_shader(renderer, shader, gl_shader);
+			
+			clear(&arena);
+
             printf("Reloaded shader: %s\n", shader.path);
         }
     }
@@ -403,28 +438,148 @@ static void create_instance_buffer(Buffer *buffer, size_t buffer_size, rendering
         glGenBuffers(1, &buffer->vbo);
     }
 
-    GLenum usage = get_usage(buffer_usage);
-
+    buffer->usage = get_usage(buffer_usage);
+    
     glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)buffer_size, nullptr, usage);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)buffer_size, nullptr, buffer->usage);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+static rendering::BufferUsage get_buffer_usage(Buffer *buffer)
+{
+	return buffer->usage == GL_DYNAMIC_DRAW ? rendering::BufferUsage::DYNAMIC : rendering::BufferUsage::STATIC;
+}
+
+static void delete_buffer(Buffer *buffer, RenderState *render_state, Renderer *renderer)
+{
+    glDeleteBuffers(1, &buffer->vbo);
+}
+
+static void create_buffer(Buffer *buffer, rendering::RegisterBufferInfo info, RenderState *render_state, Renderer *renderer)
+{
+    *buffer = {};
+
+    if(buffer->vbo == 0)
+    {
+        glGenBuffers(1, &buffer->vbo);
+    }
+
+    buffer->vertex_buffer_size = info.data.vertex_buffer_size;
+    buffer->index_buffer_count = info.data.index_buffer_count;
+    buffer->vertex_count = info.data.vertex_count;
+
+    glGenVertexArrays(1, &buffer->vao);
+    bind_vertex_array(buffer->vao, *render_state);
+
+    glGenBuffers(1, &buffer->vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+
+    buffer->usage = get_usage(info.usage);
+
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)info.data.vertex_buffer_size, info.data.vertex_buffer, buffer->usage);
+
+    size_t offset = 0;
+
+    for (i32 i = 0; i < info.vertex_attribute_count; i++)
+    {
+        rendering::VertexAttribute &attrib = info.vertex_attributes[i];
+
+        GLenum type = GL_FLOAT;
+        i32 count = 1;
+        size_t type_size = 0;
+
+        switch (attrib.type)
+        {
+        case rendering::ValueType::FLOAT:
+        {
+            type = GL_FLOAT;
+            count = 1;
+            type_size = sizeof(GLfloat);
+        }
+        break;
+        case rendering::ValueType::FLOAT2:
+        {
+            type = GL_FLOAT;
+            count = 2;
+            type_size = 2 * sizeof(GLfloat);
+        }
+        break;
+        case rendering::ValueType::FLOAT3:
+        {
+            type = GL_FLOAT;
+            count = 3;
+            type_size = 3 * sizeof(GLfloat);
+        }
+        break;
+        case rendering::ValueType::FLOAT4:
+        {
+            type = GL_FLOAT;
+            count = 4;
+            type_size = 4 * sizeof(GLfloat);
+        }
+        break;
+        case rendering::ValueType::INTEGER:
+        {
+            type = GL_INT;
+            count = 1;
+            type_size = 1 * sizeof(GLint);
+        }
+        break;
+        case rendering::ValueType::BOOL:
+        {
+            type = GL_INT;
+            count = 1;
+            type_size = 1 * sizeof(GLint);
+        }
+        break;
+        case rendering::ValueType::MAT4:
+        {
+            type = GL_FLOAT;
+            count = 16;
+            type_size = 16 * sizeof(GLfloat);
+        }
+        break;
+        case rendering::ValueType::TEXTURE:
+        case rendering::ValueType::MS_TEXTURE:
+        case rendering::ValueType::STRUCTURE:
+        case rendering::ValueType::INVALID:
+        {
+            assert(false);
+        }
+        break;
+        }
+
+        vertex_attrib_pointer(i, count, type, (u32)info.stride, (void *)offset);
+
+        offset += type_size;
+    }
+
+    if (info.data.index_buffer_count > 0)
+    {
+        glGenBuffers(1, &buffer->ibo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->ibo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, info.data.index_buffer_size, info.data.index_buffer, buffer->usage);
+    }
+
+    bind_vertex_array(0, *render_state);
 }
 
 static void create_framebuffer_color_attachment(RenderState &render_state, Renderer *renderer, rendering::FramebufferInfo &info, Framebuffer &framebuffer, i32 width, i32 height)
 {
     framebuffer.tex_color_buffer_count = info.color_attachments.count;
 
-    for (i32 i = 0; i < info.color_attachments.count; i++)
+    for(i32 i = 0; i < info.color_attachments.count; i++)
     {
         rendering::ColorAttachment &attachment = info.color_attachments.attachments[i];
-        if (attachment.type == rendering::ColorAttachmentType::RENDER_BUFFER)
+        
+        if(attachment.type == rendering::AttachmentType::RENDER_BUFFER)
         {
-            if (framebuffer.tex_color_buffer_handles[i] != 0)
+            if(framebuffer.tex_color_buffer_handles[i] != 0)
             {
                 glDeleteRenderbuffers(1, &framebuffer.tex_color_buffer_handles[i]);
             }
 
-            if (attachment.flags & rendering::ColorAttachmentFlags::MULTISAMPLED)
+            if(attachment.flags & rendering::ColorAttachmentFlags::MULTISAMPLED)
             {
                 if (framebuffer.tex_color_buffer_handles[i] != 0)
                 {
@@ -480,27 +635,28 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
                 texture = renderer->render.textures[renderer->render.texture_count++];
                 handle = renderer->render.texture_count;
             }
+            
             assert(handle != 0);
 
             glGenTextures(1, &texture->handle);
 
-            if (attachment.flags & rendering::ColorAttachmentFlags::MULTISAMPLED)
+            if(attachment.flags & rendering::ColorAttachmentFlags::MULTISAMPLED)
             {
                 glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture->handle);
 
                 if (attachment.flags & rendering::ColorAttachmentFlags::HDR)
                 {
                     glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, attachment.samples, GL_RGBA16F, width, height, GL_TRUE);
-                    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+                    //glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
                 }
                 else
                 {
                     glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, attachment.samples, GL_RGBA, width, height, GL_TRUE);
-                    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+                    //glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
                 }
 
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D_MULTISAMPLE, texture->handle, NULL);
-                attachment.ms_texture = {handle};
+                attachment.ms_texture = { handle };
             }
             else
             {
@@ -526,7 +682,7 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 }
                 
-                attachment.texture = {handle};
+                attachment.texture = { handle };
             }
 
             texture->width = width;
@@ -536,9 +692,9 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
     }
 }
 
-static void create_framebuffer_depth_texture_attachment(rendering::FramebufferInfo &info, Framebuffer &framebuffer, i32 width, i32 height, Renderer *renderer)
+static void _create_framebuffer_depth_texture_attachment(rendering::DepthAttachment &attachment, i32 index, Framebuffer &framebuffer, i32 width, i32 height, Renderer *renderer)
 {
-    if(info.depth_attachment.flags & rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED)
+    if(attachment.flags & rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED)
     {
         Texture* texture = renderer->render.textures[renderer->render.texture_count++];
         i32 handle = renderer->render.texture_count;
@@ -546,7 +702,7 @@ static void create_framebuffer_depth_texture_attachment(rendering::FramebufferIn
         glGenTextures(1, &texture->handle);
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture->handle);
         
-        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, info.depth_attachment.samples, GL_DEPTH_COMPONENT, width, height, GL_TRUE);
+        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, attachment.samples, GL_DEPTH_COMPONENT, width, height, GL_TRUE);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -560,8 +716,8 @@ static void create_framebuffer_depth_texture_attachment(rendering::FramebufferIn
 
         texture->width = width;
         texture->height = height;
-        framebuffer.depth_buffer_handle = handle;
-        info.depth_attachment.texture = {handle};
+        framebuffer.depth_buffer_handles[index] = handle;
+        attachment.texture = {handle};
     }
     else
     {
@@ -570,11 +726,11 @@ static void create_framebuffer_depth_texture_attachment(rendering::FramebufferIn
     
         glGenTextures(1, &texture->handle);
         glBindTexture(GL_TEXTURE_2D, texture->handle);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
         // Prevent shadows outside of the shadow map
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
@@ -585,32 +741,50 @@ static void create_framebuffer_depth_texture_attachment(rendering::FramebufferIn
 
         texture->width = width;
         texture->height = height;
-        framebuffer.depth_buffer_handle = handle;
-        info.depth_attachment.texture = {handle};
+        framebuffer.depth_buffer_handles[index] = handle;
+        attachment.texture = {handle};
     }
-    
 }
 
-static void create_framebuffer_render_buffer_attachment(rendering::FramebufferInfo &info, Framebuffer &framebuffer, i32 width, i32 height)
+static void _create_framebuffer_depth_render_buffer_attachment(rendering::DepthAttachment &attachment, i32 index, Framebuffer &framebuffer, i32 width, i32 height)
 {
-    if (framebuffer.depth_buffer_handle != 0)
+    if (framebuffer.depth_buffer_handles[index] != 0)
     {
-        glDeleteRenderbuffers(1, &framebuffer.depth_buffer_handle);
+        glDeleteRenderbuffers(1, &framebuffer.depth_buffer_handles[index]);
     }
     
-    glGenRenderbuffers(1, &framebuffer.depth_buffer_handle);
-    glBindRenderbuffer(GL_RENDERBUFFER, framebuffer.depth_buffer_handle);
+    glGenRenderbuffers(1, &framebuffer.depth_buffer_handles[index]);
+    glBindRenderbuffer(GL_RENDERBUFFER, framebuffer.depth_buffer_handles[index]);
 
-    if (info.depth_attachment.flags & rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED)
+    if(attachment.flags & rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED)
     {
-        glRenderbufferStorageMultisample(GL_RENDERBUFFER, info.depth_attachment.samples, GL_DEPTH_COMPONENT, width, height);
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, attachment.samples, GL_DEPTH_COMPONENT, width, height);
     }
     else
     {
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
     }
 
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, framebuffer.depth_buffer_handle);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, framebuffer.depth_buffer_handles[index]);
+}
+
+static void create_framebuffer_depth_attachment(rendering::FramebufferInfo &info, Framebuffer &framebuffer, i32 width, i32 height, Renderer *renderer)
+{
+    framebuffer.depth_buffer_count = info.color_attachments.count;
+    
+    for (i32 i = 0; i < info.depth_attachments.count; i++)
+    {
+        rendering::DepthAttachment &attachment = info.depth_attachments.attachments[i];
+
+        if(attachment.type == rendering::AttachmentType::TEXTURE)
+        {
+            _create_framebuffer_depth_texture_attachment(attachment, i, framebuffer, width, height, renderer);
+        }
+        else
+        {
+            _create_framebuffer_depth_render_buffer_attachment(attachment, i, framebuffer, width, height);
+        }
+    }
 }
 
 // @Incomplete: We should probably have a good way to link one or multiple light sources to this
@@ -632,12 +806,7 @@ static void create_shadow_map(Framebuffer &framebuffer, i32 width, i32 height)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
-    float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, framebuffer.shadow_map_handle, 0);
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
@@ -668,21 +837,52 @@ static void create_new_framebuffer(rendering::FramebufferInfo &info, Framebuffer
     if (info.color_attachments.enabled)
         create_framebuffer_color_attachment(render_state, renderer, info, framebuffer, info.width, info.height);
 
-    if (info.depth_attachment.enabled)
+    if (info.depth_attachments.enabled)
     {
-        if(info.depth_attachment.flags & rendering::DepthAttachmentFlags::DEPTH_TEXTURE)
-            create_framebuffer_depth_texture_attachment(info, framebuffer, info.width, info.height, renderer);
-        else
-            create_framebuffer_render_buffer_attachment(info, framebuffer, info.width, info.height);
+        create_framebuffer_depth_attachment(info, framebuffer, info.width, info.height, renderer);
     }
 
     glDrawBuffers(color_buffer_count, attachments);
 
     free(attachments);
 
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE)
     {
         log_error("Error: Framebuffer incomplete");
+        if(status == GL_FRAMEBUFFER_UNDEFINED)
+        {
+            log_error("FRAMEBUFFER UNDEFINED");
+        }
+        else if(status == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT)
+        {
+            log_error("INCOMPLETE ATTACHMENT");
+        }
+        else if(status == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT)
+        {
+            log_error("MISSING ATTACHMENT");
+        }
+        else if(status == GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER)
+        {
+            log_error("INCOMPLETE DRAW BUFFER");
+        }
+        else if(status == GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER)
+        {
+            log_error("INCOMPLETE READ BUFFER");
+        }
+        else if(status == GL_FRAMEBUFFER_UNSUPPORTED)
+        {
+            log_error("UNSUPPORTED");
+        }
+        else if(status == GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE)
+        {
+            log_error("INCOMPLETE MULTISAMPLE");
+        }
+        else if(status == GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS)
+        {
+            log_error("INCOMPLETE LAYER TARGETS");
+        }
+        
         error_gl();
     }
 }
@@ -801,33 +1001,27 @@ static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
 
     glfwGetFramebufferSize(render_state->window, &render_state->framebuffer_width, &render_state->framebuffer_height);
 
-    create_shadow_map(render_state->shadow_map_buffer, 2048, 2048);
-
     setup_quad(*render_state, render_state->perm_arena);
     
     render_state->total_delta = 0.0f;
     render_state->frame_delta = 0.0f;
 
-    render_state->gl_buffers = push_array(render_state->perm_arena, global_max_custom_buffers, Buffer);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendEquation(GL_FUNC_ADD);
 }
 
-static void load_new_shaders(RenderState &render_state, Renderer *renderer)
+static void load_shader(RenderState *render_state, Renderer *renderer, rendering::Shader &shader)
 {
-    // @Note: Load the "new" shader system shaders
-    for (i32 index = render_state.gl_shader_count; index < renderer->render.shader_count; index++)
-    {
-        rendering::Shader &shader = renderer->render.shaders[index];
-        ShaderGL &gl_shader = render_state.gl_shaders[index];
-        gl_shader.location_count = 0;
+    ShaderGL &gl_shader = render_state->gl_shaders[render_state->gl_shader_count];
+    gl_shader.handle = render_state->gl_shader_count;
+    
+    gl_shader.location_count = 0;
 
-        if (shader.loaded)
-        {
-            load_shader(renderer, shader, gl_shader);
-        }
-    }
+	if(shader.loaded)
+		load_shader(renderer, shader, gl_shader);
 
-    // @Note: Even if loading a shader fails, we don't want to continue to compile it
-    render_state.gl_shader_count = renderer->render.shader_count;
+	render_state->gl_shader_count = renderer->render.shader_count;
 }
 
 static const GLFWvidmode *create_open_gl_window(RenderState &render_state, WindowMode window_mode, const char *title, i32 width, i32 height)
@@ -897,7 +1091,7 @@ static void create_framebuffer(rendering::FramebufferInfo &info, RenderState *re
 
 static void load_texture(Texture* texture, TextureFiltering filtering, TextureWrap wrap, TextureFormat format, i32 width, i32 height, unsigned char* image_data, RenderState* render_state, Renderer* renderer)
 {
-    if (texture->handle == 0)
+   if (texture->handle == 0)
     {
         glGenTextures(1, &texture->handle);
     }
@@ -926,10 +1120,6 @@ static void load_texture(Texture* texture, TextureFiltering filtering, TextureWr
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     }
     
-    //enable alpha for textures
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
     GLenum gl_format = GL_RGBA;
 
     switch (format)
@@ -959,7 +1149,7 @@ static void load_texture(Texture* texture, TextureFiltering filtering, TextureWr
 
     glGenerateMipmap(GL_TEXTURE_2D);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, -1);
+    //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, -1);
 }
 
 static math::Vec2i get_texture_size(Texture* texture)
@@ -987,22 +1177,74 @@ static void set_mouse_lock(b32 locked, RenderState *render_state)
 static Buffer &get_internal_buffer(Renderer *renderer, RenderState &render_state, rendering::BufferHandle buffer)
 {
     i32 handle = renderer->render._internal_buffer_handles[buffer.handle - 1];
-    Buffer &gl_buffer = render_state.gl_buffers[handle];
-    return gl_buffer;
+    Buffer *gl_buffer = renderer->render.buffers[handle];
+    return *gl_buffer;
 }
 
-static void direct_update_buffer(rendering::BufferHandle handle, r32 *data, size_t count, size_t size, RenderState *render_state, Renderer *renderer)
+static void update_vertex_buffer(Buffer *buffer, r32 *data, size_t count, size_t size, rendering::BufferUsage buffer_usage, RenderState *render_state, Renderer *renderer)
 {
-    Buffer& buffer = get_internal_buffer(renderer, *render_state, handle);
-
-    bind_vertex_array(buffer.vao, *render_state);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
-    buffer.vertex_count = (i32)count;
-    buffer.vertex_buffer_size = (i32)size;
+    bind_vertex_array(buffer->vao, *render_state);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+    buffer->vertex_count = (i32)count;
+    buffer->vertex_buffer_size = (i32)size;
 
     glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW);
 
     bind_vertex_array(0, *render_state);
+
+    GLenum usage = get_usage(buffer_usage);
+
+    bind_vertex_array(buffer->vao, *render_state);
+    buffer->vertex_count = (i32)count;
+    buffer->vertex_buffer_size = (i32)size;
+
+    glBufferData(GL_ARRAY_BUFFER, size, data, usage);
+
+    bind_vertex_array(0, *render_state);
+}
+
+static void update_index_buffer(Buffer *buffer, u16* data, size_t count, size_t size, rendering::BufferUsage buffer_usage, RenderState *render_state, Renderer* renderer)
+{
+    if(buffer->ibo == 0)
+    {
+        glGenBuffers(1, &buffer->ibo);
+    }
+    
+    GLenum usage = get_usage(buffer_usage);
+    bind_vertex_array(buffer->vao, *render_state);
+        
+    buffer->index_buffer_count = (i32)count;
+    buffer->index_buffer_size = (i32)size;
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, usage);
+}
+
+static void update_buffer(Buffer *buffer, rendering::BufferType buffer_type, void* data, size_t count, size_t size, rendering::BufferUsage buffer_usage, RenderState *render_state, Renderer* renderer)
+{
+    switch(buffer_type)
+    {
+    case rendering::BufferType::VERTEX:
+    {
+        update_vertex_buffer(buffer, (r32*)data, count, size, buffer_usage, render_state, renderer);
+    }
+    break;
+    case rendering::BufferType::INDEX:
+    {
+        update_index_buffer(buffer, (u16*)data, count, size, buffer_usage, render_state, renderer);        
+    }
+    break;    
+    }
+}
+
+static void set_v_sync(RenderState *render_state, b32 value)
+{
+    glfwSwapInterval(value ? 1 : 0);
+    render_state->vsync_active = value;
+}
+
+static b32 get_v_sync(RenderState *render_state)
+{
+    return render_state->vsync_active;
 }
 
 static void set_window_mode(RenderState* render_state, Renderer* renderer, Resolution new_resolution, WindowMode new_window_mode)
@@ -1070,20 +1312,25 @@ static void set_window_mode(RenderState* render_state, Renderer* renderer, Resol
     }
 }
 
-static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char *title, MemoryArena *perm_arena, b32 *do_save_config)
+static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char *title, MemoryArena *perm_arena, b32 *do_save_config, b32 vsync_active)
 {
     renderer->api_functions.render_state = &render_state;
     renderer->api_functions.get_texture_size = &get_texture_size;
     renderer->api_functions.load_texture = &load_texture;
     renderer->api_functions.create_framebuffer = &create_framebuffer;
-    renderer->api_functions.create_instance_buffer = &create_instance_buffer;
+	renderer->api_functions.create_instance_buffer = &create_instance_buffer;
+	renderer->api_functions.get_buffer_usage = &get_buffer_usage;
     renderer->api_functions.delete_instance_buffer = &delete_instance_buffer;
-    renderer->api_functions.update_buffer = &direct_update_buffer;
+    renderer->api_functions.create_buffer = &create_buffer;
+    renderer->api_functions.delete_buffer = &delete_buffer;
+    renderer->api_functions.update_buffer = &update_buffer;
     renderer->api_functions.set_mouse_lock = &set_mouse_lock;
     renderer->api_functions.get_mouse_lock = &get_mouse_lock;
     renderer->api_functions.set_window_cursor = &set_window_cursor;
     renderer->api_functions.set_window_mode = &set_window_mode;
-        
+    renderer->api_functions.set_v_sync = &set_v_sync;
+    renderer->api_functions.get_v_sync = &get_v_sync;
+    renderer->api_functions.load_shader = &load_shader;
 
     auto recreate_window = render_state.window != nullptr;
 
@@ -1096,15 +1343,14 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
         }
     }
 
-
     render_state.paused = false;
 
     glfwSetErrorCallback(error_callback);
 
     //@Incomplete: Figure something out here. Ask for compatible version etc
 #ifdef _WIN32
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 #elif __linux
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
@@ -1169,6 +1415,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
     glfwSwapInterval(1);
+    render_state.vsync_active = vsync_active;
 
     glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
     glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
@@ -1289,7 +1536,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
 
 static void initialize_opengl(RenderState &render_state, Renderer *renderer, ConfigData *config_data, MemoryArena *perm_arena, b32 *do_save_config)
 {
-    initialize_opengl(render_state, renderer, config_data->contrast, config_data->brightness, config_data->window_mode, config_data->screen_width, config_data->screen_height, config_data->title, perm_arena, do_save_config);
+    initialize_opengl(render_state, renderer, config_data->contrast, config_data->brightness, config_data->window_mode, config_data->screen_width, config_data->screen_height, config_data->title, perm_arena, do_save_config, config_data->vsync);
 }
 
 static void set_float_uniform(GLuint shader_handle, const char *uniform_name, r32 value)
@@ -1384,145 +1631,6 @@ static void set_ms_texture_uniform(GLuint shader_handle, GLuint texture, i32 ind
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture);
 }
 
-#define BUFFER_OFFSET(i) ((char *)NULL + (i))
-
-// @Incomplete: Ignores if the register info has new vertex attributes
-static void update_buffer(Buffer &buffer, rendering::RegisterBufferInfo info, RenderState &render_state)
-{
-    GLenum usage = GL_DYNAMIC_DRAW;
-
-    // @Incomplete: Copy/Read?
-    switch (info.usage)
-    {
-    case rendering::BufferUsage::DYNAMIC:
-        usage = GL_DYNAMIC_DRAW;
-        break;
-    case rendering::BufferUsage::STATIC:
-        usage = GL_STATIC_DRAW;
-        break;
-    case rendering::BufferUsage::STREAM:
-        usage = GL_STREAM_DRAW;
-        break;
-    }
-
-    bind_vertex_array(buffer.vao, render_state);
-    buffer.vertex_count = info.data.vertex_count;
-    buffer.vertex_buffer_size = info.data.vertex_buffer_size;
-
-    glBufferData(GL_ARRAY_BUFFER, info.data.vertex_buffer_size, info.data.vertex_buffer, usage);
-
-    if (info.data.index_buffer_count > 0)
-    {
-        buffer.index_buffer_count = info.data.index_buffer_count;
-        buffer.index_buffer_size = info.data.index_buffer_size;
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, info.data.index_buffer_size, info.data.index_buffer, usage);
-    }
-
-    bind_vertex_array(0, render_state);
-}
-
-static void register_buffer(Buffer &buffer, rendering::RegisterBufferInfo info, RenderState &render_state)
-{
-    buffer.vertex_buffer_size = info.data.vertex_buffer_size;
-    buffer.index_buffer_count = info.data.index_buffer_count;
-    buffer.vertex_count = info.data.vertex_count;
-
-    glGenVertexArrays(1, &buffer.vao);
-    bind_vertex_array(buffer.vao, render_state);
-
-    glGenBuffers(1, &buffer.vbo);
-
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
-
-    GLenum usage = get_usage(info.usage);
-
-    glBufferData(GL_ARRAY_BUFFER, info.data.vertex_buffer_size, info.data.vertex_buffer, usage);
-
-    size_t offset = 0;
-
-    for (i32 i = 0; i < info.vertex_attribute_count; i++)
-    {
-        rendering::VertexAttribute &attrib = info.vertex_attributes[i];
-
-        GLenum type = GL_FLOAT;
-        i32 count = 1;
-        size_t type_size = 0;
-
-        switch (attrib.type)
-        {
-        case rendering::ValueType::FLOAT:
-        {
-            type = GL_FLOAT;
-            count = 1;
-            type_size = 1 * sizeof(GLfloat);
-        }
-        break;
-        case rendering::ValueType::FLOAT2:
-        {
-            type = GL_FLOAT;
-            count = 2;
-            type_size = 2 * sizeof(GLfloat);
-        }
-        break;
-        case rendering::ValueType::FLOAT3:
-        {
-            type = GL_FLOAT;
-            count = 3;
-            type_size = 3 * sizeof(GLfloat);
-        }
-        break;
-        case rendering::ValueType::FLOAT4:
-        {
-            type = GL_FLOAT;
-            count = 4;
-            type_size = 4 * sizeof(GLfloat);
-        }
-        break;
-        case rendering::ValueType::INTEGER:
-        {
-            type = GL_INT;
-            count = 1;
-            type_size = 1 * sizeof(GLint);
-        }
-        break;
-        case rendering::ValueType::BOOL:
-        {
-            type = GL_INT;
-            count = 1;
-            type_size = 1 * sizeof(GLint);
-        }
-        break;
-        case rendering::ValueType::MAT4:
-        {
-            type = GL_FLOAT;
-            count = 16;
-            type_size = 16 * sizeof(GLfloat);
-        }
-        break;
-        case rendering::ValueType::TEXTURE:
-        case rendering::ValueType::INVALID:
-        {
-            assert(false);
-        }
-        break;
-        }
-
-        vertex_attrib_pointer(i, count, type, (u32)info.stride, (void *)offset);
-
-        offset += type_size;
-    }
-
-    if (info.data.index_buffer_count > 0)
-    {
-        glGenBuffers(1, &buffer.ibo);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, info.data.index_buffer_size, info.data.index_buffer, usage);
-    }
-
-    bind_vertex_array(0, render_state);
-}
-
 static void register_framebuffers(RenderState &render_state, Renderer *renderer)
 {
     for (i32 index = render_state.v2.framebuffer_count; index < renderer->render.framebuffer_count; index++)
@@ -1551,32 +1659,6 @@ static void register_framebuffers(RenderState &render_state, Renderer *renderer)
         info.pending_textures.count = 0;
     }
     render_state.v2.framebuffer_count = renderer->render.framebuffer_count;
-}
-
-//@Cleanup: Remove new
-static void register_new_buffers(RenderState &render_state, Renderer *renderer)
-{
-    for (i32 index = render_state.gl_buffer_count; index < renderer->render.buffer_count; index++)
-    {
-        rendering::RegisterBufferInfo &info = renderer->render.buffers[index];
-        Buffer &gl_buffer = render_state.gl_buffers[index];
-        register_buffer(gl_buffer, info, render_state);
-    }
-
-    render_state.gl_buffer_count = renderer->render.buffer_count;
-}
-
-static void update_new_buffers(RenderState &render_state, Renderer *renderer)
-{
-    for (i32 index = 0; renderer->render.updated_buffer_handle_count; index++)
-    {
-        i32 handle = renderer->render.updated_buffer_handles[index];
-        rendering::RegisterBufferInfo &info = renderer->render.buffers[handle];
-        Buffer &gl_buffer = render_state.gl_buffers[handle];
-        update_buffer(gl_buffer, info, render_state);
-    }
-
-    renderer->render.updated_buffer_handle_count = 0;
 }
 
 static void set_uniform(RenderState &render_state, Renderer *renderer, GLuint program, rendering::UniformValue &uniform_value, GLuint location, i32 *texture_count = nullptr)
@@ -1641,6 +1723,7 @@ static void set_uniform(RenderState &render_state, Renderer *renderer, GLuint pr
     }
     break;
     case rendering::ValueType::INVALID:
+    case rendering::ValueType::STRUCTURE:
         assert(false);
         break;
     }
@@ -1651,98 +1734,193 @@ static void set_uniform(rendering::Transform transform, const rendering::RenderP
     rendering::Uniform &uniform = uniform_value.uniform;
 
     GLuint location = gl_shader.uniform_locations[uniform_value.uniform.location_index];
-    if (location != -1)
+    switch (uniform.mapping_type)
     {
-        switch (uniform.mapping_type)
+    case rendering::UniformMappingType::CUSTOM:
+    {
+        rendering::CustomUniformMapping mapping = renderer->render.custom_mappings[uniform.custom_mapping.handle];
+        switch(mapping.type)
         {
-        case rendering::UniformMappingType::NONE:
-        case rendering::UniformMappingType::DIFFUSE_TEX:
-        case rendering::UniformMappingType::DIFFUSE_COLOR:
-        case rendering::UniformMappingType::SPECULAR_TEX:
-        case rendering::UniformMappingType::SPECULAR_COLOR:
-        case rendering::UniformMappingType::SPECULAR_EXPONENT:
-        case rendering::UniformMappingType::AMBIENT_COLOR:
-        case rendering::UniformMappingType::AMBIENT_TEX:
-        case rendering::UniformMappingType::DIRECTIONAL_LIGHT_COUNT:
-        case rendering::UniformMappingType::POINT_LIGHT_COUNT:
-        case rendering::UniformMappingType::POINT_LIGHT_POSITION:
-        case rendering::UniformMappingType::DIRECTIONAL_LIGHT_DIRECTION:
-        case rendering::UniformMappingType::DIRECTIONAL_LIGHT_AMBIENT:
-        case rendering::UniformMappingType::DIRECTIONAL_LIGHT_DIFFUSE:
-        case rendering::UniformMappingType::DIRECTIONAL_LIGHT_SPECULAR:
-        case rendering::UniformMappingType::POINT_LIGHT_AMBIENT:
-        case rendering::UniformMappingType::POINT_LIGHT_DIFFUSE:
-        case rendering::UniformMappingType::POINT_LIGHT_SPECULAR:
-        case rendering::UniformMappingType::POINT_LIGHT_CONSTANT:
-        case rendering::UniformMappingType::POINT_LIGHT_LINEAR:
-        case rendering::UniformMappingType::POINT_LIGHT_QUADRATIC:
+        case rendering::ValueType::FLOAT:
         {
-            set_uniform(render_state, renderer, gl_shader.program, uniform_value, location, texture_count);
+            set_float_uniform(gl_shader.program, location, mapping.float_val);
         }
         break;
-        case rendering::UniformMappingType::CAMERA_UP:
+        case rendering::ValueType::FLOAT2:
         {
-            set_vec3_uniform(gl_shader.program, location, math::up(camera.view_matrix));
+            set_vec2_uniform(gl_shader.program, location, mapping.float2_val);
         }
         break;
-        case rendering::UniformMappingType::CAMERA_RIGHT:
+        case rendering::ValueType::FLOAT3:
         {
-            set_vec3_uniform(gl_shader.program, location, math::right(camera.view_matrix));
+            set_vec3_uniform(gl_shader.program, location, mapping.float3_val);
+
         }
         break;
-        case rendering::UniformMappingType::CAMERA_FORWARD:
+        case rendering::ValueType::FLOAT4:
         {
-            set_vec3_uniform(gl_shader.program, location, math::forward(camera.view_matrix));
+            set_vec4_uniform(gl_shader.program, location, mapping.float4_val);
         }
         break;
-        case rendering::UniformMappingType::CLIPPING_PLANE:
+        case rendering::ValueType::INTEGER:
         {
-            set_vec4_uniform(gl_shader.program, location, render_pass.clipping_planes.plane);
+            set_int_uniform(gl_shader.program, location, mapping.integer_val);
         }
         break;
-        case rendering::UniformMappingType::LIGHT_SPACE_MATRIX:
+        case rendering::ValueType::BOOL:
         {
-            set_mat4_uniform(gl_shader.program, location, renderer->render.light_space_matrix);
+            set_bool_uniform(gl_shader.program, location, mapping.boolean_val);
         }
         break;
-        case rendering::UniformMappingType::SHADOW_MAP:
+        case rendering::ValueType::MAT4:
         {
-            set_int_uniform(gl_shader.program, location, *texture_count);
-            glActiveTexture(GL_TEXTURE0 + *texture_count++);
-            glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
+            set_mat4_uniform(gl_shader.program, location, mapping.mat4_val);
         }
         break;
-        case rendering::UniformMappingType::SHADOW_VIEW_POSITION:
+        case rendering::ValueType::TEXTURE:
         {
-            set_vec3_uniform(gl_shader.program, location, renderer->render.shadow_view_position);
+            if(mapping.texture.handle == 0)
+                return;
+                
+            Texture *texture = renderer->render.textures[mapping.texture.handle - 1];
+            set_texture_uniform(gl_shader.program, texture->handle, *texture_count);
+            (*texture_count)++;
         }
         break;
-        case rendering::UniformMappingType::VIEWPORT_SIZE:
+        case rendering::ValueType::MS_TEXTURE:
         {
-            set_vec2_uniform(gl_shader.program, location, math::Vec2(renderer->framebuffer_width, renderer->framebuffer_height));
+            if(mapping.ms_texture.handle == 0)
+                return;
+                
+            Texture *texture = renderer->render.textures[mapping.ms_texture.handle - 1];
+            set_ms_texture_uniform(gl_shader.program, texture->handle, *texture_count);
+            (*texture_count)++;
         }
         break;
-        case rendering::UniformMappingType::MODEL:
+        case rendering::ValueType::STRUCTURE:
+        case rendering::ValueType::INVALID:
         {
-            set_mat4_uniform(gl_shader.program, location, transform.model);
-        }
-        break;
-        case rendering::UniformMappingType::VIEW:
-        {
-            set_mat4_uniform(gl_shader.program, location, camera.view_matrix);
-        }
-        break;
-        case rendering::UniformMappingType::PROJECTION:
-        {
-            set_mat4_uniform(gl_shader.program, location, camera.projection_matrix);
-        }
-        break;
-        case rendering::UniformMappingType::CAMERA_POSITION:
-        {
-            set_vec3_uniform(gl_shader.program, location, camera.position);
+            assert(false);
         }
         break;
         }
+    }
+    break;
+    case rendering::UniformMappingType::NONE:
+    case rendering::UniformMappingType::DIFFUSE_TEX:
+    case rendering::UniformMappingType::DIFFUSE_COLOR:
+    case rendering::UniformMappingType::SPECULAR_TEX:
+    case rendering::UniformMappingType::SPECULAR_COLOR:
+    case rendering::UniformMappingType::SPECULAR_EXPONENT:
+    case rendering::UniformMappingType::SPECULAR_INTENSITY_TEX:
+    case rendering::UniformMappingType::AMBIENT_COLOR:
+    case rendering::UniformMappingType::AMBIENT_TEX:
+    case rendering::UniformMappingType::BUMP_TEX:
+    case rendering::UniformMappingType::DIRECTIONAL_LIGHT_COUNT:
+    case rendering::UniformMappingType::POINT_LIGHT_COUNT:
+    case rendering::UniformMappingType::POINT_LIGHT_POSITION:
+    case rendering::UniformMappingType::DIRECTIONAL_LIGHT_DIRECTION:
+    case rendering::UniformMappingType::DIRECTIONAL_LIGHT_AMBIENT:
+    case rendering::UniformMappingType::DIRECTIONAL_LIGHT_DIFFUSE:
+    case rendering::UniformMappingType::DIRECTIONAL_LIGHT_SPECULAR:
+    case rendering::UniformMappingType::POINT_LIGHT_AMBIENT:
+    case rendering::UniformMappingType::POINT_LIGHT_DIFFUSE:
+    case rendering::UniformMappingType::POINT_LIGHT_SPECULAR:
+    case rendering::UniformMappingType::POINT_LIGHT_CONSTANT:
+    case rendering::UniformMappingType::POINT_LIGHT_LINEAR:
+    case rendering::UniformMappingType::POINT_LIGHT_QUADRATIC:
+    {
+        set_uniform(render_state, renderer, gl_shader.program, uniform_value, location, texture_count);
+    }
+    break;
+    case rendering::UniformMappingType::CAMERA_UP:
+    {
+        set_vec3_uniform(gl_shader.program, location, math::up(camera.view_matrix));
+    }
+    break;
+    case rendering::UniformMappingType::CAMERA_RIGHT:
+    {
+        set_vec3_uniform(gl_shader.program, location, math::right(camera.view_matrix));
+    }
+    break;
+    case rendering::UniformMappingType::CAMERA_FORWARD:
+    {
+        set_vec3_uniform(gl_shader.program, location, math::forward(camera.view_matrix));
+    }
+    break;
+    case rendering::UniformMappingType::FRAMEBUFFER_WIDTH:
+    {
+        set_int_uniform(gl_shader.program, location, renderer->window_width);
+    }
+    break;
+    case rendering::UniformMappingType::FRAMEBUFFER_HEIGHT:
+    {
+        set_int_uniform(gl_shader.program, location, renderer->window_height);
+    }
+    break;
+    case rendering::UniformMappingType::TIME:
+    {
+        set_float_uniform(gl_shader.program, location, (r32)glfwGetTime());
+    }
+    break;
+    case rendering::UniformMappingType::CLIPPING_PLANE:
+    {
+        set_vec4_uniform(gl_shader.program, location, render_pass.clipping_planes.plane);
+    }
+    break;
+    case rendering::UniformMappingType::LIGHT_SPACE_MATRIX:
+    {
+        set_mat4_uniform(gl_shader.program, location, renderer->render.light_space_matrix);
+    }
+    break;
+    case rendering::UniformMappingType::SHADOW_MAP:
+    {
+        set_int_uniform(gl_shader.program, location, *texture_count);
+            
+        rendering::TextureHandle handle = rendering::get_depth_texture_from_framebuffer(0, renderer->render.shadow_framebuffer, renderer);
+
+        Texture *texture = renderer->render.textures[handle.handle - 1];
+        set_texture_uniform(gl_shader.program, texture->handle, *texture_count);
+        (*texture_count++);
+    }
+    break;
+    case rendering::UniformMappingType::SHADOW_VIEW_POSITION:
+    {
+        set_vec3_uniform(gl_shader.program, location, renderer->render.shadow_view_position);
+    }
+    break;
+    case rendering::UniformMappingType::VIEWPORT_SIZE:
+    {
+        set_vec2_uniform(gl_shader.program, location, math::Vec2(renderer->framebuffer_width, renderer->framebuffer_height));
+    }
+    break;
+    case rendering::UniformMappingType::MODEL:
+    {
+        set_mat4_uniform(gl_shader.program, location, transform.model);
+    }
+    break;
+    case rendering::UniformMappingType::VIEW:
+    {
+        set_mat4_uniform(gl_shader.program, location, camera.view_matrix);
+    }
+    break;
+    case rendering::UniformMappingType::PROJECTION:
+    {
+        set_mat4_uniform(gl_shader.program, location, camera.projection_matrix);
+    }
+    break;
+    case rendering::UniformMappingType::CAMERA_POSITION:
+    {
+        set_vec3_uniform(gl_shader.program, location, camera.position);
+    }
+    break;
+    case rendering::UniformMappingType::DISSOLVE:
+    case rendering::UniformMappingType::POINT_LIGHTS:
+    case rendering::UniformMappingType::DIRECTIONAL_LIGHTS:
+    // @Incomplete: Handle these?
+    break;
+    default:
+    break;
     }
 }
 
@@ -1771,10 +1949,15 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
 
             Buffer *buffer = renderer->render.instancing.internal_float_buffers[handle];
             
-            glEnableVertexAttribArray(array_num);
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
 
+            if(renderer->render.instancing.dirty_float_buffers[handle])
+            {
+                glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
+                renderer->render.instancing.dirty_float_buffers[handle] = false;
+            }
+            
+            glEnableVertexAttribArray(array_num);
             glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
             glVertexAttribDivisor(array_num, 1);
         }
@@ -1787,11 +1970,16 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             count = renderer->render.instancing.float2_buffer_counts[handle];
 
             Buffer *buffer = renderer->render.instancing.internal_float2_buffers[handle];
+            
+            glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+
+            if(renderer->render.instancing.dirty_float2_buffers[handle])
+            {
+                glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
+                renderer->render.instancing.dirty_float2_buffers[handle] = false;
+            }
 
             glEnableVertexAttribArray(array_num);
-            glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
-
             glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
             glVertexAttribDivisor(array_num, 1);
         }
@@ -1805,10 +1993,15 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
 
             Buffer *buffer = renderer->render.instancing.internal_float3_buffers[handle];
 
-            glEnableVertexAttribArray(array_num);
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
+            
+            if(renderer->render.instancing.dirty_float3_buffers[handle])
+            {
+                glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
+                renderer->render.instancing.dirty_float3_buffers[handle] = false;
+            }
 
+            glEnableVertexAttribArray(array_num);
             glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
             glVertexAttribDivisor(array_num, 1);
         }
@@ -1822,10 +2015,15 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
 
             Buffer *buffer = renderer->render.instancing.internal_float4_buffers[handle];
             
-            glEnableVertexAttribArray(array_num);
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
-         
+
+            if(renderer->render.instancing.dirty_float4_buffers[handle])
+            {
+                glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
+                renderer->render.instancing.dirty_float4_buffers[handle] = false;
+            }
+            
+            glEnableVertexAttribArray(array_num);         
             glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
             glVertexAttribDivisor(array_num, 1);
         }
@@ -1846,7 +2044,12 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             glEnableVertexAttribArray(array_num + 3);
 
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), &((math::Mat4*)buf_ptr)[0]);
+
+            if(renderer->render.instancing.dirty_mat4_buffers[handle])
+            {
+                glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), &((math::Mat4*)buf_ptr)[0]);
+                renderer->render.instancing.dirty_mat4_buffers[handle] = false;
+            }
 
             glVertexAttribPointer(array_num, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)0);
             glVertexAttribPointer(array_num + 1, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)(vec4_size));
@@ -1858,6 +2061,15 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             glVertexAttribDivisor(array_num + 2, 1);
             glVertexAttribDivisor(array_num + 3, 1);
         }
+        break;
+        case rendering::ValueType::INTEGER:
+        case rendering::ValueType::BOOL:
+        case rendering::ValueType::TEXTURE:
+        case rendering::ValueType::MS_TEXTURE:
+        case rendering::ValueType::STRUCTURE:
+        case rendering::ValueType::INVALID:
+        debug_log("Value type not supported\n");
+        assert(false);
         break;
         }
     }
@@ -1876,6 +2088,7 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
     if (shader)
     {
         gl_shader = *shader;
+        shader_info = renderer->render.shaders[gl_shader.handle];
     }
     else
     {
@@ -1924,6 +2137,8 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
 
     i32 texture_count = 0;
 
+    // assert(gl_shader.location_count == material.uniform_value_count);
+    
     for (i32 i = 0; i < material.uniform_value_count; i++)
     {
         rendering::UniformValue &uniform_value = material.uniform_values[i];
@@ -1939,7 +2154,6 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
                 {
                     rendering::UniformValue &value = entry.values[k];
                     set_uniform(transform, render_pass, value, gl_shader, camera, &texture_count, render_state, renderer);
-
                 }
             }
         }
@@ -1954,6 +2168,8 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
         setup_instanced_vertex_attribute_buffers(material.instanced_vertex_attributes, material.instanced_vertex_attribute_count, shader_info, render_state, renderer);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
+        // debug_vao();
+                            
         glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void *)nullptr, count);
     }
     else
@@ -1961,7 +2177,17 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
         if (buffer.ibo)
         {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
-            glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void *)nullptr);
+            if(primitive_type == rendering::PrimitiveType::TRIANGLES)
+            {
+                glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void *)nullptr);
+            }
+            else if(primitive_type == rendering::PrimitiveType::LINE_LOOP)
+            {
+                glDrawElements(GL_LINE_LOOP, 4, GL_UNSIGNED_SHORT, 0);
+                glDrawElements(GL_LINE_LOOP, 4, GL_UNSIGNED_SHORT, (GLvoid*)(4 * sizeof(GLushort)));
+                glDrawElements(GL_LINES, 8, GL_UNSIGNED_SHORT, (GLvoid*)(8 * sizeof(GLushort)));
+            }
+            
         }
         else
         {
@@ -1969,14 +2195,15 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
                 glDrawArrays(GL_TRIANGLES, 0, buffer.vertex_count / 3);
             else if(primitive_type == rendering::PrimitiveType::LINES)
                 glDrawArrays(GL_LINES_ADJACENCY, 0, buffer.vertex_count);
+            else if(primitive_type == rendering::PrimitiveType::LINES)
+                glDrawArrays(GL_LINE_LOOP, 0, buffer.vertex_count);
         }
     }
 }
 
 static void render_shadow_buffer(rendering::ShadowCommand &shadow_command, RenderState &render_state, Renderer *renderer)
 {
-    i32 handle = renderer->render._internal_buffer_handles[shadow_command.buffer.handle - 1];
-    Buffer &buffer = render_state.gl_buffers[handle];
+    Buffer &buffer = get_internal_buffer(renderer, render_state, shadow_command.buffer);
 
     bind_vertex_array(buffer.vao, render_state);
 
@@ -2006,10 +2233,9 @@ static void render_shadow_buffer(rendering::ShadowCommand &shadow_command, Rende
     bind_vertex_array(0, render_state);
 }
 
-static void render_instanced_shadow_buffer(rendering::ShadowCommand &shadow_command, RenderState &render_state, Renderer *renderer)
+static void render_instanced_shadow_buffer(rendering::ShadowCommand &shadow_command, rendering::Material &material, RenderState &render_state, Renderer *renderer)
 {
-    i32 handle = renderer->render._internal_buffer_handles[shadow_command.buffer.handle - 1];
-    Buffer &buffer = render_state.gl_buffers[handle];
+    Buffer &buffer = get_internal_buffer(renderer, render_state, shadow_command.buffer);
 
     bind_vertex_array(buffer.vao, render_state);
 
@@ -2018,7 +2244,7 @@ static void render_instanced_shadow_buffer(rendering::ShadowCommand &shadow_comm
 
     glUseProgram(gl_shader.program);
 
-    setup_instanced_vertex_attribute_buffers(shadow_command.instanced_vertex_attributes, shadow_command.instanced_vertex_attribute_count, shader_info, render_state, renderer);
+    setup_instanced_vertex_attribute_buffers(material.instanced_vertex_attributes, material.instanced_vertex_attribute_count, shader_info, render_state, renderer);
 
     static GLint lsLoc = glGetUniformLocation(gl_shader.program, "lightSpaceMatrix");
     set_mat4_uniform(gl_shader.program, lsLoc, renderer->render.light_space_matrix);
@@ -2049,10 +2275,12 @@ static void render_shadows(RenderState &render_state, Renderer *renderer, Frameb
     for (i32 i = 0; i < renderer->render.shadow_command_count; i++)
     {
         rendering::ShadowCommand &shadow_command = renderer->render.shadow_commands[i];
-        if (shadow_command.count > 1)
-            render_instanced_shadow_buffer(shadow_command, render_state, renderer);
-        else
-            render_shadow_buffer(shadow_command, render_state, renderer);
+        rendering::Material &material = get_material_instance(shadow_command.material, renderer);
+        
+        //if (shadow_command.count > 1)
+            render_instanced_shadow_buffer(shadow_command, material, render_state, renderer);
+            //else
+            //render_shadow_buffer(shadow_command, render_state, renderer);
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -2071,10 +2299,6 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
 
     Buffer &font_buffer = get_internal_buffer(renderer, render_state, renderer->render.ui.font_buffer);
-
-    i32 internal_handle = renderer->render._internal_buffer_handles[renderer->render.ui.font_buffer.handle - 1];
-
-    rendering::RegisterBufferInfo &info = renderer->render.buffers[internal_handle];
 
     glDisable(GL_DEPTH_TEST);
 
@@ -2100,11 +2324,11 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
             rendering::CharacterBufferHandle char_buf_handle = command.buffer;
             rendering::CharacterData *coords = pass.ui.coords[char_buf_handle.handle];
 
-            info.data.vertex_buffer_size = (i32)(6 * command.text_length * sizeof(rendering::CharacterData));
-            info.data.vertex_count = (i32)(6 * command.text_length * 3);
-            info.data.vertex_buffer = (r32 *)coords;
+            i32 vertex_buffer_size = (i32)(6 * command.text_length * sizeof(rendering::CharacterData));
+            i32 vertex_count = (i32)(6 * command.text_length * 3);
+            r32* vertex_buffer = (r32 *)coords;
 
-            update_buffer(font_buffer, info, render_state);
+            update_buffer(&font_buffer, rendering::BufferType::VERTEX, vertex_buffer, vertex_count, vertex_buffer_size, rendering::BufferUsage::DYNAMIC, &render_state, renderer);
             render_buffer(rendering::PrimitiveType::TRIANGLES, {}, renderer->render.ui.font_buffer, pass, render_state, renderer, command.material, pass.camera, 0 ,&render_state.gl_shaders[command.shader_handle.handle]);
 
             if (command.clip)
@@ -2127,7 +2351,6 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
                 glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
             }
 
-
             render_buffer(rendering::PrimitiveType::TRIANGLES, {}, command.buffer, pass, render_state, renderer, command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
             
             if (command.clip)
@@ -2140,49 +2363,56 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
         pass.ui.text_z_layer_counts[i] = 0;
     }
 
-    // for (i32 i = 0; i < pass.ui.transparent_command_count; i++)
-    // {
-    //     rendering::UIRenderCommand &command = pass.ui.transparent_commands[i];
-
-    //     if (command.clip)
-    //     {
-    //         glEnable(GL_SCISSOR_TEST);
-    //         math::Rect clip_rect = command.clip_rect;
-    //         glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
-    //     }
-
-    //     render_buffer(rendering::PrimitiveType::TRIANGLES, {}, command.buffer, pass, render_state, renderer, command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
-
-    //     if (command.clip)
-    //     {
-    //         glDisable(GL_SCISSOR_TEST);
-    //     }
-    // }
-    
-
-
     glClear(GL_DEPTH_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
 
     pass.ui.text_command_count = 0;
-    // pass.ui.transparent_command_count = 0;
     pass.ui.render_command_count = 0;
 }
 
-static void render_all_passes(RenderState &render_state, Renderer *renderer)
+static void render_line(rendering::RenderCommand& command, rendering::Material& material, rendering::RenderPass &pass, Renderer *renderer, RenderState &render_state)
 {
-    bind_vertex_array(0, render_state);
+    math::Vec3 line[4];
+    line[0] = 2.0f * command.line.p0 - command.line.p1;
+    line[1] = command.line.p0;
+    line[2] = command.line.p1;
+    line[3] = 2.0f * line[2] - line[3];
 
-    // @Incomplete: Create a better way for enabling/disabling the clipping planes
-    // Check if we have clipping planes
-    glEnable(GL_CLIP_PLANE0);
+    rendering::update_buffer(renderer->render.line_buffer, rendering::BufferType::VERTEX, rendering::BufferUsage::DYNAMIC, (r32*)line, 4, sizeof(math::Vec3) * 4, renderer);
+                    
+    rendering::set_uniform_value(renderer, material, "thickness", command.line.thickness);
+    rendering::set_uniform_value(renderer, material, "color", command.line.color);
+    rendering::set_uniform_value(renderer, material, "miter_limit", 0.1f);
+    
+    render_buffer(rendering::PrimitiveType::LINES, command.transform, renderer->render.line_buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[material.shader.handle]);
+}
 
-    // Go backwards through the array to enable easy render pass adding
-    for (i32 pass_index = renderer->render.pass_count - 1; pass_index >= 0; pass_index--)
+static void render_pass(RenderState &render_state, Renderer *renderer, rendering::RenderPass &pass)
+{    
+    if(pass.type == rendering::RenderPassType::NORMAL)
     {
-        rendering::RenderPass &pass = renderer->render.passes[pass_index];
+        if(pass.commands.render_command_count == 0 && pass.commands.depth_free_command_count == 0)
+        {
+            pass.commands.render_command_count = 0;
+            pass.commands.depth_free_command_count = 0;
+            return;
+        }
 
         Framebuffer &framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
+
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
+        
+        if(pass.settings & rendering::RenderPassSettings::BACKFACE_CULLING)
+        {
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_BACK);
+        }
+        else if(pass.settings & rendering::RenderPassSettings::FRONTFACE_CULLING)
+        {
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_FRONT);
+        }
 
         glViewport(0, 0, framebuffer.width, framebuffer.height);
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
@@ -2190,15 +2420,63 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
         // @Incomplete: Not all framebuffers should have depth testing or clear both bits
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
+            
+        if(pass.has_clear_color)
+            glClearColor(pass.clear_color.r, pass.clear_color.g, pass.clear_color.b, pass.clear_color.a);
+        else
+            glClearColor(renderer->clear_color.r, renderer->clear_color.g, renderer->clear_color.b, renderer->clear_color.a);
+            
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glClearColor(renderer->clear_color.r, renderer->clear_color.g, renderer->clear_color.b, renderer->clear_color.a);
 
+        if(framebuffer.tex_color_buffer_count > 1)
+        {
+            static const float transparent[] = { 0, 0, 0, 0 };
+            glClearBufferfv(GL_COLOR, 1, transparent);
+        }
+            
         for (i32 i = 0; i < pass.commands.render_command_count; i++)
         {
             rendering::RenderCommand &command = pass.commands.render_commands[i];
-            rendering::Material &material = get_material_instance(command.material, renderer);
-            
-            render_buffer(command.primitive_type, command.transform, command.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
+
+            if(command.blend_mode == rendering::BlendMode::ONE_MINUS_SOURCE)
+            {
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            }
+            else if(command.blend_mode == rendering::BlendMode::ONE)
+            {
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+            }
+                
+            rendering::Material material = get_material_instance(command.material, renderer);
+            ShaderGL *shader = &render_state.gl_shaders[material.shader.handle];
+
+            //assert(material.shader.handle == command.pass.shader_handle.handle);
+                
+            switch(command.type)
+            {
+            case rendering::RenderCommandType::BUFFER:
+            {
+                /*if(pass_index == renderer->render.shadow_pass.handle - 1)
+                  {
+                  material = renderer->render.materials[renderer->render.shadow_map_material.handle];
+                        
+                  if(rendering::VertexAttributeInstanced* original_mapping = rendering::get_attrib_mapping(command.material, rendering::VertexAttributeMappingType::MODEL, renderer))
+                  {
+                  rendering::VertexAttributeInstanced* mapping = rendering::attrib_mapping(material, rendering::VertexAttributeMappingType::MODEL);
+
+                  mapping->instance_buffer_handle = original_mapping->instance_buffer_handle;
+                  }
+                  }*/
+
+                render_buffer(command.buffer.primitive_type, command.transform, command.buffer.buffer, pass, render_state, renderer, material, pass.camera, command.count, shader);
+            }
+            break;
+            case rendering::RenderCommandType::LINE:
+            {
+                render_line(command, material, pass, renderer, render_state);
+            }
+            break;
+            }
         }
 
         glDisable(GL_DEPTH_TEST);
@@ -2208,13 +2486,80 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
             rendering::RenderCommand &command = pass.commands.depth_free_commands[i];
             rendering::Material &material = get_material_instance(command.material, renderer);
 
-            render_buffer(command.primitive_type, command.transform, command.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[command.pass.shader_handle.handle]);
+            if(command.blend_mode == rendering::BlendMode::ONE_MINUS_SOURCE)
+            {
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            }
+            else if(command.blend_mode == rendering::BlendMode::ONE)
+            {
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+            }
+
+            switch(command.type)
+            {
+            case rendering::RenderCommandType::BUFFER:
+            {
+                render_buffer(command.buffer.primitive_type, command.transform, command.buffer.buffer, pass, render_state, renderer, material, pass.camera, command.count, &render_state.gl_shaders[material.shader.handle]);
+            }
+            break;
+            case rendering::RenderCommandType::LINE:
+            {
+                render_line(command, material, pass, renderer, render_state);
+            }
+            break;
+            }
         }
 
         glEnable(GL_DEPTH_TEST);
         
         pass.commands.render_command_count = 0;
         pass.commands.depth_free_command_count = 0;
+        glDisable(GL_CULL_FACE);
+    }
+    else if(pass.type == rendering::RenderPassType::READ_DRAW)
+    {
+        Framebuffer &read_framebuffer = render_state.v2.framebuffers[pass.read_framebuffer.handle - 1];
+        Framebuffer &draw_framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
+            
+        glViewport(0, 0, draw_framebuffer.width, draw_framebuffer.height);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, read_framebuffer.buffer_handle);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, draw_framebuffer.buffer_handle);
+
+        for(i32 i = 0; i < read_framebuffer.tex_color_buffer_count; i++)
+        {
+            glReadBuffer(GL_COLOR_ATTACHMENT0 + i);
+            glDrawBuffer(GL_COLOR_ATTACHMENT0 + i);
+            
+            glBlitFramebuffer(0, 0, draw_framebuffer.width, draw_framebuffer.height, 0, 0, draw_framebuffer.width, draw_framebuffer.height, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+        }
+            
+        glReadBuffer(GL_COLOR_ATTACHMENT0);
+        glDrawBuffer(GL_COLOR_ATTACHMENT0);
+                
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+}
+
+static void render_all_passes(RenderState &render_state, Renderer *renderer)
+{
+    bind_vertex_array(0, render_state);
+
+    // @Incomplete: Create a better way for enabling/disabling the clipping planes
+    // Check if we have clipping planes
+    glEnable(GL_CLIP_PLANE0);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    rendering::RenderPass &pass = renderer->render.passes[renderer->render.shadow_pass.handle - 1];
+    render_pass(render_state, renderer, pass);
+        
+    // Go backwards through the array to enable easy render pass adding
+    for (i32 pass_index = renderer->render.pass_count - 1; pass_index >= 0; pass_index--)
+    {
+        if(pass_index == renderer->render.shadow_pass.handle - 1)
+            continue;
+        
+        rendering::RenderPass &pass = renderer->render.passes[pass_index];
+        render_pass(render_state, renderer, pass);
     }
 
     //glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -2222,12 +2567,33 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
 
     for (i32 i = 0; i < MAX_INSTANCE_BUFFERS; i++)
     {
-        renderer->render.instancing.float_buffer_counts[i] = 0;
-        renderer->render.instancing.float2_buffer_counts[i] = 0;
-        renderer->render.instancing.float3_buffer_counts[i] = 0;
-        renderer->render.instancing.float4_buffer_counts[i] = 0;
-        renderer->render.instancing.mat4_buffer_counts[i] = 0;
-    }
+		if (renderer->render.instancing.internal_float_buffers[i]->usage == GL_DYNAMIC_DRAW)
+		{
+			renderer->render.instancing.float_buffer_counts[i] = 0;
+		}
+
+        if(renderer->render.instancing.internal_float2_buffers[i]->usage == GL_DYNAMIC_DRAW)
+        {
+            renderer->render.instancing.float2_buffer_counts[i] = 0;
+        }
+
+        if(renderer->render.instancing.internal_float3_buffers[i]->usage == GL_DYNAMIC_DRAW)
+        {
+            renderer->render.instancing.float3_buffer_counts[i] = 0;
+        }
+
+        if(renderer->render.instancing.internal_float4_buffers[i]->usage == GL_DYNAMIC_DRAW)
+        {
+            renderer->render.instancing.float4_buffer_counts[i] = 0;
+        }
+
+        if(renderer->render.instancing.internal_mat4_buffers[i]->usage == GL_DYNAMIC_DRAW)
+        {
+            renderer->render.instancing.mat4_buffer_counts[i] = 0;
+        }
+	}
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 static void swap_buffers(RenderState &render_state)
@@ -2240,8 +2606,6 @@ static void render_post_processing_passes(RenderState &render_state, Renderer *r
     glDisable(GL_DEPTH_TEST);
 
     bind_vertex_array(render_state.framebuffer_quad_vao, render_state);
-
-    Framebuffer final_buffer = render_state.v2.framebuffers[renderer->render.final_framebuffer.handle - 1];
 
     for (i32 pass_index = 0; pass_index < renderer->render.post_processing_pass_count; pass_index++)
     {
@@ -2265,7 +2629,8 @@ static void render_post_processing_passes(RenderState &render_state, Renderer *r
 
         for (i32 i = 0; i < pass.post_processing.uniform_value_count; i++)
         {
-            set_uniform({}, pass, pass.post_processing.uniform_values[i], shader, {}, &texture_count, render_state, renderer);
+            rendering::UniformValue &value = pass.post_processing.uniform_values[i];
+            set_uniform({}, pass, value, shader, {}, &texture_count, render_state, renderer);
         }
         
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_state.quad_index_buffer);
@@ -2296,21 +2661,16 @@ static void render_post_processing_passes(RenderState &render_state, Renderer *r
 
 static void render(RenderState &render_state, Renderer *renderer, r64 delta_time)
 {
-    load_new_shaders(render_state, renderer);
     reload_shaders(render_state, renderer);
-    
-    // @Speed: Do we have to clear this every frame?
-    clear(&renderer->shader_arena);
+	
+	//clear(&renderer->shader_arena);
 
     b32 should_render = renderer->window_width != 0;
-
-    register_new_buffers(render_state, renderer);
-    //register_framebuffers(render_state, renderer);
 
     if (should_render)
     {
         // Render through all passes
-        render_shadows(render_state, renderer, render_state.shadow_map_buffer);
+        // render_shadows(render_state, renderer, render_state.shadow_map_buffer);
         render_all_passes(render_state, renderer);
         render_post_processing_passes(render_state, renderer);
         render_ui_pass(render_state, renderer);

@@ -6,6 +6,7 @@
 struct ShaderGL
 {
 	GLuint program;
+    int handle;
 	
 	GLuint vert_program;
     GLuint geo_program;
@@ -32,6 +33,7 @@ struct Buffer
     GLint vertex_count;
     GLint index_buffer_size;
     GLint index_buffer_count;
+    GLenum usage;
 };
 
 struct Framebuffer
@@ -43,7 +45,9 @@ struct Framebuffer
     GLuint tex0_loc;
     GLuint tex_color_buffer_handles[4];
     i32 tex_color_buffer_count;
-    GLuint depth_buffer_handle;
+    
+    GLuint depth_buffer_handles[4];
+    i32 depth_buffer_count;
     GLuint vao;
     GLuint vbo;
     GLuint ebo;
@@ -72,6 +76,8 @@ struct RenderState
     } current_state;
 
     GLFWwindow *window;
+
+    b32 vsync_active;
 
     i32 window_width;
     i32 window_height;
@@ -103,8 +109,7 @@ struct RenderState
 
     struct
     {
-#define MAX_FRAMEBUFFERS 16
-        Framebuffer framebuffers[MAX_FRAMEBUFFERS];
+        Framebuffer framebuffers[global_max_framebuffers];
         i32 framebuffer_count;
     } v2;
 
@@ -128,9 +133,6 @@ struct RenderState
     };
     
     GLuint quad_index_buffer;
-
-	Buffer *gl_buffers;
-	i32 gl_buffer_count;
     
     GLuint framebuffer_quad_vao;
     GLuint framebuffer_quad_vbo;

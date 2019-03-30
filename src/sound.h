@@ -1,6 +1,11 @@
 #ifndef SOUND_H
 #define SOUND_H
 
+struct SoundDevice;
+
+namespace sound
+{
+
 struct SoundHandle
 {
     i32 handle;
@@ -193,8 +198,19 @@ struct SoundCommand
     };
 };
 
+typedef void (*LoadSound)(const char *file_path, SoundDevice *device);
+
+struct SoundApi
+{
+    SoundDevice *device;
+    LoadSound load_sound;
+};
+
 struct SoundSystem
 {
+    SoundApi api_functions;
+    b32 update;
+    
     MemoryArena arena;
     
     SoundHandle *sounds;
@@ -218,5 +234,12 @@ struct SoundSystem
     r32 master_volume;
 };
 
+struct SoundSystemData
+{
+    SoundSystem *system;
+    SoundDevice *device;
+};
+
+}
 
 #endif

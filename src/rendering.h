@@ -95,8 +95,10 @@ r32 plane_vertices[] =
 
 u16 plane_indices[] = 
 {
-    0, 1, 2,
-    3, 4, 5
+    /* 0, 1, 2, */
+    /* 3, 4, 5 */
+    2, 1, 0,
+    5, 4, 3
 };
 
 r32 plane_normals[] =
@@ -111,12 +113,12 @@ r32 plane_normals[] =
 
 r32 plane_uvs[] =
 {
-    0.0f, 1.0f,
     1.0f, 1.0f,
-    1.0f, 0.0f,
-    1.0f, 0.0f, 
+    0.0f, 1.0f,
+    0.0f, 0.0f,
     0.0f, 0.0f, 
-    0.0f, 1.0f
+    1.0f, 0.0f, 
+    1.0f, 1.0f
 };
 
 r32 cube_normals[] =
@@ -350,15 +352,11 @@ struct Mesh
 	i32 instance_scale_buffer_handle;
 };
 
-struct BatchedCommand
+struct CombinedCommand
 {
     rendering::MaterialInstanceHandle material_handle;
     rendering::Transform transform;
     b32 casts_shadows;
-
-    rendering::RenderPassHandle passes[8];
-    rendering::ShaderHandle shader_handles[8];
-    i32 pass_count;
 };
 
 struct QueuedRenderCommand
@@ -366,15 +364,15 @@ struct QueuedRenderCommand
     rendering::BufferHandle buffer_handle;
     rendering::MaterialHandle original_material;
     b32 ignore_depth;
-    
-    BatchedCommand commands[1024];
+
+    CombinedCommand commands[1024];
     i32 count;
 };
 
 enum CommandBlendMode
 {
-    CBM_ONE,
-    CBM_ONE_MINUS_SRC_ALPHA
+    ONE,
+    ONE_MINUS_SRC_ALPHA
 };
 
 enum FadingMode
@@ -413,14 +411,6 @@ enum TextureFormat
     RED
 };
 
-struct ShadowMapMatrices
-{
-	math::Mat4 depth_rojection_matrix;
-	math::Mat4 depth_model_matrix;
-	math::Mat4 depth_view_matrix;
-	math::Mat4 depth_bias_matrix;
-};
-
 struct Resolution
 {
 	i32 width;
@@ -438,7 +428,6 @@ enum CursorType
     CURSOR_VRESIZE
 };
 
-
 struct ParticleSystemInfo;
 
 struct RenderState;
@@ -451,13 +440,19 @@ typedef void (*SetWindowCursor)(RenderState* render_state, CursorType cursor);
 typedef math::Vec2i (*GetTextureSize)(Texture* texture);
 typedef void (*LoadTexture)(Texture* texture, TextureFiltering filtering, TextureWrap wrap, TextureFormat format, i32 width, i32 height, unsigned char* image_data, RenderState* render_state, Renderer* renderer);
 typedef void (*CreateFramebuffer)(rendering::FramebufferInfo &framebuffer_info, RenderState *render_state, Renderer *renderer);
-typedef void (*CreateInstanceBuffer)(Buffer *buffer, size_t buffer_size, rendering::BufferUsage usage, RenderState *render_state, Renderer *renderer);
+typedef void(*CreateInstanceBuffer)(Buffer *buffer, size_t buffer_size, rendering::BufferUsage usage, RenderState *render_state, Renderer *renderer);
+typedef rendering::BufferUsage (*GetBufferUsage)(Buffer *buffer);
 typedef void (*DeleteInstanceBuffer)(Buffer *buffer, RenderState *render_state, Renderer *renderer);
 typedef void (*DeleteAllInstanceBuffers)(RenderState *render_state, Renderer *renderer);
-typedef void (*UpdateBuffer)(rendering::BufferHandle handle, r32 *data, size_t count, size_t size, RenderState *render_state, Renderer *renderer);
+typedef void (*UpdateBuffer)(Buffer *buffer, rendering::BufferType buffer_type, void *data, size_t count, size_t size, rendering::BufferUsage buffer_usage, RenderState *render_state, Renderer *renderer);
+typedef void (*CreateBuffer)(Buffer *buffer, rendering::RegisterBufferInfo info, RenderState *render_state, Renderer *renderer);
+typedef void (*DeleteBuffer)(Buffer *buffer, RenderState *render_state, Renderer *renderer);
 typedef void (*SetMouseLock)(b32 locked, RenderState *render_state);
 typedef b32 (*GetMouseLock)(RenderState *render_state);
 typedef void (*SetWindowMode)(RenderState* render_state, Renderer* renderer, Resolution resolution, WindowMode window_mode);
+typedef void (*SetVSync)(RenderState *render_state, b32 value);
+typedef b32 (*GetVSync)(RenderState *render_state);
+typedef void (*LoadShader)(RenderState *render_state, Renderer *renderer, rendering::Shader &shader);
 
 struct GraphicsAPI
 {
@@ -465,18 +460,34 @@ struct GraphicsAPI
     GetTextureSize get_texture_size;
     LoadTexture load_texture;
     CreateFramebuffer create_framebuffer;
-    CreateInstanceBuffer create_instance_buffer;
+	CreateInstanceBuffer create_instance_buffer;
+	GetBufferUsage get_buffer_usage;
     DeleteInstanceBuffer delete_instance_buffer;
     DeleteAllInstanceBuffers delete_all_instance_buffers;
 
     UpdateBuffer update_buffer;
+    CreateBuffer create_buffer;
+    DeleteBuffer delete_buffer;
     
     SetMouseLock set_mouse_lock;
     GetMouseLock get_mouse_lock;
 
     SetWindowMode set_window_mode;
+    SetVSync set_v_sync;
+    GetVSync get_v_sync;
+
+    LoadShader load_shader;
     
     RenderState *render_state;
+};
+
+struct ParticleApi;
+
+struct Pass
+{
+    rendering::RenderPassHandle pass_handle;
+    QueuedRenderCommand queued_commands[64];
+    i32 command_count;
 };
 
 struct Renderer
@@ -497,15 +508,6 @@ struct Renderer
 	
 	MemoryArena command_arena;
     
-	/* i32 *_internal_buffer_handles; */
-	/* i32 _current_internal_buffer_handle; */
-    
-	/* i32 *updated_buffer_handles; */
-	/* i32 updated_buffer_handle_count; */
-    
-	/* i32 *removed_buffer_handles; */
-	/* i32 removed_buffer_handle_count; */
-    
 	Mesh *meshes;
 	i32 mesh_count;
     
@@ -520,10 +522,17 @@ struct Renderer
 
 		RandomSeries* entropy;
         rendering::BufferHandle quad_buffer;
+        rendering::BufferHandle textured_quad_buffer;
+
+        i32 *_internal_work_queue_handles;
+        i32 _current_internal_work_queue_handle;
+        
+        WorkQueue *work_queues;
+        WorkQueue *system_work_queue;
+        ThreadInfo *system_threads;
+        
+        ParticleApi *api;
 	} particles;
-    
-	// Shadow map
-	ShadowMapMatrices shadow_map_matrices;
     
 	i32 current_camera_handle;
     
@@ -588,6 +597,8 @@ struct Renderer
         rendering::ShaderHandle fallback_shader;
         rendering::ShaderHandle wireframe_shader;
         rendering::MaterialInstanceHandle wireframe_material;
+        rendering::ShaderHandle bounding_box_shader;
+        rendering::MaterialInstanceHandle bounding_box_material;
         rendering::ShaderHandle shadow_map_shader;
         rendering::ShaderHandle bloom_shader;
         rendering::ShaderHandle blur_shader;
@@ -595,6 +606,7 @@ struct Renderer
         rendering::ShaderHandle ui_quad_shader;
         rendering::ShaderHandle textured_ui_quad_shader;
         rendering::ShaderHandle font_shader;
+        rendering::ShaderHandle font3d_shader;
         
         rendering::MaterialInstanceHandle line_material;
         rendering::ShaderHandle line_shader;
@@ -610,9 +622,9 @@ struct Renderer
         i32 material_instance_count;
         i32 *_internal_material_instance_handles;
         i32 current_material_instance_index;
-		
-		rendering::RegisterBufferInfo *buffers;
-		i32 buffer_count;
+
+        Buffer **buffers;
+        i32 buffer_count;
     
 		i32 *_internal_buffer_handles;
 		i32 _current_internal_buffer_handle;
@@ -625,6 +637,20 @@ struct Renderer
 
         struct
         {
+            r32 z_near;
+            r32 z_far;
+            r32 fov;
+            r32 light_offset;
+        } shadow_settings;
+
+        struct
+        {
+            b32 *dirty_float_buffers;
+            b32 *dirty_float2_buffers;
+            b32 *dirty_float3_buffers;
+            b32 *dirty_float4_buffers;
+            b32 *dirty_mat4_buffers;
+            
             // All instance buffers
             r32 *float_buffers[MAX_INSTANCE_BUFFERS];
             math::Vec2 *float2_buffers[MAX_INSTANCE_BUFFERS];
@@ -640,25 +666,25 @@ struct Renderer
             Buffer **internal_mat4_buffers;
 
             // Flags to keep track of all free buffers
-            b32 free_float_buffers[MAX_INSTANCE_BUFFERS];
-            b32 free_float2_buffers[MAX_INSTANCE_BUFFERS];
-            b32 free_float3_buffers[MAX_INSTANCE_BUFFERS];
-            b32 free_float4_buffers[MAX_INSTANCE_BUFFERS];
-            b32 free_mat4_buffers[MAX_INSTANCE_BUFFERS];
+            b32 *free_float_buffers;
+            b32 *free_float2_buffers;
+            b32 *free_float3_buffers;
+            b32 *free_float4_buffers;
+            b32 *free_mat4_buffers;
 
             // The current count
-            i32 float_buffer_counts[MAX_INSTANCE_BUFFERS];
-            i32 float2_buffer_counts[MAX_INSTANCE_BUFFERS];
-            i32 float3_buffer_counts[MAX_INSTANCE_BUFFERS];
-            i32 float4_buffer_counts[MAX_INSTANCE_BUFFERS];
-            i32 mat4_buffer_counts[MAX_INSTANCE_BUFFERS];
+            i32 *float_buffer_counts;
+            i32 *float2_buffer_counts;
+            i32 *float3_buffer_counts;
+            i32 *float4_buffer_counts;
+            i32 *mat4_buffer_counts;
 
             // The allocated max count
-            i32 float_buffer_max[MAX_INSTANCE_BUFFERS];
-            i32 float2_buffer_max[MAX_INSTANCE_BUFFERS];
-            i32 float3_buffer_max[MAX_INSTANCE_BUFFERS];
-            i32 float4_buffer_max[MAX_INSTANCE_BUFFERS];
-            i32 mat4_buffer_max[MAX_INSTANCE_BUFFERS];
+            i32 *float_buffer_max;
+            i32 *float2_buffer_max;
+            i32 *float3_buffer_max;
+            i32 *float4_buffer_max;
+            i32 *mat4_buffer_max;
 
             // The internal handle last used + 1
             i32 current_internal_float_handle;
@@ -671,13 +697,13 @@ struct Renderer
         Texture **textures;
         i32 texture_count;
 
-        rendering::RenderPass passes[16];
+        rendering::RenderPass *passes;
         i32 pass_count;
 
         rendering::RenderPass post_processing_passes[16];
         i32 post_processing_pass_count;
 
-        rendering::FramebufferInfo framebuffers[32];
+        rendering::FramebufferInfo *framebuffers;
         i32 framebuffer_count;
 
         struct
@@ -696,16 +722,20 @@ struct Renderer
             rendering::MaterialHandle textured_material;
 
             rendering::MaterialHandle font_material;
+            rendering::MaterialHandle font3d_material;
             rendering::BufferHandle font_buffer;
         } ui;
 
         MemoryArena render_pass_arena;
         
-		/* rendering::RenderCommand *render_commands; */
-		/* i32 render_command_count; */
-
         QueuedRenderCommand *queued_commands;
         i32 queued_command_count;
+
+        Pass *pass_commands;
+
+#define MAX_CUSTOM_UNIFORM_MAPPINGS 64
+        rendering::CustomUniformMapping *custom_mappings;
+        i32 custom_mapping_count;
 
         rendering::ShadowCommand *shadow_commands;
         i32 shadow_command_count;
@@ -717,7 +747,7 @@ struct Renderer
         i32 point_light_count;
 
         math::Mat4 light_space_matrix;
-        
+        math::Mat4 light_view_matrix;
         math::Vec3 shadow_view_position;
 
         struct
@@ -734,6 +764,11 @@ struct Renderer
         } hdr;
 
         rendering::FramebufferHandle final_framebuffer;
+        rendering::FramebufferHandle shadow_framebuffer;
+        rendering::RenderPassHandle emissive_pass;
+        rendering::RenderPassHandle standard_pass;
+        rendering::RenderPassHandle shadow_pass;
+        rendering::MaterialHandle shadow_map_material;
         
 	} render;
 };

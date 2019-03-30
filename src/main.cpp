@@ -1,3 +1,7 @@
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#define VC_EXTRA_LEAN
+#endif
 
 #include "shared.h"
 
@@ -37,7 +41,6 @@ static MemoryState memory_state;
 //#include "vulkan_rendering.h"
 #endif
 
-
 #include "opengl_rendering.h"
 #include "animation.cpp"
 #include "keycontroller.cpp"
@@ -46,7 +49,6 @@ static MemoryState memory_state;
 #include "fmod_sound.h"
 #include "fmod_sound.cpp"
 #include "filehandling.h"
-
 
 #include "shader_loader.cpp"
 #include "render_pipeline.cpp"
@@ -72,7 +74,7 @@ static InputController input_controller;
 
 static void load_game_code(GameCode &game_code, char *game_library_path, char *temp_game_library_path, MemoryArena *arena = nullptr)
 {
-    if (!copy_file(game_library_path, temp_game_library_path, false, arena))
+    if (!copy_file(game_library_path, temp_game_library_path, false))
         return;
 
     game_code.update = update_stub;
@@ -188,6 +190,7 @@ void save_config(const char *file_path, Renderer* renderer, SoundDevice *sound_d
         r32 sfx_vol = 1.0f;
         r32 music_vol = 1.0f;
         r32 master_vol = 1.0f;
+        b32 vsync = renderer->api_functions.get_v_sync(renderer->api_functions.render_state);
 
         if (sound_device)
         {
@@ -201,6 +204,7 @@ void save_config(const char *file_path, Renderer* renderer, SoundDevice *sound_d
         fprintf(file, "sfx_volume %.2f\n", sfx_vol);
         fprintf(file, "music_volume %.2f\n", music_vol);
         fprintf(file, "master_volume %.2f\n", master_vol);
+        fprintf(file, "vsync %d\n", vsync);
 
         fclose(file);
 
@@ -211,6 +215,7 @@ void save_config(const char *file_path, Renderer* renderer, SoundDevice *sound_d
         core.config_data.sfx_volume = sfx_vol;
         core.config_data.music_volume = music_vol;
         core.config_data.master_volume = master_vol;
+        core.config_data.vsync = vsync;
     }
 }
 
@@ -269,6 +274,7 @@ inline void load_config(const char *file_path, ConfigData *config_data, MemoryAr
         config_data->sfx_volume = 1.0f;
         config_data->music_volume = 1.0f;
         config_data->master_volume = 1.0f;
+        config_data->vsync = true;
 
         save_config(file_path);
     }
@@ -318,11 +324,16 @@ inline void load_config(const char *file_path, ConfigData *config_data, MemoryAr
             {
                 sscanf(line_buffer, "master_volume %f", &config_data->master_volume);
             }
+            else if (starts_with(line_buffer, "vsync"))
+            {
+                sscanf(line_buffer, "vsync %d", &config_data->vsync);
+            }
         }
         fclose(file);
     }
 }
 
+[[noreturn]]
 static void check_shader_files(WorkQueue *queue, void *data)
 {
     // @Incomplete: We might want to sleep
@@ -330,10 +341,11 @@ static void check_shader_files(WorkQueue *queue, void *data)
     {
         Renderer *renderer = (Renderer *)data;
         rendering::check_for_shader_file_changes(renderer);
+		sleep_ms(100);
     }
 }
 
-static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInfo *reload_thread)
+static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInfo *reload_thread, ParticleApi particle_api)
 {
     renderer->pixels_per_unit = global_pixels_per_unit;
     renderer->frame_lock = 0;
@@ -344,7 +356,14 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
 
     renderer->particles.particle_systems = push_array(&renderer->particle_arena, global_max_particle_systems, ParticleSystemInfo);
     renderer->particles._internal_handles = push_array(&renderer->particle_arena, global_max_particle_systems, i32);
+    renderer->particles._internal_work_queue_handles = push_array(&renderer->particle_arena, global_max_particle_systems, i32);
+    renderer->particles.work_queues = push_array(&renderer->particle_arena, global_max_particle_systems, WorkQueue);
+    renderer->particles.api = &particle_api;
 
+    renderer->particles.system_work_queue = (WorkQueue*)malloc(sizeof(WorkQueue));
+    renderer->particles.system_threads = push_array(&renderer->particle_arena, global_max_particle_systems, ThreadInfo);
+    platform.make_queue(renderer->particles.system_work_queue, global_max_particle_systems, renderer->particles.system_threads);
+    
     PushParams params = default_push_params();
     params.alignment = math::multiple_of_number_uint(member_size(RandomSeries, state), 16);
     renderer->particles.entropy = push_size(&renderer->particle_arena, sizeof(RandomSeries), RandomSeries, params);
@@ -353,10 +372,11 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     for (i32 index = 0; index < global_max_particle_systems; index++)
     {
         renderer->particles._internal_handles[index] = -1;
+        renderer->particles._internal_work_queue_handles[index] = -1;
     }
 
     renderer->particles.particle_system_count = 0;
-    renderer->animation_controllers = push_array(&renderer->animation_arena, 64, AnimationController);
+    renderer->animation_controllers = push_array(&renderer->animation_arena, global_max_animation_controllers, AnimationController);
     renderer->spritesheet_animations = push_array(&renderer->animation_arena, global_max_spritesheet_animations, SpritesheetAnimation);
     
     renderer->render.textures = push_array(&renderer->texture_arena, global_max_textures, Texture*);
@@ -371,16 +391,17 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     //renderer.render.render_commands = push_array(&renderer.command_arena, global_max_render_commands, rendering::RenderCommand);
     //renderer.render.depth_free_commands = push_array(&renderer.command_arena, global_max_depth_free_commands, rendering::RenderCommand);
     renderer->render.shadow_commands = push_array(&renderer->command_arena, global_max_shadow_commands, rendering::ShadowCommand);
-    renderer->render.queued_commands = push_array(&renderer->command_arena, global_max_render_commands, QueuedRenderCommand);
+    renderer->render.pass_commands = push_array(&renderer->command_arena, 16, Pass);
     renderer->tt_font_infos = push_array(&renderer->font_arena, global_max_fonts, TrueTypeFontInfo);
     
     // NEW RENDER PIPELINE
     renderer->render.shadow_commands = push_array(&renderer->command_arena, global_max_shadow_commands, rendering::ShadowCommand);
     renderer->render.queued_commands = push_array(&renderer->command_arena, global_max_render_commands, QueuedRenderCommand);
     
-    renderer->render.buffers = push_array(&renderer->buffer_arena, global_max_custom_buffers, rendering::RegisterBufferInfo);
-    renderer->render.updated_buffer_handles = push_array(&renderer->buffer_arena, global_max_custom_buffers, i32);
     renderer->render.material_count = 0;
+
+    renderer->render.passes = push_array(&renderer->render.render_pass_arena, global_max_render_commands, rendering::RenderPass);
+    renderer->render.framebuffers = push_array(&renderer->render.render_pass_arena, global_max_framebuffers, rendering::FramebufferInfo);
     
     //@Incomplete: Make these dynamically allocated?
 
@@ -400,6 +421,7 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     }
 
     renderer->render.shaders = push_array(&renderer->mesh_arena, global_max_shaders, rendering::Shader);
+    renderer->render.custom_mappings = push_array(&renderer->mesh_arena, MAX_CUSTOM_UNIFORM_MAPPINGS, rendering::CustomUniformMapping);
     renderer->render._internal_buffer_handles = push_array(&renderer->buffer_arena, global_max_custom_buffers, i32);
     renderer->render._current_internal_buffer_handle = 0;
     
@@ -408,6 +430,13 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
         renderer->render._internal_buffer_handles[index] = -1;
     }
     
+    renderer->render.buffers = push_array(&renderer->buffer_arena, global_max_custom_buffers, Buffer*);
+
+    for(i32 i = 0; i < global_max_custom_buffers; i++)
+    {
+        renderer->render.buffers[i] = push_struct(&renderer->buffer_arena, Buffer);
+    }
+          
     renderer->render.removed_buffer_handles = push_array(&renderer->buffer_arena, global_max_custom_buffers, i32);
 
 #if DEBUG
@@ -422,25 +451,76 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     
     rendering::set_fallback_shader(renderer, "../engine_assets/standard_shaders/fallback.shd");
     rendering::set_wireframe_shader(renderer, "../engine_assets/standard_shaders/wireframe.shd");
+    rendering::set_bounding_box_shader(renderer, "../engine_assets/standard_shaders/bounding_box.shd");
     rendering::set_debug_line_shader(renderer, "../engine_assets/standard_shaders/line.shd");
     rendering::set_shadow_map_shader(renderer, "../engine_assets/standard_shaders/shadow_map.shd");
-    rendering::set_light_space_matrices(renderer, math::ortho(-25, 25, -25, 25, 1, 20.0f), math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0.0f, 0.0f, 0.0f));
+    // // rendering::set_light_space_matrices(renderer, math::ortho(-15, 15, -15, 15, 1, 20.0f), math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0.0f, 0.0f, 0.0f));
+    // rendering::calculate_light_space_matrices(renderer, );
 
     rendering::set_bloom_shader(renderer, "../engine_assets/standard_shaders/bloom.shd");
     rendering::set_blur_shader(renderer, "../engine_assets/standard_shaders/blur.shd");
     rendering::set_hdr_shader(renderer, "../engine_assets/standard_shaders/hdr.shd");
+
+    
+    rendering::ShaderHandle blur_shader = renderer->render.blur_shader;
+    rendering::ShaderHandle bloom_shader = renderer->render.bloom_shader;
+
+    // Create the framebuffers
+    rendering::FramebufferInfo standard_resolve_info = rendering::generate_framebuffer_info();
+    standard_resolve_info.width = renderer->framebuffer_width;
+    standard_resolve_info.height = renderer->framebuffer_height;
+    
+	rendering::add_color_attachment(rendering::AttachmentType::TEXTURE, rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_resolve_info);
+    rendering::add_color_attachment(rendering::AttachmentType::TEXTURE, rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_resolve_info);
+    rendering::add_depth_attachment(rendering::AttachmentType::TEXTURE, 0, standard_resolve_info);
+    
+    rendering::FramebufferHandle standard_resolve_framebuffer = rendering::create_framebuffer(standard_resolve_info, renderer);
+    rendering::RenderPassHandle standard_resolve = rendering::create_render_pass("standard_resolve", standard_resolve_framebuffer, renderer);
+    
+    rendering::FramebufferInfo standard_info = rendering::generate_framebuffer_info();
+    standard_info.width = renderer->framebuffer_width;
+    standard_info.height = renderer->framebuffer_height;
+    
+    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 8);
+    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 8);
+    rendering::add_depth_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, standard_info, 8);
+
+    rendering::FramebufferHandle standard_framebuffer = rendering::create_framebuffer(standard_info, renderer);
+    rendering::RenderPassHandle standard = rendering::create_render_pass(STANDARD_PASS, standard_framebuffer, renderer);
+    
+    renderer->render.standard_pass = standard;
+   
+    //rendering::RenderPassHandle read_draw_pass = rendering::create_render_pass("read_draw", standard_framebuffer, renderer);
+
+    rendering::set_read_draw_render_passes(standard, standard_resolve, renderer);
+
+    // Create shadow pass
+    rendering::FramebufferInfo shadow_pass_info = rendering::generate_framebuffer_info();
+    shadow_pass_info.width = 2048;
+    shadow_pass_info.height = 2048;
+    shadow_pass_info.size_ratio = 0;
+
+    rendering::add_depth_attachment(rendering::AttachmentType::TEXTURE, 0, shadow_pass_info);
+
+    rendering::FramebufferHandle shadow_fbo = rendering::create_framebuffer(shadow_pass_info, renderer);
+    rendering::RenderPassHandle shadow_pass = rendering::create_render_pass(SHADOW_PASS, shadow_fbo, renderer, rendering::RenderPassSettings::FRONTFACE_CULLING);
+    renderer->render.shadow_pass = shadow_pass;
+    renderer->render.shadow_framebuffer = shadow_fbo;
+
+    renderer->render.shadow_settings.z_near = -18.0f;
+    renderer->render.shadow_settings.z_far = 65.0f;
+    renderer->render.shadow_settings.fov = 110.0f;
     
     // Final framebuffer
     rendering::FramebufferInfo final_info = rendering::generate_framebuffer_info();
     final_info.width = renderer->framebuffer_width;
     final_info.height = renderer->framebuffer_height;
-    rendering::add_color_attachment(rendering::ColorAttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, final_info, 8);
-    rendering::add_depth_attachment(rendering::DepthAttachmentFlags::DEPTH_TEXTURE | rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, final_info, 8);
     
+    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, final_info, 8);
+    rendering::add_depth_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::DepthAttachmentFlags::DEPTH_TEXTURE | rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, final_info, 8);
+
     rendering::FramebufferHandle final_framebuffer = rendering::create_framebuffer(final_info, renderer);
     rendering::set_final_framebuffer(renderer, final_framebuffer);
-
-    rendering::RenderPassHandle standard = rendering::create_render_pass(STANDARD_PASS, final_framebuffer, renderer);
 
     // UI
     renderer->render.ui.top_left_textured_quad_buffer = rendering::create_quad_buffer(renderer, rendering::UIAlignment::TOP | rendering::UIAlignment::LEFT, true);
@@ -458,11 +538,21 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     renderer->render.textured_ui_quad_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/ui_texture_quad.shd");
     renderer->render.ui.material = rendering::create_material(renderer, renderer->render.ui_quad_shader);
     renderer->render.ui.textured_material = rendering::create_material(renderer, renderer->render.textured_ui_quad_shader);
-
+    
     // Initialize font material
     renderer->render.font_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/font.shd");
     renderer->render.ui.font_material = rendering::create_material(renderer, renderer->render.font_shader);
 
+    renderer->render.font3d_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/3d_font.shd");
+    renderer->render.ui.font3d_material = rendering::create_material(renderer, renderer->render.font3d_shader);
+
+    rendering::RegisterBufferInfo line_info = rendering::create_register_buffer_info();
+
+    add_vertex_attrib(rendering::ValueType::FLOAT3, line_info);
+    line_info.usage = rendering::BufferUsage::DYNAMIC;
+
+    renderer->render.line_buffer = rendering::register_buffer(renderer, line_info);
+    
     rendering::RegisterBufferInfo font_info = rendering::create_register_buffer_info();
 
     add_vertex_attrib(rendering::ValueType::FLOAT4, font_info);
@@ -491,41 +581,49 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
 
     //Pass through post processing
 
-    //BLOOM
-    // rendering::FramebufferInfo bloom_info = rendering::generate_framebuffer_info();
-    // bloom_info.width = renderer->framebuffer_width;
-    // bloom_info.height = renderer->framebuffer_height;
+    // rendering::FramebufferInfo blur_framebuffer = rendering::generate_framebuffer_info();
+    // blur_framebuffer.width = renderer->framebuffer_width;
+    // blur_framebuffer.height = renderer->framebuffer_height;
+    // rendering::add_color_attachment(rendering::AttachmentType::TEXTURE, rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, blur_framebuffer, 0);
 
-//     rendering::add_color_attachment(rendering::ColorAttachmentType::TEXTURE, rendering::ColorAttachmentFlags::HDR | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, bloom_info, 0)
-// ;
-//     rendering::ShaderHandle blur_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/blur.shd");
-//     rendering::ShaderHandle bloom_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/bloom.shd");
-
-//     rendering::TextureHandle src_tex = rendering::get_texture_from_framebuffer(1, hdr_fbo, renderer);
-//     b32 horizontal = true;
-
-//     rendering::FramebufferHandle blur_fbo[2] = {rendering::create_framebuffer(bloom_info, renderer), rendering::create_framebuffer(bloom_info, renderer)};
-
-//     renderer->render.bloom.active = true;
-//     renderer->render.bloom.exposure = 1.8f;
-//     renderer->render.bloom.amount = 5;
+    // rendering::FramebufferHandle blur_handle = rendering::create_framebuffer(blur_framebuffer, renderer);
     
-//     for(i32 i = 0; i < renderer->render.bloom.amount; i++)
-//     {
-//         // @Incomplete: Duplicate names for passes?
-//         rendering::PostProcessingRenderPassHandle blur = rendering::create_post_processing_render_pass("Bloom_Blur", blur_fbo[horizontal], renderer, blur_shader);
+    // renderer->render.emissive_pass = rendering::create_render_pass("emissive_pass", blur_handle, renderer);
+    // rendering::set_render_pass_clear_color(renderer->render.emissive_pass, math::Rgba(0, 0, 0, 0), renderer);
+    
+    // BLOOM
+    rendering::FramebufferInfo blur_info = rendering::generate_framebuffer_info();
+    blur_info.width = renderer->framebuffer_width;
+    blur_info.height = renderer->framebuffer_height;
 
-//         rendering::set_uniform_value(renderer, blur, "image", src_tex);
-//         rendering::set_uniform_value(renderer, blur, "horizontal", horizontal);
+    rendering::add_color_attachment(rendering::AttachmentType::TEXTURE, rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, blur_info);
 
-//         src_tex = rendering::get_texture_from_framebuffer(0, blur_fbo[horizontal], renderer);
-//         horizontal = !horizontal;
-//     }
+    rendering::TextureHandle src_tex = rendering::get_texture_from_framebuffer(1, standard_resolve_framebuffer, renderer);
 
-//     rendering::PostProcessingRenderPassHandle bloom = rendering::create_post_processing_render_pass("Bloom", final_framebuffer, renderer, bloom_shader);
+    b32 horizontal = true;
 
-//     rendering::set_uniform_value(renderer, bloom, "scene", rendering::get_texture_from_framebuffer(0, hdr_fbo, renderer));
-//     rendering::set_uniform_value(renderer, bloom, "blur", src_tex);
+    rendering::FramebufferHandle blur_fbo[2] = { rendering::create_framebuffer(blur_info, renderer), rendering::create_framebuffer(blur_info, renderer) };
+    
+    renderer->render.bloom.active = true;
+    renderer->render.bloom.exposure = 1.8f;
+    renderer->render.bloom.amount = 5;
+    
+    for(i32 i = 0; i < renderer->render.bloom.amount; i++)
+    {
+        // @Incomplete: Duplicate names for passes?
+        rendering::PostProcessingRenderPassHandle blur = rendering::create_post_processing_render_pass("Bloom_Blur", blur_fbo[horizontal], renderer, blur_shader);
+
+        rendering::set_uniform_value(renderer, blur, "image", src_tex);
+        rendering::set_uniform_value(renderer, blur, "horizontal", horizontal);
+
+        src_tex = rendering::get_texture_from_framebuffer(0, blur_fbo[horizontal], renderer);
+        horizontal = !horizontal;
+    }
+
+    rendering::PostProcessingRenderPassHandle final_blur_pass = rendering::create_post_processing_render_pass("Blur_To_Final", final_framebuffer, renderer, bloom_shader);
+    rendering::set_uniform_value(renderer, final_blur_pass, "scene", rendering::get_texture_from_framebuffer(0, standard_resolve_framebuffer, renderer));
+    rendering::set_uniform_value(renderer, final_blur_pass, "depth", rendering::get_depth_texture_from_framebuffer(0, standard_resolve_framebuffer, renderer));
+    rendering::set_uniform_value(renderer, final_blur_pass, "blur", src_tex);
 
 //     rendering::set_uniform_value(renderer, bloom, "bloom", renderer->render.bloom.active);
 //     rendering::set_uniform_value(renderer, bloom, "exposure", renderer->render.bloom.exposure);
@@ -540,6 +638,30 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     renderer->render.instancing.internal_float4_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
     renderer->render.instancing.internal_mat4_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
 
+    renderer->render.instancing.dirty_float_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);
+    renderer->render.instancing.dirty_float2_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);
+    renderer->render.instancing.dirty_float3_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);
+    renderer->render.instancing.dirty_float4_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);
+    renderer->render.instancing.dirty_mat4_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);
+
+    renderer->render.instancing.free_float_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);
+    renderer->render.instancing.free_float2_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);
+    renderer->render.instancing.free_float3_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);
+    renderer->render.instancing.free_float4_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);
+    renderer->render.instancing.free_mat4_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);
+
+    renderer->render.instancing.float_buffer_counts = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, i32);
+    renderer->render.instancing.float2_buffer_counts = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, i32);
+    renderer->render.instancing.float3_buffer_counts = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, i32);
+    renderer->render.instancing.float4_buffer_counts = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, i32);
+    renderer->render.instancing.mat4_buffer_counts = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, i32);
+
+    renderer->render.instancing.float_buffer_max = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, i32);
+    renderer->render.instancing.float2_buffer_max = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, i32);
+    renderer->render.instancing.float3_buffer_max = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, i32);
+    renderer->render.instancing.float4_buffer_max = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, i32);
+    renderer->render.instancing.mat4_buffer_max = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, i32);
+
     for(i32 i = 0; i < MAX_INSTANCE_BUFFERS; i++)
     {
         renderer->render.instancing.free_float_buffers[i] = true;
@@ -547,6 +669,12 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
         renderer->render.instancing.free_float3_buffers[i] = true;
         renderer->render.instancing.free_float4_buffers[i] = true;
         renderer->render.instancing.free_mat4_buffers[i] = true;
+        
+        renderer->render.instancing.dirty_float_buffers[i] = false;
+        renderer->render.instancing.dirty_float2_buffers[i] = false;
+        renderer->render.instancing.dirty_float3_buffers[i] = false;
+        renderer->render.instancing.dirty_float4_buffers[i] = false;
+        renderer->render.instancing.dirty_mat4_buffers[i] = false;
 
         renderer->render.instancing.internal_float_buffers[i] = push_struct(&renderer->buffer_arena, Buffer);
         renderer->render.instancing.internal_float2_buffers[i] = push_struct(&renderer->buffer_arena, Buffer);
@@ -554,26 +682,27 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
         renderer->render.instancing.internal_float4_buffers[i] = push_struct(&renderer->buffer_arena, Buffer);
         renderer->render.instancing.internal_mat4_buffers[i] = push_struct(&renderer->buffer_arena, Buffer);
     }
+
+    TemporaryMemory temp_mem = begin_temporary_memory(&renderer->buffer_arena);
     
     rendering::RegisterBufferInfo particle_buffer = rendering::create_register_buffer_info();
     particle_buffer.usage = rendering::BufferUsage::STATIC;
     add_vertex_attrib(rendering::ValueType::FLOAT3, particle_buffer);
-    add_vertex_attrib(rendering::ValueType::FLOAT2, particle_buffer);
-    
-    r32 quad_vertices[20] =
-    {
-        -0.5f, 0.5f, 0.0f, 0.0f, 0.0f,
-        0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
-        0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
-        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f
-    };
 
-    i32 vertex_size = 5;
+    i32 vertex_size = 3;
     particle_buffer.data.vertex_count = 4;
-    particle_buffer.data.vertex_buffer_size = particle_buffer.data.vertex_count * vertex_size * (i32)sizeof(r32);
+    particle_buffer.data.vertex_buffer_size = particle_buffer.data.vertex_count * vertex_size * (i32)(sizeof(r32));
     particle_buffer.data.vertex_buffer = push_size(&renderer->buffer_arena, particle_buffer.data.vertex_buffer_size, r32);
-
-    for (i32 i = 0; i < particle_buffer.data.vertex_count * vertex_size; i++)
+        
+    r32 quad_vertices[12] =
+        {
+            -0.5f, 0.5f, 0.0f,
+            0.5f, 0.5f, 0.0f,
+            0.5f, -0.5f, 0.0f,
+            -0.5f, -0.5f, 0.0f,
+        };
+    
+    for(i32 i = 0; i < particle_buffer.data.vertex_count * vertex_size; i++)
     {
         particle_buffer.data.vertex_buffer[i] = quad_vertices[i];
     }
@@ -595,6 +724,29 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     }
 
     renderer->particles.quad_buffer = rendering::register_buffer(renderer, particle_buffer);
+    
+    add_vertex_attrib(rendering::ValueType::FLOAT2, particle_buffer);
+    
+    r32 textured_quad_vertices[20] =
+    {
+        -0.5f, 0.5f, 0.0f, 0.0f, 0.0f,
+        0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
+        0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
+        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f
+    };
+
+    vertex_size = 5;
+    particle_buffer.data.vertex_buffer_size = particle_buffer.data.vertex_count * vertex_size * (i32)sizeof(r32);
+    particle_buffer.data.vertex_buffer = push_size(&renderer->buffer_arena, particle_buffer.data.vertex_buffer_size, r32);
+
+    for (i32 i = 0; i < particle_buffer.data.vertex_count * vertex_size; i++)
+    {
+        particle_buffer.data.vertex_buffer[i] = textured_quad_vertices[i];
+    }
+
+    renderer->particles.textured_quad_buffer = rendering::register_buffer(renderer, particle_buffer);
+
+    end_temporary_memory(temp_mem);
 }
 
 #if defined(_WIN32) && !defined(DEBUG)
@@ -668,12 +820,21 @@ int main(int argc, char **args)
 
     load_config("../.config", &core.config_data, &platform_state->perm_arena);
 
-    core.config_data;
-
     init_keys();
     RenderState *render_state_ptr = push_struct(&platform_state->perm_arena, RenderState);
     RenderState &render_state = *render_state_ptr;
     render_state = {};
+    render_state.v2 = {};
+
+    for(i32 j = 0; j < global_max_framebuffers; j++)
+    {
+        Framebuffer &framebuffer = render_state.v2.framebuffers[j];
+        for(i32 i = 0; i < 4; i++)
+        {
+            framebuffer.tex_color_buffer_handles[i] = 0;       
+        }
+    }
+
     render_state.should_close = false;
     render_state.dpi_scale = 0;
     render_state.window = nullptr;
@@ -681,14 +842,12 @@ int main(int argc, char **args)
 
     render_state.string_arena = {};
     render_state.gl_shader_count = 0;
-    render_state.gl_buffer_count = 0;
     render_state.gl_shaders = push_array(&platform_state->perm_arena, 64, ShaderGL);
-
+  
     Renderer *renderer_alloc = push_struct(&platform_state->perm_arena, Renderer);
     Renderer *renderer = renderer_alloc;
     *renderer = {};
 
-    
     b32 do_save_config = false;
     
     if constexpr(global_graphics_api == GRAPHICS_VULKAN)
@@ -705,22 +864,49 @@ int main(int argc, char **args)
         initialize_opengl(render_state, renderer, &core.config_data, &platform_state->perm_arena, &do_save_config);
     }
 
+    ParticleApi particle_api = {};
+    particle_api.get_particle_system_info = &get_particle_system_info;
+    particle_api.start_particle_system = &start_particle_system;
+    particle_api.stop_particle_system = &stop_particle_system;
+    particle_api.pause_particle_system = &pause_particle_system;
+    particle_api.remove_all_particle_systems = &remove_all_particle_systems;
+    particle_api.particle_system_is_running = &particle_system_is_running;
+    
+    particle_api.get_default_attributes = &get_default_particle_system_attributes;
+    particle_api.create_particle_system = &create_particle_system;
+    particle_api.remove_particle_system = &remove_particle_system;
+    particle_api.update_particle_system = &update_particle_system;
+
+    particle_api.add_burst_over_time_key = &add_burst_over_time_key;
+    particle_api.add_angle_key = &add_angle_key;
+    particle_api.remove_angle_key = &remove_angle_key;
+    particle_api.add_color_key = &add_color_key;
+    particle_api.remove_color_key = &remove_color_key;
+    particle_api.add_size_key = &add_size_key;
+    particle_api.remove_size_key = &remove_size_key;
+
+    particle_api.add_speed_key = &add_speed_key;
+    particle_api.remove_speed_key = &remove_speed_key;
+    
     WorkQueue reload_queue;
     ThreadInfo reload_thread;
-    init_renderer(renderer, &reload_queue, &reload_thread);
-    
+    init_renderer(renderer, &reload_queue, &reload_thread, particle_api);
+
     scene::SceneManager *scene_manager = scene::create_scene_manager(&platform_state->perm_arena, renderer);
     
     GameCode game = {};
     game.is_valid = false;
 
     load_game_code(game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
+    
     TimerController *timer_controller_ptr = (TimerController*)malloc(sizeof(TimerController));
     TimerController &timer_controller = *timer_controller_ptr;
     timer_controller.timer_count = 0;
-
+    timer_controller.paused = false;
+    
     SoundDevice sound_device = {};
     sound_device.system = nullptr;
+    
     debug_log("Initializing FMOD");
 
     sound_device.channel_count = 0;
@@ -730,23 +916,35 @@ int main(int argc, char **args)
     sound_device.master_volume = core.config_data.master_volume;
     sound_device.muted = core.config_data.muted;
 
-    WorkQueue fmod_queue = {};
-    ThreadInfo fmod_thread = {};
-    make_queue(&fmod_queue, 1, &fmod_thread);
-    platform.add_entry(&fmod_queue, init_audio_fmod_thread, &sound_device);
-
-    SoundSystem sound_system = {};
+    sound::SoundSystem sound_system = {};
+    sound_system.update = false;
     sound_system.command_count = 0;
     sound_system.sound_count = 0;
-    sound_system.commands = push_array(&sound_system.arena, global_max_sound_commands, SoundCommand);
-    sound_system.sounds = push_array(&sound_system.arena, global_max_sounds, SoundHandle);
-    sound_system.audio_sources = push_array(&sound_system.arena, global_max_audio_sources, AudioSource);
-    sound_system.channel_groups = push_array(&sound_system.arena, global_max_channel_groups, ChannelGroup);
+    sound_system.commands = push_array(&sound_system.arena, global_max_sound_commands, sound::SoundCommand);
+    sound_system.sounds = push_array(&sound_system.arena, global_max_sounds, sound::SoundHandle);
+    sound_system.audio_sources = push_array(&sound_system.arena, global_max_audio_sources, sound::AudioSource);
+    sound_system.channel_groups = push_array(&sound_system.arena, global_max_channel_groups, sound::ChannelGroup);
     sound_system.sfx_volume = core.config_data.sfx_volume;
     sound_system.music_volume = core.config_data.music_volume;
     sound_system.master_volume = core.config_data.master_volume;
     sound_system.muted = core.config_data.muted;
 
+    sound::SoundSystemData data;
+    data.device = &sound_device;
+    data.system = &sound_system;
+    
+    /*WorkQueue fmod_queue = {};
+    ThreadInfo fmod_thread = {};
+    make_queue(&fmod_queue, 1, &fmod_thread);
+    platform.add_entry(&fmod_queue, init_audio_fmod_thread, &data);
+*/
+	init_audio_fmod(&data);
+
+    WorkQueue asset_queue = {};
+    ThreadInfo asset_thread = {};
+    make_queue(&asset_queue, 1, &asset_thread);
+    game_memory.platform_api.asset_queue = &asset_queue;
+    
     r64 last_second_check = get_time();
     i32 frames = 0;
 
@@ -763,7 +961,7 @@ int main(int argc, char **args)
     template_state.template_count = 0;
 
     template_state.templates = push_array(&platform_state->perm_arena, global_max_entity_templates, scene::EntityTemplate);
-
+    
     core.renderer = renderer;
     core.input_controller = &input_controller;
     core.timer_controller = &timer_controller;
@@ -802,10 +1000,12 @@ int main(int argc, char **args)
             }
             else
                 game.update_editor(&game_memory);
-            
-            update_scene_editor(scene_manager->loaded_scene, &input_controller, delta_time);
-            
-            push_scene_for_rendering(scene::get_scene(scene_manager->loaded_scene), renderer);
+
+            if(scene_manager->scene_loaded) // Check again, since there could be a call to unload_current_scene() in game.update()
+            {
+                update_scene_editor(scene_manager->loaded_scene, &input_controller, delta_time);
+                push_scene_for_rendering(scene::get_scene(scene_manager->loaded_scene), renderer);
+            }
         }
         else
             game.update(&game_memory);
@@ -814,7 +1014,9 @@ int main(int argc, char **args)
 
         tick_animation_controllers(renderer, &sound_system, &input_controller, timer_controller, delta_time);
         tick_timers(timer_controller, delta_time);
-        update_sound_commands(&sound_device, &sound_system, delta_time, &do_save_config);
+
+        if(sound_system.update)
+            update_sound_commands(&sound_device, &sound_system, delta_time, &do_save_config);
 
         render(render_state, renderer, delta_time);
         if (do_save_config)
@@ -827,19 +1029,10 @@ int main(int argc, char **args)
         set_invalid_keys();
         set_mouse_invalid_keys();
         
-
         update_log();
         
         swap_buffers(render_state);
 
-#if defined(__APPLE__)
-        static b32 first_load = true;
-        if (first_load)
-        {
-            mojave_workaround(render_state);
-            first_load = false;
-        }
-#endif
         frames++;
         r64 end_counter = get_time();
         if (end_counter - last_second_check >= 1.0)

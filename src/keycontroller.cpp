@@ -1,6 +1,6 @@
 static inline b32 get_mouse_button(MouseCode key, InputController* input_controller, b32 force = false)
 {
-    if(input_controller->ignore_mouse && !force)
+    if((input_controller->ignore_all_keys || input_controller->ignore_mouse) && !force)
     {
         return false;
     }
@@ -10,7 +10,7 @@ static inline b32 get_mouse_button(MouseCode key, InputController* input_control
 
 static inline b32 get_mouse_button_down(MouseCode key, InputController* input_controller, b32 force = false)
 {
-    if(input_controller->ignore_mouse && !force)
+    if((input_controller->ignore_all_keys || input_controller->ignore_mouse) && !force)
     {
         return false;
     }
@@ -30,7 +30,7 @@ static inline b32 get_key(KeyCode key, InputController* input_controller, b32 fo
     if(key == Key_MouseRight)
         return get_mouse_button(Mouse_Right, input_controller);
 
-    if(input_controller->ignore_key[key] && !force)
+    if((input_controller->ignore_all_keys || input_controller->ignore_key[key]) && !force)
     {
         return false;
     }
@@ -44,7 +44,7 @@ static inline b32 get_key_down(KeyCode key, InputController* input_controller, b
         return get_mouse_button_down(Mouse_Left, input_controller);
     if(key == Key_MouseRight)
         return get_mouse_button_down(Mouse_Right, input_controller);
-    if(input_controller->ignore_key[key] && !force)
+    if((input_controller->ignore_all_keys || input_controller->ignore_key[key]) && !force)
     {
         return false;
     }
@@ -65,6 +65,11 @@ static inline b32 get_key_up(KeyCode key, InputController* input_controller)
 static inline void eat_key(KeyCode key, InputController* input_controller)
 {
     input_controller->ignore_key[key] = true;
+}
+
+static inline void eat_all_keys(InputController* input_controller)
+{
+    input_controller->ignore_all_keys = true;
 }
 
 static inline b32 get_joystick_key(ControllerCode key, InputController* input_controller)
@@ -206,6 +211,7 @@ static inline r32 get_input_y(InputController* input_controller, Stick stick = S
 #define CUSTOM_KEY_DOWN(key) is_custom_key_down(input_controller, key)
 #define CUSTOM_KEY(key) is_custom_key_pressed(input_controller, key)
 #define EAT_KEY(key) eat_key(key, input_controller);
+#define EAT_ALL_KEYS() eat_all_keys(input_controller);
 
 // Use this to add key mappings in your game. The CustomKey int is the keys identifier for your game and when checking for key events later this will be used to automatically check with the correct mapped keyboard- or controller-keys
 static void add_custom_mapping(InputController* input_controller, i32 custom_key, KeyCode keyboard_key, i32 ps4_key, i32 xbox_key)

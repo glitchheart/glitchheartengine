@@ -13,11 +13,12 @@ void fmod_error_check(FMOD_RESULT result)
     }
 }
 
-static void load_sound(const char* file_path, SoundDevice* sound_device)
+static void load_sound(const char* file_path, SoundDevice* device)
 {
-    assert(sound_device->sound_count + 1 < global_max_sounds);
-    //@Incomplete: Find out the exact parameters for a sound
-    auto result = FMOD_System_CreateSound(sound_device->system, file_path, FMOD_DEFAULT, nullptr, &sound_device->sounds[sound_device->sound_count++]);
+    assert(device->sound_count + 1 < global_max_sounds);
+
+    auto result = FMOD_System_CreateSound(device->system, file_path, NULL, nullptr, &device->sounds[device->sound_count++]);
+    
     if(result != FMOD_OK)
     {
         FMOD_DEBUG(result);
@@ -35,7 +36,7 @@ FMOD_RESULT F_CALLBACK channel_control_callback(FMOD_CHANNELCONTROL *chan_contro
     {
         case FMOD_CHANNELCONTROL_CALLBACK_END:
         {
-            AudioSource *as;
+            sound::AudioSource *as;
             FMOD_Channel_GetUserData((FMOD_CHANNEL*)chan_control, (void**)&as);
             if(as)
             {
@@ -62,14 +63,14 @@ FMOD_RESULT F_CALLBACK channel_control_callback(FMOD_CHANNELCONTROL *chan_contro
     return FMOD_OK;
 }
 
-static void set_channel_attributes(FMOD_CHANNEL *channel, ChannelAttributes attributes, SoundSystem *system, SoundDevice *device, i32 handle = 0)
+static void set_channel_attributes(FMOD_CHANNEL *channel, sound::ChannelAttributes attributes, sound::SoundSystem *system, SoundDevice *device, i32 handle = 0)
 {
     auto mode = FMOD_DEFAULT;
     
     // LOOP_OFF is default?
     switch(attributes.loop.type)
     {
-        case LOOP_NORMAL:
+        case sound::LoopType::LOOP_NORMAL:
         {
             mode |= FMOD_LOOP_NORMAL;
             // @Incomplete: -1 is default, add loop_count later!
@@ -82,7 +83,7 @@ static void set_channel_attributes(FMOD_CHANNEL *channel, ChannelAttributes attr
             }
         }
         break;
-        case LOOP_BIDI:
+        case sound::LoopType::LOOP_BIDI:
         {
             mode |= FMOD_LOOP_BIDI;
         }
@@ -95,7 +96,7 @@ static void set_channel_attributes(FMOD_CHANNEL *channel, ChannelAttributes attr
         break;
     }
     
-    if(attributes.channel_space == CS_3D)
+    if(attributes.channel_space == sound::ChannelSpace::CS_3D)
     {
         mode |= FMOD_3D;
         
@@ -160,7 +161,7 @@ static void set_channel_attributes(FMOD_CHANNEL *channel, ChannelAttributes attr
     FMOD_Channel_SetVolume(channel, attributes.volume);
 }
 
-static void play_audio_source(AudioSource& audio_source, SoundDevice* device, SoundSystem* system)
+static void play_audio_source(sound::AudioSource& audio_source, SoundDevice* device, sound::SoundSystem* system)
 {
     assert(device->sounds && audio_source.sound_handle.handle - 1 < device->sound_count);
     auto sound = device->sounds[audio_source.sound_handle.handle - 1];
@@ -176,14 +177,14 @@ static void play_audio_source(AudioSource& audio_source, SoundDevice* device, So
     
     if(!is_playing)
     {
-	if(channel_attributes.type == ChannelType::SFX)
-	{
-	    result = FMOD_System_PlaySound(device->system, sound, device->sfx_channel_group, true, &channel);
-	}
-	else if(channel_attributes.type == ChannelType::MUSIC)
-	{
-	    result = FMOD_System_PlaySound(device->system, sound, device->music_channel_group, true, &channel);
-	}
+        if(channel_attributes.type == sound::ChannelType::SFX)
+        {
+            result = FMOD_System_PlaySound(device->system, sound, device->sfx_channel_group, true, &channel);
+        }
+        else if(channel_attributes.type == sound::ChannelType::MUSIC)
+        {
+            result = FMOD_System_PlaySound(device->system, sound, device->music_channel_group, true, &channel);
+        }
     }
     
     device->channels[as_handle - 1] = channel;
@@ -201,7 +202,7 @@ static void play_audio_source(AudioSource& audio_source, SoundDevice* device, So
     FMOD_Channel_SetPaused(channel, audio_source.paused);
 }
 
-static void play_sound(SoundCommand &command, SoundDevice *device, SoundSystem *system)
+static void play_sound(sound::SoundCommand &command, SoundDevice *device, sound::SoundSystem *system)
 {
     auto sound = device->sounds[command.one_shot.handle.handle - 1];
     
@@ -209,7 +210,7 @@ static void play_sound(SoundCommand &command, SoundDevice *device, SoundSystem *
     
     FMOD_CHANNEL *channel = nullptr;
 
-    if(command.one_shot.channel_attributes.type == ChannelType::SFX)
+    if(command.one_shot.channel_attributes.type == sound::ChannelType::SFX)
     {
         result = FMOD_System_PlaySound(device->system, sound, device->sfx_channel_group, true, &channel);
     }
@@ -236,7 +237,7 @@ static void play_sound(SoundCommand &command, SoundDevice *device, SoundSystem *
 }
 
 
-static void stop_audio_source(AudioSource &audio_source, SoundDevice* device, SoundSystem *system)
+static void stop_audio_source(sound::AudioSource &audio_source, SoundDevice* device, sound::SoundSystem *system)
 {
     auto channel = device->channels[audio_source.handle.handle - 1];
     
@@ -245,7 +246,7 @@ static void stop_audio_source(AudioSource &audio_source, SoundDevice* device, So
     FMOD_Channel_Stop(channel);
 }
 
-static void pause_audio_source(AudioSource &audio_source, SoundDevice* device, SoundSystem *system, b32 paused)
+static void pause_audio_source(sound::AudioSource &audio_source, SoundDevice* device, sound::SoundSystem *system, b32 paused)
 {
     auto channel = device->channels[audio_source.handle.handle - 1];
     
@@ -254,7 +255,7 @@ static void pause_audio_source(AudioSource &audio_source, SoundDevice* device, S
     FMOD_Channel_SetPaused(channel, paused);
 }
 
-static void set_position_audio_source(SoundCommand &command, AudioSource &audio_source, SoundDevice *device, SoundSystem *system)
+static void set_position_audio_source(sound::SoundCommand &command, sound::AudioSource &audio_source, SoundDevice *device, sound::SoundSystem *system)
 {
     auto channel = device->channels[audio_source.handle.handle - 1];
     
@@ -264,7 +265,7 @@ static void set_position_audio_source(SoundCommand &command, AudioSource &audio_
 }
 
 
-static void update_sound_commands(SoundDevice *device, SoundSystem *system, r64 delta_time, b32 *save_config)
+static void update_sound_commands(SoundDevice *device, sound::SoundSystem *system, r64 delta_time, b32 *save_config)
 {
     if(device->system)
     {
@@ -280,57 +281,72 @@ static void update_sound_commands(SoundDevice *device, SoundSystem *system, r64 
         {
             device->sfx_volume = system->sfx_volume;
             device->music_volume = system->music_volume;
-	    device->master_volume = system->master_volume;
+            device->master_volume = system->master_volume;
             *save_config = true;
         }
 
         for(i32 i = 0; i < system->command_count; i++)
         {
-            SoundCommand& command = system->commands[i];
+            sound::SoundCommand& command = system->commands[i];
             
             switch(command.type)
             {
-                case SC_PLAY_AUDIO_SOURCE:
+                case sound::SoundCommandType::SC_PLAY_AUDIO_SOURCE:
                 {
                     auto &audio_source = system->audio_sources[command.play_audio_source.handle.handle - 1];
                     play_audio_source(audio_source, device, system);
                 }
                 break;
-                case SC_STOP_AUDIO_SOURCE:
+                case sound::SoundCommandType::SC_STOP_AUDIO_SOURCE:
                 {
                     auto &audio_source = system->audio_sources[command.play_audio_source.handle.handle - 1];
                     stop_audio_source(audio_source, device, system);
                 }
                 break;
-                case SC_PAUSE_AUDIO_SOURCE:
+                case sound::SoundCommandType::SC_PAUSE_AUDIO_SOURCE:
                 {
                     auto &audio_source = system->audio_sources[command.play_audio_source.handle.handle - 1];
                     pause_audio_source(audio_source, device, system, true);
                 }
                 break;
-                case SC_UNPAUSE_AUDIO_SOURCE:
+                case sound::SoundCommandType::SC_UNPAUSE_AUDIO_SOURCE:
                 {
                     auto &audio_source = system->audio_sources[command.play_audio_source.handle.handle - 1];
                     pause_audio_source(audio_source, device, system, false);
                 }
                 break;
-                case SC_LOAD_SOUND:
+                case sound::SoundCommandType::SC_LOAD_SOUND:
                 {
                     load_sound(command.load_sound.file_path, device);
                 }
                 break;
-                case SC_ONE_SHOT:
+                case sound::SoundCommandType::SC_ONE_SHOT:
                 {
                     play_sound(command, device, system);
                 }
                 break;
-                case SC_AUDIO_SOURCE_POSITION:
+                case sound::SoundCommandType::SC_AUDIO_SOURCE_POSITION:
                 {
                     auto &audio_source = system->audio_sources[command.play_audio_source.handle.handle - 1];
                     set_position_audio_source(command, audio_source, device, system);
                 }
                 break;
             }
+        }
+
+        for(i32 i = 0; i < system->audio_source_count; i++)
+        {
+            sound::AudioSource& source = system->audio_sources[i];
+
+            FMOD_CHANNEL* channel = device->channels[source.handle.handle - 1];
+            b32 is_playing;
+            FMOD_Channel_IsPlaying(channel, &is_playing);
+            if(is_playing)
+            {
+                FMOD_Channel_SetVolume(channel, source.channel_attributes.volume);
+                // set_channel_attributes(channel, source.channel_attributes, system, device, source.handle.handle);
+            }
+
         }
         
         if(FMOD_System_Update(device->system) != FMOD_OK)
@@ -343,8 +359,11 @@ static void update_sound_commands(SoundDevice *device, SoundSystem *system, r64 
 }
 
 
-static void init_audio_fmod(SoundDevice* device)
+static void init_audio_fmod(sound::SoundSystemData *data)
 {
+    SoundDevice *device = data->device;
+    sound::SoundSystem *sound_system = data->system;
+    
     FMOD_RESULT result;
     FMOD_SYSTEM* system;
     result = FMOD_System_Create(&system);
@@ -384,10 +403,13 @@ static void init_audio_fmod(SoundDevice* device)
 
     FMOD_System_CreateChannelGroup(device->system, "Music", &device->music_channel_group);
     FMOD_System_CreateChannelGroup(device->system, "SFX", &device->sfx_channel_group);
+
+    sound_system->api_functions.device = device;
+    sound_system->api_functions.load_sound = load_sound;
 }
 
 
 static void init_audio_fmod_thread(WorkQueue *queue, void* data_ptr)
 {
-    init_audio_fmod((SoundDevice*)data_ptr);
+    init_audio_fmod((sound::SoundSystemData*)data_ptr);
 }

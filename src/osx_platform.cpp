@@ -96,7 +96,7 @@ static b32 copy_file(const char* src, const char* dst, b32 dont_overwrite, Memor
     
     if(binary)
     {
-        system(concat("chmod +xr ", dst, arena));
+        //system(concat("chmod +xr ", dst, arena));
     }
     return true;
 }
@@ -275,7 +275,17 @@ PLATFORM_GET_ALL_FILES_WITH_EXTENSION(osx_get_all_files_with_extension)
     
     while((de = readdir(dr)) != nullptr)
     {
-        if(de->d_type == DT_REG)
+        if(with_sub_directories && de->d_type == DT_DIR)
+        {
+            if(strcmp(de->d_name, ".") != 0 &&
+               strcmp(de->d_name, "..") != 0)
+            {
+                char sub_path[2048];
+                sprintf(sub_path, "%s%s/", directory_path, de->d_name);
+                osx_get_all_files_with_extension(sub_path, "gsc", directory_data, true);
+            }
+        }
+        else if(de->d_type == DT_REG)
         {
             const char *ext = strrchr(de->d_name,'.');
             
@@ -283,17 +293,18 @@ PLATFORM_GET_ALL_FILES_WITH_EXTENSION(osx_get_all_files_with_extension)
             {
                 if(strcmp((++ext), extension) == 0)
                 {
-                    char* concat_str = concat(directory_path, de->d_name, arena);
+                    char sub_path[2048];
+                    sprintf(sub_path, "%s%s", directory_path, de->d_name);
+
                     char* file_name = strtok(de->d_name, ".");
                     
-                    strcpy(directory_data->file_paths[directory_data->files_length], concat_str);
-                    strcpy(directory_data->file_names[directory_data->files_length], file_name);
-                    directory_data->files_length++;
+                    strcpy(directory_data->file_paths[directory_data->file_count], sub_path);
+                    strcpy(directory_data->file_names[directory_data->file_count], file_name);
+                    directory_data->file_count++;
                 }
             }
-        }
+        }        
     }
-    
     closedir(dr);    
 }
 
@@ -349,6 +360,7 @@ static void init_platform(PlatformApi& platform_api)
     // Threading
     platform_api.add_entry = add_entry;
     platform_api.complete_all_work = complete_all_work;
+    platform_api.make_queue = make_queue;
 }
 
 
