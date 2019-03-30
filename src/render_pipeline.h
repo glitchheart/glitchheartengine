@@ -4,7 +4,7 @@
 namespace rendering
 {
     
-#define MAX_INSTANCE_BUFFERS 256
+#define MAX_INSTANCE_BUFFERS 512
 #define Z_LAYERS 251
     
     struct ShaderHandle
@@ -97,6 +97,7 @@ namespace rendering
         POSITION,
         SCALE,
         ROTATION,
+        DIFFUSE_COLOR,
         MODEL,
         PARTICLE_POSITION,
         PARTICLE_COLOR,
@@ -123,6 +124,7 @@ namespace rendering
 		AMBIENT_COLOR,
 
 		AMBIENT_TEX,
+        BUMP_TEX,
 
 		DISSOLVE,
 	
@@ -159,8 +161,38 @@ namespace rendering
         CAMERA_UP,
         CAMERA_RIGHT,
         CAMERA_FORWARD,
+
+        FRAMEBUFFER_WIDTH,
+        FRAMEBUFFER_HEIGHT,
+
+        TIME,
+        CUSTOM,
         
 		MAX
+    };
+
+    struct CustomUniformMapping
+    {
+        char name[32];
+        ValueType type;
+
+        union
+        {
+			r32 float_val = 0.0f;
+			math::Vec2 float2_val;
+			math::Vec3 float3_val;
+			math::Vec4 float4_val;
+			i32 integer_val;
+			b32 boolean_val;
+			math::Mat4 mat4_val;
+			TextureHandle texture;
+            MSTextureHandle ms_texture;
+        };
+    };
+
+    struct CustomUniformHandle
+    {
+        i32 handle;
     };
 
     struct Uniform
@@ -168,6 +200,8 @@ namespace rendering
 		UniformMappingType mapping_type;
 		ValueType type;
 		char name[32];
+
+        CustomUniformHandle custom_mapping;
         
         i32 structure_index; // If the uniforms is a structure we should save the index of the structure for later
 
@@ -296,10 +330,44 @@ namespace rendering
         
 		Material () {}
     };
+
+    enum class PassType
+    {
+        NONE,
+        STANDARD,
+        NO_UVS,
+        WITH_UVS,
+        SHADOWS,
+        SHADOWS_WITH_UVS
+    };
     
+    struct PassMaterial
+    {
+        PassType pass_type;
+        char pass_name[256];
+        
+        Material material;
+    };    
+
+    struct MaterialPair
+    {
+        char name[32];
+        b32 has_texture;
+        
+        char pass_names[8][32];
+        i32 passes[8];
+        i32 pass_count;
+    };
+
 	HANDLE(Buffer);
     HANDLE(InternalBuffer);
-	
+
+    enum class BufferType
+    {
+        VERTEX,
+        INDEX
+    };
+    
 	struct BufferData
 	{
 		r32* vertex_buffer;
@@ -340,15 +408,29 @@ namespace rendering
 		RegisterBufferInfo() {}
 	};
 
-    struct UpdateBufferInfo
-    {
-        BufferHandle buffer;
-        BufferData update_data;
-    };
+#define MAX_OBJ_OBJECTS 64
 
-    struct LineBufferHandle
+    struct MeshObjectData
     {
-        i32 handle;
+        b32 use_material;
+        b32 use_one_material;
+        char material_name[256];
+
+        MaterialPair pair;
+        
+        rendering::BufferHandle buffer;
+        math::Vec3 mesh_scale;
+        math::BoundingBox bounding_box;
+    };
+    
+    struct MeshObjectInfo
+    {
+        b32 has_mtl;
+        char mtl_file_name[32];
+        char mtl_file_path[256];
+        
+        MeshObjectData data[MAX_OBJ_OBJECTS];
+        i32 object_count;
     };
     
     struct Transform
@@ -367,23 +449,51 @@ namespace rendering
     enum class PrimitiveType
     {
         TRIANGLES,
-        LINES
+        LINES,
+        LINE_LOOP
+    };
+
+    enum class RenderCommandType
+    {
+        BUFFER,
+        LINE,
+    };
+
+    enum BlendMode
+    {
+        ONE_MINUS_SOURCE,
+        ONE
     };
     
     struct RenderCommand
     {
+        RenderCommandType type;
 		MaterialInstanceHandle material;
-		Transform transform;
-		BufferHandle buffer;
-
+        Transform transform;
+        BlendMode blend_mode;
+        
         i32 count;
 
-        PrimitiveType primitive_type;
         struct
         {
             rendering::RenderPassHandle pass_handle;
-            rendering::ShaderHandle shader_handle;
         } pass;
+
+        union
+        {
+            struct
+            {
+                BufferHandle buffer;
+                PrimitiveType primitive_type;
+            } buffer;
+            struct
+            {
+                math::Vec3 p0;
+                math::Vec3 p1;
+                r32 thickness;
+                math::Rgba color;
+            } line;
+        };
     };
 
     enum UIScalingFlag
@@ -401,12 +511,6 @@ namespace rendering
         RIGHT = (1 << 1),
         TOP = (1 << 2),
         BOTTOM = (1 << 3),
-    };
-
-    struct LineCommandData
-    {
-        math::Vec3 p1;
-        math::Vec3 p2;
     };
 
     struct FontHandle
@@ -432,6 +536,11 @@ namespace rendering
         b32 clip;
 
         u64 alignment_flags;
+
+        b32 has_world_position;
+        math::Vec3 world_position;
+        math::Mat4 projection_matrix;
+        math::Mat4 view_matrix;
     };
 
     struct CharacterData
@@ -504,8 +613,8 @@ namespace rendering
         Transform transform;
 
         // Instanced call
-        VertexAttributeInstanced instanced_vertex_attributes[8];
-        i32 instanced_vertex_attribute_count;
+        
+		MaterialInstanceHandle material;
     };
     
     enum FramebufferType
@@ -530,7 +639,7 @@ namespace rendering
         DEPTH_TEXTURE = 1 << 1
     };
 
-    enum class ColorAttachmentType
+    enum class AttachmentType
     {
         TEXTURE,
         RENDER_BUFFER
@@ -538,7 +647,21 @@ namespace rendering
 
     struct ColorAttachment
     {
-        ColorAttachmentType type;
+        AttachmentType type;
+        u64 flags;
+
+        union
+        {
+            TextureHandle texture;
+            MSTextureHandle ms_texture;
+        };
+        
+        u32 samples;
+    };
+
+    struct DepthAttachment
+    {
+        AttachmentType type;
         u64 flags;
 
         union
@@ -570,10 +693,9 @@ namespace rendering
         struct
         {
             b32 enabled;
-            u64 flags;
-            u32 samples;
-            TextureHandle texture;
-        } depth_attachment;
+            DepthAttachment attachments[4];
+            i32 count;
+        } depth_attachments;
 
         struct
         {
@@ -598,7 +720,20 @@ namespace rendering
     };
     
 #define STANDARD_PASS "STANDARD_PASS"
+#define SHADOW_PASS "SHADOW_PASS"
 
+    enum class RenderPassType
+    {
+        NORMAL,
+        READ_DRAW
+    };
+
+    enum RenderPassSettings
+    {
+        BACKFACE_CULLING = (1 << 0),
+        FRONTFACE_CULLING = (1 << 1)
+    };
+    
     // @Note: When rendering a scene, multiple render passes can be used.
     // Each render component can register itself to a render pass
     // Each render pass has it's own render commands
@@ -608,8 +743,14 @@ namespace rendering
     struct RenderPass
     {
         char name[32];
+        RenderPassType type;
+        u64 settings;
+
+        b32 has_clear_color;
+        math::Rgba clear_color;
         
         FramebufferHandle framebuffer;
+        FramebufferHandle read_framebuffer;
         
         b32 use_scene_camera;
         Camera camera;
@@ -644,9 +785,6 @@ namespace rendering
 
                 i32 **ui_z_layers;
                 i32 *ui_z_layer_counts;
-
-                /* rendering::UIRenderCommand* transparent_commands; */
-                /* i32 transparent_command_count; */
 
                 //@Cleanup: An extra 8 + 8 + 8 bytes?
                 rendering::CharacterData **coords;

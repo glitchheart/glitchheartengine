@@ -3,8 +3,19 @@
 
 #define TIME_UNIT FMOD_TIMEUNIT_MS
 
+struct SoundDevice;
+
 struct SoundDevice
 {
+    struct
+    {
+        WorkQueue *work_queue;
+        i32 thread_info_count;
+        ThreadInfo *thread_infos;
+        i32 sounds_being_loaded;
+    } threading;
+
+    
     b32 is_initialized;
     
     FMOD_SYSTEM* system;

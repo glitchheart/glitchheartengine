@@ -124,6 +124,7 @@ struct ConfigData
     r32 master_volume;
     r32 sfx_volume;
     r32 music_volume;
+    b32 vsync;
 };
 
 #define MAX_FILE_PATHS 128
@@ -247,10 +248,20 @@ typedef PLATFORM_CREATE_DIRECTORY(PlatformCreateDirectory);
 
 struct WorkQueue;
 struct WorkQueueEntry;
+struct ThreadInfo;
 typedef void (*WorkCallback)(WorkQueue *queue, void *data);
+
+#define PLATFORM_REQUEST_QUEUE(name) WorkQueue * name()
+typedef PLATFORM_REQUEST_QUEUE(PlatformRequestQueue);
+
+#define PLATFORM_REQUEST_THREAD_INFO(name) ThreadInfo * name()
+typedef PLATFORM_REQUEST_THREAD_INFO(PlatformRequestThreadInfo);
 
 #define PLATFORM_ADD_ENTRY(name) void name(WorkQueue *queue, WorkCallback work_ptr, void *data)
 typedef PLATFORM_ADD_ENTRY(PlatformAddEntry);
+
+#define PLATFORM_MAKE_QUEUE(name) void name(WorkQueue *queue, u32 thread_count, ThreadInfo *thread_infos)
+typedef PLATFORM_MAKE_QUEUE(PlatformMakeQueue);
 
 #define PLATFORM_COMPLETE_ALL_WORK(name) void name(WorkQueue *queue)
 typedef PLATFORM_COMPLETE_ALL_WORK(PlatformCompleteAllWork);
@@ -280,15 +291,25 @@ struct PlatformApi
     PlatformPrintFile *print_file;
     PlatformCreateDirectory *create_directory;
 
+    PlatformRequestQueue* request_queue;
+    PlatformRequestThreadInfo* request_thread_info;
     PlatformAddEntry *add_entry;
     PlatformCompleteAllWork *complete_all_work;
+    PlatformMakeQueue *make_queue;
+
+    WorkQueue *asset_queue;
 };
 
 extern PlatformApi platform;
 
 struct MemoryArena;
 struct InputController;
-struct SoundSystem;
+
+namespace sound
+{
+    struct SoundSystem;
+}
+
 struct Renderer;
 struct RenderState;
 
@@ -304,7 +325,7 @@ struct Core
     Renderer* renderer;
     InputController* input_controller;
     TimerController* timer_controller;
-    SoundSystem* sound_system;
+    sound::SoundSystem* sound_system;
     scene::SceneManager *scene_manager;
     r64 delta_time;
     r64 current_time;

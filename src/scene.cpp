@@ -8,16 +8,20 @@ namespace scene
     
     static void free_scene(SceneHandle scene, b32 invalidate_handle = true);
     static void load_scene(SceneHandle handle, u64 scene_load_flags = 0);
+    static void unload_scene(SceneManager *scene_manager);
     
     // Scene handle
     static RenderComponent& add_render_component(SceneHandle scene, EntityHandle entity_handle, b32 cast_shadows);
     static TransformComponent& add_transform_component(SceneHandle scene, EntityHandle entity_handle);
     static ParticleSystemComponent& add_particle_system_component(SceneHandle handle, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles, rendering::MaterialHandle material);
+    static LightComponent & add_light_component(SceneHandle &handle, EntityHandle entity_handle);
     static EntityHandle register_entity(u64 comp_flags, SceneHandle scene, b32 savable);
     static void unregister_entity(EntityHandle handle, SceneHandle scene);
-    static EntityTemplate _load_template(const char *path, SceneHandle scene);
-    static EntityHandle register_entity_from_template_file(const char *path, SceneHandle scene, b32 savable);
+    static EntityTemplate _load_template(const char *path, EntityTemplateState template_state, SceneHandle scene);
+    static EntityHandle register_entity_from_template_file(const char *path, SceneHandle scene, b32 savable = false, Tags* tags = nullptr);
     static void set_active(EntityHandle handle, b32 active, SceneHandle scene);
+    static void set_hide_in_ui(EntityHandle handle, b32 hide, SceneHandle scene_handle);
+    static TransformComponent& get_transform_comp(EntityHandle handle, Scene &scene);
     static TransformComponent& get_transform_comp(EntityHandle handle, SceneHandle scene);
     static TransformComponent& get_transform_comp(TransformComponentHandle handle, SceneHandle scene);
     static RenderComponent& get_render_comp(EntityHandle handle, SceneHandle scene);
@@ -25,17 +29,26 @@ namespace scene
     static LightComponent &get_light_comp(EntityHandle handle, SceneHandle scene);
     static Camera & get_scene_camera(SceneHandle handle);
     static EntityHandle pick_entity(i32 mouse_x, i32 mouse_y);
+    static Entity& get_entity(EntityHandle handle, Scene &scene);
     static Entity& get_entity(EntityHandle handle, SceneHandle& scene_handle);
     static RegisteredEntityType * get_registered_type(u32 type_id, SceneManager *manager);
+    static b32 has_light_component(EntityHandle entity_handle, SceneHandle& scene);
+    static b32 has_particle_component(EntityHandle entity_handle, SceneHandle& scene);
+    static b32 has_render_component(EntityHandle entity_handle, SceneHandle& scene);
+    static b32 has_transform_component(EntityHandle entity_handle, SceneHandle& scene);
+    static void add_child(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene);
+    static b32 has_tag(const char* tag_name, EntityHandle entity_handle, SceneHandle scene_handle);
+    static void set_entity_tag(const char *tag, EntityHandle entity_handle, SceneHandle scene_handle);
     
     // @Deprecated
     static RenderComponent& _add_render_component(Scene &scene, EntityHandle entity_handle, b32 cast_shadows);
     static TransformComponent& _add_transform_component(Scene &scene, EntityHandle entity_handle);
     static ParticleSystemComponent& _add_particle_system_component(Scene &scene, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles, rendering::MaterialHandle material);
+    static LightComponent& _add_light_component(Scene &scene, EntityHandle entity_handle);
     static EntityHandle _register_entity(u64 comp_flags, Scene &scene, b32 savable);
     static void _unregister_entity(EntityHandle handle, Scene &scene);
-    static EntityTemplate _load_template(const char *path, Scene &scene);
-    static EntityHandle _register_entity_from_template_file(const char *path, Scene &scene);
+    static EntityTemplate _load_template(const char *path, EntityTemplateState &template_state, Scene &scene);
+    static EntityHandle _register_entity_from_template_file(const char *path, Scene &scene, b32 savable, Tags* tags);
     static void _set_active(EntityHandle handle, b32 active, Scene &scene);
     static TransformComponent& _get_transform_comp(EntityHandle handle, Scene &scene);
     static RenderComponent& _get_render_comp(EntityHandle handle, Scene &scene);
@@ -53,7 +66,8 @@ namespace scene
         scene_manager->registered_types[scene_manager->registered_type_count++] = registered;
     }
 
-    static void register_member(RegisteredEntityType& registered, size_t offset, char* name, FieldType type)
+#define register_member(registered, entity_type, field, field_type) _register_member(registered, offset_of(entity_type, field), #field, field_type)
+    static void _register_member(RegisteredEntityType& registered, size_t offset, char* name, FieldType type)
     {
         strcpy(registered.fields[registered.field_count].name, name);
         registered.fields[registered.field_count].offset = offset;
@@ -203,71 +217,79 @@ namespace scene
         rendering::set_position_z(comp.transform, z);
     }
 
-    
 	static void set_uniform_value(EntityHandle handle, const char* name, r32 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
+        for(i32 i = 0; i < render.render_pass_count; i++)
+        {
+            rendering::set_uniform_value(scene.manager->renderer, render.material_handles[i], name, value);
+        }
 	}
 
 	static void set_uniform_value(EntityHandle handle, const char* name, math::Vec2 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
+        for(i32 i = 0; i < render.render_pass_count; i++)
+        {
+            rendering::set_uniform_value(scene.manager->renderer, render.material_handles[i], name, value);
+        }
 	}
 
 	static void set_uniform_value(EntityHandle handle, const char* name, math::Vec3 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
+        for(i32 i = 0; i < render.render_pass_count; i++)
+        {
+            rendering::set_uniform_value(scene.manager->renderer, render.material_handles[i], name, value);
+        }
 	}
 
 	static void set_uniform_value(EntityHandle handle, const char* name, math::Vec4 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
+        for(i32 i = 0; i < render.render_pass_count; i++)
+        {
+            rendering::set_uniform_value(scene.manager->renderer, render.material_handles[i], name, value);
+        }
 	}
 
 	static void set_uniform_value(EntityHandle handle, const char* name, i32 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
+        for(i32 i = 0; i < render.render_pass_count; i++)
+        {
+            rendering::set_uniform_value(scene.manager->renderer, render.material_handles[i], name, value);
+        }
 	}
 
 	static void set_uniform_value(EntityHandle handle, const char* name, math::Mat4 value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
-        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
+        for(i32 i = 0; i < render.render_pass_count; i++)
+        {
+            rendering::set_uniform_value(scene.manager->renderer, render.material_handles[i], name, value);
+        }
 	}
 
 	static void set_uniform_value(EntityHandle handle, const char* name, rendering::TextureHandle value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
         assert(value.handle != 0);
-        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
+        for(i32 i = 0; i < render.render_pass_count; i++)
+        {
+            rendering::set_uniform_value(scene.manager->renderer, render.material_handles[i], name, value);
+        }
 	}
 
     static void set_uniform_value(EntityHandle handle, const char* name, rendering::MSTextureHandle value, SceneHandle &scene)
 	{
         RenderComponent &render = get_render_comp(handle, scene);
         assert(value.handle != 0);
-        rendering::set_uniform_value(scene.manager->renderer, render.v2.material_handle, name, value);
-	}
-    
-    static i32 _find_handle_in_range(i32 start, i32 end, i32 *handles)
-    {
-        i32 handle = -1;
-        for(i32 i = start; i < end; i++)
+        for(i32 i = 0; i < render.render_pass_count; i++)
         {
-            if(handles[i] == -1)
-            {
-                handle = i;
-                break;
-            }
+            rendering::set_uniform_value(scene.manager->renderer, render.material_handles[i], name, value);
         }
-
-        return handle;
-    } 
+	}
 
     static i32 _find_next_free_internal_handle(SceneManager *scene_manager)
     {
@@ -337,13 +359,9 @@ namespace scene
             scene._internal_handles[index] = -1;
             scene.active_entities[index] = true;
             scene.transform_components[index].transform = rendering::create_transform(math::Vec3(0, 0, 0), math::Vec3(1, 1, 1), math::Vec3(0.0f));
-            scene.transform_components[index].parent_handle = EMPTY_COMP_HANDLE;
-
-            for(i32 i = 0; i < MAX_CHILDREN; i++)
-            {
-                scene.transform_components[index].child_handles[i] = EMPTY_COMP_HANDLE;
-            }
             
+            scene.entities[index].child_count = 0;
+            scene.entities[index].parent = EMPTY_ENTITY_HANDLE;
         }
     }
     
@@ -393,18 +411,68 @@ namespace scene
                     }
                     
                     fprintf(file, "type: %d\n", entity.type);
+
+                    if(entity.tags.tag_count > 0)
+                    {
+                        fprintf(file, "tags: ");
+
+                        for(i32 i = 0; i < entity.tags.tag_count; i++)
+                        {                            
+                            fprintf(file, "%s", entity.tags.tags[i]);
+
+                            if(i < entity.tags.tag_count - 1)
+                            {
+                                fprintf(file, ", ");
+                            }
+                        }
+
+                        fprintf(file, "\n");
+                    }
+                    
+                    
                     fprintf(file, "position: %f %f %f\n", transform.transform.position.x, transform.transform.position.y, transform.transform.position.z);
                     fprintf(file, "scale: %f %f %f\n", transform.transform.scale.x, transform.transform.scale.y, transform.transform.scale.z);
                     fprintf(file, "rotation: %f %f %f\n", transform.transform.euler_angles.x, transform.transform.euler_angles.y, transform.transform.euler_angles.z);
+
+                    if(has_light_component(entity.handle, scene_handle))
+                    {
+                        LightComponent &light = get_light_comp(entity.handle, scene_handle);
+
+                        switch(light.type)
+                        {
+                        case LightType::DIRECTIONAL:
+                        {
+                            fprintf(file, "light::direction: %f %f %f\n", light.dir_light.direction.x, light.dir_light.direction.y, light.dir_light.direction.z);
+                            fprintf(file, "light::ambient: %f %f %f\n", light.dir_light.ambient.x, light.dir_light.ambient.y, light.dir_light.ambient.z);
+                            fprintf(file, "light::diffuse: %f %f %f\n", light.dir_light.diffuse.x, light.dir_light.diffuse.y, light.dir_light.diffuse.z);
+                            fprintf(file, "light::specular: %f %f %f\n", light.dir_light.specular.x, light.dir_light.specular.y, light.dir_light.specular.z);                            
+                        }
+                        break;
+                        case LightType::POINT:
+                        {
+                            fprintf(file, "light::direction: %f %f %f\n", light.point_light.position.x, light.point_light.position.y, light.point_light.position.z);
+                            fprintf(file, "light::constant: %f\n", light.point_light.constant);
+                            fprintf(file, "light::linear: %f\n", light.point_light.linear);
+                            fprintf(file, "light::quadratic: %f\n", light.point_light.quadratic);
+                            fprintf(file, "light::ambient: %f %f %f\n", light.point_light.ambient.x, light.point_light.ambient.y, light.point_light.ambient.z);
+                            fprintf(file, "light::diffuse: %f %f %f\n", light.point_light.diffuse.x, light.point_light.diffuse.y, light.point_light.diffuse.z);
+                            fprintf(file, "light::specular: %f %f %f\n", light.point_light.specular.x, light.point_light.specular.y, light.point_light.specular.z);                            
+                        }
+                        break;
+                        default:
+                        assert(false);
+                        break;
+                        }
+                    }
 
                     RegisteredEntityType* type_info = get_registered_type(entity.type, scene_handle.manager);
 
                     if(type_info)
                     {
                         EntityData* data = entity.entity_data;
-                        for(i32 i = 0; i < type_info->field_count; i++)
+                        for(i32 j = 0; j < type_info->field_count; j++)
                         {
-                            Field& field = type_info->fields[i];
+                            Field& field = type_info->fields[j];
                             fprintf(file, "%s: ", field.name);
                             unsigned char *ptr = ((unsigned char *)data + field.offset);
                             switch(field.type)
@@ -453,8 +521,6 @@ namespace scene
                                 fprintf(file, "%s\n", (char*)(ptr));
                             }
                             break;
-                            default:
-                            break;
                             }
                         }
                     }
@@ -479,6 +545,7 @@ namespace scene
         EntityHandle handle = { -1 };
         
         char buffer[256];
+        b32 hide_in_ui = false;
 
         RegisteredEntityType *type_info = nullptr;
         EntityData* entity_data = nullptr;
@@ -498,6 +565,37 @@ namespace scene
                 sscanf(buffer, "template: %[^\n]", template_path);
                 handle = register_entity_from_template_file(template_path, scene, true);
             }
+            else if(starts_with(buffer, "hide_in_ui"))
+            {
+                sscanf(buffer, "hide_in_ui: %d", &hide_in_ui);
+            }
+            else if(starts_with(buffer, "tags"))
+            {
+                char tag_buf[256];
+                sscanf(buffer, "tags: %[^\n]", tag_buf);
+
+                char tag[64];
+                i32 tag_index = 0;
+                
+                for(size_t i = 0; i < strlen(tag_buf) + 1; i++)
+                {
+                    char c = tag_buf[i];
+                    if(c == ',' || c == '\n' || c == '\r' || c == '\0')
+                    {
+                        tag[tag_index] = '\0';
+                        tag_index = 0;
+                        set_entity_tag(tag, handle, scene);
+                    }
+                    else if(c == ' ')
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        tag[tag_index++] = c;
+                    }
+                }
+            }
             else if(starts_with(buffer, "type"))
             {
                 u32 type;
@@ -511,7 +609,7 @@ namespace scene
                         entity_data = scene.manager->callbacks.on_load_entity_of_type(handle, type_info->type_id, scene);
                         if(entity_data)
                         {
-                            entity_data->handle = handle;
+                            entity_data->handle.handle = handle.handle;
                             Entity& entity = get_entity(handle, scene);
                             entity.savable = true;
                             entity.entity_data = entity_data;
@@ -551,6 +649,113 @@ namespace scene
             else if(starts_with(buffer, "id"))
             {
             }
+            else if(starts_with(buffer, "light::"))
+            {
+                LightComponent &light_comp = get_light_comp(handle, scene);
+                if(starts_with(buffer, "light::direction"))
+                {
+                    if(light_comp.type != LightType::DIRECTIONAL)
+                    {
+                        log_error("ERROR in scene loading: Light type mismatch");
+                    }
+                    sscanf(buffer, "light::direction: %f %f %f", &light_comp.dir_light.direction.x, &light_comp.dir_light.direction.y, &light_comp.dir_light.direction.z);
+                }
+                else if(starts_with(buffer, "light::ambient"))
+                {
+                    math::Vec3 ambient;
+                    sscanf(buffer, "light::ambient: %f %f %f", &ambient.x, &ambient.y, &ambient.z);
+                    switch(light_comp.type)
+                    {
+                    case LightType::DIRECTIONAL:
+                    {
+                        light_comp.dir_light.ambient = ambient;
+                    }
+                    break;
+                    case LightType::POINT:
+                    {
+                        light_comp.point_light.ambient = ambient;                        
+                    }
+                    break;
+                    default:
+                    assert(false);
+                    break;
+                    }
+                }
+                else if(starts_with(buffer, "light::diffuse"))
+                {
+                    math::Vec3 diffuse;
+                    sscanf(buffer, "light::diffuse: %f %f %f", &diffuse.x, &diffuse.y, &diffuse.z);
+                    switch(light_comp.type)
+                    {
+                    case LightType::DIRECTIONAL:
+                    {
+                        light_comp.dir_light.diffuse = diffuse;
+                    }
+                    break;
+                    case LightType::POINT:
+                    {
+                        light_comp.point_light.diffuse = diffuse;                        
+                    }
+                    break;
+                    default:
+                    assert(false);
+                    break;
+                    }
+                }
+                else if(starts_with(buffer, "light::specular"))
+                {
+                    math::Vec3 specular;
+                    sscanf(buffer, "light::specular: %f %f %f", &specular.x, &specular.y, &specular.z);
+                    switch(light_comp.type)
+                    {
+                    case LightType::DIRECTIONAL:
+                    {
+                        light_comp.dir_light.specular = specular;
+                    }
+                    break;
+                    case LightType::POINT:
+                    {
+                        light_comp.point_light.specular = specular;                        
+                    }
+                    break;
+                    default:
+                    assert(false);
+                    break;
+                    }
+                }
+                else if(starts_with(buffer, "light::position"))
+                {
+                    if(light_comp.type != LightType::POINT)
+                    {
+                        log_error("ERROR in scene loading: Light type mismatch");
+                    }
+                    sscanf(buffer, "light::direction: %f %f %f", &light_comp.point_light.position.x, &light_comp.point_light.position.y, &light_comp.point_light.position.z);
+                }
+                else if(starts_with(buffer, "light::constant"))
+                {
+                    if(light_comp.type != LightType::POINT)
+                    {
+                        log_error("ERROR in scene loading: Light type mismatch");
+                    }
+                    sscanf(buffer, "light::constant: %f", &light_comp.point_light.constant);
+                }
+                else if(starts_with(buffer, "light::linear"))
+                {
+                    if(light_comp.type != LightType::POINT)
+                    {
+                        log_error("ERROR in scene loading: Light type mismatch");
+                    }
+                    sscanf(buffer, "light::linear: %f", &light_comp.point_light.linear);
+                }
+                else if(starts_with(buffer, "light::quadratic"))
+                {
+                    if(light_comp.type != LightType::POINT)
+                    {
+                        log_error("ERROR in scene loading: Light type mismatch");
+                    }
+                    sscanf(buffer, "light::quadratic: %f", &light_comp.point_light.quadratic);
+                }
+            }
             else
             {
                 if(!type_info || !entity_data)
@@ -575,6 +780,8 @@ namespace scene
                 
                 load_entity_field(name, val, entity_data, *type_info);
             }
+
+            set_hide_in_ui(handle, hide_in_ui, scene);
         }
     }
     
@@ -628,15 +835,18 @@ namespace scene
         rendering::MaterialHandle material_handle;
         rendering::BufferHandle buffer_handle;
         rendering::MaterialInstanceHandle material_instances[1024];
-        i32 count;
+		rendering::RenderPassHandle pass_handle;
+		i32 count;
 
         rendering::VertexAttribute attributes[8];
         i32 attribute_count;
+
+        b32 is_static;
     };
     
     static void allocate_instance_buffers(Scene &scene)
     {
-        InstancePair instance_pairs[32];
+        InstancePair *instance_pairs = (InstancePair*)malloc(sizeof(InstancePair) * 256);
         i32 pair_count = 0;
         
         Renderer *renderer = scene.renderer;
@@ -645,37 +855,47 @@ namespace scene
         for(i32 i = 0; i < scene.render_component_count; i++)
         {
             RenderComponent &comp = scene.render_components[i];
-            rendering::Material &material_instance = rendering::get_material_instance(comp.v2.material_handle, renderer);
 
-            if(material_instance.instanced_vertex_attribute_count > 0)
+            for(i32 pass_index = 0; pass_index < comp.render_pass_count; pass_index++)
             {
-                b32 found = false;
-            
-                for(i32 j = 0; j < pair_count; j++)
+				rendering::RenderPassHandle pass_handle = comp.render_passes[pass_index];
+                rendering::MaterialInstanceHandle instance_handle = comp.material_handles[pass_index];
+                rendering::Material &material_instance = rendering::get_material_instance(instance_handle, renderer);
+
+                if(material_instance.instanced_vertex_attribute_count > 0)
                 {
-                    InstancePair &pair = instance_pairs[j];
-                    if(pair.buffer_handle.handle == comp.v2.buffer_handle.handle && pair.material_handle.handle ==  material_instance.source_material.handle)
+                    b32 found = false;
+            
+                    for(i32 j = 0; j < pair_count; j++)
                     {
-                        found = true;
-                        pair.material_instances[pair.count++] = comp.v2.material_handle;
+                        InstancePair &pair = instance_pairs[j];
+                        if(pair.pass_handle.handle == pass_handle.handle && pair.buffer_handle.handle == comp.buffer_handle.handle && pair.material_handle.handle == comp.original_materials[pass_index].handle)
+                        {
+                            found = true;
+                            pair.material_instances[pair.count++] = instance_handle;
+                        }
+                    }
+
+                    if(!found)
+                    {
+                        InstancePair &pair = instance_pairs[pair_count++];
+                        pair.attribute_count = 0;
+                        pair.count = 0;
+                        pair.is_static = comp.is_static;
+                        pair.buffer_handle = comp.buffer_handle;
+                        pair.material_handle = material_instance.source_material;
+						pair.pass_handle = pass_handle;
+
+                        for(i32 j = 0; j < material_instance.instanced_vertex_attribute_count; j++)
+                        {
+                            pair.attributes[pair.attribute_count++] = material_instance.instanced_vertex_attributes[j].attribute;
+                        }
+                    
+                        pair.material_instances[pair.count++] = instance_handle;
                     }
                 }
 
-                if(!found)
-                {
-                    InstancePair &pair = instance_pairs[pair_count++];
-                    pair.attribute_count = 0;
-                    pair.count = 0;
-                    pair.buffer_handle = comp.v2.buffer_handle;
-                    pair.material_handle = material_instance.source_material;
-                    
-                    for(i32 j = 0; j < material_instance.instanced_vertex_attribute_count; j++)
-                    {
-                        pair.attributes[pair.attribute_count++] = material_instance.instanced_vertex_attributes[j].attribute;
-                    }
-                    
-                    pair.material_instances[pair.count++] = comp.v2.material_handle;
-                }
+                comp.material_handles[pass_index] = instance_handle;
             }
         }
 
@@ -683,6 +903,9 @@ namespace scene
         for(i32 i = 0; i < pair_count; i++)
         {
             InstancePair &pair = instance_pairs[i];
+
+            rendering::BufferUsage usage = pair.is_static ? rendering::BufferUsage::STATIC : rendering::BufferUsage::DYNAMIC;
+            
             InstanceBufferData data = {};
             data.buffer_handle = pair.buffer_handle;
             data.source_material_handle = pair.material_handle;
@@ -690,7 +913,7 @@ namespace scene
             // Allocate all buffers
             for(i32 j = 0; j < pair.attribute_count; j++)
             {
-                rendering::InstanceBufferHandle instance_buffer_handle = rendering::allocate_instance_buffer(pair.attributes[j].type, math::next_power_of_two(pair.count), renderer);
+                rendering::InstanceBufferHandle instance_buffer_handle = rendering::allocate_instance_buffer(pair.attributes[j].type, math::next_power_of_two(pair.count), usage, renderer);
 
                 data.instance_buffer_handles[data.instance_buffer_count++] = instance_buffer_handle;
                 
@@ -706,6 +929,8 @@ namespace scene
             scene.instance_buffer_data[scene.instance_buffer_data_count++] = data;
             assert(scene.instance_buffer_data_count < MAX_INSTANCE_BUFFER_HANDLES);
         }
+
+		free(instance_pairs);
     }
 
     static void free_instance_buffers(Scene &scene)
@@ -722,6 +947,10 @@ namespace scene
     static void free_scene(SceneHandle handle, b32 invalidate_handle)
     {
         SceneManager *scene_manager = handle.manager;
+
+        
+        if(!scene_manager)
+            return;
         
         if(scene_manager->callbacks.on_scene_will_be_freed)
             scene_manager->callbacks.on_scene_will_be_freed(handle);
@@ -739,7 +968,10 @@ namespace scene
             {
                 for(i32 i = 0; i < scene.render_component_count; i++)
                 {
-                    rendering::delete_material_instance(scene.renderer, scene.render_components[i].v2.material_handle);
+                    for(i32 j = 0; j < scene.render_components[i].render_pass_count; j++)
+                    {
+                        rendering::delete_material_instance(scene.renderer, scene.render_components[i].material_handles[j]);
+                    }
                 }
                 
                 scene.entity_count = 0;
@@ -749,7 +981,7 @@ namespace scene
                 for(i32 index = 0; index < scene.particle_system_component_count; index++)
                 {
                     ParticleSystemComponent& ps_comp = scene.particle_system_components[index];
-                    remove_particle_system(scene.renderer, ps_comp.handle);
+                    scene_manager->renderer->particles.api->remove_particle_system(scene.renderer, ps_comp.handle);
                 }
                 
                 scene.particle_system_component_count = 0;
@@ -788,17 +1020,21 @@ namespace scene
         Scene &scene = get_scene(handle);                
         for(i32 i = 0; i < scene.particle_system_component_count; i++)
         {
-            stop_particle_system(scene.particle_system_components[i].handle, scene.renderer);
+            handle.manager->renderer->particles.api->stop_particle_system(scene.particle_system_components[i].handle, scene.renderer);
         }
     }
-    
+
     static void activate_particle_systems(SceneHandle handle)
     {
-        Scene &scene = get_scene(handle);                
+        Scene &scene = get_scene(handle);
         for(i32 i = 0; i < scene.particle_system_component_count; i++)
         {
-            start_particle_system(scene.particle_system_components[i].handle, scene.renderer);
-            pause_particle_system(scene.particle_system_components[i].handle, scene.renderer, false);
+            ParticleSystemInfo* ps = handle.manager->renderer->particles.api->get_particle_system_info(scene.particle_system_components[i].handle, handle.manager->renderer);
+            if(ps->attributes.play_on_awake)
+            {
+                handle.manager->renderer->particles.api->start_particle_system(scene.particle_system_components[i].handle, scene.renderer);
+            }
+            handle.manager->renderer->particles.api->pause_particle_system(scene.particle_system_components[i].handle, scene.renderer, false);
         }
     }
     
@@ -833,20 +1069,6 @@ namespace scene
     }
 
 #define EPSILON 0.00001f
-
-    // b32 ray_intersects_plane(math::Vec3 plane_normal, math::Vec3 plane_position, math::Vec3 ray_origin, math::Vec3 ray_direction, math::Vec3 &intersection_point)
-    // {
-    //     r32 denom = math::dot(plane_normal, ray_direction);
-    //     if(denom > EPSILON)
-    //     {
-    //         math::Vec3 dist_vec = plane_position - ray_origin;
-    //         r32 t = -math::dot(dist_vec, plane_normal) / denom;
-    //         intersection_point = ray_origin + ray_direction * t;
-    //         return t >= 0;
-    //     }
-
-    //     return false;
-    // }
 
     b32 ray_intersects_plane(math::Vec3 plane_normal, math::Vec3 plane_position, math::Vec3 ray_origin, math::Vec3 ray_direction, math::Vec3 &intersection_point)
     {
@@ -890,53 +1112,26 @@ namespace scene
 
         return true;
     }
-    
-    static b32 _is_gizmo(EntityHandle entity, SceneManager *manager)
-    {
-        
-        // if(entity.handle == manager->gizmos.x_arrow.handle)
-        // {
-        //     manager->gizmos.selected_gizmo = Gizmos::X_ARROW;
-        //     return true;
-        // }
-
-        // if(entity.handle == manager->gizmos.y_arrow.handle)
-        // {
-        //     manager->gizmos.selected_gizmo = Gizmos::Y_ARROW;
-        //     return true;
-        // }
-
-        // if(entity.handle == manager->gizmos.z_arrow.handle)
-        // {
-        //     manager->gizmos.selected_gizmo = Gizmos::Z_ARROW;
-        //     return true;
-        // }
-
-        return false;
-    }
 
     static void deactivate_gizmo_arrows(SceneManager *manager)
     {
         manager->gizmos.active = false;
     }
 
-    static EntityHandle get_root_entity(TransformComponent &current_transform, Scene &scene)
+    static EntityHandle get_root_entity(EntityHandle handle, Scene &scene)
     {
-        if(IS_COMP_HANDLE_VALID(current_transform.parent_handle))
+        Entity &entity = get_entity(handle, scene);
+
+        if(IS_ENTITY_HANDLE_VALID(entity.parent))
         {
-            TransformComponent& parent_transform = scene.transform_components[current_transform.parent_handle.handle];
-            return get_root_entity(parent_transform, scene);
+            return get_root_entity(entity.parent, scene);
         }
         else
         {
-            i32 internal_handle = scene._internal_handles[current_transform.entity.handle - 1];
-            assert(internal_handle > -1);
-            Entity &entity = scene.entities[internal_handle];
-            
             if(!entity.selection_enabled)
                 return { -1 };
             else
-                return current_transform.entity;
+                return handle;
         }
     }
     
@@ -979,7 +1174,7 @@ namespace scene
                     scene::RenderComponent &render_comp = scene.render_components[ent.render_handle.handle];
 
                     // Ignore the entity if it is not selectable and it has no parent
-                    if(!ent.selection_enabled && !IS_COMP_HANDLE_VALID(transform.parent_handle))
+                    if(!ent.selection_enabled && !IS_ENTITY_HANDLE_VALID(ent.parent))
                         continue;
                         
                     math::BoundingBox box;
@@ -998,7 +1193,7 @@ namespace scene
                             // Look for selectable parents
                             if(!ent.selection_enabled)
                             {
-                                EntityHandle parent = get_root_entity(transform, scene);
+                                EntityHandle parent = get_root_entity(entity_handle, scene);
 
                                 // If a selectable parent was found
                                 if(IS_ENTITY_HANDLE_VALID(parent))
@@ -1022,8 +1217,21 @@ namespace scene
         return entity_handle;
     }
 
+    static b32 entity_exists(EntityHandle entity_handle, SceneHandle scene_handle)
+    {
+        Scene& scene = get_scene(scene_handle);
+        i32 internal_handle = scene._internal_handles[entity_handle.handle - 1];
+        if(internal_handle == -1)
+            return false;
+
+        return true;
+    }
+
     static b32 has_render_component(EntityHandle entity_handle, SceneHandle& scene)
     {
+        if(!entity_exists(entity_handle, scene))
+            return false;
+        
         Entity& entity = get_entity(entity_handle, scene);
 
         return (b32)(entity.comp_flags & COMP_RENDER);
@@ -1031,6 +1239,9 @@ namespace scene
 
     static b32 has_transform_component(EntityHandle entity_handle, SceneHandle& scene)
     {
+        if(!entity_exists(entity_handle, scene))
+            return false;
+        
         Entity& entity = get_entity(entity_handle, scene);
 
         return (b32)(entity.comp_flags & COMP_TRANSFORM);
@@ -1038,6 +1249,9 @@ namespace scene
 
     static b32 has_particle_component(EntityHandle entity_handle, SceneHandle& scene)
     {
+        if(!entity_exists(entity_handle, scene))
+            return false;
+        
         Entity& entity = get_entity(entity_handle, scene);
 
         return (b32)(entity.comp_flags & COMP_PARTICLES);
@@ -1045,12 +1259,15 @@ namespace scene
 
     static b32 has_light_component(EntityHandle entity_handle, SceneHandle& scene)
     {
+        if(!entity_exists(entity_handle, scene))
+            return false;
+        
         Entity& entity = get_entity(entity_handle, scene);
 
         return (b32)(entity.comp_flags & COMP_LIGHT);
     }
     
-    static void set_wireframe_enabled(b32 enabled, EntityHandle entity_handle, SceneHandle &handle)
+    static void set_wireframe_enabled(b32 enabled, EntityHandle entity_handle, SceneHandle &handle, b32 update_children = true)
     {
         Scene &scene = get_scene(handle);
         if(has_render_component(entity_handle, handle))
@@ -1058,6 +1275,37 @@ namespace scene
             RenderComponent &render_comp = _get_render_comp(entity_handle, scene);
             render_comp.wireframe_enabled = enabled;            
         }
+
+        if(update_children)
+        {
+            Entity &entity = get_entity(entity_handle, handle);
+        
+            for(i32 i = 0; i < entity.child_count; i++)
+            {
+                scene::set_wireframe_enabled(enabled, entity.children[i], handle);
+            }
+        }
+    }
+
+    static void set_bounding_box_enabled(b32 enabled, EntityHandle entity_handle, SceneHandle &handle)
+    {
+        Scene &scene = get_scene(handle);
+        if(has_render_component(entity_handle, handle))
+        {
+            RenderComponent &render_comp = _get_render_comp(entity_handle, scene);
+            render_comp.bounding_box_enabled = enabled;            
+        }
+    }
+
+    static b32 get_bounding_box_enabled(EntityHandle entity_handle, SceneHandle &handle)
+    {
+        Scene &scene = get_scene(handle);
+        if(has_render_component(entity_handle, handle))
+        {
+            RenderComponent &render_comp = _get_render_comp(entity_handle, scene);
+            return render_comp.bounding_box_enabled;            
+        }
+        return false;
     }
 
     static void _register_gizmos(SceneHandle scene)
@@ -1074,7 +1322,7 @@ namespace scene
             r32 unit = manager->gizmos.current_distance_to_camera;
             
             TransformComponent &transform_comp = get_transform_comp(manager->selected_entity, manager->loaded_scene);
-            rendering::Transform t = rendering::create_transform(transform_comp.transform.position, math::Vec3(1.0f), transform_comp.transform.orientation);
+            rendering::Transform t = rendering::create_transform(transform_comp.transform.position, math::Vec3(1.0f), math::Vec3(0.0f));
             math::Vec3 yellow(RGB_FLOAT(189), RGB_FLOAT(183), RGB_FLOAT(107));
 
             if(manager->gizmos.transformation_type == TransformationType::SCALE)
@@ -1104,62 +1352,32 @@ namespace scene
             }
                 
             // Draw transform manipulators
-            math::Vec3 line[4];
-
-            // The first adjacency vector
-            math::Vec3 v1 = 2.0f * math::Vec3(0.0f) - math::Vec3(manager->gizmos.current_distance_to_camera, 0.0f, 0.0f);
-            math::Vec3 v2 = math::Vec3(0.0f, 0.0f, 0.0f);
-            math::Vec3 v3 = math::Vec3(manager->gizmos.current_distance_to_camera, 0.0f, 0.0f);
-            math::Vec3 v4 = 2.0f * v3 - v2;
-
-            line[0] = v1;
-            line[1] = v2;
-            line[2] = v3;
-            line[3] = v4;
-
-            size_t count = 4;
+            math::Vec3 v1 = math::Vec3(0.0f, 0.0f, 0.0f);
+            math::Vec3 v2 = math::Vec3(manager->gizmos.current_distance_to_camera, 0.0f, 0.0f);
 
             r32 line_thickness = 5.0f;
-            r32 miter_limit = 0.1f;
 
             // X
-            rendering::direct_update_buffer(manager->renderer, manager->gizmos.x_buffer, (r32*)line, count, sizeof(math::Vec3) * count);
-            rendering::set_uniform_value(manager->renderer, manager->gizmos.x_material, "color", c == TranslationConstraint::X ? yellow : math::Vec3(1.0f, 0.0f, 0.0f));
-            rendering::set_uniform_value(manager->renderer, manager->gizmos.x_material, "thickness", line_thickness);
-            rendering::set_uniform_value(manager->renderer, manager->gizmos.x_material, "miter_limit", miter_limit);
-            rendering::push_buffer_to_render_pass(manager->renderer, manager->gizmos.x_buffer, manager->gizmos.x_material, t, manager->gizmos.line_shader, {1}, rendering::CommandType::NO_DEPTH, rendering::PrimitiveType::LINES);
+            rendering::set_uniform_value(manager->renderer, manager->gizmos.x_material, "color", c == TranslationConstraint::X ? math::Rgba(yellow, 1.0f) : math::Rgba(1.0f, 0.0f, 0.0f, 1.0f));
+            math::Rgba color = c == TranslationConstraint::X ? math::Rgba(yellow, 1.0f) : math::Rgba(1.0f, 0.0f, 0.0f, 1.0f);
+
+            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.x_material,  manager->renderer->render.standard_pass, rendering::CommandType::NO_DEPTH);
 
             // Y
-            v1 = 2.0f * math::Vec3(0.0f) - math::Vec3(0.0f, manager->gizmos.current_distance_to_camera, 0.0f);
-            v2 = math::Vec3(0.0f, 0.0f, 0.0f);
-            v3 = math::Vec3(0.0f, manager->gizmos.current_distance_to_camera, 0.0f);
-            v4 = 2.0f * v3 - v2;
+            v1 = math::Vec3(0.0f, 0.0f, 0.0f);
+            v2 = math::Vec3(0.0f, manager->gizmos.current_distance_to_camera, 0.0f);
 
-            line[0] = v1;
-            line[1] = v2;
-            line[2] = v3;
-            line[3] = v4;
-            rendering::direct_update_buffer(manager->renderer, manager->gizmos.y_buffer, (r32*)line, count, sizeof(math::Vec3) * count);
-            rendering::set_uniform_value(manager->renderer, manager->gizmos.y_material, "color", c == TranslationConstraint::Y ? yellow : math::Vec3(0.0f, 1.0f, 0.0f));
-            rendering::set_uniform_value(manager->renderer, manager->gizmos.y_material, "thickness", line_thickness);
-            rendering::set_uniform_value(manager->renderer, manager->gizmos.y_material, "miter_limit", miter_limit);
-            rendering::push_buffer_to_render_pass(manager->renderer, manager->gizmos.y_buffer, manager->gizmos.y_material, t, manager->gizmos.line_shader, {1}, rendering::CommandType::NO_DEPTH, rendering::PrimitiveType::LINES);
+            color = c == TranslationConstraint::Y ? math::Rgba(yellow, 1.0f) : math::Rgba(0.0f, 1.0f, 0.0f, 1.0f);
+
+            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.y_material, manager->renderer->render.standard_pass, rendering::CommandType::NO_DEPTH);
 
             // Z
-            v1 = 2.0f * math::Vec3(0.0f) - math::Vec3(0.0f, 0.0f, manager->gizmos.current_distance_to_camera);
-            v2 = math::Vec3(0.0f, 0.0f, 0.0f);
-            v3 = math::Vec3(0.0f, 0.0f, manager->gizmos.current_distance_to_camera);
-            v4 = 2.0f * v3 - v2;
+            v1 = math::Vec3(0.0f, 0.0f, 0.0f);
+            v2 = math::Vec3(0.0f, 0.0f, manager->gizmos.current_distance_to_camera);
 
-            line[0] = v1;
-            line[1] = v2;
-            line[2] = v3;
-            line[3] = v4;
-            rendering::direct_update_buffer(manager->renderer, manager->gizmos.z_buffer, (r32*)line, count, sizeof(math::Vec3) * count);
-            rendering::set_uniform_value(manager->renderer, manager->gizmos.z_material, "color", c == TranslationConstraint::Z ? yellow : math::Vec3(0.0f, 0.0f, 1.0f));
-            rendering::set_uniform_value(manager->renderer, manager->gizmos.z_material, "thickness", line_thickness);
-            rendering::set_uniform_value(manager->renderer, manager->gizmos.z_material, "miter_limit", miter_limit);
-            rendering::push_buffer_to_render_pass(manager->renderer, manager->gizmos.z_buffer, manager->gizmos.z_material, t, manager->gizmos.line_shader, {1}, rendering::CommandType::NO_DEPTH, rendering::PrimitiveType::LINES);
+            color = c == TranslationConstraint::Z ? math::Rgba(yellow, 1.0f) : math::Rgba(0.0f, 0.0f, 1.0f, 1.0f);
+
+            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.z_material, manager->renderer->render.standard_pass, rendering::CommandType::NO_DEPTH);
         }
     }
 
@@ -1300,18 +1518,17 @@ namespace scene
                     }
                 }
                 break;
-                case Gizmos::NONE:
-                    return;
+                default:
+                break;
                 }
             }
         }
-            
     }
 
     static void _select_gizmo(SceneHandle handle, EntityHandle gizmo)
     {
         //RenderComponent &render_selected = get_render_comp(gizmo, handle);
-        //rendering::set_uniform_value(*handle.manager->renderer, render_selected.v2.material_handle, "color", math::Rgba(1.0f, 1.0f, 0.0f, 1.0f));
+        //rendering::set_uniform_value(*handle.manager->renderer, render_selected.material_handle, "color", math::Rgba(1.0f, 1.0f, 0.0f, 1.0f));
     }
 
     static void set_editor_camera_lock(b32 locked, SceneManager *scene_manager)
@@ -1345,10 +1562,8 @@ namespace scene
         set_selection_enabled(!scene_manager->editor.selection_enabled, scene_manager);
     }
 
-    static Entity& get_entity(EntityHandle handle, SceneHandle& scene_handle)
+    static Entity& get_entity(EntityHandle handle, Scene &scene)
     {
-        Scene& scene = get_scene(scene_handle);
-        assert(handle.handle != 0);
         i32 internal_handle = scene._internal_handles[handle.handle - 1];
         assert(internal_handle > -1);
         
@@ -1359,14 +1574,23 @@ namespace scene
         return entity;
     }
     
+    static Entity& get_entity(EntityHandle handle, SceneHandle& scene_handle)
+    {
+        Scene& scene = get_scene(scene_handle);
+        assert(handle.handle != 0);
+        return get_entity(handle, scene);
+    }
+    
     static void delete_entity(EntityHandle handle, SceneManager *manager)
     {
-        TransformComponent &transform = get_transform_comp(handle, manager->loaded_scene);
+        if(manager->callbacks.on_entity_will_be_deleted)
+            manager->callbacks.on_entity_will_be_deleted(handle, manager->loaded_scene);
+
+        Entity &entity = get_entity(handle, manager->loaded_scene);
         
-        for(i32 i = 0; i < transform.child_count; i ++)
+        for(i32 i = 0; i < entity.child_count; i++)
         {
-            TransformComponent &child_transform = get_transform_comp(transform.child_handles[i], manager->loaded_scene);
-            delete_entity(child_transform.entity, manager);
+            delete_entity(entity.children[i], manager);
         }
         
         unregister_entity(handle, manager->loaded_scene);
@@ -1403,26 +1627,32 @@ namespace scene
     {
         if(KEY(Key_LeftCtrl))
             return;
-        
+
         // Update camera
-        if(KEY(Key_W))
+        if(KEY(Key_Up))
         {
             translate_forward(camera, (r32)delta_time * 10.0f);
         }
 
-        if(KEY(Key_S))
+        if(KEY(Key_Down))
         {
             translate_forward(camera, (r32)-delta_time * 10.0f);
         }
 
-        if(KEY(Key_A))
+        if(KEY(Key_Left))
         {
             translate_right(camera, (r32)-delta_time * 10.0f);
         }
 
-        if(KEY(Key_D))
+        if(KEY(Key_Right))
         {
             translate_right(camera, (r32)delta_time * 10.0f);
+        }
+
+        if(MOUSE(Mouse_Middle))
+        {
+            translate_up(camera, (r32)input_controller->mouse_y_delta * 0.01f);
+            translate_right(camera, (r32)-input_controller->mouse_x_delta * 0.01f);
         }
 
         if(KEY_DOWN(Key_LeftAlt))
@@ -1453,15 +1683,20 @@ namespace scene
             manager->gizmos.active = false;
         }
     }
+    
+    static EntityHandle get_selected_entity(SceneManager *manager)
+    {
+        return manager->selected_entity;
+    }
 
     static void select_entity(EntityHandle entity, SceneManager *manager)
     {
-        if(IS_ENTITY_HANDLE_VALID(entity))
+        if(IS_ENTITY_HANDLE_VALID(entity) && !HANDLES_EQUAL(entity, manager->selected_entity))
         {
             // Deselect the previously selected entity
             if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
-                scene::set_wireframe_enabled(false, manager->selected_entity, manager->loaded_scene);                        
-
+                scene::set_wireframe_enabled(false, manager->selected_entity, manager->loaded_scene);                 
+            
             manager->selected_entity = entity;
             manager->gizmos.active = true;
 
@@ -1473,7 +1708,7 @@ namespace scene
     static void find_all_template_files(SceneManager *scene_manager)
     {
         DirectoryData data = {};
-        platform.get_all_files_with_extension("../assets/templates/", "tmpl", &data, true);
+        platform.get_all_files_with_extension("../assets/templates/PLACABLES/", "tmpl", &data, true);
         scene_manager->editor.template_files = data;
     }
 
@@ -1486,6 +1721,7 @@ namespace scene
             set_active(manager->gizmos.scale_cubes[i], false, manager->loaded_scene);
             TransformComponent &transform = get_transform_comp(manager->gizmos.scale_cubes[i], manager->loaded_scene);
             set_position(transform, math::Vec3(0, 1 + i, 0));
+            set_hide_in_ui(manager->gizmos.scale_cubes[i], true, manager->loaded_scene);
         }
     }
     
@@ -1507,10 +1743,6 @@ namespace scene
                 if(manager->callbacks.on_started_edit_mode)
                     manager->callbacks.on_started_edit_mode(handle);
                 
-                // @Note: Unnecessary?
-                if(manager->callbacks.on_load)
-                    manager->callbacks.on_load(handle);
-
                 manager->play_camera = scene.camera;
             }
             else
@@ -1534,7 +1766,6 @@ namespace scene
             }
         }
 #endif
-        
         if(manager->mode == SceneMode::EDITING)
         {
             //manager->dragging = MOUSE(Mouse_Left);
@@ -1570,6 +1801,30 @@ namespace scene
                     
                     manager->selected_entity = { -1 };
                     manager->gizmos.active = false;
+                }
+            }
+
+            if(KEY(Key_LeftCtrl) && KEY_DOWN(Key_D))
+            {
+                if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
+                {
+                    Entity e = get_entity(manager->selected_entity, manager->loaded_scene);
+                    if(e.savable)
+                    {
+                        EntityHandle new_entity = register_entity_from_template_file(e.template_path, manager->loaded_scene, true);
+                        for(i32 i = 0; i < e.tags.tag_count; i++)
+                        {
+                            set_entity_tag(e.tags.tags[i], new_entity, manager->loaded_scene);
+                        }
+                        
+                        TransformComponent &transform = get_transform_comp(e.handle, manager->loaded_scene);
+                        TransformComponent &new_transform = get_transform_comp(new_entity, manager->loaded_scene);
+                        set_scale(new_transform, transform.transform.scale);
+                        set_position(new_transform, transform.transform.position);
+                        set_rotation(new_transform, transform.transform.euler_angles);
+
+                        select_entity(new_entity, manager);
+                    }
                 }
             }
 
@@ -1693,11 +1948,18 @@ namespace scene
             }
         }
     }
+
+    static void unload_current_scene(SceneManager *scene_manager)
+    {
+        scene::deactivate_particle_systems(scene_manager->loaded_scene);
+        scene_manager->loaded_scene = { -1 , nullptr};
+        scene_manager->scene_loaded = false;
+    }
     
     static void load_scene(SceneHandle handle, u64 load_flags)
     {
         SceneManager *scene_manager = handle.manager;
-        
+
         if(scene_manager->scene_loaded)
         {
             scene::deactivate_particle_systems(scene_manager->loaded_scene);
@@ -1708,20 +1970,23 @@ namespace scene
                 free_instance_buffers(get_scene(scene_manager->loaded_scene));
                 loaded_scene.loaded = false;
                 free_scene(scene_manager->loaded_scene);
-                scene_manager->loaded_scene = { -1 };
+                scene_manager->loaded_scene = { -1 , nullptr};
                 scene_manager->scene_loaded = false;
             }
         }
         
-        Scene &scene = get_scene(handle);
-        assert(scene.valid);
+        Scene *scene = &get_scene(handle);
+        assert(scene->valid);
 
         scene_manager->loaded_scene = handle;
 
-        if(!scene.loaded)
+        if(!scene->loaded)
         {
-            allocate_instance_buffers(scene);
-            scene.loaded = true;
+            if(scene_manager->callbacks.on_scene_will_load)
+                scene_manager->callbacks.on_scene_will_load(handle);
+            
+            allocate_instance_buffers(*scene);
+            scene->loaded = true;
             
             if(scene_manager->callbacks.on_scene_loaded)
                 scene_manager->callbacks.on_scene_loaded(handle);
@@ -1734,6 +1999,9 @@ namespace scene
         if(scene_manager->mode == SceneMode::EDITING)
         {
             editor_setup(scene_manager);
+            
+            if(scene_manager->callbacks.on_load)
+                scene_manager->callbacks.on_load(handle);
         }
     }
     
@@ -1773,7 +2041,8 @@ namespace scene
         
         entity.render_handle = { scene.render_component_count++ };
         scene::RenderComponent &comp = scene.render_components[entity.render_handle.handle];
-        comp.v2.render_pass_count = 0;
+        comp.wireframe_enabled = false;
+        comp.render_pass_count = 0;
         comp.casts_shadows = cast_shadows;
         
         return(comp);
@@ -1785,55 +2054,115 @@ namespace scene
         return _add_render_component(scene, entity_handle, cast_shadows);
     }
 
-    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, rendering::ShaderHandle shader_handle, RenderComponent &comp)
+    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, rendering::MaterialInstanceHandle material, RenderComponent &comp, Renderer *renderer)
     {
-        comp.v2.render_passes[comp.v2.render_pass_count] = render_pass_handle;
-        comp.v2.shader_handles[comp.v2.render_pass_count] = shader_handle;
-        comp.v2.render_pass_count++;
+        comp.render_passes[comp.render_pass_count] = render_pass_handle;
+        rendering::Material &instance = get_material_instance(material, renderer);
+        comp.original_materials[comp.render_pass_count] = instance.source_material;
+        comp.material_handles[comp.render_pass_count] = create_material_instance(renderer, instance.source_material);
+        comp.render_pass_count++;
     }
 
-    static void add_to_render_pass(const char *pass_name, rendering::ShaderHandle shader_handle, RenderComponent &comp, Renderer *renderer)
+    static void add_to_render_pass(const char *pass_name, rendering::MaterialInstanceHandle material, RenderComponent &comp, Renderer *renderer)
     {
         rendering::RenderPassHandle render_pass_handle = rendering::get_render_pass_handle_for_name(pass_name, renderer);
-        add_to_render_pass(render_pass_handle, shader_handle, comp);
+        add_to_render_pass(render_pass_handle, material, comp, renderer);
     }
 
-    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, RenderComponent &comp)
+    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, RenderComponent &comp, Renderer *renderer)
     {
-        add_to_render_pass(render_pass_handle, comp.v2.shader_handles[0], comp);
+        add_to_render_pass(render_pass_handle, comp.material_handles[0], comp, renderer);
     }
 
     static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, EntityHandle entity, SceneHandle &scene)
     {
         RenderComponent &render_comp = get_render_comp(entity, scene);
-        add_to_render_pass(render_pass_handle, render_comp);
+        add_to_render_pass(render_pass_handle, render_comp, scene.manager->renderer);
     }
 
-    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, rendering::ShaderHandle shader_handle, EntityHandle entity, SceneHandle &scene)
+    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, rendering::MaterialInstanceHandle material, EntityHandle entity, SceneHandle &scene)
     {
         RenderComponent &render_comp = get_render_comp(entity, scene);
-        add_to_render_pass(render_pass_handle, shader_handle, render_comp);
+        add_to_render_pass(render_pass_handle, material, render_comp, scene.manager->renderer);
     }
 
-    static void add_all_to_render_pass(rendering::RenderPassHandle render_pass_handle, SceneHandle &handle)
+    static void add_all_to_render_pass(rendering::RenderPassHandle render_pass_handle, SceneHandle handle)
     {
         Scene &scene = scene::get_scene(handle);
         for(i32 i = 0; i < scene.render_component_count; i++)
         {
-            add_to_render_pass(render_pass_handle, scene.render_components[i]);
+            add_to_render_pass(render_pass_handle, scene.render_components[i], handle.manager->renderer);
+        }
+    }
+
+    static void add_all_with_tag_to_render_pass(rendering::RenderPassHandle render_pass_handle, const char* tag, SceneHandle handle)
+    {
+        if(render_pass_handle.handle > global_max_render_passes)
+        {
+            debug_log("Invalid render pass handle: %d, max is %d", render_pass_handle.handle, global_max_render_passes);
+            assert(false);
+            return;
+        }
+
+        static i32 count = 0;
+        
+        Scene &scene = scene::get_scene(handle);
+        for(i32 i = 0; i < scene.entity_count; i++)
+        {
+            Entity& entity = scene.entities[i];
+            if(has_tag(tag, entity.handle, handle))
+            {
+                if(has_render_component(entity.handle, handle))
+                {
+                    RenderComponent& render_comp = get_render_comp(entity.handle, handle);
+                    add_to_render_pass(render_pass_handle, render_comp, handle.manager->renderer);
+                }
+
+                for(i32 c = 0; c < entity.child_count; c++)
+                {
+                    EntityHandle& child_handle = entity.children[c];
+                    if(!IS_ENTITY_HANDLE_VALID(child_handle))
+                    {
+                        debug_log("Referencing invalid child");
+                        continue;
+                    }
+
+                    Entity& child = get_entity(child_handle, handle);
+                    if(child.child_count > 0)
+                    {
+                        debug_log("Warning: nested children not supported here");
+                        continue;
+                    }
+                    
+                    if(has_render_component(child.handle, handle))
+                    {
+                        RenderComponent& child_render = get_render_comp(child.handle, handle);
+                        add_to_render_pass(render_pass_handle, child_render, handle.manager->renderer);
+                    }
+                }
+            }
         }
     }
 
     static void remove_from_render_pass(rendering::RenderPassHandle render_pass_handle, scene::EntityHandle entity, SceneHandle& scene)
     {
-        RenderComponent &render_comp = get_render_comp(entity, scene);
-        for(i32 i = 0; i < render_comp.v2.render_pass_count; i++)
+        if(!has_render_component(entity, scene))
         {
-            if(render_comp.v2.render_passes[i].handle == render_pass_handle.handle)
+            // @Incomplete/@Hack: Fix this some other way?
+            return;
+        }
+        
+        RenderComponent &render_comp = get_render_comp(entity, scene);
+        for(i32 i = 0; i < render_comp.render_pass_count; i++)
+        {
+            if(render_comp.render_passes[i].handle == render_pass_handle.handle)
             {
-                render_comp.v2.render_passes[i] = render_comp.v2.render_passes[render_comp.v2.render_pass_count - 1];
-                render_comp.v2.shader_handles[i] = render_comp.v2.shader_handles[render_comp.v2.render_pass_count - 1];
-                render_comp.v2.render_pass_count--;
+                rendering::delete_material_instance(scene.manager->renderer, render_comp.material_handles[i]);
+                
+                render_comp.render_passes[i] = render_comp.render_passes[render_comp.render_pass_count - 1];
+                render_comp.material_handles[i] = render_comp.material_handles[render_comp.render_pass_count - 1];
+				render_comp.original_materials[i] = render_comp.original_materials[render_comp.render_pass_count - 1];
+                render_comp.render_pass_count--;
                 break;
             }
         }
@@ -1846,8 +2175,6 @@ namespace scene
         entity.transform_handle = { scene.transform_component_count++ };
 
         scene::TransformComponent &comp = scene.transform_components[entity.transform_handle.handle];
-        comp.parent_handle = { -1 };
-        comp.child_count = 0;
         
         comp.transform = rendering::create_transform(math::Vec3(0.0f), math::Vec3(0.0f), math::Vec3(0.0f));
         comp.entity = entity_handle;
@@ -1869,11 +2196,17 @@ namespace scene
         entity.particle_system_handle = {scene.particle_system_component_count++};
         scene::ParticleSystemComponent &comp = scene.particle_system_components[entity.particle_system_handle.handle];
         
-        comp.handle = create_particle_system(scene.renderer, max_particles, material, attributes.buffer);
-        ParticleSystemInfo* info = get_particle_system_info(comp.handle, scene.renderer);
+        comp.handle = scene.renderer->particles.api->create_particle_system(scene.renderer, max_particles, material, attributes.buffer);
+        ParticleSystemInfo* info = scene.renderer->particles.api->get_particle_system_info(comp.handle, scene.renderer);
         assert(info);
         
         info->attributes = attributes;
+
+        if(attributes.play_on_awake)
+        {
+            scene.renderer->particles.api->start_particle_system(comp.handle, scene.renderer);
+            scene.renderer->particles.api->pause_particle_system(comp.handle, scene.renderer, false);
+        }
         
         return(comp);
     }
@@ -1913,6 +2246,8 @@ namespace scene
         entity.selection_enabled = true;
         entity.handle = handle;
         entity.comp_flags = comp_flags;
+        entity.child_count = 0;
+        entity.parent = EMPTY_ENTITY_HANDLE;
         
         if(comp_flags & COMP_TRANSFORM)
         {
@@ -1943,14 +2278,50 @@ namespace scene
         return _register_entity(comp_flags, scene, savable);
     }
     
-    static EntityTemplate _load_template(const char *path, Scene &scene)
+    static TemplateHandle _create_template_copy_with_new_render_data(rendering::Material *temp_materials, EntityTemplate *template_to_copy, EntityTemplateState &template_state, Renderer *renderer, const rendering::MeshObjectData &obj_data)
     {
-        EntityTemplate templ = {};
+        EntityTemplate new_template = *template_to_copy;
+        new_template.child_count = 0;
+        new_template.render.buffer_handle = obj_data.buffer;
+        new_template.render.mesh_scale = obj_data.mesh_scale;
+        new_template.render.bounding_box = obj_data.bounding_box;
+
+        const rendering::MaterialPair &pair = obj_data.pair;
+        
+        for(i32 i = 0; i < pair.pass_count; i++)
+        {
+            new_template.render.material_handles[i] = create_material(renderer, temp_materials[pair.passes[i]]);
+            strcpy(new_template.render.render_pass_names[i], pair.pass_names[i]);
+        }
+
+        template_state.templates[template_state.template_count++] = new_template;
+        return { template_state.template_count };
+    }
+
+    static void add_render_pass(EntityTemplate *templ, const char *pass_name, rendering::MaterialHandle material)
+    {
+        strcpy(templ->render.render_pass_names[templ->render.render_pass_count], pass_name);
+        templ->render.material_handles[templ->render.render_pass_count] = material;
+        templ->render.render_pass_count++;
+    }
+
+    static void _load_template(EntityTemplate *templ, const char *path, EntityTemplateState &template_state, Scene &scene)
+    {
+        // This will be used at the end of the function to look for child entities that were described in the obj-file
+		
+		templ->render.material_handle = { -1 };
+        
+        rendering::PassMaterial pass_materials[4];
+        i32 pass_material_count = 0;
+        
+		rendering::MeshObjectInfo obj_info;
+        obj_info.object_count = 0;
         
         FILE *file = fopen(path, "r");
+        
         if(file)
         {
-            sprintf(templ.file_path, "%s", path);
+            sprintf(templ->file_path, "%s", path);
 
             i32 last_slash = 0;
             for(i32 i = 0; i < (i32)strlen(path); i++)
@@ -1964,42 +2335,48 @@ namespace scene
             {
                 char c = path[i];
                 if(c != '.')
-                    templ.name[real_index++] = c;
+                    templ->name[real_index++] = c;
                 else
                 {
-                    templ.name[real_index++] = '\0';
+                    templ->name[real_index++] = '\0';
                     break;
                 }
             }
             
             char buffer[256];
 
+            templ->hide_in_ui = false;
+
             while(fgets(buffer, 256, file))
             {
                 if(starts_with(buffer, "v2"))
                 {
                 }
+                else if(starts_with(buffer, "hide_in_ui"))
+                {
+                    sscanf(buffer, "hide_in_ui: %d", &templ->hide_in_ui);
+                }
                 else if(starts_with(buffer, "-transform"))
                 {
-                    templ.comp_flags |= COMP_TRANSFORM;
-                    templ.transform.position = math::Vec3();
-                    templ.transform.scale = math::Vec3(1, 1, 1);
-                    templ.transform.rotation = math::Vec3(0, 0, 0);
-                    templ.transform.child_handle = EMPTY_TEMPLATE_HANDLE;
+                    templ->comp_flags |= COMP_TRANSFORM;
+                    templ->transform.position = math::Vec3();
+                    templ->transform.scale = math::Vec3(1, 1, 1);
+                    templ->transform.rotation = math::Vec3(0, 0, 0);
+                    templ->transform.child_handle = EMPTY_TEMPLATE_HANDLE;
                     
                     while(fgets(buffer, 256, file) && !starts_with(buffer, "-"))
                     {
                         if(starts_with(buffer, "position"))
                         {
-                            sscanf(buffer, "position: %f %f %f\n", &templ.transform.position.x, &templ.transform.position.y, &templ.transform.position.z);
+                            sscanf(buffer, "position: %f %f %f\n", &templ->transform.position.x, &templ->transform.position.y, &templ->transform.position.z);
                         }
                         else if(starts_with(buffer, "scale"))
                         {
-                            sscanf(buffer, "scale: %f %f %f\n", &templ.transform.scale.x, &templ.transform.scale.y, &templ.transform.scale.z);
+                            sscanf(buffer, "scale: %f %f %f\n", &templ->transform.scale.x, &templ->transform.scale.y, &templ->transform.scale.z);
                         }
                         else if(starts_with(buffer, "rotation"))
                         {
-                            sscanf(buffer, "rotation: %f %f %f\n", &templ.transform.rotation.x, &templ.transform.rotation.y, &templ.transform.rotation.z);
+                            sscanf(buffer, "rotation: %f %f %f\n", &templ->transform.rotation.x, &templ->transform.rotation.y, &templ->transform.rotation.z);
                         }
                         else if(starts_with(buffer, "child_templ"))
                         {
@@ -2008,133 +2385,303 @@ namespace scene
                         }
                     }
                 }
-                else if(starts_with(buffer, "-render"))
-                {
-                    templ.comp_flags |= COMP_RENDER;
-                    
-                    while(fgets(buffer, 256, file) && !starts_with(buffer, "-"))
+				else if (starts_with(buffer, "-render"))
+				{
+					templ->comp_flags |= COMP_RENDER;
+                    templ->render.is_static = false;
+
+					while (fgets(buffer, 256, file) && !starts_with(buffer, "-"))
+					{
+						// FIRST PARSE ALL SHADER PASS INFORMATION
+                        if(starts_with(buffer, "static:"))
+                        {
+                            sscanf(buffer, "static: %d", &templ->render.is_static);
+                        } 
+                        else if (starts_with(buffer, "shd"))
+						{
+							if (starts_with(buffer, "shd::uvs:"))
+							{
+								rendering::PassMaterial pass_mat = {};
+								pass_mat.pass_type = rendering::PassType::WITH_UVS;
+								strncpy(pass_mat.pass_name, STANDARD_PASS, strlen(STANDARD_PASS) + 1);
+
+								char shader_file[256];
+								sscanf(buffer, "shd::uvs: %s", shader_file);
+
+								rendering::ShaderHandle shader = rendering::load_shader(scene.renderer, shader_file);
+								pass_mat.material = create_material_copyable(scene.renderer, shader);
+								pass_materials[pass_material_count++] = pass_mat;
+							}
+							else if (starts_with(buffer, "shd::no_uvs:"))
+							{
+								rendering::PassMaterial pass_mat = {};
+								pass_mat.pass_type = rendering::PassType::NO_UVS;
+								strncpy(pass_mat.pass_name, STANDARD_PASS, strlen(STANDARD_PASS) + 1);
+
+								char shader_file[256];
+								sscanf(buffer, "shd::no_uvs: %s", shader_file);
+
+								rendering::ShaderHandle shader = rendering::load_shader(scene.renderer, shader_file);
+								pass_mat.material = create_material_copyable(scene.renderer, shader);
+								pass_materials[pass_material_count++] = pass_mat;
+							}
+							else if (starts_with(buffer, "shd::shadows:"))
+							{
+								rendering::PassMaterial pass_mat = {};
+								pass_mat.pass_type = rendering::PassType::SHADOWS;
+								strcpy(pass_mat.pass_name, SHADOW_PASS);
+
+								char shader_file[256];
+								sscanf(buffer, "shd::shadows: %s", shader_file);
+
+								rendering::ShaderHandle shader = rendering::load_shader(scene.renderer, shader_file);
+								pass_mat.material = create_material_copyable(scene.renderer, shader);
+								pass_materials[pass_material_count++] = pass_mat;
+							}
+							else if (starts_with(buffer, "shd::shadows_uvs:"))
+							{
+								rendering::PassMaterial pass_mat = {};
+								pass_mat.pass_type = rendering::PassType::SHADOWS_WITH_UVS;
+								strcpy(pass_mat.pass_name, SHADOW_PASS);
+
+								char shader_file[256];
+								sscanf(buffer, "shd::shadows_uvs: %s", shader_file);
+
+								rendering::ShaderHandle shader = rendering::load_shader(scene.renderer, shader_file);
+								pass_mat.material = create_material_copyable(scene.renderer, shader);
+								pass_materials[pass_material_count++] = pass_mat;
+							}
+							else if (starts_with(buffer, "shd::pass"))
+							{
+								rendering::PassMaterial pass_mat = {};
+
+								pass_mat.pass_type = rendering::PassType::NONE;
+
+								char shader_file[256];
+								sscanf(buffer, "shd::pass: %s - %s", pass_mat.pass_name, shader_file);
+
+								rendering::ShaderHandle shader = rendering::load_shader(scene.renderer, shader_file);
+								pass_mat.material = create_material_copyable(scene.renderer, shader);
+								pass_materials[pass_material_count++] = pass_mat;
+							}
+							else if (starts_with(buffer, "shd:"))
+							{
+								rendering::PassMaterial pass_mat = {};
+								pass_mat.pass_type = rendering::PassType::STANDARD;
+								strncpy(pass_mat.pass_name, STANDARD_PASS, strlen(STANDARD_PASS) + 1);
+
+								char shader_file[256];
+								sscanf(buffer, "shd: %s", shader_file);
+
+								rendering::ShaderHandle shader = rendering::load_shader(scene.renderer, shader_file);
+								pass_mat.material = create_material_copyable(scene.renderer, shader);
+								pass_materials[pass_material_count++] = pass_mat;
+							}
+
+						}
+						else if (starts_with(buffer, "obj"))
+						{
+							char obj_file[256];
+							sscanf(buffer, "obj: %s", obj_file);
+
+							obj_info = rendering::load_obj(scene.renderer, obj_file);
+
+							if (obj_info.object_count > 0)
+							{
+								templ->render.bounding_box_buffer = rendering::create_bounding_box_buffer(scene.renderer);
+							}
+
+                            if(obj_info.object_count == 1)
+                            {
+                                templ->render.mesh_scale = obj_info.data[0].mesh_scale;
+                            }
+						}
+						else if (starts_with(buffer, "prim"))
+						{
+							char *prim_type = buffer + sizeof(char) * 6;
+
+							if (starts_with(prim_type, "cube"))
+							{
+								obj_info.data[0].buffer = rendering::create_cube(scene.renderer, &templ->render.mesh_scale, &templ->render.bounding_box);
+								obj_info.data[0].use_one_material = true;
+								obj_info.data[0].use_material = true;
+								obj_info.object_count++;
+							}
+							else if (starts_with(prim_type, "plane"))
+							{
+								obj_info.data[0].buffer = rendering::create_plane(scene.renderer, &templ->render.mesh_scale, &templ->render.bounding_box);
+								obj_info.data[0].use_one_material = true;
+								obj_info.data[0].use_material = true;
+								obj_info.object_count++;
+							}
+						}
+						else if (starts_with(buffer, "ignore depth"))
+						{
+							sscanf(buffer, "ignore depth: %d\n", &templ->render.ignore_depth);
+						}
+						else if (starts_with(buffer, "receives shadows"))
+						{
+							//sscanf(buffer, "receives shadows: %d\n", &templ->render.receives_shadows);
+						}
+						else if (starts_with(buffer, "cast shadows"))
+						{
+							sscanf(buffer, "cast shadows: %d\n", &templ->render.casts_shadows);
+						}
+						else if (starts_with(buffer, "mtl"))
+						{
+							sscanf(buffer, "mtl: %s", obj_info.mtl_file_path);
+							obj_info.has_mtl = true;
+						}
+					}
+
+					b32 has_shadow_shader = false;
+					b32 has_uv_shadow_shader = false;
+
+					for (i32 i = 0; i < pass_material_count; i++)
+					{
+						if (pass_materials[i].pass_type == rendering::PassType::SHADOWS)
+						{
+							has_shadow_shader = true;
+						}
+						else if (pass_materials[i].pass_type == rendering::PassType::SHADOWS_WITH_UVS)
+						{
+							has_uv_shadow_shader = true;
+						}
+					}
+
+					if (templ->render.casts_shadows)
+					{
+						if (!has_shadow_shader)
+						{
+							rendering::Material shadow_material = scene.renderer->render.materials[scene.renderer->render.shadow_map_material.handle];
+
+							rendering::PassMaterial pass;
+							pass.pass_type = rendering::PassType::SHADOWS;
+							pass.material = shadow_material;
+							strcpy(pass.pass_name, SHADOW_PASS);
+							pass_materials[pass_material_count++] = pass;
+						}
+
+						if (!has_uv_shadow_shader)
+						{
+							if (!has_shadow_shader)
+							{
+								rendering::Material shadow_material = scene.renderer->render.materials[scene.renderer->render.shadow_map_material.handle];
+
+								rendering::PassMaterial pass;
+								pass.pass_type = rendering::PassType::SHADOWS_WITH_UVS;
+								pass.material = shadow_material;
+								strcpy(pass.pass_name, SHADOW_PASS);
+								pass_materials[pass_material_count++] = pass;
+							}
+						}
+					}
+                        
+                    // PARSE YOUR ANUS!
+                    assert(obj_info.has_mtl);
+
+                    rendering::MaterialPair mat_pairs[64];
+                    i32 mat_pair_count = 0;
+                        
+					rendering::Material *temp = (rendering::Material*)malloc(sizeof(rendering::Material) * 128);
+					i32 temp_count = 0;
+
+                    load_materials_from_mtl(temp, &temp_count, pass_materials, pass_material_count, mat_pairs, &mat_pair_count, obj_info.mtl_file_path, scene.renderer);
+
+                    for(i32 i = 0; i < obj_info.object_count; i++)
                     {
-                        if(starts_with(buffer, "shd:"))
+                        rendering::MeshObjectData &data = obj_info.data[i];
+                            
+                        if(data.use_material)
                         {
-                            if(starts_with(buffer, "shd_pass"))
+                            for(i32 j = 0; j < mat_pair_count; j++)
                             {
-                                // @Incomplete
-                                // char pass_name[128];
-                                // char shader_file[256];
-                                // sscanf(buffer, "shd_pass: %s - %s", pass_name, shader_file);
-                                // rendering::ShaderHandle shader_handle;
+                                rendering::MaterialPair &pair = mat_pairs[j];
 
-                                // rendering::ShaderHandle existing = rendering::get_shader_by_path(scene.renderer, shader_file);
-                                // if(existing.handle != -1)
-                                //     shader_handle = existing;
-                                // else
-                                //     shader_handle = rendering::load_shader(scene.renderer, shader_file);
-
-                                // // Add the pass information
-                                // strncpy(templ.render.v2.render_pass_names[templ.render.v2.render_pass_count], pass_name, strlen(pass_name) + 1);
-                                // templ.render.v2.shader_handles[templ.render.v2.render_pass_count++] = shader_handle;
-                            }
-                            else
-                            {
-                                char shader_file[256];
-                                sscanf(buffer, "shd: %s", shader_file);
-                                
-                                rendering::ShaderHandle shader_handle = rendering::load_shader(scene.renderer, shader_file);
-                                templ.render.v2.material_handle = rendering::create_material(scene.renderer, shader_handle);
-
-                                // Add the pass information
-                                strncpy(templ.render.v2.render_pass_names[templ.render.v2.render_pass_count], STANDARD_PASS, strlen(STANDARD_PASS) + 1);
-                                templ.render.v2.shader_handles[templ.render.v2.render_pass_count++] = shader_handle;
+                                if(strcmp(pair.name, "glitch_default") == 0 || (strcmp(pair.name, data.material_name) == 0 && strlen(pair.name) == strlen(data.material_name)))
+                                {
+                                    data.pair = pair;
+                                }
                             }
                         }
-                        else if(starts_with(buffer, "ignore depth"))
-                        {
-                            sscanf(buffer, "ignore depth: %d\n", &templ.render.ignore_depth);
-                        }
-                        else if(starts_with(buffer, "receives shadows"))
-                        {
-                            //sscanf(buffer, "receives shadows: %d\n", &templ.render.receives_shadows);
-                        }
-                        else if(starts_with(buffer, "cast shadows"))
-                        {
-                            sscanf(buffer, "cast shadows: %d\n", &templ.render.casts_shadows);
-                        }
-                        else if(starts_with(buffer, "obj"))
-                        {
-                            char obj_file[256];
-                            sscanf(buffer, "obj: %s", obj_file);
-                           
-                            templ.render.is_new_version = true;
-                            templ.render.v2.buffer_handle = rendering::load_obj(scene.renderer, obj_file, &templ.render.v2.material_handle, &templ.render.mesh_scale);
-                        }
-                        else if(starts_with(buffer, "prim"))
-                        {
-                            char *prim_type = buffer + sizeof(char) * 6;
+						else
+						{
+							for (i32 j = 0; j < mat_pair_count; j++)
+							{
+								rendering::MaterialPair &pair = mat_pairs[j];
 
-                            if(starts_with(prim_type, "cube"))
-                            {
-                                templ.render.is_new_version = true;
-                                templ.render.v2.buffer_handle = rendering::create_cube(scene.renderer, &templ.render.mesh_scale);
-                            }
-                            else if(starts_with(prim_type, "plane"))
-                            {
-                                templ.render.is_new_version = true;
-                                templ.render.v2.buffer_handle = rendering::create_plane(scene.renderer, &templ.render.mesh_scale);
-                            }
-                        }
-                        else if(starts_with(buffer, "mtl"))
-                        {
-                            if(templ.render.material_handle.handle != 0)
-                            {
-                                debug("A material file was already loaded for this template file: %s\n", templ.file_path);
-                            }
-
-                            char mtl_file[256];
-                            sscanf(buffer, "mtl: %s", mtl_file);
-                            rendering::load_material_from_mtl(scene.renderer, templ.render.v2.material_handle, mtl_file);
-                        }
+								if (strcmp(pair.name, "glitch_default") == 0)
+								{
+									data.pair = pair;
+								}
+							}
+						}
                     }
+
+                    rendering::MaterialPair pair = obj_info.data[0].pair;
+                    templ->render.buffer_handle = obj_info.data[0].buffer;
+                    
+                    for(i32 i = 0; i < pair.pass_count; i++)
+                    {
+                        templ->render.material_handles[i] = create_material(scene.renderer, temp[pair.passes[i]]);
+                        strcpy(templ->render.render_pass_names[i], pair.pass_names[i]);
+                    }
+
+					templ->render.render_pass_count = pair.pass_count;
+
+                    if(obj_info.object_count > 1)
+                    {
+                        for(i32 i = 0; i < obj_info.object_count; i++)
+                        {
+                            const rendering::MeshObjectData &data = obj_info.data[i];
+                            templ->child_handles[templ->child_count++] = _create_template_copy_with_new_render_data(temp, templ, template_state, scene.renderer, data);
+                        }
+            
+                        templ->comp_flags = templ->comp_flags & ~ COMP_RENDER;
+                    }
+
+					free(temp);
                 }
                 else if(starts_with(buffer, "-particles"))
                 {
-                    templ.comp_flags |= COMP_PARTICLES;
+                    templ->comp_flags |= COMP_PARTICLES;
 		    
-                    templ.particles.max_particles = 0;
-                    templ.particles.color_over_lifetime.value_count = 0;
-                    templ.particles.size_over_lifetime.value_count = 0;
-                    templ.particles.speed_over_lifetime.value_count = 0;
-                    templ.particles.material_handle = {};
-                    templ.particles.shader_handle = {};
+                    templ->particles.max_particles = 0;
+                    templ->particles.color_over_lifetime.value_count = 0;
+                    templ->particles.size_over_lifetime.value_count = 0;
+                    templ->particles.speed_over_lifetime.value_count = 0;
+                    templ->particles.material_handle = {};
+                    templ->particles.shader_handle = {};
 		    
-                    ParticleSystemAttributes attributes = get_default_particle_system_attributes();
+                    ParticleSystemAttributes attributes = scene.renderer->particles.api->get_default_attributes();
 		    
                     while(fgets(buffer, 256, file) && !starts_with(buffer, "-"))
                     {
                         if(starts_with(buffer, "max_particles"))
                         {
-                            sscanf(buffer, "max_particles: %d", &templ.particles.max_particles);
+                            sscanf(buffer, "max_particles: %d", &templ->particles.max_particles);
                         }
                         else if(starts_with(buffer, "obj"))
                         {
-                            char obj_file[256];
-                            sscanf(buffer, "obj: %s", obj_file);
+                            // char obj_file[256];
+                            // sscanf(buffer, "obj: %s", obj_file);
 
-                            attributes.buffer = rendering::load_obj(scene.renderer, obj_file, &templ.particles.material_handle, nullptr);
+                            // attributes.buffer = rendering::load_obj(scene.renderer, obj_file, &templ->particles.material_handle, nullptr);
                         }
                         else if(starts_with(buffer, "shd"))
                         {
                             char shader_file[256];
                             sscanf(buffer, "shd: %s", shader_file);
                             rendering::ShaderHandle shader_handle = rendering::load_shader(scene.renderer, shader_file);
-                            templ.particles.material_handle = rendering::create_material(scene.renderer, shader_handle);
+                            templ->particles.material_handle = rendering::create_material(scene.renderer, shader_handle);
 
                             // @Incomplete: Multiple passes?
                             // Add the pass information
-                            templ.particles.shader_handle = shader_handle;
+                            templ->particles.shader_handle = shader_handle;
                         }
-                        else if(starts_with(buffer, "started"))
+                        else if(starts_with(buffer, "play_on_awake"))
                         {
-                            sscanf(buffer, "started: %d", &templ.particles.started);
+                            sscanf(buffer, "play_on_awake: %d", &attributes.play_on_awake);
                         }
                         else if(starts_with(buffer, "start_size"))
                         {
@@ -2223,30 +2770,30 @@ namespace scene
                             {
                                 attributes.emission_module.emitter_func_type = EmissionFuncType::DIRECTION;
                             }
-                            else if(starts_with(func_name, "square"))
-                            {
-                                attributes.emission_module.emitter_func_type = EmissionFuncType::SQUARE;
-                            }
                             else if(starts_with(func_name, "square_random"))
                             {
                                 attributes.emission_module.emitter_func_type = EmissionFuncType::SQUARE_RANDOM;
                             }
-                            else if(starts_with(func_name, "disc"))
+                            else if(starts_with(func_name, "square"))
                             {
-                                attributes.emission_module.emitter_func_type = EmissionFuncType::DISC;
+                                attributes.emission_module.emitter_func_type = EmissionFuncType::SQUARE;
                             }
                             else if(starts_with(func_name, "disc_random"))
                             {
                                 attributes.emission_module.emitter_func_type = EmissionFuncType::DISC_RANDOM;
                             }
-                            else if(starts_with(func_name, "circle"))
+                            else if(starts_with(func_name, "disc"))
                             {
-                                attributes.emission_module.emitter_func_type = EmissionFuncType::CIRCLE;
+                                attributes.emission_module.emitter_func_type = EmissionFuncType::DISC;
                             }
                             else if(starts_with(func_name, "circle_random"))
                             {
                                 attributes.emission_module.emitter_func_type = EmissionFuncType::CIRCLE_RANDOM;
                             }
+                            else if(starts_with(func_name, "circle"))
+                            {
+                                attributes.emission_module.emitter_func_type = EmissionFuncType::CIRCLE;
+                            }                            
                         }
                         else if(starts_with(buffer, "emission_min"))
                         {
@@ -2274,10 +2821,10 @@ namespace scene
                         }
                         else if(starts_with(buffer, "size_key"))
                         {
-                            math::Vec2 &value = templ.particles.size_over_lifetime.values[templ.particles.size_over_lifetime.value_count];
-                            r64 &key = templ.particles.size_over_lifetime.keys[templ.particles.size_over_lifetime.value_count];
+                            math::Vec2 &value = templ->particles.size_over_lifetime.values[templ->particles.size_over_lifetime.value_count];
+                            r64 &key = templ->particles.size_over_lifetime.keys[templ->particles.size_over_lifetime.value_count];
                             sscanf(buffer, "size_key: %lf %f %f", &key, &value.x, &value.y);
-                            templ.particles.size_over_lifetime.value_count++;
+                            templ->particles.size_over_lifetime.value_count++;
                         }
                         else if(starts_with(buffer, "color_key"))
                         {
@@ -2291,8 +2838,8 @@ namespace scene
                                 }
                             }
 
-                            math::Rgba &value = templ.particles.color_over_lifetime.values[templ.particles.color_over_lifetime.value_count];
-                            r64 &key = templ.particles.color_over_lifetime.keys[templ.particles.color_over_lifetime.value_count];
+                            math::Rgba &value = templ->particles.color_over_lifetime.values[templ->particles.color_over_lifetime.value_count];
+                            r64 &key = templ->particles.color_over_lifetime.keys[templ->particles.color_over_lifetime.value_count];
 
                             if(keep_start_color)
                             {
@@ -2306,27 +2853,89 @@ namespace scene
                                 sscanf(buffer, "color_key: %lf %f %f %f %f", &key, &value.r, &value.g, &value.b, &value.a);
                             }
                             
-                            templ.particles.color_over_lifetime.value_count++;
+                            templ->particles.color_over_lifetime.value_count++;
                         }
                         else if(starts_with(buffer, "speed_key"))
                         {
-                            r32 &value = templ.particles.speed_over_lifetime.values[templ.particles.speed_over_lifetime.value_count];
-                            r64 &key = templ.particles.speed_over_lifetime.keys[templ.particles.speed_over_lifetime.value_count];
+                            r32 &value = templ->particles.speed_over_lifetime.values[templ->particles.speed_over_lifetime.value_count];
+                            r64 &key = templ->particles.speed_over_lifetime.keys[templ->particles.speed_over_lifetime.value_count];
                             sscanf(buffer, "speed_key: %lf %f", &key, &value);
-                            templ.particles.speed_over_lifetime.value_count++;
+                            templ->particles.speed_over_lifetime.value_count++;
                         }
                     }
 
-                    templ.particles.attributes = attributes;
+                    templ->particles.attributes = attributes;
+                }
+                else if(starts_with(buffer, "-light"))
+                {
+                    templ->comp_flags |= COMP_LIGHT;
+                    
+                    while(fgets(buffer, 256, file) && !starts_with(buffer, "-"))
+                    {
+                        if(starts_with(buffer, "type"))
+                        {
+                            char buf[256];
+                            sscanf(buffer, "type: %s", buf);
+                            if(starts_with(buf, "directional"))
+                            {
+                                templ->light.type = LightType::DIRECTIONAL;
+                            }
+                            else if(starts_with(buf, "point"))
+                            {
+                                templ->light.type = LightType::POINT;                                
+                            }
+                            else
+                            {
+                                log_error("ERROR in template loading: Unknown light type");
+                            }
+                        }
+                        else if(starts_with(buffer, "direction"))
+                        {
+                            assert(templ->light.type == LightType::DIRECTIONAL);
+                        }
+                        else if(starts_with(buffer, "ambient"))
+                        {
+                            sscanf(buffer, "ambient: %f %f %f", &templ->light.ambient.x, &templ->light.ambient.y, &templ->light.ambient.z);
+                        }
+                        else if(starts_with(buffer, "diffuse"))
+                        {
+                            sscanf(buffer, "diffuse: %f %f %f", &templ->light.diffuse.x, &templ->light.diffuse.y, &templ->light.diffuse.z);
+                        }
+                        else if(starts_with(buffer, "specular"))
+                        {
+                            sscanf(buffer, "specular: %f %f %f", &templ->light.specular.x, &templ->light.specular.y, &templ->light.specular.z);                            
+                        }
+                        else if(starts_with(buffer, "position"))
+                        {
+                            assert(templ->light.type == LightType::POINT);
+                            sscanf(buffer, "position: %f %f %f", &templ->light.point.position.x, &templ->light.point.position.y, &templ->light.point.position.z);
+                        }
+                        else if(starts_with(buffer, "constant"))
+                        {
+                            assert(templ->light.type == LightType::POINT);
+                            sscanf(buffer, "constant: %f", &templ->light.point.constant);
+                        }
+                        else if(starts_with(buffer, "linear"))
+                        {
+                            assert(templ->light.type == LightType::POINT);
+                            sscanf(buffer, "linear: %f", &templ->light.point.linear);
+                        }
+                        else if(starts_with(buffer, "quadratic"))
+                        {
+                            assert(templ->light.type == LightType::POINT);
+                            sscanf(buffer, "quadratic: %f", &templ->light.point.quadratic);
+                        }
+                    }
                 }
             }
             
             fclose(file);
         }
         else
+        {
+            log_error("ERROR in template loading: Could not find file %s", path);
             assert(false);
-        
-        return(templ);
+        }
     }
 
 #define EMPTY_TRANSFORM { math::Vec3(), math::Vec3(1, 1, 1), math::Vec3(), EMPTY_COMP_HANDLE, EMPTY_COMP_HANDLE };
@@ -2354,6 +2963,7 @@ namespace scene
         EntityHandle handle = _register_entity(templ.comp_flags, scene, savable);
         _set_entity_name(handle, templ.name, scene);
         _set_entity_template_path(handle, templ.file_path, scene);
+        set_hide_in_ui(handle, templ.hide_in_ui, scene.handle);
         
         if(templ.comp_flags & COMP_TRANSFORM)
         {
@@ -2365,17 +2975,35 @@ namespace scene
         if(templ.comp_flags & COMP_RENDER)
         {
             RenderComponent &render = _get_render_comp(handle, scene);
-            if(templ.render.is_new_version)
+            render.ignore_depth = templ.render.ignore_depth;
+            render.buffer_handle = templ.render.buffer_handle;
+            render.bounding_box_buffer = templ.render.bounding_box_buffer;
+            render.bounding_box_enabled = false;
+            
+            render.casts_shadows = templ.render.casts_shadows;
+            render.mesh_scale = templ.render.mesh_scale;
+            render.bounding_box = templ.render.bounding_box;
+            render.is_static = templ.render.is_static;
+
+            for(i32 i = 0; i < templ.render.render_pass_count; i++)
             {
-                render.is_new_version = true;
-                render.ignore_depth = templ.render.ignore_depth;
-                render.v2.buffer_handle = templ.render.v2.buffer_handle;
-                render.v2.material_handle = rendering::create_material_instance(scene.renderer, templ.render.v2.material_handle);
-                
-                if(scene.loaded)
+                rendering::RenderPassHandle render_pass_handle = rendering::get_render_pass_handle_for_name(templ.render.render_pass_names[i], scene.renderer);
+                render.render_passes[i] = render_pass_handle;
+                render.original_materials[i] = templ.render.material_handles[i];
+                render.material_handles[i] = rendering::create_material_instance(scene.renderer, templ.render.material_handles[i]);
+            }
+            
+			render.render_pass_count = templ.render.render_pass_count;
+
+            rendering::BufferUsage usage = render.is_static ? rendering::BufferUsage::STATIC : rendering::BufferUsage::DYNAMIC;
+            
+            if(scene.loaded)
+            {
+                for(i32 pass_index = 0; pass_index < templ.render.render_pass_count; pass_index++)
                 {
                     // We have to look for the right instance buffers or allocate them
-                    rendering::Material &material_instance = rendering::get_material_instance(render.v2.material_handle, scene.renderer);
+                    rendering::Material &material_instance = rendering::get_material_instance(render.material_handles[pass_index], scene.renderer);
+                    
                     if(material_instance.instanced_vertex_attribute_count > 0)
                     {
                         InstanceBufferData *data = nullptr;
@@ -2383,7 +3011,7 @@ namespace scene
                         for(i32 i = 0; i < scene.instance_buffer_data_count; i++)
                         {
                             InstanceBufferData &current_data = scene.instance_buffer_data[i];
-                            if(current_data.buffer_handle.handle == render.v2.buffer_handle.handle // The same buffer
+                            if(current_data.buffer_handle.handle == render.buffer_handle.handle // The same buffer
                                && current_data.source_material_handle.handle == material_instance.source_material.handle) // The same source material)
                             {
                                 data = &current_data;
@@ -2398,15 +3026,15 @@ namespace scene
                             for(i32 i = 0; i < material_instance.instanced_vertex_attribute_count; i++)
                             {
                                 // We got a match!
-                                rendering::InstanceBufferHandle handle = data->instance_buffer_handles[i];
-                                i32 max = rendering::get_instance_buffer_max(handle, scene.renderer);
+                                rendering::InstanceBufferHandle instance_buffer_handle = data->instance_buffer_handles[i];
+                                i32 max = rendering::get_instance_buffer_max(instance_buffer_handle, scene.renderer);
                                 
-                                material_instance.instanced_vertex_attributes[i].instance_buffer_handle = handle;
+                                material_instance.instanced_vertex_attributes[i].instance_buffer_handle = instance_buffer_handle;
                                     
                                 if(data->max_count > max)
                                 {
                                     i32 new_max = math::next_power_of_two(max + 1);
-                                    realloc_instance_buffer(handle, new_max, scene.renderer);
+                                    realloc_instance_buffer(instance_buffer_handle, new_max, scene.renderer);
                                 }
                             }
                         }
@@ -2415,31 +3043,18 @@ namespace scene
                             // Allocate all the needed buffers
                             data = &scene.instance_buffer_data[scene.instance_buffer_data_count++];
                             data->max_count = 1;
-                            data->buffer_handle = render.v2.buffer_handle;
+                            data->buffer_handle = render.buffer_handle;
                             data->source_material_handle = material_instance.source_material;
                             
                             for(i32 i = 0; i < material_instance.instanced_vertex_attribute_count; i++)
                             {
-                                rendering::InstanceBufferHandle handle = rendering::allocate_instance_buffer(material_instance.instanced_vertex_attributes[i].attribute.type, math::next_power_of_two(1), scene.renderer);
-                                material_instance.instanced_vertex_attributes[i].instance_buffer_handle = handle;
-                                data->instance_buffer_handles[data->instance_buffer_count++] = handle;
+                                rendering::InstanceBufferHandle instance_buffer_handle = rendering::allocate_instance_buffer(material_instance.instanced_vertex_attributes[i].attribute.type, math::next_power_of_two(1), usage, scene.renderer);
+                                material_instance.instanced_vertex_attributes[i].instance_buffer_handle = instance_buffer_handle;
+                                data->instance_buffer_handles[data->instance_buffer_count++] = instance_buffer_handle;
                             }
                         }
                     }
                 }
-        
-                
-                render.casts_shadows = templ.render.casts_shadows;
-                render.mesh_scale = templ.render.mesh_scale;
-                
-                for(i32 i = 0; i < templ.render.v2.render_pass_count; i++)
-                {
-                    add_to_render_pass(templ.render.v2.render_pass_names[i], templ.render.v2.shader_handles[i], render, scene.renderer);
-                }
-            }
-            else
-            {
-                assert(false);
             }
         }
         
@@ -2447,27 +3062,27 @@ namespace scene
         {
             scene::ParticleSystemComponent &ps_comp = scene::_add_particle_system_component(scene, handle, templ.particles.attributes, templ.particles.max_particles, templ.particles.material_handle);
 
-            ParticleSystemInfo *ps = get_particle_system_info(ps_comp.handle, scene.renderer);
+            ParticleSystemInfo *ps = scene.renderer->particles.api->get_particle_system_info(ps_comp.handle, scene.renderer);
             
             for(i32 i = 0; i < templ.particles.size_over_lifetime.value_count; i++)
             {
                 r64 key = templ.particles.size_over_lifetime.keys[i];
                 math::Vec2 value = templ.particles.size_over_lifetime.values[i];
-                add_size_key(*ps, key, value);
+                scene.renderer->particles.api->add_size_key(*ps, key, value);
             }
 
             for(i32 i = 0; i < templ.particles.color_over_lifetime.value_count; i++)
             {
                 r64 key = templ.particles.color_over_lifetime.keys[i];
                 math::Rgba value = templ.particles.color_over_lifetime.values[i];
-                add_color_key(*ps, key, value);
+                scene.renderer->particles.api->add_color_key(*ps, key, value);
             }
 
             for(i32 i = 0; i < templ.particles.speed_over_lifetime.value_count; i++)
             {
                 r64 key = templ.particles.speed_over_lifetime.keys[i];
                 r32 value = templ.particles.speed_over_lifetime.values[i];
-                add_speed_key(*ps, key, value);
+                scene.renderer->particles.api->add_speed_key(*ps, key, value);
             }
 
             if(templ.comp_flags & COMP_TRANSFORM)
@@ -2482,15 +3097,49 @@ namespace scene
             }
 
             ps_comp.render_pass = rendering::get_render_pass_handle_for_name(STANDARD_PASS, scene.renderer);
-            
-            if(templ.particles.started)
-                start_particle_system(ps_comp.handle, scene.renderer);
+        }
+
+        if(templ.comp_flags & COMP_LIGHT)
+        {
+            LightComponent &light_comp = _add_light_component(scene, handle);
+
+            switch(templ.light.type)
+            {
+            case LightType::DIRECTIONAL:
+            {
+                light_comp.type = LightType::DIRECTIONAL;
+                DirectionalLight &light = light_comp.dir_light;
+
+                light.direction = templ.light.directional.direction;
+                light.ambient = templ.light.ambient;
+                light.diffuse = templ.light.diffuse;
+                light.specular = templ.light.specular;
+            }
+            break;
+            case LightType::POINT:
+            {
+                light_comp.type = LightType::POINT;
+                PointLight &light = light_comp.point_light;
+
+                light.position = templ.light.point.position;
+                light.constant = templ.light.point.constant;
+                light.linear = templ.light.point.linear;
+                light.quadratic = templ.light.point.quadratic;
+                light.ambient = templ.light.ambient;
+                light.diffuse = templ.light.diffuse;
+                light.specular = templ.light.specular;
+            }
+            break;
+            default:
+            assert(false);
+            break;
+            }
         }
         
         return(handle);
     }
     
-    static EntityHandle _register_entity_from_template_file(const char *path, Scene &scene, b32 savable = false)
+    static EntityHandle _register_entity_from_template_file(const char *path, Scene &scene, b32 savable = false, Tags* tags = nullptr)
     {
         EntityTemplateState *template_state = scene.template_state;
         
@@ -2512,19 +3161,37 @@ namespace scene
         }
         else
         {
-            template_state->templates[template_state->template_count] = _load_template(path, scene);
             templ = &template_state->templates[template_state->template_count++];
+            _load_template(templ, path, *template_state, scene);
         }
         
         assert(templ);
-        
-        return(_register_entity_with_template(*templ, scene, savable));
-    }
 
-    static EntityHandle register_entity_from_template_file(const char *path, SceneHandle scene_handle, b32 savable = false)
+        EntityHandle entity = _register_entity_with_template(*templ, scene, savable);
+
+        //// Add all children registered to the template
+        for(i32 i = 0; i < templ->child_count; i++)
+        {
+			scene::EntityHandle child = _register_entity_with_template(template_state->templates[templ->child_handles[i].handle - 1], scene, false);
+			scene::add_child(entity, child, scene.handle);
+        }
+
+        if(tags)
+        {
+            // @Incomplete: Tags
+            for(i32 i = 0; i < tags->tag_count; i++)
+            {
+                set_entity_tag(tags->tags[i], entity, scene.handle);
+            }
+        }
+        
+        return(entity);
+    }
+			
+    static EntityHandle register_entity_from_template_file(const char *path, SceneHandle scene_handle, b32 savable, Tags* tags)
     {
         Scene &scene = get_scene(scene_handle);
-        return _register_entity_from_template_file(path, scene, savable);
+        return _register_entity_from_template_file(path, scene, savable, tags);
     }
     
     i32 _pack_transform_components(Entity &entity, Scene &scene)
@@ -2574,7 +3241,7 @@ namespace scene
         if(entity.comp_flags & COMP_PARTICLES)
         {
             ParticleSystemHandle ps_handle = scene.particle_system_components[entity.particle_system_handle.handle].handle;
-            remove_particle_system(scene.renderer, ps_handle);
+            scene.renderer->particles.api->remove_particle_system(scene.renderer, ps_handle);
             for(i32 index = entity.particle_system_handle.handle; index < scene.particle_system_component_count - 1; index++)
             {
                 scene.particle_system_components[index] = scene.particle_system_components[index + 1];
@@ -2587,9 +3254,6 @@ namespace scene
     
     static void _unregister_entity(EntityHandle handle, Scene &scene)
     {
-        if(handle.handle == 0 || scene._internal_handles[handle.handle - 1] == -1 && scene._internal_handles[handle.handle - 1] < scene.entity_count)
-            return;
-        
         i32 removed_handle = handle.handle;
         
         // Invalidate handle
@@ -2646,10 +3310,10 @@ namespace scene
                 
                 scene.active_entities[index] = scene.active_entities[index + 1];
             }
-            
+
             scene.entity_count--;
             
-            // We also have to update the internal handles if they were placed after the unregistered entity
+            //@Note: We also have to update the internal handles if they were placed after the unregistered entity
             for(i32 internal_index = 0; internal_index < scene.max_entity_count; internal_index++)
             {
                 i32 current_handle = scene._internal_handles[internal_index];
@@ -2661,18 +3325,50 @@ namespace scene
         }
     }
 
-    static void unregister_entity(EntityHandle entity, SceneHandle handle)
+    static void unregister_entity(EntityHandle handle, SceneHandle scene_handle)
     {
-        Scene &scene = get_scene(handle);
-        _unregister_entity(entity, scene);
+        Scene &scene = get_scene(scene_handle);
+        
+        if(handle.handle == 0 || (scene._internal_handles[handle.handle - 1] == -1 && scene._internal_handles[handle.handle - 1] < scene.entity_count))
+            return;
+
+        Entity entity = get_entity(handle, scene_handle);
+            
+        _unregister_entity(handle, scene);
+
+        for(i32 i = 0; i < entity.child_count; i++)
+        {
+            unregister_entity(entity.children[i], scene_handle);
+        }
+        
+        entity.child_count = 0;
     }
 
-    static EntityHandle place_entity_from_template(math::Vec3 position, const char* path, SceneHandle scene, b32 savable = true)
+    static EntityHandle place_entity_from_template(math::Vec3 position, const char* path, SceneHandle scene, b32 savable = true, b32 select = false)
     {
         EntityHandle entity = register_entity_from_template_file(path, scene, savable);
         TransformComponent &transform = get_transform_comp(entity, scene);
         rendering::set_position(transform.transform, position);
+        if(select)
+        {
+            select_entity(entity, scene.manager);
+        }
+        
         return entity;
+    }
+
+    static b32 is_entity_active(EntityHandle handle, SceneHandle &scene_handle)
+    {
+        Scene& scene = get_scene(scene_handle);
+        if(handle.handle > 0)
+        {
+            i32 internal_handle = scene._internal_handles[handle.handle - 1];
+            if(internal_handle > -1)
+            {
+                return scene.active_entities[internal_handle];
+            }
+        }
+        return false;
     }
     
     static void _set_active(EntityHandle handle, b32 active, Scene &scene)
@@ -2693,6 +3389,12 @@ namespace scene
         _set_active(handle, active, scene);
     }
 
+    static void set_hide_in_ui(EntityHandle handle, b32 hide, SceneHandle scene_handle)
+    {
+        Entity& entity = get_entity(handle, scene_handle);
+        entity.hide_in_ui = hide;
+    }
+
     static void set_entity_selection_enabled(EntityHandle entity_handle, b32 enabled, SceneHandle scene_handle)
     {
         Scene &scene = get_scene(scene_handle);
@@ -2703,24 +3405,80 @@ namespace scene
         entity.selection_enabled = enabled;
     }
 
+    static EntityHandle find_entity_by_name(const char* name, SceneHandle scene_handle)
+    {
+        Scene &scene = get_scene(scene_handle);
+        for(i32 i = 0; i < scene.entity_count; i++)
+        {
+            Entity& e = scene.entities[i];
+            if(strcmp(e.name, name) == 0)
+            {
+                return e.handle;
+            }
+        }
+        return EMPTY_ENTITY_HANDLE;
+    }
+
     static void set_entity_tag(const char *tag, EntityHandle entity_handle, SceneHandle scene_handle)
     {
         Scene &scene = get_scene(scene_handle);
         i32 internal_handle = scene._internal_handles[entity_handle.handle - 1];
         assert(internal_handle > -1);
+
+        if(has_tag(tag, entity_handle, scene_handle))
+            return;
         
         Entity &entity = scene.entities[internal_handle];
-        strcpy(entity.tag, tag);
+        if(entity.tags.tag_count >= MAX_ENTITY_TAGS)
+        {
+            debug_log("Max count for entity tags reached (%d/%d).", MAX_ENTITY_TAGS, MAX_ENTITY_TAGS);
+            assert(false);
+            return;
+        }
+
+        strncpy(entity.tags.tags[entity.tags.tag_count++], tag, strlen(tag) + 1);
     }
 
-    static const char * get_entity_tag(EntityHandle entity_handle, SceneHandle scene_handle)
+    static const EntityList find_entities_with_tag(const char* tag, SceneHandle scene_handle)
     {
+        assert(strlen(tag) > 0);
         Scene &scene = get_scene(scene_handle);
-        i32 internal_handle = scene._internal_handles[entity_handle.handle - 1];
-        assert(internal_handle > -1);
-        
-        const Entity &entity = scene.entities[internal_handle];
-        return entity.tag;
+
+        EntityList list = {};
+
+        for(i32 i = 0; i < scene.entity_count; i++)
+        {
+            const Entity& entity = scene.entities[i];
+            if(has_tag(tag, entity.handle, scene_handle))
+            {
+                list.handles[list.entity_count++] = entity.handle;
+            }
+        }
+        return list;
+    }
+
+    static const Tags& get_entity_tags(EntityHandle entity_handle, SceneHandle scene_handle)
+    {
+        if(!IS_ENTITY_HANDLE_VALID(entity_handle))
+        {
+            debug_log("Entity handle not valid: %d\n", entity_handle.handle);
+            assert(false);
+            return {};
+        }
+        return get_entity(entity_handle, scene_handle).tags;
+    }
+
+    static b32 has_tag(const char* tag_name, EntityHandle entity_handle, SceneHandle scene_handle)
+    {
+        const Entity &entity = get_entity(entity_handle, scene_handle);
+        for(i32 i = 0; i < entity.tags.tag_count; i++)
+        {
+            if(strcmp(entity.tags.tags[i], tag_name) == 0)
+            {
+                return true;
+            }
+        }
+        return false;        
     }
     
     static void set_entity_name(const char *name, EntityHandle entity_handle, SceneHandle scene_handle)
@@ -2743,10 +3501,15 @@ namespace scene
         return entity.name;
     }
 
+    static TransformComponent & get_transform_comp(TransformComponentHandle handle, Scene &scene)
+    {
+        return scene.transform_components[handle.handle];
+    }
+    
     static TransformComponent & get_transform_comp(TransformComponentHandle handle, SceneHandle scene_handle)
     {
         Scene &scene = get_scene(scene_handle);
-        return scene.transform_components[handle.handle];
+        return get_transform_comp(handle, scene);
     }
     
     // Returns a direct pointer to the TransformComponent of the specified entity
@@ -2764,10 +3527,15 @@ namespace scene
         return(comp);
     }
 
+    static TransformComponent& get_transform_comp(EntityHandle entity, Scene &scene)
+    {
+        return _get_transform_comp(entity, scene);
+    }
+     
     static TransformComponent& get_transform_comp(EntityHandle entity, SceneHandle handle)
     {
         Scene &scene = get_scene(handle);
-        return _get_transform_comp(entity, scene);
+        return get_transform_comp(entity, scene);
     }
      
     // @Note(Daniel): Should we really return a pointer here? A reference might suffice, since we don't ever use the null-value for anything....
@@ -2835,10 +3603,13 @@ namespace scene
         return handle.manager->scenes[real_handle].camera;
     }
     
-#define SET_MAT_ARRAY_VALUE(type) static void set_uniform_array_value(EntityHandle handle, const char *array_name, i32 index, const char *variable_name, type value, SceneHandle &scene) \
+#define SET_MAT_ARRAY_VALUE(type) static void set_uniform_array_value(scene::EntityHandle handle, const char *array_name, i32 index, const char *variable_name, type value, scene::SceneHandle &scene) \
     {                                                                   \
-        RenderComponent &render = get_render_comp(handle, scene);       \
-        rendering::set_uniform_array_value(scene.manager->renderer, render.v2.material_handle, array_name, index, variable_name, value); \
+    scene::RenderComponent &render = get_render_comp(handle, scene);    \
+        for(i32 i = 0; i < render.render_pass_count; i++) \
+        {\
+            rendering::set_uniform_array_value(scene.manager->renderer, render.material_handles[i], array_name, index, variable_name, value); \
+        } \
     }                                                                   \
 
     SET_MAT_ARRAY_VALUE(r32)
@@ -2850,105 +3621,92 @@ namespace scene
     SET_MAT_ARRAY_VALUE(rendering::TextureHandle)
 
 
-#define STANDARD_PASS_HANDLE { 1 }
-
     static void recompute_transforms(TransformComponent& root, Scene& scene)
     {
         rendering::recompute_transform(root.transform);
-        if(root.parent_handle.handle != -1)
+        Entity &entity = get_entity(root.entity, scene);
+        
+        if(IS_ENTITY_HANDLE_VALID(entity.parent))
         {
-            math::Mat4 parent_model = scene.transform_components[root.parent_handle.handle].transform.model;
+            scene::TransformComponent &parent_trans = get_transform_comp(entity.parent, scene);
+            math::Mat4 parent_model = parent_trans.transform.model;
             root.transform.model = parent_model * root.transform.model;
         }
 
-        for(i32 i = 0; i < root.child_count; i++)
+        for(i32 i = 0; i < entity.child_count; i++)
         {
-            TransformComponent& child = scene.transform_components[root.child_handles[i].handle];
+            TransformComponent& child = get_transform_comp(entity.children[i], scene);
             recompute_transforms(child, scene);
         }
-    }
-
-    static void add_child(TransformComponentHandle parent_handle, TransformComponentHandle child_handle, SceneHandle& scene_handle)
-    {
-        Scene& scene = get_scene(scene_handle);
-        TransformComponent& parent = scene.transform_components[parent_handle.handle];
-        assert(parent.child_count + 1 < MAX_CHILDREN);
-        parent.child_handles[parent.child_count++] = child_handle;
-        parent.transform.dirty = true;
-
-        TransformComponent& child = scene.transform_components[child_handle.handle];
-        child.parent_handle = parent_handle;
-
-        child.transform.position -= parent.transform.position;
-        child.transform.euler_angles -= parent.transform.euler_angles;
-        child.transform.scale /= parent.transform.scale;
-        child.transform.dirty = true;
     }
 
     static void add_child(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
     {
         assert(parent_handle.handle != child_handle.handle);
+
         Entity& parent = get_entity(parent_handle, scene);
         Entity& child = get_entity(child_handle, scene);
-        add_child(parent.transform_handle, child.transform_handle, scene);
-    }
-
-    static void remove_child(TransformComponentHandle parent_handle, TransformComponentHandle child_handle, SceneHandle& scene_handle)
-    {
-        Scene& scene = get_scene(scene_handle);
-        TransformComponent& parent = scene.transform_components[parent_handle.handle];
-        parent.transform.dirty = true;
         
+        TransformComponent &parent_transform = get_transform_comp(parent_handle, scene);
+        TransformComponent &child_transform = get_transform_comp(child_handle, scene);
+
         assert(parent.child_count + 1 < MAX_CHILDREN);
-
-        for(i32 i = 0; i < parent.child_count; i++)
-        {
-            if(parent.child_handles[i].handle == child_handle.handle)
-            {
-                TransformComponent& child = scene.transform_components[child_handle.handle];
-                child.parent_handle = {0};
-
-                child.transform.position += parent.transform.position;
-                child.transform.euler_angles += parent.transform.euler_angles;
-                child.transform.scale *= parent.transform.scale;
-                child.transform.dirty = true;
-                
-                parent.child_handles[i] = parent.child_handles[parent.child_count - 1];
-                parent.child_count--;
-                break;
-            }
-        }
+        assert(parent_handle.handle != child_handle.handle);
+        
+        parent.children[parent.child_count++] = child_handle;
+        child.parent = parent_handle;
+        
+        child_transform.transform.position -= parent_transform.transform.position;
+        child_transform.transform.position /= parent_transform.transform.scale;
+        child_transform.transform.euler_angles -= parent_transform.transform.euler_angles;
+        child_transform.transform.scale /= parent_transform.transform.scale;
+        child_transform.transform.dirty = true;
     }
 
     static void remove_child(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
     {
         Entity& parent = get_entity(parent_handle, scene);
         Entity& child = get_entity(child_handle, scene);
-        remove_child(parent.transform_handle, child.transform_handle, scene);
+        TransformComponent &parent_transform = get_transform_comp(parent_handle, scene);
+        TransformComponent &child_transform = get_transform_comp(child_handle, scene);
+        
+        for(i32 i = 0; i < parent.child_count; i++)
+        {
+            if(parent.children[i].handle == child_handle.handle)
+            {
+                child.parent = EMPTY_ENTITY_HANDLE;
+
+                child_transform.transform.position += parent_transform.transform.position;
+                child_transform.transform.position *= parent_transform.transform.scale;
+                child_transform.transform.euler_angles += parent_transform.transform.euler_angles;
+                child_transform.transform.scale *= parent_transform.transform.scale;
+                child_transform.transform.dirty = true;
+                
+                parent.children[i] = parent.children[parent.child_count - 1];
+                parent.child_count--;
+                break;
+            }
+        }
     }
 
-    static void add_parent(TransformComponentHandle child_handle, TransformComponentHandle parent_handle, SceneHandle& scene)
+    static b32 has_parent(EntityHandle child_handle, SceneHandle scene)
+    {
+        Entity &child = get_entity(child_handle, scene);
+        return IS_ENTITY_HANDLE_VALID(child.parent);
+    }
+    
+    static void add_parent(EntityHandle child_handle, EntityHandle parent_handle, SceneHandle scene)
     {
         add_child(parent_handle, child_handle, scene);
     }
 
-    static void add_parent(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
+    static void remove_parent(EntityHandle child_handle, SceneHandle scene)
     {
-        Entity& parent = get_entity(parent_handle, scene);
         Entity& child = get_entity(child_handle, scene);
-        add_parent(parent.transform_handle, child.transform_handle, scene);
-    }
-
-    static void remove_parent(TransformComponentHandle child_handle, TransformComponentHandle parent_handle, SceneHandle& scene)
-    {
-        remove_child(parent_handle, child_handle, scene);
-    }
-    
-    static void remove_parent(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
-    {
-        Entity& parent = get_entity(parent_handle, scene);
-        Entity& child = get_entity(child_handle, scene);
-        remove_parent(parent.transform_handle, child.transform_handle, scene);
+        if(IS_ENTITY_HANDLE_VALID(child.parent))
+        {
+            remove_child(child.parent, child_handle, scene);
+        }
     }
     
     static void push_scene_for_rendering(scene::Scene &scene, Renderer *renderer)
@@ -2966,29 +3724,32 @@ namespace scene
     
         renderer->render.dir_light_count = 0;
         renderer->render.point_light_count = 0;
-    
-        QueuedRenderCommand *queued_commands = renderer->render.queued_commands;
-        i32 normal_count = 0;
+
+		Pass *passes = renderer->render.pass_commands;
+		i32 pass_count = 0;
 
         i32 particles_to_push[64];
         i32 particles_count = 0;
 
         for(i32 ent_index = 0; ent_index < scene.entity_count; ent_index++)
         {
-            const scene::Entity &ent = scene.entities[ent_index];
-
+            const scene::Entity *ent = &scene.entities[ent_index];
+            
             if(scene.active_entities[ent_index])
             {
-                TransformComponent* start_component = &scene.transform_components[ent.transform_handle.handle];
+                TransformComponent* start_component = &scene.transform_components[ent->transform_handle.handle];
                 
                 if(start_component->transform.dirty)
                 {
-                    while(start_component->parent_handle.handle != -1)
+                    while(IS_ENTITY_HANDLE_VALID(ent->parent))
                     {
-                        TransformComponent& parent = scene.transform_components[start_component->parent_handle.handle];
-                        if(parent.transform.dirty)
+                        Entity *parent = &get_entity(ent->parent, scene);
+                        TransformComponent& parent_transform = get_transform_comp(ent->parent, scene);
+                        
+                        if(parent_transform.transform.dirty)
                         {
-                            start_component = &parent;
+                            ent = parent;
+                            start_component = &parent_transform;
                         }
                         else
                         {
@@ -3001,7 +3762,6 @@ namespace scene
                 }
             }
         }
-        
     
         for(i32 ent_index = 0; ent_index < scene.entity_count; ent_index++)
         {
@@ -3021,7 +3781,12 @@ namespace scene
                     switch(light_comp.type)
                     {
                     case scene::LightType::DIRECTIONAL:
-                    renderer->render.directional_lights[renderer->render.dir_light_count++] = light_comp.dir_light;
+                    {
+                        Camera &camera = scene.camera;
+                        renderer->render.directional_lights[renderer->render.dir_light_count++] = light_comp.dir_light;
+                        rendering::calculate_light_space_matrices(renderer, camera, light_comp.dir_light.direction);
+                    }
+                    
                     break;
                     case scene::LightType::POINT:
                     light_comp.point_light.position = position;
@@ -3035,17 +3800,102 @@ namespace scene
                 if (ent.comp_flags & scene::COMP_RENDER)
                 {
                     scene::RenderComponent &render = scene.render_components[ent.render_handle.handle];
-                
-                    if(render.is_new_version)
+
+                    for(i32 pass_index = 0; pass_index < render.render_pass_count; pass_index++)
                     {
-                        QueuedRenderCommand *command = nullptr;
-                        rendering::Material &instance = get_material_instance(render.v2.material_handle, renderer);
-                    
-                        for(i32 i = 0; i < normal_count; i++)
+						Pass *pass_command = nullptr;
+
+						for (i32 i = 0; i < pass_count; i++)
+						{
+							if (passes[i].pass_handle.handle == render.render_passes[pass_index].handle)
+							{
+								pass_command = &passes[i];
+							}
+						}
+
+						if (!pass_command)
+						{
+							pass_command = &passes[pass_count++];
+							pass_command->pass_handle = render.render_passes[pass_index];
+							pass_command->command_count = 0;
+						}
+
+						QueuedRenderCommand *command = nullptr;
+                        rendering::Material &mat_instance = get_material_instance(render.material_handles[pass_index], renderer);
+
+                        if(!render.is_static || !render.is_pushed[pass_index])
                         {
-                            QueuedRenderCommand &cmd = queued_commands[i];
-                            if(cmd.buffer_handle.handle == render.v2.buffer_handle.handle
-                               && cmd.original_material.handle == instance.source_material.handle && cmd.ignore_depth == render.ignore_depth)
+                            if(render.is_static)
+                            {
+                                render.is_pushed[pass_index] = true;
+                            }
+                            
+                            // We can make one call instead
+                            for (i32 i = 0; i < mat_instance.instanced_vertex_attribute_count; i++)
+                            {
+                                rendering::VertexAttributeInstanced &va = mat_instance.instanced_vertex_attributes[i];
+                                rendering::VertexAttribute &attr = va.attribute;
+
+                                switch (attr.type)
+                                {
+                                case rendering::ValueType::FLOAT:
+								rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float_val, renderer);
+								break;
+                                case rendering::ValueType::FLOAT2:
+								rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float2_val, renderer);
+								break;
+                                case rendering::ValueType::FLOAT3:
+                                {
+                                    math::Vec3 val = attr.float3_val;
+
+                                    if (va.mapping_type != rendering::VertexAttributeMappingType::NONE)
+                                    {
+                                        if (va.mapping_type == rendering::VertexAttributeMappingType::POSITION)
+                                        {
+                                            assert(false);
+                                            // val = render_command.transform.position;
+                                        }
+                                        else if (va.mapping_type == rendering::VertexAttributeMappingType::ROTATION)
+                                        {
+                                            assert(false);
+                                            // val = render_command.transform.rotation;
+                                        }
+                                        else if (va.mapping_type == rendering::VertexAttributeMappingType::SCALE)
+                                        {
+                                            assert(false);
+                                            // val = render_command.transform.scale;
+                                        }
+
+                                    }
+                                    rendering::add_instance_buffer_value(va.instance_buffer_handle, val, renderer);
+                                }
+                                break;
+                                case rendering::ValueType::FLOAT4:
+								rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float4_val, renderer);
+								break;
+                                case rendering::ValueType::MAT4:
+                                {
+                                    math::Mat4 val = attr.mat4_val;
+
+                                    if (va.mapping_type == rendering::VertexAttributeMappingType::MODEL)
+                                    {
+                                        rendering::Transform &t = transform.transform;
+                                        val = math::transpose(t.model);
+                                    }
+                                    rendering::add_instance_buffer_value(va.instance_buffer_handle, val, renderer);
+                                }
+                                break;
+                                default:
+								assert(false);
+                                }
+                            }
+                        }
+                        
+					    for(i32 i = 0; i < pass_command->command_count; i++)
+                        {
+                            QueuedRenderCommand &cmd = pass_command->queued_commands[i];
+                            if(cmd.buffer_handle.handle == render.buffer_handle.handle
+                               && cmd.original_material.handle == mat_instance.source_material.handle && cmd.ignore_depth == render.ignore_depth)
                             {
                                 // It's a doozy
                                 command = &cmd;
@@ -3055,34 +3905,37 @@ namespace scene
 
                         if(!command)
                         {
-                            command = &queued_commands[normal_count++];
+                            command = &pass_command->queued_commands[pass_command->command_count++];
                             command->ignore_depth = render.ignore_depth;
-                            command->buffer_handle = render.v2.buffer_handle;
-                            command->original_material = instance.source_material;
+                            command->buffer_handle = render.buffer_handle;
+                            command->original_material = mat_instance.source_material;
                             command->count = 0;
                         }
 
-                        if(render.v2.render_pass_count > 0)
+                        if(render.wireframe_enabled)
                         {
-                            if(render.wireframe_enabled)
-                            {
-                                rendering::push_buffer_to_render_pass(renderer, render.v2.buffer_handle, renderer->render.wireframe_material, transform.transform, renderer->render.wireframe_shader, render.v2.render_passes[0], rendering::CommandType::NO_DEPTH);
-                            }
-                        
-                            BatchedCommand &batch_command = command->commands[command->count];
-                            batch_command.transform = transform.transform;
-                            batch_command.material_handle = render.v2.material_handle;
-                            batch_command.casts_shadows = render.casts_shadows;
-                            batch_command.pass_count = render.v2.render_pass_count;
-                        
-                            for(i32 i = 0; i < render.v2.render_pass_count; i++)
-                            {
-                                batch_command.passes[i] = render.v2.render_passes[i];
-                                batch_command.shader_handles[i] = render.v2.shader_handles[i];
-                            }
-                        
-                            command->count++;
+                            rendering::push_buffer_to_render_pass(renderer, render.buffer_handle, renderer->render.wireframe_material, transform.transform, renderer->render.standard_pass, rendering::CommandType::NO_DEPTH);
                         }
+
+                        if(render.bounding_box_enabled && render.bounding_box_buffer.handle != 0)
+                        {
+                            math::BoundingBox box = render.bounding_box;
+                            math::Vec3 size = math::Vec3(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z);
+                            math::Vec3 box_position = math::Vec3((box.min.x + box.max.x) / 2.0f, (box.min.y + box.max.y) / 2.0f, (box.min.z + box.max.z) / 2.0f);
+                            
+                            rendering::Transform box_transform = rendering::create_transform(box_position, size, math::Quat());
+                            box_transform.model = transform.transform.model * box_transform.model;
+
+                            rendering::push_buffer_to_render_pass(renderer, render.bounding_box_buffer, renderer->render.bounding_box_material, box_transform, renderer->render.standard_pass, rendering::CommandType::WITH_DEPTH, rendering::PrimitiveType::LINE_LOOP);
+                        }
+                        
+                        CombinedCommand &batch_command = command->commands[command->count];
+                        batch_command.transform = transform.transform;
+                        batch_command.material_handle = render.material_handles[pass_index];
+                        batch_command.casts_shadows = render.casts_shadows;
+                        batch_command.material_handle = render.material_handles[pass_index];
+                        
+                        command->count++;
                     }
                 }
                 else if(ent.comp_flags & scene::COMP_PARTICLES)
@@ -3098,7 +3951,7 @@ namespace scene
                     
                         if(ent.comp_flags & scene::COMP_TRANSFORM)
                         {
-                            system.transform.position += transform.transform.position;
+                            system.transform.position += math::translation(transform.transform.model);
                             system.transform.scale = transform.transform.scale;
                             system.transform.orientation = transform.transform.orientation;
                             
@@ -3117,105 +3970,35 @@ namespace scene
             }
         }
 
-        for(i32 index = 0; index < normal_count; index++)
+        for(i32 index = 0; index < pass_count; index++)
         {
-            QueuedRenderCommand &queued_command = queued_commands[index];
-        
-            BatchedCommand &first_command = queued_command.commands[0];
-            rendering::Material &material = get_material_instance(first_command.material_handle, renderer);
+            Pass &pass = passes[index];
 
-            if(material.lighting.receives_light)
-                update_lighting_for_material(first_command, renderer);
-
-            for(i32 batch_index = 0; batch_index < queued_command.count; batch_index++)
+            for(i32 i = 0; i < pass.command_count; i++)
             {
-                BatchedCommand &render_command = queued_command.commands[batch_index];
+                QueuedRenderCommand &queued_command = pass.queued_commands[i];
+                CombinedCommand &first_command = queued_command.commands[0];
 
-                rendering::Material &mat_instance = get_material_instance(render_command.material_handle, renderer);
+                rendering::Material &material = get_material_instance(first_command.material_handle, renderer);
 
-                if (mat_instance.instanced_vertex_attribute_count == 0)
+                if(material.lighting.receives_light)
+                    update_lighting_for_material(first_command, renderer);
+
+                for(i32 batch_index = 0; batch_index < queued_command.count; batch_index++)
                 {
-                    // Just push the buffer as a normal draw call
-                    for (i32 pass_index = 0; pass_index < render_command.pass_count; pass_index++)
+                    CombinedCommand &render_command = queued_command.commands[batch_index];
+
+                    rendering::Material &mat_instance = get_material_instance(render_command.material_handle, renderer);
+                
+                    if (mat_instance.instanced_vertex_attribute_count == 0)
                     {
-                        rendering::push_buffer_to_render_pass(renderer, queued_command.buffer_handle, render_command.material_handle, render_command.transform, render_command.shader_handles[pass_index], render_command.passes[pass_index], queued_command.ignore_depth ? rendering::CommandType::NO_DEPTH : rendering::CommandType::WITH_DEPTH);
-                    }
-                    continue;
-                }
-                else
-                {
-                    // We can make one call instead
-                    for (i32 i = 0; i < mat_instance.instanced_vertex_attribute_count; i++)
-                    {
-                        rendering::VertexAttributeInstanced &va = mat_instance.instanced_vertex_attributes[i];
-                        rendering::VertexAttribute &attr = va.attribute;
-                        
-                        switch (attr.type)
-                        {
-                        case rendering::ValueType::FLOAT:
-                        rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float_val, renderer);
-                        break;
-                        case rendering::ValueType::FLOAT2:
-                        rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float2_val, renderer);
-                        break;
-                        case rendering::ValueType::FLOAT3:
-                        {
-                            math::Vec3 val = attr.float3_val;
-                            
-                            if(va.mapping_type != rendering::VertexAttributeMappingType::NONE)
-                            {
-                                if(va.mapping_type == rendering::VertexAttributeMappingType::POSITION)
-                                {
-                                    assert(false);
-                                    // val = render_command.transform.position;
-                                }
-                                else if(va.mapping_type == rendering::VertexAttributeMappingType::ROTATION)
-                                {
-                                    assert(false);
-                                    // val = render_command.transform.rotation;
-                                }
-                                else if(va.mapping_type == rendering::VertexAttributeMappingType::SCALE)
-                                {
-                                    assert(false);
-                                    // val = render_command.transform.scale;
-                                }
-                                
-                            }
-                            rendering::add_instance_buffer_value(va.instance_buffer_handle, val, renderer);
-                        }
-                        break;
-                        case rendering::ValueType::FLOAT4:
-                        rendering::add_instance_buffer_value(va.instance_buffer_handle, attr.float4_val, renderer);
-                        break;
-                        case rendering::ValueType::MAT4:
-                        {
-                            math::Mat4 val = attr.mat4_val;
-                            
-                            if(va.mapping_type == rendering::VertexAttributeMappingType::MODEL)
-                            {
-                                rendering::Transform &transform = render_command.transform;
-                                val = math::transpose(transform.model);
-                            }
-                            rendering::add_instance_buffer_value(va.instance_buffer_handle, val, renderer);
-                        }
-                        break;
-                        default:
-                        assert(false);
-                        }
+                        rendering::push_buffer_to_render_pass(renderer, queued_command.buffer_handle, render_command.material_handle, render_command.transform, pass.pass_handle, queued_command.ignore_depth ? rendering::CommandType::NO_DEPTH : rendering::CommandType::WITH_DEPTH);
+                        continue;
                     }
                 }
-            }
-        
-            // Push the command to the shadow buffer if it casts shadows
-            if(first_command.casts_shadows)
-            {
-                rendering::push_instanced_buffer_to_shadow_pass(renderer, queued_command.count, queued_command.buffer_handle, material.instanced_vertex_attributes, material.instanced_vertex_attribute_count);
-            }
-        
-            // Push the command to the correct render passes
-            for (i32 pass_index = 0; pass_index < first_command.pass_count; pass_index++)
-            {
-                rendering::push_instanced_buffer_to_render_pass(renderer, queued_command.count, queued_command.buffer_handle, first_command.material_handle, first_command.shader_handles[pass_index], first_command.passes[pass_index], queued_command.ignore_depth ? rendering::CommandType::NO_DEPTH : rendering::CommandType::WITH_DEPTH);
+
+                rendering::push_instanced_buffer_to_render_pass(renderer, queued_command.count, queued_command.buffer_handle, first_command.material_handle,
+                                                                pass.pass_handle, queued_command.ignore_depth ? rendering::CommandType::NO_DEPTH : rendering::CommandType::WITH_DEPTH);
             }
         }
     
@@ -3223,11 +4006,10 @@ namespace scene
         {
             i32 _internal_handle = renderer->particles._internal_handles[particles_to_push[i] - 1];
             ParticleSystemInfo& system = renderer->particles.particle_systems[_internal_handle];
-            rendering::Material& particle_material = get_material_instance(system.material_handle, renderer);
 
-            rendering::BufferHandle buffer = system.attributes.buffer.handle != 0 ? system.attributes.buffer : renderer->particles.quad_buffer;
-            
-            rendering::push_instanced_buffer_to_render_pass(renderer, system.particle_count, buffer, system.material_handle, particle_material.shader, rendering::get_render_pass_handle_for_name(STANDARD_PASS, renderer), rendering::CommandType::WITH_DEPTH);
+            rendering::BufferHandle buffer = system.attributes.buffer.handle != 0 ? system.attributes.buffer : (system.attributes.texture_handle.handle != 0 ? renderer->particles.textured_quad_buffer : renderer->particles.quad_buffer);
+
+            rendering::push_instanced_buffer_to_render_pass(renderer, system.particle_count, buffer, system.material_handle, renderer->render.standard_pass, rendering::CommandType::WITH_DEPTH);
         }
 
         draw_gizmos(scene.scene_manager);

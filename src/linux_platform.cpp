@@ -97,9 +97,9 @@ static b32 copy_file(const char* src, const char* dst, b32 dont_overwrite, Memor
     
     if(binary)
     {
-        auto temp_mem = begin_temporary_memory(arena);
+        // auto temp_mem = begin_temporary_memory(arena);
         //        system(concat("chmod +xr ", dst, arena));
-        end_temporary_memory(temp_mem);
+        // end_temporary_memory(temp_mem);
     }
     return true;
 }
@@ -190,7 +190,6 @@ PLATFORM_DEALLOCATE_MEMORY(linux_deallocate_memory)
         memory_state.blocks--;
         memory_state.size_allocated -= (block->size + sizeof(MemoryBlock));
         
-        
         MemoryBlock *new_block =  ((MemoryBlock*)block);
         munmap(new_block, block->size + sizeof(MemoryBlock));
     }
@@ -218,6 +217,10 @@ static PLATFORM_OPEN_FILE(linux_open_file)
     }
     
     result.handle = open(path, flags);
+    if(result.handle == -1)
+    {
+        log_error("ERROR in open file: %s", strerror(errno));
+    }
     
     return(result);
 }
@@ -283,6 +286,53 @@ static PLATFORM_PRINT_FILE(linux_print_file)
     return 0;
 }
 
+PLATFORM_GET_ALL_FILES_WITH_EXTENSION(linux_get_all_files_with_extension)
+{
+    struct dirent *de;
+
+    DIR *dr = opendir(directory_path);
+
+    if(dr == nullptr)
+    {
+        log_error("Could not open current directory");
+        return;
+    }
+
+    while((de = readdir(dr)) != nullptr)
+    {
+        if(with_sub_directories && de->d_type == DT_DIR)
+        {
+            if(strcmp(de->d_name, ".") != 0 &&
+               strcmp(de->d_name, "..") != 0)
+            {
+                char sub_path[2048];
+                sprintf(sub_path, "%s%s/", directory_path, de->d_name);
+                linux_get_all_files_with_extension(sub_path, "gsc", directory_data, true);
+            }
+        }
+        else if(de->d_type == DT_REG)
+        {
+            const char *ext = strrchr(de->d_name, '.');
+
+            if((ext) && (ext != de->d_name))
+            {
+                if(strcmp((++ext), extension) == 0)
+                {
+                    char sub_path[2048];
+                    sprintf(sub_path, "%s%s", directory_path, de->d_name);
+
+                    char *file_name = strtok(de->d_name, ".");
+
+                    strcpy(directory_data->file_paths[directory_data->file_count], sub_path);
+                    strcpy(directory_data->file_names[directory_data->file_count], file_name);
+                    directory_data->file_count++;
+                }
+            }
+        }        
+    }
+    closedir(dr);    
+}
+
 PLATFORM_GET_ALL_DIRECTORIES(linux_get_all_directories)
 {
     char ** dir_buf = nullptr;
@@ -316,6 +366,7 @@ PLATFORM_GET_ALL_DIRECTORIES(linux_get_all_directories)
 
 static void init_platform(PlatformApi& platform_api)
 {
+    platform_api.get_all_files_with_extension = linux_get_all_files_with_extension;
     platform_api.file_exists = linux_file_exists;
     platform_api.allocate_memory = linux_allocate_memory;
     platform_api.deallocate_memory = linux_deallocate_memory;
@@ -332,8 +383,8 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.get_all_directories = linux_get_all_directories;
     platform_api.create_directory = linux_create_directory;
 
-    
     // Threading
     platform_api.add_entry = add_entry;
     platform_api.complete_all_work = complete_all_work;
+    platform_api.make_queue = make_queue;
 }

@@ -151,6 +151,10 @@ namespace rendering
         {
             type = VertexAttributeMappingType::MODEL;
         }
+        else if (starts_with(mapped_buffer, "DIFFUSE_COLOR"))
+        {
+            type = VertexAttributeMappingType::DIFFUSE_COLOR;
+        }
         else if (starts_with(mapped_buffer, "PARTICLE_POSITION"))
         {
             type = VertexAttributeMappingType::PARTICLE_POSITION;
@@ -168,6 +172,27 @@ namespace rendering
             type = VertexAttributeMappingType::PARTICLE_ANGLE;
         }
         return type;
+    }
+
+    static CustomUniformHandle parse_custom_mapping(ValueType type, char *mapped_buffer, Renderer *renderer)
+    {
+        for(i32 i = 0; i < renderer->render.custom_mapping_count; i++)
+        {
+            CustomUniformMapping& mapping = renderer->render.custom_mappings[i];
+
+            if(strcmp(mapping.name, mapped_buffer) == 0)
+            {
+                //@Note: Already exists as a mapping
+                return { i };
+            }
+        }
+
+        assert(renderer->render.custom_mapping_count < MAX_CUSTOM_UNIFORM_MAPPINGS);
+        CustomUniformMapping& new_mapping = renderer->render.custom_mappings[renderer->render.custom_mapping_count++];
+        strncpy(new_mapping.name, mapped_buffer, strlen(mapped_buffer));
+        new_mapping.type = type;
+
+        return { renderer->render.custom_mapping_count - 1 };
     }
 
     static UniformMappingType parse_mapping(char *mapped_buffer)
@@ -201,6 +226,10 @@ namespace rendering
         else if (starts_with(mapped_buffer, "AMBIENT_TEX"))
         {
             type = UniformMappingType::AMBIENT_TEX;
+        }
+        else if (starts_with(mapped_buffer, "BUMP_TEX"))
+        {
+            type = UniformMappingType::BUMP_TEX;
         }
         else if (starts_with(mapped_buffer, "SHADOW_MAP"))
         {
@@ -310,7 +339,19 @@ namespace rendering
         {
             type = UniformMappingType::CAMERA_FORWARD;
         }
-
+        else if(starts_with(mapped_buffer, "FRAMEBUFFER_WIDTH"))
+        {
+            type = UniformMappingType::FRAMEBUFFER_WIDTH;
+        }
+        else if(starts_with(mapped_buffer, "FRAMEBUFFER_HEIGHT"))
+        {
+            type = UniformMappingType::FRAMEBUFFER_HEIGHT;
+        }
+        else if(starts_with(mapped_buffer, "TIME"))
+        {
+            type = UniformMappingType::TIME;
+        }
+        
         return type;
     }
 
@@ -330,12 +371,12 @@ namespace rendering
             }
             else
             {
-                uniform.array_size = strtol(*rest, rest, 10);
+                uniform.array_size = (i32)strtol(*rest, rest, 10);
             }
         }
     }
 
-    static Uniform parse_uniform(ValueType type, char *rest, char *original_buffer, Shader &shader, const char *file_path)
+    static Uniform parse_uniform(Renderer *renderer, ValueType type, char *rest, char *original_buffer, Shader &shader, const char *file_path)
     {
         Uniform uniform = {};
         uniform.type = type;
@@ -357,13 +398,23 @@ namespace rendering
         {
             i32 c = 0;
             i32 m_c = 0;
+            i32 custom_m_c = -1;
             char mapped_buffer[32];
 
             while (rest[c] != ';' && rest[c] != '\n')
             {
-                if (rest[c] != ':' && rest[c] != ' ')
+                if(rest[c] == '$')
+                {
+                    assert(m_c == 0);
+                    custom_m_c++;
+                }
+                else if (rest[c] != ':' && rest[c] != ' ' && custom_m_c == -1)
                 {
                     mapped_buffer[m_c++] = rest[c];
+                }
+                else if(rest[c] != '$' && rest[c] != ' ' && m_c == 0 && custom_m_c != -1)
+                {
+                    mapped_buffer[custom_m_c++] = rest[c];
                 }
                 c++;
             }
@@ -377,12 +428,22 @@ namespace rendering
                 mapped_buffer[m_c] = '\0';
                 uniform.mapping_type = parse_mapping(mapped_buffer);
             }
+            else if(custom_m_c > 0)
+            {
+                //@Note: Check for correct indices
+                original_buffer[strlen(original_buffer) - strlen(rest) + 2] = '\0';
+                original_buffer[strlen(original_buffer) - strlen(rest) + 1] = '\n';
+                original_buffer[strlen(original_buffer) - strlen(rest)] = ';';
+                mapped_buffer[custom_m_c] = '\0';
+                uniform.custom_mapping = parse_custom_mapping(type, mapped_buffer, renderer);
+                uniform.mapping_type = UniformMappingType::CUSTOM;
+            }
         }
 
         return (uniform);
     }
 
-    static void parse_structure_variables(char **source, char *total_buffer, Structure &structure, Shader &shader, const char *file_path)
+    static void parse_structure_variables(Renderer *renderer, char **source, char *total_buffer, Structure &structure, Shader &shader, const char *file_path)
     {
         size_t i = 0;
 
@@ -415,7 +476,7 @@ namespace rendering
                 ValueType type = get_value_type(&rest, file_path);
                 if (type != ValueType::INVALID)
                 {
-                    Uniform uniform = parse_uniform(type, rest, buffer, shader, file_path);
+                    Uniform uniform = parse_uniform(renderer, type, rest, buffer, shader, file_path);
                     structure.uniforms[structure.uniform_count++] = uniform;
                 }
             }
@@ -430,279 +491,299 @@ namespace rendering
         total_buffer[i++] = '\0';
     }
 
-    static char *load_shader_text(MemoryArena *arena, char *source, bool is_vertex_shader, Shader &shader, Uniform **uniforms_array, i32 *uniform_count, const char *file_path, size_t *file_size = nullptr)
-    {
-        size_t i = 0;
+	static char *load_shader_text(Renderer *renderer, MemoryArena *arena, char *source, bool is_vertex_shader, Shader &shader, Uniform **uniforms_array, i32 *uniform_count, const char *file_path, size_t *file_size = nullptr)
+	{
+		size_t i = 0;
 
-        MemoryArena temp_arena = {};
-        auto temp_mem = begin_temporary_memory(&temp_arena);
+		MemoryArena temp_arena = {};
+		auto temp_mem = begin_temporary_memory(&temp_arena);
 
-        char *result;
-        b32 instancing_enabled = false;
+		char *result;
+		b32 instancing_enabled = false;
 
-        size_t temp_current_size = strlen(source) * 10;
-        char *temp_result = push_string(&temp_arena, temp_current_size);
+		size_t temp_current_size = strlen(source) * 30;
+		char *temp_result = push_string(&temp_arena, temp_current_size);
 
-        char buffer[256];
+		char buffer[256];
 
-        while (read_line(buffer, 256, &source))
-        {
-            if (starts_with(buffer, "#vert") || starts_with(buffer, "#geo") || starts_with(buffer, "#frag"))
-            {
-                break;
-            }
-            else if (starts_with(buffer, "#include \""))
-            {
-                // @Note: Game shaders are included with ""
-                char include_name[256];
-                sscanf(buffer, "#include \"%s\"", include_name);
+		while (read_line(buffer, 256, &source))
+		{
+			if (starts_with(buffer, "#vert") || starts_with(buffer, "#geo") || starts_with(buffer, "#frag"))
+			{
+				break;
+			}
+			else if (starts_with(buffer, "#include \""))
+			{
+				// @Note: Game shaders are included with ""
+				char include_name[256];
 
-                char *included_path = concat("../assets/shaders/", include_name, &temp_arena);
+				i32 quotes_found = 0;
+				i32 index = 0;
 
-                FILE *included_shd = fopen(included_path, "r");
+				for (size_t c = 0; c < strlen(buffer); c++)
+				{
+					if (buffer[c] == '\"')
+					{
+						quotes_found++;
+						if (quotes_found == 2)
+						{
+							include_name[index] = '\0';
+							break;
+						}
+					}
+					else if (quotes_found == 1)
+					{
+						include_name[index++] = buffer[c];
+					}
+				}
 
-                if (included_shd)
-                {
-                    char *included_source = read_file_into_buffer(&temp_arena, included_shd);
-                    char *path = concat(concat(file_path, "<-", &temp_arena), included_path, &temp_arena);
+				char *included_path = concat("../assets/shaders/", include_name, &temp_arena);
 
-                    char *included_text = load_shader_text(&temp_arena, included_source, is_vertex_shader, shader, uniforms_array, uniform_count, path);
+				FILE *included_shd = fopen(included_path, "r");
 
-                    if (i + strlen(buffer) > temp_current_size)
-                    {
-                        error("Temp buffer is too small", file_path);
-                    }
+				if (included_shd)
+				{
+					char *included_source = read_file_into_buffer(&temp_arena, included_shd);
+					char *path = concat(concat(file_path, "<-", &temp_arena), included_path, &temp_arena);
 
-                    strncpy(&temp_result[i], included_text, strlen(included_text));
-                    i += strlen(included_text);
-                    if (file_size)
-                    {
-                        *file_size += strlen(buffer);
-                    }
+					char *included_text = load_shader_text(renderer, &temp_arena, included_source, is_vertex_shader, shader, uniforms_array, uniform_count, path);
 
-                    fclose(included_shd);
+					if (i + strlen(buffer) > temp_current_size)
+					{
+						error("Temp buffer is too small", file_path);
+					}
 
-                    continue;
-                }
-                else
-                {
-                    char err_buf[256];
-                    sprintf(err_buf, "Include file not found %s", included_path);
-                    error(err_buf, file_path);
-                }
-            }
-            else if (starts_with(buffer, "#include <"))
-            {
-                // @Note: Engine shaders are included with <>
-                char include_name[256];
-                sscanf(buffer, "#include <%[^>]", include_name);
-                char *included_path = concat("../engine_assets/standard_shaders/", include_name, &temp_arena);
+					strncpy(&temp_result[i], included_text, strlen(included_text));
+					i += strlen(included_text);
+					if (file_size)
+					{
+						*file_size += strlen(buffer);
+					}
 
-                FILE *included_shd = fopen(included_path, "r");
+					fclose(included_shd);
 
-                if (included_shd)
-                {
-                    char *included_source = read_file_into_buffer(&temp_arena, included_shd);
-                    char *path = concat(concat(file_path, "<-", &temp_arena), included_path, &temp_arena);
+					continue;
+				}
+				else
+				{
+					char err_buf[256];
+					sprintf(err_buf, "Include file not found %s", included_path);
+					error(err_buf, file_path);
+				}
+			}
+			else if (starts_with(buffer, "#include <"))
+			{
+				// @Note: Engine shaders are included with <>
+				char include_name[256];
+				sscanf(buffer, "#include <%[^>]", include_name);
+				char *included_path = concat("../engine_assets/standard_shaders/", include_name, &temp_arena);
 
-                    char *included_text = load_shader_text(&temp_arena, included_source, is_vertex_shader, shader, uniforms_array, uniform_count, path);
+				FILE *included_shd = fopen(included_path, "r");
 
-                    if (i + strlen(buffer) > temp_current_size)
-                    {
-                        error("Temp buffer is too small", file_path);
-                    }
+				if (included_shd)
+				{
+					char *included_source = read_file_into_buffer(&temp_arena, included_shd);
+					char *path = concat(concat(file_path, "<-", &temp_arena), included_path, &temp_arena);
 
-                    strncpy(&temp_result[i], included_text, strlen(included_text));
-                    i += strlen(included_text);
+					char *included_text = load_shader_text(renderer, &temp_arena, included_source, is_vertex_shader, shader, uniforms_array, uniform_count, path);
 
-                    if (file_size)
-                    {
-                        *file_size += strlen(buffer);
-                    }
+					if (i + strlen(buffer) > temp_current_size)
+					{
+						error("Temp buffer is too small", file_path);
+					}
 
-                    fclose(included_shd);
+					strncpy(&temp_result[i], included_text, strlen(included_text));
+					i += strlen(included_text);
 
-                    continue;
-                }
-                else
-                {
-                    char err_buf[256];
-                    sprintf(err_buf, "Include file not found %s", included_path);
-                    error(err_buf, file_path);
-                }
-            }
-            else if (starts_with(buffer, "#BEGIN_INSTANCING"))
-            {
-                instancing_enabled = true;
-                continue;
-            }
-            else if (starts_with(buffer, "#END_INSTANCING"))
-            {
-                instancing_enabled = false;
-                continue;
-            }
-            else if (starts_with(buffer, "#define"))
-            {
-                // @Incomplete: float defines missing
-                DefinedValue defined_value = {};
-                defined_value.type = DefinedValueType::INTEGER;
-                sscanf(buffer, "#define %s %d", defined_value.name, &defined_value.integer_val);
-                shader.defined_values[shader.defined_value_count++] = defined_value;
-            }
-            else if (starts_with(buffer, "struct"))
-            {
-                source -= strlen(buffer);
+					if (file_size)
+					{
+						*file_size += strlen(buffer);
+					}
 
-                char total_buffer[1024];
-                Structure &structure = shader.structures[shader.structure_count++];
-                structure.uniform_count = 0;
-                parse_structure_variables(&source, total_buffer, structure, shader, file_path);
+					fclose(included_shd);
 
-                strncpy(&temp_result[i], total_buffer, strlen(total_buffer));
-                i += strlen(total_buffer);
+					continue;
+				}
+				else
+				{
+					char err_buf[256];
+					sprintf(err_buf, "Include file not found %s", included_path);
+					error(err_buf, file_path);
+				}
+			}
+			else if (starts_with(buffer, "#BEGIN_INSTANCING"))
+			{
+				instancing_enabled = true;
+				continue;
+			}
+			else if (starts_with(buffer, "#END_INSTANCING"))
+			{
+				instancing_enabled = false;
+				continue;
+			}
+			else if (starts_with(buffer, "#define"))
+			{
+				// @Incomplete: float defines missing
+				DefinedValue defined_value = {};
+				defined_value.type = DefinedValueType::INTEGER;
+				sscanf(buffer, "#define %s %d", defined_value.name, &defined_value.integer_val);
+				shader.defined_values[shader.defined_value_count++] = defined_value;
+			}
+			else if (starts_with(buffer, "struct"))
+			{
+				source -= strlen(buffer);
 
-                continue;
-            }
-            else if (starts_with(buffer, "uniform"))
-            {
-                char *rest = &buffer[strlen("uniform") + 1];
-                char *prev = rest;
+				char total_buffer[1024];
+				Structure &structure = shader.structures[shader.structure_count++];
+				structure.uniform_count = 0;
+				parse_structure_variables(renderer, &source, total_buffer, structure, shader, file_path);
 
-                ValueType type = get_value_type(&rest, file_path, true);
+				strncpy(&temp_result[i], total_buffer, strlen(total_buffer));
+				i += strlen(total_buffer);
 
-                if (type == ValueType::INVALID) // We might have a struct
-                {
-                    char name[32];
-                    sscanf(prev, "%[^ ]", name);
+				continue;
+			}
+			else if (starts_with(buffer, "uniform"))
+			{
+				char *rest = &buffer[strlen("uniform") + 1];
+				char *prev = rest;
 
-                    i32 structure_index = get_structure_index(name, shader);
+				ValueType type = get_value_type(&rest, file_path, true);
 
-                    if (structure_index < 0)
-                    {
-                        char buf[32];
-                        sprintf(buf, "Structure '%s' not found\n", prev);
-                        error(buf, file_path);
-                    }
-                    else
-                    {
-                        Uniform uniform = parse_uniform(ValueType::STRUCTURE, rest, buffer, shader, file_path);
-                        uniform.structure_index = structure_index;
-                        (*uniforms_array)[(*uniform_count)++] = uniform;
-                    }
-                }
-                else
-                {
-                    Uniform uniform = parse_uniform(type, rest, buffer, shader, file_path);
-                    (*uniforms_array)[(*uniform_count)++] = uniform;
-                }
-            }
-            else if (starts_with(buffer, "layout"))
-            {
-                if (is_vertex_shader)
-                {
-                    VertexAttribute *vertex_attribute = nullptr;
+				if (type == ValueType::INVALID) // We might have a struct
+				{
+					char name[32];
+					sscanf(prev, "%[^ ]", name);
 
-                    if (instancing_enabled)
-                    {
-                        vertex_attribute = &shader.instanced_vertex_attributes[shader.instanced_vertex_attribute_count++].attribute;
-                    }
-                    else
-                    {
-                        vertex_attribute = &shader.vertex_attributes[shader.vertex_attribute_count++];
-                    }
+					i32 structure_index = get_structure_index(name, shader);
 
-                    char *rest = &buffer[strlen("layout") + 1];
+					if (structure_index < 0)
+					{
+						char buf[32];
+						sprintf(buf, "Structure '%s' not found\n", prev);
+						error(buf, file_path);
+					}
+					else
+					{
+						Uniform uniform = parse_uniform(renderer, ValueType::STRUCTURE, rest, buffer, shader, file_path);
+						uniform.structure_index = structure_index;
+						(*uniforms_array)[(*uniform_count)++] = uniform;
+					}
+				}
+				else
+				{
+					Uniform uniform = parse_uniform(renderer, type, rest, buffer, shader, file_path);
+					(*uniforms_array)[(*uniform_count)++] = uniform;
+				}
+			}
+			else if (starts_with(buffer, "layout"))
+			{
+				if (is_vertex_shader)
+				{
+					VertexAttribute *vertex_attribute = nullptr;
 
-                    while (rest[0] == ' ' || rest[0] == '(')
-                    {
-                        rest++;
-                    }
+					if (instancing_enabled)
+					{
+						vertex_attribute = &shader.instanced_vertex_attributes[shader.instanced_vertex_attribute_count++].attribute;
+					}
+					else
+					{
+						vertex_attribute = &shader.vertex_attributes[shader.vertex_attribute_count++];
+					}
 
-                    if (starts_with(rest, "location"))
-                    {
-                        rest += strlen("location");
-                        // @Note: Eat spaces until we see =
-                        while (rest[0] == ' ')
-                        {
-                            rest++;
-                        }
+					char *rest = &buffer[strlen("layout") + 1];
 
-                        if (rest[0] == '=')
-                        {
-                            rest++;
-                            vertex_attribute->location = strtol(rest, &rest, 10);
+					while (rest[0] == ' ' || rest[0] == '(')
+					{
+						rest++;
+					}
 
-                            while (rest[0] == ' ' || rest[0] == ')')
-                                rest++;
+					if (starts_with(rest, "location"))
+					{
+						rest += strlen("location");
+						// @Note: Eat spaces until we see =
+						while (rest[0] == ' ')
+						{
+							rest++;
+						}
 
-                            if (starts_with(rest, "in"))
-                            {
-                                while (rest[0] == ' ')
-                                    rest++;
+						if (rest[0] == '=')
+						{
+							rest++;
+							vertex_attribute->location = (i32)strtol(rest, &rest, 10);
 
-                                rest += 2;
+							while (rest[0] == ' ' || rest[0] == ')')
+								rest++;
 
-                                vertex_attribute->type = get_value_type(&rest, file_path);
+							if (starts_with(rest, "in"))
+							{
+								while (rest[0] == ' ')
+									rest++;
 
-                                eat_spaces_and_newlines(&rest);
-                                parse_word(&rest, vertex_attribute->name);
-                                eat_spaces_and_newlines(&rest);
+								rest += 2;
 
-                                if (rest[0] == ':') // Oh boy, we've go a mapping
-                                {
-                                    char *start = &rest[0];
-                                    rest += 1;
-                                    eat_spaces_and_newlines(&rest);
-                                    char mapping_name[32];
-                                    parse_word(&rest, mapping_name);
-                                    shader.instanced_vertex_attributes[shader.instanced_vertex_attribute_count - 1].mapping_type = parse_vertex_attribute_mapping(mapping_name);
-                                    buffer[strlen(buffer) - (strlen(start) + 1) + 2] = '\0';
-                                    buffer[strlen(buffer) - (strlen(start) + 1) + 1] = '\n';
-                                    buffer[strlen(buffer) - (strlen(start) + 1)] = ';';
-                                }
-                            }
-                            else if (starts_with(rest, "out"))
-                            {
-                                // @Incomplete: IGNORE
-                            }
-                            else
-                            {
-                                error("layout 'in' keyword missing", file_path);
-                            }
-                        }
-                        else
-                        {
-                            error("layout location invalid, found no =", file_path);
-                        }
-                    }
-                    else
-                    {
-                        error("layout location not found", file_path);
-                    }
-                }
-            }
+								vertex_attribute->type = get_value_type(&rest, file_path);
 
-            if (i + strlen(buffer) > temp_current_size)
-            {
-                error("Temp buffer is too small", file_path);
-            }
+								eat_spaces_and_newlines(&rest);
+								parse_word(&rest, vertex_attribute->name);
+								eat_spaces_and_newlines(&rest);
 
-            strncpy(&temp_result[i], buffer, strlen(buffer));
+								if (rest[0] == ':') // Oh boy, we've go a mapping
+								{
+									char *start = &rest[0];
+									rest += 1;
+									eat_spaces_and_newlines(&rest);
+									char mapping_name[32];
+									parse_word(&rest, mapping_name);
+									shader.instanced_vertex_attributes[shader.instanced_vertex_attribute_count - 1].mapping_type = parse_vertex_attribute_mapping(mapping_name);
+									buffer[strlen(buffer) - (strlen(start) + 1) + 2] = '\0';
+									buffer[strlen(buffer) - (strlen(start) + 1) + 1] = '\n';
+									buffer[strlen(buffer) - (strlen(start) + 1)] = ';';
+								}
+							}
+							else if (starts_with(rest, "out"))
+							{
+								// @Incomplete: IGNORE
+							}
+							else
+							{
+								error("layout 'in' keyword missing", file_path);
+							}
+						}
+						else
+						{
+							error("layout location invalid, found no =", file_path);
+						}
+					}
+					else
+					{
+						error("layout location not found", file_path);
+					}
+				}
+			}
 
-            i += strlen(buffer);
-            if (file_size)
-            {
-                *file_size += strlen(buffer);
-            }
-        }
+			if (i + strlen(buffer) > temp_current_size)
+			{
+				error("Temp buffer is too small", file_path);
+			}
 
-        result = push_string(arena, i);
-        memcpy(result, temp_result, i);
+			strncpy(&temp_result[i], buffer, strlen(buffer));
 
-        end_temporary_memory(temp_mem);
+			i += strlen(buffer);
+			if (file_size)
+			{
+				*file_size += strlen(buffer);
+			}
+		}
 
-        return result;
-    }
+		result = push_string(arena, i);
+		memcpy(result, temp_result, i);
+
+		end_temporary_memory(temp_mem);
+
+		return result;
+	}
+
     
 // Shader reload
     static b32 check_dirty(Shader &shader)
@@ -743,85 +824,101 @@ namespace rendering
 
     static int out_count = 0;
 
-    static void load_shader(Renderer *renderer, Shader &shader)
-    {
-        FILE *file = fopen(shader.path, "r");
+	static void load_shader(Renderer *renderer, Shader &shader, b32 reload = false, MemoryArena *extra_arena = nullptr)
+	{
+		MemoryArena shader_arena = {};
 
-        shader.loaded = false;
+		MemoryArena *arena = &shader_arena;
+		
+		if (extra_arena)
+		{
+			arena = extra_arena;
+		}
 
-        if (file)
-        {
-            size_t size = 0;
-            char *source = read_file_into_buffer(&renderer->shader_arena, file, &size);
+		FILE *file = fopen(shader.path, "r");
 
-            shader.vert_shader = nullptr;
-            shader.geo_shader = nullptr;
-            shader.frag_shader = nullptr;
+		shader.loaded = false;
 
-            Uniform *uniforms = (Uniform *)malloc(sizeof(Uniform) * 512);
-            i32 uniform_count = 0;
+		if (file)
+		{
+			size_t size = 0;
+			char *source = read_file_into_buffer(arena, file, &size);
+
+			shader.vert_shader = nullptr;
+			shader.geo_shader = nullptr;
+			shader.frag_shader = nullptr;
+
+			Uniform *uniforms = (Uniform *)malloc(sizeof(Uniform) * 512);
+			i32 uniform_count = 0;
 
 			shader.instanced_vertex_attribute_count = 0;
-            shader.vertex_attribute_count = 0;
-            shader.uniform_count = 0;
-            shader.structure_count = 0;
-            shader.defined_value_count = 0;
+			shader.vertex_attribute_count = 0;
+			shader.uniform_count = 0;
+			shader.structure_count = 0;
+			shader.defined_value_count = 0;
 
-            for (size_t i = 0; i < size; i++)
-            {
-                if (starts_with(&source[i], "#vert"))
-                {
-                    shader.vert_shader = load_shader_text(&renderer->shader_arena, &source[i + strlen("#vert") + 1], true, shader, &uniforms, &uniform_count, shader.path, &i);
-                }
-                else if (starts_with(&source[i], "#geo"))
-                {
-                    shader.geo_shader = load_shader_text(&renderer->shader_arena, &source[i + strlen("#geo") + 1], false, shader, &uniforms, &uniform_count, shader.path, &i);
-                }
-                else if (starts_with(&source[i], "#frag"))
-                {
-                    shader.frag_shader = load_shader_text(&renderer->shader_arena, &source[i + strlen("#frag") + 1], false, shader, &uniforms, &uniform_count, shader.path, &i);
-                }
-            }
+			for (size_t i = 0; i < size; i++)
+			{
+				if (starts_with(&source[i], "#vert"))
+				{
+					shader.vert_shader = load_shader_text(renderer, arena, &source[i + strlen("#vert") + 1], true, shader, &uniforms, &uniform_count, shader.path, &i);
+				}
+				else if (starts_with(&source[i], "#geo"))
+				{
+					shader.geo_shader = load_shader_text(renderer, arena, &source[i + strlen("#geo") + 1], false, shader, &uniforms, &uniform_count, shader.path, &i);
+				}
+				else if (starts_with(&source[i], "#frag"))
+				{
+					shader.frag_shader = load_shader_text(renderer, arena, &source[i + strlen("#frag") + 1], false, shader, &uniforms, &uniform_count, shader.path, &i);
+				}
+			}
 
-            shader.uniforms = nullptr;
-            shader.uniform_count = 0;
+			shader.uniforms = nullptr;
+			shader.uniform_count = 0;
 
-            shader.uniforms = push_array(&shader.arena, uniform_count, Uniform);
-            shader.uniform_count = (i32)uniform_count;
-            memcpy(shader.uniforms, uniforms, uniform_count * sizeof(Uniform));
-            free(uniforms);
+			shader.uniforms = push_array(&shader.arena, uniform_count, Uniform);
+			shader.uniform_count = (i32)uniform_count;
+			memcpy(shader.uniforms, uniforms, uniform_count * sizeof(Uniform));
+			free(uniforms);
 
 #if DEBUG
-            char out_name[256];
-            strcpy(out_name, shader.path);
-            for (size_t i = 0; i < strlen(out_name); i++)
-            {
-                if (out_name[i] == '/')
-                {
-                    out_name[i] = '_';
-                }
-            }
+			char out_name[256];
+			strcpy(out_name, shader.path);
+			for (size_t i = 0; i < strlen(out_name); i++)
+			{
+				if (out_name[i] == '/')
+				{
+					out_name[i] = '_';
+				}
+			}
 
-            char out_path[256];
+			char out_path[256];
 
-            sprintf(out_path, "../out/%s.shd", out_name);
+			sprintf(out_path, "../out/%s.shd", out_name);
 
-            FILE *shd = fopen(out_path, "w");
-            fwrite(shader.vert_shader, strlen(shader.vert_shader), 1, shd);
-            fwrite(shader.frag_shader, strlen(shader.frag_shader), 1, shd);
-            fclose(shd);
+			// FILE *shd = fopen(out_path, "w");
+			// fwrite(shader.vert_shader, strlen(shader.vert_shader), 1, shd);
+			// fwrite(shader.frag_shader, strlen(shader.frag_shader), 1, shd);
+			// fclose(shd);
 #endif
 
-            fclose(file);
-            shader.loaded = shader.vert_shader && shader.frag_shader;
-            set_last_loaded(shader);
-        }
-        else
-        {
-            shader.loaded = false;
-            error("File not found", shader.path);
-        }
-    }
+			fclose(file);
+			shader.loaded = shader.vert_shader && shader.frag_shader;
+
+            if(!reload)
+                renderer->api_functions.load_shader(renderer->api_functions.render_state, renderer, shader);
+			set_last_loaded(shader);
+		}
+		else
+		{
+			shader.loaded = false;
+			error("File not found", shader.path);
+		}
+
+		if(!reload)
+			clear(arena);
+	}
+
 
     ShaderHandle get_shader_by_path(Renderer *renderer, const char *path)
     {
@@ -836,7 +933,7 @@ namespace rendering
     
     static ShaderHandle load_shader(Renderer *renderer, const char *file_path)
     {
-        assert(renderer->render.shader_count + 1 < 64);
+        assert(renderer->render.shader_count + 1 < global_max_shaders);
 
         ShaderHandle handle = get_shader_by_path(renderer, file_path);
         if(handle.handle != -1)
@@ -845,8 +942,8 @@ namespace rendering
         Shader &shader = renderer->render.shaders[renderer->render.shader_count];
         strncpy(shader.path, file_path, strlen(file_path));
         shader.index = renderer->render.shader_count;
-        load_shader(renderer, shader);
-        handle.handle = renderer->render.shader_count++;
+		handle.handle = renderer->render.shader_count++;
+		load_shader(renderer, shader);
         return handle;
     }
 

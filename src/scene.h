@@ -88,11 +88,25 @@ namespace scene
         Field fields[32];
         i32 field_count;
     };
-    
+
+#define MAX_ENTITY_TAGS 8
+    struct Tags
+    {
+        char tags[MAX_ENTITY_TAGS][32];
+        i32 tag_count;
+    };
+
+    struct EntityList
+    {
+        EntityHandle handles[64];
+        i32 entity_count;
+    };
+
+    #define MAX_CHILDREN 64
     struct Entity
     {
         char name[256];
-        char tag[32];
+        Tags tags;
         
         u32 type; // The entity type can be used to map the saved entities to game-specific logic
         RegisteredEntityType type_info;
@@ -100,6 +114,7 @@ namespace scene
 
         b32 selection_enabled;
         b32 savable; // Should this be saved in the scene file?
+        b32 hide_in_ui;
         
         char template_path[256];
         
@@ -110,45 +125,40 @@ namespace scene
         RenderComponentHandle render_handle;
         ParticleSystemComponentHandle particle_system_handle;
         LightComponentHandle light_handle;
-    };
 
-    #define MAX_CHILDREN 4
+        EntityHandle parent;
+        
+        EntityHandle children[MAX_CHILDREN];
+        i32 child_count;
+    };
     
     struct TransformComponent
     {
         rendering::Transform transform;
-
-		TransformComponentHandle parent_handle;
-
-        // Remember the child's handle to be able to quickly remove the childs parent handle if the parent is removed
-		TransformComponentHandle child_handles[4];
-        i32 child_count;
-
         EntityHandle entity;
 	};
     
     struct RenderComponent
     {
-        rendering::MaterialHandle material_handle;
-        rendering::MaterialHandle original_material_handle;
+        rendering::BufferHandle buffer_handle;
+        rendering::BufferHandle bounding_box_buffer;
         
-        b32 casts_shadows;
         math::Vec3 mesh_scale;
+        math::BoundingBox bounding_box;
 
+        b32 is_static;
+        b32 casts_shadows;
         b32 wireframe_enabled;
+        b32 bounding_box_enabled;
         b32 ignore_depth;
-        
-        b32 is_new_version;
-        struct
-        {
-            rendering::BufferHandle buffer_handle;
-            rendering::MaterialInstanceHandle material_handle;
             
-            // @Note: All the render passes this component should be rendered in
-            rendering::RenderPassHandle render_passes[8];
-            rendering::ShaderHandle shader_handles[8];
-            i32 render_pass_count;
-        } v2;
+        // @Note: All the render passes this component should be rendered in
+        rendering::RenderPassHandle render_passes[8];
+        rendering::MaterialInstanceHandle material_handles[8];
+        rendering::MaterialHandle original_materials[8];
+        b32 is_pushed[8];
+        
+        i32 render_pass_count;
     };
     
     struct ParticleSystemComponent
@@ -180,6 +190,7 @@ namespace scene
 
         char file_path[256];
         u64 comp_flags;
+        b32 hide_in_ui;
         
         struct
         {
@@ -190,21 +201,19 @@ namespace scene
         } transform;
         struct
         {
-            rendering::MaterialHandle material_handle;
-
+            b32 is_static;
             b32 ignore_depth;
             b32 casts_shadows;
             math::Vec3 mesh_scale;
+            math::BoundingBox bounding_box;
             b32 is_new_version;
-            struct
-            {
-                rendering::BufferHandle buffer_handle;
-                rendering::MaterialHandle material_handle;
+            rendering::BufferHandle buffer_handle;
+            rendering::BufferHandle bounding_box_buffer;
+            rendering::MaterialHandle material_handle;
 
-                char render_pass_names[8][32];
-                rendering::ShaderHandle shader_handles[8];
-                i32 render_pass_count;
-            } v2;
+            char render_pass_names[8][32];
+            rendering::MaterialHandle material_handles[8];
+            i32 render_pass_count;
         } render;
         struct
         {
@@ -213,7 +222,6 @@ namespace scene
             rendering::ShaderHandle shader_handle;
 
             i32 max_particles;
-            b32 started;
             
             struct
             {
@@ -236,7 +244,31 @@ namespace scene
         } particles;
         struct
         {
+            LightType type;
+
+            math::Vec3 ambient;
+            math::Vec3 diffuse;
+            math::Vec3 specular;
+            
+            union
+            {
+                struct
+                {                    
+                    math::Vec3 direction;
+                } directional;
+                struct
+                {
+                    math::Vec3 position;
+                    r32 constant;
+                    r32 linear;
+                    r32 quadratic;
+                } point;
+            };
         } light;
+        
+#define MAX_CHILD_HANDLES 64
+        TemplateHandle child_handles[MAX_CHILD_HANDLES];
+        i32 child_count;
     };
     
     // Holds all the currently loaded templates
@@ -252,7 +284,7 @@ namespace scene
         FREE_CURRENT_SCENE = 1 << 1
     };
 
-    #define MAX_INSTANCE_BUFFER_HANDLES 128
+    #define MAX_INSTANCE_BUFFER_HANDLES 256
     struct InstanceBufferData
     {
         rendering::BufferHandle buffer_handle;
@@ -318,12 +350,14 @@ namespace scene
     typedef void (*OnLoad)(SceneHandle scene);
     typedef void (*OnSave)(SceneHandle scene);
     typedef void (*OnSceneWillBeFreed)(SceneHandle scene);
+    typedef void (*OnSceneWillLoad)(SceneHandle scene);
     typedef void (*OnSceneLoaded)(SceneHandle scene);
     typedef void (*OnEntityUpdated)(EntityHandle entity, SceneHandle scene);
     typedef void (*OnEntitySelected)(EntityHandle entity, SceneHandle scene);
-    typedef void (*OnEntityDeleted)(EntityHandle entity, SceneHandle scene);
+    typedef void (*OnEntityWillBeDeleted)(EntityHandle entity, SceneHandle scene);
     typedef void (*OnEntityRegisteredWithType)(EntityHandle entity, u32 type, SceneHandle scene);
     typedef EntityData* (*OnLoadEntityOfType)(EntityHandle entity, u32 type, SceneHandle scene);
+    typedef void (*OnLoadedEntityOfType)(EntityHandle entity, u32 type, SceneHandle scene);
 
     enum class SceneMode
     {
@@ -401,9 +435,6 @@ namespace scene
             Gizmos selected_gizmo;
             TranslationConstraint constraint;
 
-            rendering::BufferHandle x_buffer;
-            rendering::BufferHandle y_buffer;
-            rendering::BufferHandle z_buffer;
             rendering::ShaderHandle line_shader;
             rendering::MaterialHandle line_material;
             rendering::MaterialInstanceHandle x_material;
@@ -442,12 +473,14 @@ namespace scene
             OnLoad on_load;
             OnSave on_save;
             OnSceneWillBeFreed on_scene_will_be_freed;
+            OnSceneWillLoad on_scene_will_load;
             OnSceneLoaded on_scene_loaded;
             OnEntityUpdated on_entity_updated;
             OnEntitySelected on_entity_selected;
-            OnEntityDeleted on_entity_deleted;
+            OnEntityWillBeDeleted on_entity_will_be_deleted;
             OnEntityRegisteredWithType on_entity_registered_with_type;
             OnLoadEntityOfType on_load_entity_of_type;
+            OnLoadedEntityOfType on_loaded_entity_of_type;
         } callbacks;
     };
 
@@ -458,7 +491,7 @@ namespace scene
         scene_manager->scene_loaded = false;
         scene_manager->editor.selection_enabled = true;
         scene_manager->editor.lock_camera = false;
-        scene_manager->loaded_scene = { -1 };
+        scene_manager->loaded_scene = { -1 , nullptr};
         scene_manager->scenes = push_array(arena, global_max_scenes, scene::Scene);
         scene_manager->_internal_scene_handles = push_array(arena, global_max_scenes, i32);
 
@@ -474,11 +507,6 @@ namespace scene
         scene_manager->renderer = renderer;
 
         scene_manager->debug_cube.handle = 0;
-
-        scene_manager->gizmos.x_buffer = rendering::create_line_buffer(renderer);
-        scene_manager->gizmos.y_buffer = rendering::create_line_buffer(renderer);
-        scene_manager->gizmos.z_buffer = rendering::create_line_buffer(renderer);
-
         scene_manager->gizmos.line_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/line.shd");
         scene_manager->gizmos.line_material = rendering::create_material(renderer, scene_manager->gizmos.line_shader);
         

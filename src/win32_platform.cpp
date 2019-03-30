@@ -10,7 +10,7 @@ struct PlatformHandle
     HANDLE handle;
 };
 
-#define copy_file(game_library_path, temp_game_library_path, overwrite, arena) CopyFile(game_library_path, temp_game_library_path, overwrite)
+#define copy_file(game_library_path, temp_game_library_path, overwrite) CopyFile(game_library_path, temp_game_library_path, overwrite)
 
 time_t file_time_to_time_t(const FILETIME& ft)
 {
@@ -173,7 +173,7 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
     sprintf(path, "%s*", directory_path);
     h_find = FindFirstFile(path, &find_file);
     
-    if(h_find != INVALID_HANDLE_VALUE)
+    if(h_find != INVALID_HANDLE_VALUE && with_sub_directories)
     {
         do
         {
@@ -192,11 +192,6 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
         
         while(FindNextFile(h_find, &find_file));
         FindClose(h_find);
-    }
-    else
-    {
-        debug("No files with extension %s found in %s\n", extension, directory_path);
-        return;
     }
     
     //Process files
@@ -506,6 +501,9 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.create_directory =  win32_create_directory;
 
     // Threading
+    platform_api.request_queue = request_queue;
+    platform_api.request_thread_info = request_thread_info;
     platform_api.add_entry = add_entry;
     platform_api.complete_all_work = complete_all_work;
+    platform_api.make_queue = make_queue;
 }

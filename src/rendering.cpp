@@ -45,7 +45,7 @@ static i32 _find_unused_handle(Renderer& renderer)
     return -1;
 }
 
-static void update_lighting_for_material(BatchedCommand &render_command, Renderer *renderer)
+static void update_lighting_for_material(CombinedCommand &render_command, Renderer *renderer)
 {
     rendering::UniformValue *dir_light_count_map = rendering::get_mapping(render_command.material_handle, rendering::UniformMappingType::DIRECTIONAL_LIGHT_COUNT, renderer);
                 

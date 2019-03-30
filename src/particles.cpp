@@ -1,3 +1,10 @@
+void update_particle_systems(Renderer *renderer, r64 delta_time);
+void update_particle_system(ParticleSystemInfo& particle_system, Renderer *renderer, r64 delta_time);
+void emit_particle(Renderer *renderer, ParticleSystemInfo &particle_system, i32* alive_buf, i32* count, RandomSeries& entropy, i32 emitted_count);
+void update_particles(Renderer *renderer, ParticleSystemInfo &particle_system, r64 delta_time, i32 *emitted_buf, i32 *emitted_this_frame, i32* next_frame_buf, i32 *next_frame_count);
+static void update_particles_job(WorkQueue *work_queue, void* data_ptr);
+static void update_particle_system_job(WorkQueue *work_queue, void *data_ptr);
+
 EMITTER_FUNC(emit_dir)
 {
     ParticleSpawnInfo info;
@@ -128,7 +135,6 @@ i32 find_unused_particle(ParticleSystemInfo &particle_system)
 	if (particle_system.dead_particle_count > 0)
 	{
 		particle_system.dead_particle_count--;
-		particle_system.last_used_particle_index = particle_system.dead_particle_count;
 		return particle_system.dead_particles[particle_system.dead_particle_count];
 	}
 
@@ -148,7 +154,7 @@ r64_4x get_t(r64_4x time_spent, r64_4x start_time, r64_4x end_time)
 }
 
 // @Incomplete(Niels): Rethink how this is done to be more SIMD like...
-Rgba_4x get_color_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x time_spent)
+Rgba_4x get_color_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x time_spent, i32* active_indices, i32 count)
 {
 	i32 value_count = particle_system.color_over_lifetime.value_count;
 	math::Rgba* values = particle_system.color_over_lifetime.values;
@@ -156,15 +162,14 @@ Rgba_4x get_color_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x
 
 	r64_4x start_life = particle_system.particles.start_life[index];
 
-	i32 emitted_for_this_index = particle_system.emitted_for_this_index[index];
-
 	Rgba_4x result = values[value_count - 1];
 
 	i32 found_keys[4] = {};
 	i32 found_next_keys[4] = {};
 
-	for (i32 i = 0; i < emitted_for_this_index; i++)
+	for (i32 j = 0; j < count; j++)
 	{
+        i32 i = active_indices[j];
 		for (i32 key = 0; key < value_count; key++)
 		{
 			r64 current_key = keys[key] * start_life.e[i];
@@ -199,7 +204,7 @@ Rgba_4x get_color_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x
 }
 
 // @Incomplete(Niels): Rethink how this is done to be more SIMD like...
-Vec2_4x get_size_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x time_spent)
+Vec2_4x get_size_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x time_spent, i32* active_indices, i32 count)
 {
 	i32 value_count = particle_system.size_over_lifetime.value_count;
 	math::Vec2* values = particle_system.size_over_lifetime.values;
@@ -208,15 +213,14 @@ Vec2_4x get_size_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x 
 	r64_4x start_life = particle_system.particles.start_life[index];
 	Vec2_4x _start_size = particle_system.particles.start_size[index];
 
-	i32 emitted_for_this_index = particle_system.emitted_for_this_index[index];
-
 	Vec2_4x result = _start_size * values[value_count - 1];
 
 	i32 found_keys[4] = {};
 	i32 found_next_keys[4] = {};
 
-	for (i32 i = 0; i < emitted_for_this_index; i++)
+	for (i32 j = 0; j < count; j++)
 	{
+        i32 i = active_indices[j];
 		for (i32 key = 0; key < value_count; key++)
 		{
 			r64 current_key = keys[key] * start_life.e[i];
@@ -251,7 +255,7 @@ Vec2_4x get_size_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x 
 }
 
 // @Incomplete(Niels): Rethink how this is done to be more SIMD like...
-r32_4x get_speed_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x time_spent)
+r32_4x get_speed_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x time_spent, i32* active_indices, i32 count)
 {
 	i32 value_count = particle_system.speed_over_lifetime.value_count;
 	r32* values = particle_system.speed_over_lifetime.values;
@@ -260,15 +264,14 @@ r32_4x get_speed_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x 
 	r64_4x start_life = particle_system.particles.start_life[index];
 	r32_4x _start_speed = particle_system.particles.start_speed[index];
 
-	i32 emitted_for_this_index = particle_system.emitted_for_this_index[index];
-
 	r32_4x result = values[value_count - 1];
 
 	i32 found_keys[4] = {};
 	i32 found_next_keys[4] = {};
 
-	for (i32 i = 0; i < emitted_for_this_index; i++)
+	for (i32 j = 0; j < count; j++)
 	{
+        i32 i = active_indices[j];
 		for (i32 key = 0; key < value_count; key++)
 		{
 			r64 current_key = keys[key] * start_life.e[i];
@@ -305,7 +308,7 @@ r32_4x get_speed_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x 
 }
 
 // @Incomplete(Niels): Rethink how this is done to be more SIMD like...
-r32_4x get_angle_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x time_spent)
+r32_4x get_angle_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x time_spent, i32* active_indices, i32 count)
 {
 	i32 value_count = particle_system.angle_over_lifetime.value_count;
 	r32* values = particle_system.angle_over_lifetime.values;
@@ -313,15 +316,14 @@ r32_4x get_angle_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x 
 
 	r64_4x start_life = particle_system.particles.start_life[index];
 
-	i32 emitted_for_this_index = particle_system.emitted_for_this_index[index];
-
 	r32_4x result = values[value_count - 1];
 
 	i32 found_keys[4] = {};
 	i32 found_next_keys[4] = {};
 
-	for (i32 i = 0; i < emitted_for_this_index; i++)
+	for (i32 j = 0; j < count; j++)
 	{
+        i32 i = active_indices[j];
 		for (i32 key = 0; key < value_count; key++)
 		{
 			r64 current_key = keys[key] * start_life.e[i];
@@ -355,6 +357,199 @@ r32_4x get_angle_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x 
 	return result;
 }
 
+static void update_particles(ParticleWorkData &work_data)
+{
+    assert(work_data.renderer);
+    assert(work_data.info);
+    ParticleSystemInfo &info = *work_data.info;
+
+	i32 speed_value_count = info.speed_over_lifetime.value_count;
+	i32 color_value_count = info.color_over_lifetime.value_count;
+	i32 size_value_count = info.size_over_lifetime.value_count;
+	i32 angle_value_count = info.angle_over_lifetime.value_count;
+    
+    for(i32 alive_index = 0; alive_index < work_data.emitted_this_frame; alive_index++)
+    {
+        i32 main_index = work_data.emitted_buffer[alive_index];
+
+        i32 active_particle_count = 0;
+        i32 active_particles[4] = {-1, -1, -1, -1};
+
+        for(i32 i = 0; i < 4; i++)
+        {
+            if(info.particles.life[main_index].e[i] >= 0.0)
+            {
+                active_particles[active_particle_count++] = i;
+            }
+        }
+
+        b32 start[4];
+
+        for(i32 j = 0; j < active_particle_count; j++)
+        {
+            i32 i = active_particles[j];
+
+            r64 start_life = info.particles.start_life[main_index].e[i];
+            r64 life = info.particles.life[main_index].e[i];
+
+            start[i] = start_life - 0.001 <= life && start_life + 0.001 >= life;
+        }
+
+        info.particles.life[main_index] -= work_data.delta_time;
+
+        active_particle_count = 0;
+        
+        for(i32 i = 0; i < 4; i++)
+        {
+            if(info.particles.life[main_index].e[i] >= 0.0)
+            {
+                active_particles[active_particle_count++] = i;
+            }
+        }
+
+        if(active_particle_count == 0)
+        {
+            work_data.dead_particle_indices[work_data.dead_particle_count++] = main_index;
+            assert(work_data.dead_particle_count <= info.max_particles / 4);
+            continue;
+        }
+        else
+        {
+            work_data.next_frame_buffer[work_data.next_frame_count++] = main_index;
+        }
+
+        r64_4x life = info.particles.life[main_index];
+        r64_4x time_spent = info.particles.start_life[main_index] - life;
+
+        info.particles.direction[main_index] += Vec3_4x(math::Vec3(0.0f, - info.attributes.gravity * (r32)work_data.delta_time, 0.0f));
+
+        Rgba_4x color(0.0f);
+        Vec2_4x size(0.0f);
+        r32_4x angle(0.0f);
+
+        if(size_value_count > 0)
+        {
+            size = get_size_by_time(info, main_index, time_spent, &active_particles[0], active_particle_count);
+        }
+        else
+        {
+            size = info.particles.start_size[main_index];
+        }
+
+        if(angle_value_count > 0)
+        {
+            angle = get_angle_by_time(info, main_index, time_spent, &active_particles[0], active_particle_count);
+        }
+        else
+        {
+            angle = info.particles.start_angle[main_index];
+        }
+
+        if(color_value_count > 0)
+        {
+            color = get_color_by_time(info, main_index, time_spent, &active_particles[0], active_particle_count);
+        }
+        else
+        {
+            color = info.attributes.start_color;
+        }
+
+        if(speed_value_count > 0)
+        {
+            r32_4x speed = get_speed_by_time(info, main_index, time_spent, &active_particles[0], active_particle_count);
+            info.particles.position[main_index] += info.particles.direction[main_index] * speed * (r32)work_data.delta_time;
+        }
+        else
+        {
+            info.particles.position[main_index] += info.particles.direction[main_index] * info.particles.start_speed[main_index] * (r32)work_data.delta_time;
+        }
+
+        Vec3_4x final_pos(0.0f);
+
+        if(info.attributes.particle_space == PS_WORLD)
+        {
+            for(i32 j = 0; j < active_particle_count; j++)
+            {
+                i32 i = active_particles[j];
+
+                if(!start[i])
+                {
+                    final_pos.x.e[i] = info.particles.position[main_index].x.e[i] + info.particles.relative_position[main_index].x.e[i];
+                    final_pos.y.e[i] = info.particles.position[main_index].y.e[i] + info.particles.relative_position[main_index].y.e[i];
+                    final_pos.z.e[i] = info.particles.position[main_index].z.e[i] + info.particles.relative_position[main_index].z.e[i];
+                }
+                else
+                {
+                    final_pos.x.e[i] = info.particles.position[main_index].x.e[i] + info.transform.position.x;
+                    final_pos.y.e[i] = info.particles.position[main_index].y.e[i] + info.transform.position.y;
+                    final_pos.z.e[i] = info.particles.position[main_index].z.e[i] + info.transform.position.z;
+                    
+                    info.particles.relative_position[main_index].x.e[i] = info.transform.position.x;
+                    info.particles.relative_position[main_index].y.e[i] = info.transform.position.y;
+                    info.particles.relative_position[main_index].z.e[i] = info.transform.position.z;
+                }
+            }
+        }
+        else
+        {
+            final_pos = info.particles.position[main_index] + info.transform.position;
+            info.particles.relative_position[main_index] = Vec3_4x(info.transform.position);
+        }
+
+        float p[4][4];
+        float s[4][4];
+        float c[4][4];
+        float a[4][4];
+
+        r32_4x_to_float4(angle, a[0], a[1], a[2], a[3]);
+        vec2_4x_to_float4(size, s[0], s[1], s[2], s[3]);
+        vec3_4x_to_float4(final_pos, p[0], p[1], p[2], p[3]);
+        vec4_4x_to_float4(color, c[0], c[1], c[2], c[3]);
+
+        for(i32 j = 0; j < active_particle_count; j++)
+        {
+            i32 i = active_particles[j];
+
+            work_data.offset_buffer[work_data.particle_count].x = p[i][0];
+            work_data.offset_buffer[work_data.particle_count].y = p[i][1];
+            work_data.offset_buffer[work_data.particle_count].z = p[i][2];
+
+            work_data.color_buffer[work_data.particle_count].x = c[i][0];
+            work_data.color_buffer[work_data.particle_count].y = c[i][1];
+            work_data.color_buffer[work_data.particle_count].z = c[i][2];
+            work_data.color_buffer[work_data.particle_count].w = c[i][3];
+
+            work_data.size_buffer[work_data.particle_count].x = s[i][0];
+            work_data.size_buffer[work_data.particle_count].y = s[i][1];
+
+            work_data.angle_buffer[work_data.particle_count] = a[i][0];
+
+            work_data.particle_count++;
+        }
+        assert(work_data.particle_count < PARTICLE_DATA_SIZE * 4 + 1);
+    }
+}
+
+static void update_particle_system_job(WorkQueue *work_queue, void *data_ptr)
+{
+    UpdateParticleSystemWorkData *work_data = (UpdateParticleSystemWorkData*)data_ptr;
+    assert(work_data->info);
+    assert(work_data->renderer);
+    update_particle_system(*work_data->info, work_data->renderer, work_data->delta_time);
+}
+
+static void update_particles_job(WorkQueue *work_queue, void* data_ptr)
+{
+    assert(work_queue);
+    ParticleWorkData *work_data = (ParticleWorkData*)data_ptr;
+    assert(work_data);
+    assert(work_data->renderer);
+    assert(work_data->info);
+
+    // @Incomplete: Update
+    update_particles(*work_data);
+}
+
 // @Note:(Niels): Update the particles that have been emitted in previous and in the current frame
 // Kills particles in case they have life <= 0.0 and adds them to the dead particle buffer
 // Dead particles are used when emitting in the emit procedure.
@@ -369,211 +564,77 @@ void update_particles(Renderer *renderer, ParticleSystemInfo &particle_system, r
     }
 
     particle_system.particle_count = 0;
-	
-	i32 speed_value_count = particle_system.speed_over_lifetime.value_count;
-	i32 color_value_count = particle_system.color_over_lifetime.value_count;
-	i32 size_value_count = particle_system.size_over_lifetime.value_count;
-	i32 angle_value_count = particle_system.angle_over_lifetime.value_count;
 
-    r32* angle_buffer = rendering::get_float_buffer_pointer(particle_system.angle_buffer_handle, renderer);
-    i32* angle_count = rendering::get_float_buffer_count_pointer(particle_system.angle_buffer_handle, renderer);
+    i32 threads = *emitted_this_frame / PARTICLE_DATA_SIZE;
+    i32 count = *emitted_this_frame - threads * PARTICLE_DATA_SIZE;
+    if(count > 0)
+    {
+        threads++;
+    }
+
+    assert(threads <= particle_system.thread_info_count);
+    assert(threads <= particle_system.work_data_count);
+    
+    for(i32 t = 0; t < threads; t++)
+    {
+        particle_system.work_datas[t] = {};
+        ParticleWorkData &work_data = particle_system.work_datas[t];
+        work_data.info = &particle_system;
+        work_data.delta_time = delta_time;
+
+        memcpy(&work_data.emitted_buffer[0], emitted_buf + PARTICLE_DATA_SIZE * t, sizeof(i32) * PARTICLE_DATA_SIZE);
+
+        if(t == threads - 1 && count > 0)
+        {
+            work_data.emitted_this_frame = count;
+        }
+        else
+        {
+            work_data.emitted_this_frame = PARTICLE_DATA_SIZE;
+        }
+
+        work_data.renderer = renderer;
+
+        assert(particle_system.work_queue);
+        platform.add_entry(particle_system.work_queue, update_particles_job, &work_data);
+    }
+
+    assert(particle_system.work_queue);
+    if(threads > 0)
+    {
+        platform.complete_all_work(particle_system.work_queue);
+    }
+
+    i32 total_particles = 0;
+    
+    for(i32 t = 0; t < threads; t++)
+    {
+        ParticleWorkData &work_data = particle_system.work_datas[t];
+
+        total_particles += work_data.particle_count;
+        assert(total_particles <= particle_system.max_particles);
         
-    math::Vec3* offset_buffer = rendering::get_float3_buffer_pointer(particle_system.offset_buffer_handle, renderer);
-    i32* offset_count = rendering::get_float3_buffer_count_pointer(particle_system.offset_buffer_handle, renderer);
-        
-    math::Vec2* size_buffer = rendering::get_float2_buffer_pointer(particle_system.size_buffer_handle, renderer);
-    i32* size_count = rendering::get_float2_buffer_count_pointer(particle_system.size_buffer_handle, renderer);
-        
-    math::Rgba* color_buffer = rendering::get_float4_buffer_pointer(particle_system.color_buffer_handle, renderer);
-    i32* color_count = rendering::get_float4_buffer_count_pointer(particle_system.color_buffer_handle, renderer);
+        for(i32 i = 0; i < work_data.particle_count; i++)
+        {
+            rendering::add_instance_buffer_value(particle_system.angle_buffer_handle, work_data.angle_buffer[i], renderer);
+            rendering::add_instance_buffer_value(particle_system.offset_buffer_handle, work_data.offset_buffer[i], renderer);
+            rendering::add_instance_buffer_value(particle_system.size_buffer_handle, work_data.size_buffer[i], renderer);
+            rendering::add_instance_buffer_value(particle_system.color_buffer_handle, work_data.color_buffer[i], renderer);
+        }
 
-	for (i32 alive_index = 0; alive_index < *emitted_this_frame; alive_index++)
-	{
-		i32 main_index = emitted_buf[alive_index];
+        memcpy(next_frame_buf + (*next_frame_count), &work_data.next_frame_buffer[0], sizeof(i32) * work_data.next_frame_count);
+        if(!next_frame_count)
+        {
+            assert(false);
+        }
+        *next_frame_count += work_data.next_frame_count;
+        memcpy(particle_system.dead_particles + particle_system.dead_particle_count, &work_data.dead_particle_indices[0], sizeof(i32) * work_data.dead_particle_count);
+        particle_system.dead_particle_count += work_data.dead_particle_count;
+        particle_system.particle_count += work_data.particle_count;
+    }
 
-		// @Incomplete(Niels): Used to check where to position initial emission
-		// Maybe find a better solution that doesn't require branching on every particle?
-		b32 start[4];
-
-		for (i32 i = 0; i < particle_system.emitted_for_this_index[main_index]; i++)
-		{
-			start[i] = particle_system.particles.start_life[main_index].e[i] - 0.001 <= particle_system.particles.life[main_index].e[i]
-				&& particle_system.particles.start_life[main_index].e[i] + 0.001 >= particle_system.particles.life[main_index].e[i];
-		}
-
-		particle_system.particles.life[main_index] -= delta_time;
-
-		// @Note:(Niels): Check for alive state of this particle and kill if dead.
-		// Seems like a necessary branch here, since we do need to know if a particle is dead.
-		// Maybe there is some SIMD magic, that can do this for us (probably not...).
-		i32& emitted_for_index = particle_system.emitted_for_this_index[main_index];
-		for (i32 i = 0; i < emitted_for_index; i++)
-		{
-			if (particle_system.particles.life[main_index].e[i] < 0.0)
-			{
-				// @Incomplete: Is it possible to lane swap with SIMD?
-				particle_system.particles.life[main_index].e[i] = particle_system.particles.life[main_index].e[emitted_for_index - 1];
-
-				particle_system.particles.position[main_index].x.e[i] = particle_system.particles.position[main_index].x.e[(emitted_for_index - 1)];
-				particle_system.particles.position[main_index].y.e[i] = particle_system.particles.position[main_index].y.e[(emitted_for_index - 1)];
-				particle_system.particles.position[main_index].z.e[i] = particle_system.particles.position[main_index].z.e[(emitted_for_index - 1)];
-
-				particle_system.particles.direction[main_index].x.e[i] = particle_system.particles.direction[main_index].x.e[(emitted_for_index - 1)];
-				particle_system.particles.direction[main_index].y.e[i] = particle_system.particles.direction[main_index].y.e[(emitted_for_index - 1)];
-				particle_system.particles.direction[main_index].z.e[i] = particle_system.particles.direction[main_index].z.e[(emitted_for_index - 1)];
-
-				particle_system.particles.color[main_index].x.e[i] = particle_system.particles.color[main_index].x.e[(emitted_for_index - 1)];
-				particle_system.particles.color[main_index].y.e[i] = particle_system.particles.color[main_index].y.e[(emitted_for_index - 1)];
-				particle_system.particles.color[main_index].z.e[i] = particle_system.particles.color[main_index].z.e[(emitted_for_index - 1)];
-				particle_system.particles.color[main_index].w.e[i] = particle_system.particles.color[main_index].w.e[(emitted_for_index - 1)];
-
-				particle_system.particles.size[main_index].x.e[i] = particle_system.particles.size[main_index].x.e[(emitted_for_index - 1)];
-				particle_system.particles.size[main_index].y.e[i] = particle_system.particles.size[main_index].y.e[(emitted_for_index - 1)];
-
-				particle_system.particles.angle[main_index].e[i] = particle_system.particles.angle[main_index].e[emitted_for_index - 1];
-
-				particle_system.particles.relative_position[main_index].x.e[i] = particle_system.particles.relative_position[main_index].x.e[(emitted_for_index - 1)];
-				particle_system.particles.relative_position[main_index].y.e[i] = particle_system.particles.relative_position[main_index].y.e[(emitted_for_index - 1)];
-				particle_system.particles.relative_position[main_index].z.e[i] = particle_system.particles.relative_position[main_index].z.e[(emitted_for_index - 1)];
-
-				particle_system.particles.start_size[main_index].e[i] = particle_system.particles.start_size[main_index].e[emitted_for_index - 1];
-
-				particle_system.particles.start_speed[main_index].e[i] = particle_system.particles.start_speed[main_index].e[emitted_for_index - 1];
-
-				particle_system.particles.start_life[main_index].e[i] = particle_system.particles.start_life[main_index].e[emitted_for_index - 1];
-
-				particle_system.particles.start_angle[main_index].e[i] = particle_system.particles.start_angle[main_index].e[emitted_for_index - 1];
-
-				emitted_for_index--;
-			}
-		}
-
-		if (emitted_for_index == 0)
-		{
-			particle_system.dead_particles[particle_system.dead_particle_count++] = main_index;
-			continue;
-		}
-		else
-		{
-			next_frame_buf[(*next_frame_count)++] = main_index;
-		}
-
-		r64_4x life = particle_system.particles.life[main_index];
-		r64_4x time_spent = particle_system.particles.start_life[main_index] - life;
-
-		particle_system.particles.direction[main_index] += Vec3_4x(math::Vec3(0.0f, -particle_system.attributes.gravity * (r32)delta_time, 0.0f));
-
-		// @Note(Niels): This branch will always be true or false for the whole loop so it should be optimized out (hopefully) 
-		// We could optimize it specifically by having separate arrays for each of these
-		if (size_value_count > 0)
-		{
-			particle_system.particles.size[main_index] = get_size_by_time(particle_system, main_index, time_spent);
-		}
-		else
-		{
-			particle_system.particles.size[main_index] = particle_system.particles.start_size[main_index];
-		}
-
-		if (angle_value_count > 0)
-		{
-			particle_system.particles.angle[main_index] = get_angle_by_time(particle_system, main_index, time_spent);
-		}
-		else
-		{
-			particle_system.particles.angle[main_index] = particle_system.particles.start_angle[main_index];
-		}
-
-		if (color_value_count > 0)
-		{
-			particle_system.particles.color[main_index] = get_color_by_time(particle_system, main_index, time_spent);
-		}
-		else
-		{
-			particle_system.particles.color[main_index] = particle_system.attributes.start_color;
-		}
-
-		if (speed_value_count > 0)
-		{
-			r32_4x speed = get_speed_by_time(particle_system, main_index, time_spent);
-			particle_system.particles.position[main_index] += particle_system.particles.direction[main_index] * speed * (r32)delta_time;
-		}
-		else
-		{
-			particle_system.particles.position[main_index] += particle_system.particles.direction[main_index] * particle_system.particles.start_speed[main_index] * (r32)delta_time;
-		}
-
-		Vec3_4x final_pos(0.0f);
-
-		// @Note: Another ugly killing of SIMD :(
-		if (particle_system.attributes.particle_space == PS_WORLD)
-		{
-			for (i32 i = 0; i < particle_system.emitted_for_this_index[main_index]; i++)
-			{
-				if (!start[i])
-				{
-					final_pos.x.e[i] = particle_system.particles.position[main_index].x.e[i] + particle_system.particles.relative_position[main_index].x.e[i];
-					final_pos.y.e[i] = particle_system.particles.position[main_index].y.e[i] + particle_system.particles.relative_position[main_index].y.e[i];
-					final_pos.z.e[i] = particle_system.particles.position[main_index].z.e[i] + particle_system.particles.relative_position[main_index].z.e[i];
-				}
-				else
-				{
-					final_pos.x.e[i] = particle_system.particles.position[main_index].x.e[i] + particle_system.transform.position.x;
-					final_pos.y.e[i] = particle_system.particles.position[main_index].y.e[i] + particle_system.transform.position.y;
-					final_pos.z.e[i] = particle_system.particles.position[main_index].z.e[i] + particle_system.transform.position.z;
-					particle_system.particles.relative_position[main_index].x.e[i] = particle_system.transform.position.x;
-					particle_system.particles.relative_position[main_index].y.e[i] = particle_system.transform.position.y;
-					particle_system.particles.relative_position[main_index].z.e[i] = particle_system.transform.position.z;
-				}
-			}
-		}
-		else
-		{
-			final_pos = particle_system.particles.position[main_index] + particle_system.transform.position;
-			particle_system.particles.relative_position[main_index] = Vec3_4x(particle_system.transform.position);
-		}
-
-		// @Note(Niels): Now fill the simd vectors into normal vectors that can be drawn
-		// Could be moved to another function so we don't mix SIMD too much with non-SIMD
-		Rgba_4x color = particle_system.particles.color[main_index];
-		Vec2_4x size = particle_system.particles.size[main_index];
-		r32_4x angle = particle_system.particles.angle[main_index];
-
-		float p[4][4];
-		float s[4][4];
-		float c[4][4];
-		float a[4][4];
-
-		r32_4x_to_float4(angle, a[0], a[1], a[2], a[3]);
-		vec2_4x_to_float4(size, s[0], s[1], s[2], s[3]);
-		vec3_4x_to_float4(final_pos, p[0], p[1], p[2], p[3]);
-		vec4_4x_to_float4(color, c[0], c[1], c[2], c[3]);
-        
-		for (i32 i = 0; i < particle_system.emitted_for_this_index[main_index]; i++)
-		{
-			offset_buffer[particle_system.particle_count].x = p[i][0];
-			offset_buffer[particle_system.particle_count].y = p[i][1];
-			offset_buffer[particle_system.particle_count].z = p[i][2];
-
-			color_buffer[particle_system.particle_count].r = c[i][0];
-			color_buffer[particle_system.particle_count].g = c[i][1];
-			color_buffer[particle_system.particle_count].b = c[i][2];
-			color_buffer[particle_system.particle_count].a = c[i][3];
-
-			size_buffer[particle_system.particle_count].x = s[i][0];
-			size_buffer[particle_system.particle_count].y = s[i][1];
-
-			angle_buffer[particle_system.particle_count] = a[i][0];
-
-			particle_system.particle_count++;
-
-            (*angle_count)++;
-            (*offset_count)++;
-            (*size_count)++;
-            (*color_count)++;        
-		}
-        assert(particle_system.particle_count < particle_system.max_particles);
-	}
-
+    
+    
 	*emitted_this_frame = 0;
 }
 
@@ -596,7 +657,6 @@ void emit_particle(Renderer *renderer, ParticleSystemInfo &particle_system, i32*
 	}
 
 	// @Note(Niels): Init particle to the init values saved in the particle system
-
 	if (particle_system.attributes.start_life_time_type == StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
 	{
 		r64_4x v = random_between_4x(entropy, particle_system.attributes.life.random_between_two_constants.l0, particle_system.attributes.life.random_between_two_constants.l1);
@@ -623,29 +683,23 @@ void emit_particle(Renderer *renderer, ParticleSystemInfo &particle_system, i32*
 	{
 		r32_4x v = random_between_4x(entropy, particle_system.attributes.size.random_between_two_constants.s0, particle_system.attributes.size.random_between_two_constants.s1);
 		Vec2_4x size_val = Vec2_4x(v, v) * tex_size;
-		particle_system.particles.size[original_index] = size_val;
 		particle_system.particles.start_size[original_index] = size_val;
 	}
 	else
 	{
-		particle_system.particles.size[original_index] = Vec2_4x(particle_system.attributes.size.constant.start_size) * tex_size;
 		particle_system.particles.start_size[original_index] = Vec2_4x(particle_system.attributes.size.constant.start_size) * tex_size;
 	}
 
 	if (particle_system.attributes.start_angle_type == StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
 	{
 		r32_4x v = random_between_4x(entropy, particle_system.attributes.angle.random_between_two_constants.a0, particle_system.attributes.angle.random_between_two_constants.a1);
-		particle_system.particles.angle[original_index] = v;
 		particle_system.particles.start_angle[original_index] = v;
 	}
 	else
 	{
-		particle_system.particles.angle[original_index] = particle_system.attributes.angle.constant.start_angle;
 		particle_system.particles.start_angle[original_index] = particle_system.attributes.angle.constant.start_angle;
 	}
 
-
-	//    particle_system.particles.color[original_index] = Rgba_4x(particle_system.attributes.start_color);
 	particle_system.particles.relative_position[original_index] = Vec3_4x(0.0f);
 
     ParticleSpawnInfo spawn_info = {};
@@ -725,9 +779,7 @@ void emit_particle(Renderer *renderer, ParticleSystemInfo &particle_system, i32*
 	// @Note:(Niels): The current buffer gets the particle being emitted
 	// It is passed in, so we only need to check once per frame when the system is updated
 	alive_buf[(*count)++] = original_index;
-
-	particle_system.emitted_for_this_index[original_index] = emitted_count;
-}
+}    
 
 // @Note(Niels): The way we update and choose particles is based on the link below
 // https://turanszkij.wordpress.com/2017/11/07/gpu-based-particle-simulation/
@@ -774,35 +826,36 @@ void update_particle_system(ParticleSystemInfo& particle_system, Renderer *rende
 		i32 new_particles = 0;
 
 		// @Note(Niels): Figure out the burst amount if there is any
-		i32 burst_particles = 0;
+		// i32 burst_particles = 0;
 
 		// @Note(Niels): Burst code for burst emission.
-		auto value_count = particle_system.attributes.emission_module.burst_over_lifetime.value_count;
-		if (value_count > 0)
-		{
-			auto burst_index = particle_system.attributes.emission_module.burst_over_lifetime.current_index;
+        // @Incomplete
+		// auto value_count = particle_system.attributes.emission_module.burst_over_lifetime.value_count;
+		// if (value_count > 0)
+		// {
+		// 	auto burst_index = particle_system.attributes.emission_module.burst_over_lifetime.current_index;
 
-			if (burst_index < value_count)
-			{
-				auto &current_burst = particle_system.attributes.emission_module.burst_over_lifetime.values[burst_index];
+		// 	if (burst_index < value_count)
+		// 	{
+		// 		auto &current_burst = particle_system.attributes.emission_module.burst_over_lifetime.values[burst_index];
 
-				auto target_time = current_burst.repeat_interval;
+		// 		auto target_time = current_burst.repeat_interval;
 
-				particle_system.current_emission_time += delta_time;
+		// 		particle_system.current_emission_time += delta_time;
 
-				if (particle_system.current_emission_time >= target_time)
-				{
-					burst_particles = current_burst.count;
+		// 		if (particle_system.current_emission_time >= target_time)
+		// 		{
+		// 			burst_particles = current_burst.count;
 
-					if (current_burst.cycle_count > 0 && particle_system.attributes.emission_module.burst_over_lifetime.current_index >= current_burst.cycle_count)
-					{
-						particle_system.attributes.emission_module.burst_over_lifetime.current_index++;
-					}
+		// 			if (current_burst.cycle_count > 0 && particle_system.attributes.emission_module.burst_over_lifetime.current_index >= current_burst.cycle_count)
+		// 			{
+		// 				particle_system.attributes.emission_module.burst_over_lifetime.current_index++;
+		// 			}
 
-					particle_system.current_emission_time = 0.0;
-				}
-			}
-		}
+		// 			particle_system.current_emission_time = 0.0;
+		// 		}
+		// 	}
+		// }
 
 		particle_system.time_spent += delta_time;
 
@@ -816,8 +869,8 @@ void update_particle_system(ParticleSystemInfo& particle_system, Renderer *rende
 			particle_system.particles_cumulative = particle_system.particles_cumulative - new_particles;
 		}
 
-		// @Incomplete: Burst is not completely implemented
-		i32 simd_burst_particles = math::multiple_of_number(burst_particles, 4);
+		// // @Incomplete: Burst is not completely implemented
+		// i32 simd_burst_particles = math::multiple_of_number(burst_particles, 4);
 
 		// @Note(Niels): Check if the new amount is below the max and below the amount of dead particles.
 		new_particles = MIN(particle_system.max_particles, MIN(new_particles, particle_system.dead_particle_count * 4));
@@ -853,17 +906,18 @@ void update_particle_system(ParticleSystemInfo& particle_system, Renderer *rende
 			}
 		}
 
-		// @Note(Niels): Same goes for burst		
-		for (i32 i = 0; i < simd_burst_particles / 4; i++)
-		{
-			emit_particle(renderer, particle_system, emitted_alive_buf, emitted_alive_count, *renderer->particles.entropy, 4);
-		}
+		// // @Note(Niels): Same goes for burst		
+		// for (i32 i = 0; i < simd_burst_particles / 4; i++)
+		// {
+		// 	emit_particle(renderer, particle_system, emitted_alive_buf, emitted_alive_count, *renderer->particles.entropy, 4);
+		// }
 	}
 
     if(!particle_system.paused)
     {
         // @Note:(Niels): We now update the particles in the emitted alive buf (which may contain particles from previous frames that are still alive), while passing in the next buffer,
         // which is now our "write" buffer.
+
         update_particles(renderer, particle_system, delta_time, emitted_alive_buf, emitted_alive_count, write_buf, write_buf_count);
 
         // @Note(Niels): if all particles are dead and the system is one-shot we should stop the particle_system
@@ -874,19 +928,27 @@ void update_particle_system(ParticleSystemInfo& particle_system, Renderer *rende
     }
 }
 
-
 void update_particle_systems(Renderer *renderer, r64 delta_time)
 {
 	for (i32 particle_system_index = 0; particle_system_index < renderer->particles.particle_system_count; particle_system_index++)
 	{
 		ParticleSystemInfo &particle_system = renderer->particles.particle_systems[particle_system_index];
-
-		if (particle_system.simulating)
-		{
-			update_particle_system(particle_system, renderer, delta_time);
-		}
+        if(particle_system.simulating)
+        {
+            particle_system.update_work_data = {};
+            UpdateParticleSystemWorkData &work_data = particle_system.update_work_data;
+            work_data.info = &particle_system;
+            work_data.renderer = renderer;
+            work_data.delta_time = delta_time;
+            platform.add_entry(renderer->particles.system_work_queue, update_particle_system_job, &work_data);
+        }
 	}
+
+    if(renderer->particles.particle_system_count > 0)
+    {
+        platform.complete_all_work(renderer->particles.system_work_queue);
+    }
 }
-// @Move: END
+// @End
 
 
