@@ -501,7 +501,7 @@ namespace rendering
 		char *result;
 		b32 instancing_enabled = false;
 
-		size_t temp_current_size = strlen(source) * 15;
+		size_t temp_current_size = strlen(source) * 30;
 		char *temp_result = push_string(&temp_arena, temp_current_size);
 
 		char buffer[256];

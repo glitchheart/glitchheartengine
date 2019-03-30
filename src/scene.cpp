@@ -1216,8 +1216,21 @@ namespace scene
         return entity_handle;
     }
 
+    static b32 entity_exists(EntityHandle entity_handle, SceneHandle scene_handle)
+    {
+        Scene& scene = get_scene(scene_handle);
+        i32 internal_handle = scene._internal_handles[entity_handle.handle - 1];
+        if(internal_handle == -1)
+            return false;
+
+        return true;
+    }
+
     static b32 has_render_component(EntityHandle entity_handle, SceneHandle& scene)
     {
+        if(!entity_exists(entity_handle, scene))
+            return false;
+        
         Entity& entity = get_entity(entity_handle, scene);
 
         return (b32)(entity.comp_flags & COMP_RENDER);
@@ -1225,6 +1238,9 @@ namespace scene
 
     static b32 has_transform_component(EntityHandle entity_handle, SceneHandle& scene)
     {
+        if(!entity_exists(entity_handle, scene))
+            return false;
+        
         Entity& entity = get_entity(entity_handle, scene);
 
         return (b32)(entity.comp_flags & COMP_TRANSFORM);
@@ -1232,6 +1248,9 @@ namespace scene
 
     static b32 has_particle_component(EntityHandle entity_handle, SceneHandle& scene)
     {
+        if(!entity_exists(entity_handle, scene))
+            return false;
+        
         Entity& entity = get_entity(entity_handle, scene);
 
         return (b32)(entity.comp_flags & COMP_PARTICLES);
@@ -1239,6 +1258,9 @@ namespace scene
 
     static b32 has_light_component(EntityHandle entity_handle, SceneHandle& scene)
     {
+        if(!entity_exists(entity_handle, scene))
+            return false;
+        
         Entity& entity = get_entity(entity_handle, scene);
 
         return (b32)(entity.comp_flags & COMP_LIGHT);
@@ -2116,6 +2138,12 @@ namespace scene
 
     static void remove_from_render_pass(rendering::RenderPassHandle render_pass_handle, scene::EntityHandle entity, SceneHandle& scene)
     {
+        if(!has_render_component(entity, scene))
+        {
+            // @Incomplete/@Hack: Fix this some other way?
+            return;
+        }
+        
         RenderComponent &render_comp = get_render_comp(entity, scene);
         for(i32 i = 0; i < render_comp.render_pass_count; i++)
         {
