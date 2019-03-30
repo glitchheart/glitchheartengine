@@ -612,7 +612,7 @@ void update_particles(Renderer *renderer, ParticleSystemInfo &particle_system, r
         ParticleWorkData &work_data = particle_system.work_datas[t];
 
         total_particles += work_data.particle_count;
-        assert(total_particles < particle_system.max_particles);
+        assert(total_particles <= particle_system.max_particles);
         
         for(i32 i = 0; i < work_data.particle_count; i++)
         {
