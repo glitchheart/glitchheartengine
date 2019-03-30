@@ -8,6 +8,7 @@ namespace scene
     
     static void free_scene(SceneHandle scene, b32 invalidate_handle = true);
     static void load_scene(SceneHandle handle, u64 scene_load_flags = 0);
+    static void unload_scene(SceneManager *scene_manager);
     
     // Scene handle
     static RenderComponent& add_render_component(SceneHandle scene, EntityHandle entity_handle, b32 cast_shadows);
@@ -1925,6 +1926,13 @@ namespace scene
             }
         }
     }
+
+    static void unload_current_scene(SceneManager *scene_manager)
+    {
+        scene::deactivate_particle_systems(scene_manager->loaded_scene);
+        scene_manager->loaded_scene = { -1 , nullptr};
+        scene_manager->scene_loaded = false;
+    }
     
     static void load_scene(SceneHandle handle, u64 load_flags)
     {
@@ -2436,11 +2444,6 @@ namespace scene
 
 								char shader_file[256];
 								sscanf(buffer, "shd: %s", shader_file);
-
-                                if(strcmp(shader_file, "../assets/shaders/dissolve.shd") == 0)
-                                {
-                                    debug("Hey\n");
-                                }
 
 								rendering::ShaderHandle shader = rendering::load_shader(scene.renderer, shader_file);
 								pass_mat.material = create_material_copyable(scene.renderer, shader);
@@ -3663,10 +3666,13 @@ namespace scene
         add_child(parent_handle, child_handle, scene);
     }
 
-    static void remove_parent(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
+    static void remove_parent(EntityHandle child_handle, SceneHandle& scene)
     {
         Entity& child = get_entity(child_handle, scene);
-        child.parent = EMPTY_ENTITY_HANDLE;
+        if(IS_ENTITY_HANDLE_VALID(child.parent))
+        {
+            remove_child(child.parent, child_handle, scene);
+        }
     }
     
     static void push_scene_for_rendering(scene::Scene &scene, Renderer *renderer)
