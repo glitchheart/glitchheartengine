@@ -1000,10 +1000,12 @@ int main(int argc, char **args)
             }
             else
                 game.update_editor(&game_memory);
-            
-            update_scene_editor(scene_manager->loaded_scene, &input_controller, delta_time);
-            
-            push_scene_for_rendering(scene::get_scene(scene_manager->loaded_scene), renderer);
+
+            if(scene_manager->scene_loaded) // Check again, since there could be a call to unload_current_scene() in game.update()
+            {
+                update_scene_editor(scene_manager->loaded_scene, &input_controller, delta_time);
+                push_scene_for_rendering(scene::get_scene(scene_manager->loaded_scene), renderer);
+            }
         }
         else
             game.update(&game_memory);

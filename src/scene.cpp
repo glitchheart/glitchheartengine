@@ -3689,12 +3689,18 @@ namespace scene
         }
     }
 
-    static void add_parent(EntityHandle child_handle, EntityHandle parent_handle, SceneHandle& scene)
+    static b32 has_parent(EntityHandle child_handle, SceneHandle scene)
+    {
+        Entity &child = get_entity(child_handle, scene);
+        return IS_ENTITY_HANDLE_VALID(child.parent);
+    }
+    
+    static void add_parent(EntityHandle child_handle, EntityHandle parent_handle, SceneHandle scene)
     {
         add_child(parent_handle, child_handle, scene);
     }
 
-    static void remove_parent(EntityHandle child_handle, SceneHandle& scene)
+    static void remove_parent(EntityHandle child_handle, SceneHandle scene)
     {
         Entity& child = get_entity(child_handle, scene);
         if(IS_ENTITY_HANDLE_VALID(child.parent))
