@@ -3626,6 +3626,7 @@ namespace scene
         child.parent = parent_handle;
         
         child_transform.transform.position -= parent_transform.transform.position;
+        child_transform.transform.position /= parent_transform.transform.scale;
         child_transform.transform.euler_angles -= parent_transform.transform.euler_angles;
         child_transform.transform.scale /= parent_transform.transform.scale;
         child_transform.transform.dirty = true;
@@ -3645,6 +3646,7 @@ namespace scene
                 child.parent = EMPTY_ENTITY_HANDLE;
 
                 child_transform.transform.position += parent_transform.transform.position;
+                child_transform.transform.position *= parent_transform.transform.scale;
                 child_transform.transform.euler_angles += parent_transform.transform.euler_angles;
                 child_transform.transform.scale *= parent_transform.transform.scale;
                 child_transform.transform.dirty = true;
