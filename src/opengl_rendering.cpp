@@ -1881,7 +1881,8 @@ static void set_uniform(rendering::Transform transform, const rendering::RenderP
 
         Texture *texture = renderer->render.textures[handle.handle - 1];
         set_texture_uniform(gl_shader.program, texture->handle, *texture_count);
-        (*texture_count++);
+        *texture_count += 1;
+        // (*texture_count++);
     }
     break;
     case rendering::UniformMappingType::SHADOW_VIEW_POSITION:
@@ -2549,8 +2550,8 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
     glEnable(GL_CLIP_PLANE0);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    rendering::RenderPass &pass = renderer->render.passes[renderer->render.shadow_pass.handle - 1];
-    render_pass(render_state, renderer, pass);
+    rendering::RenderPass &shadow_pass = renderer->render.passes[renderer->render.shadow_pass.handle - 1];
+    render_pass(render_state, renderer, shadow_pass);
         
     // Go backwards through the array to enable easy render pass adding
     for (i32 pass_index = renderer->render.pass_count - 1; pass_index >= 0; pass_index--)
