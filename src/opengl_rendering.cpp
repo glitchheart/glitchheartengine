@@ -389,9 +389,15 @@ static void reload_shaders(RenderState &render_state, Renderer *renderer)
             ShaderGL &gl_shader = render_state.gl_shaders[index];
 
             delete_shader_program(gl_shader);
-            rendering::load_shader(renderer, shader);
+
+			MemoryArena arena = {};
+
+            rendering::load_shader(renderer, shader, true, &arena);
             rendering::update_materials_with_shader(renderer, shader);
             load_shader(renderer, shader, gl_shader);
+			
+			clear(&arena);
+
             printf("Reloaded shader: %s\n", shader.path);
         }
     }
@@ -1009,6 +1015,7 @@ static void load_shader(RenderState *render_state, Renderer *renderer, rendering
 {
     ShaderGL &gl_shader = render_state->gl_shaders[render_state->gl_shader_count];
     gl_shader.handle = render_state->gl_shader_count;
+    
     gl_shader.location_count = 0;
 
 	if(shader.loaded)

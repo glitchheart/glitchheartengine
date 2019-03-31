@@ -8,6 +8,7 @@ namespace scene
     
     static void free_scene(SceneHandle scene, b32 invalidate_handle = true);
     static void load_scene(SceneHandle handle, u64 scene_load_flags = 0);
+    static void unload_scene(SceneManager *scene_manager);
     
     // Scene handle
     static RenderComponent& add_render_component(SceneHandle scene, EntityHandle entity_handle, b32 cast_shadows);
@@ -1216,8 +1217,21 @@ namespace scene
         return entity_handle;
     }
 
+    static b32 entity_exists(EntityHandle entity_handle, SceneHandle scene_handle)
+    {
+        Scene& scene = get_scene(scene_handle);
+        i32 internal_handle = scene._internal_handles[entity_handle.handle - 1];
+        if(internal_handle == -1)
+            return false;
+
+        return true;
+    }
+
     static b32 has_render_component(EntityHandle entity_handle, SceneHandle& scene)
     {
+        if(!entity_exists(entity_handle, scene))
+            return false;
+        
         Entity& entity = get_entity(entity_handle, scene);
 
         return (b32)(entity.comp_flags & COMP_RENDER);
@@ -1225,6 +1239,9 @@ namespace scene
 
     static b32 has_transform_component(EntityHandle entity_handle, SceneHandle& scene)
     {
+        if(!entity_exists(entity_handle, scene))
+            return false;
+        
         Entity& entity = get_entity(entity_handle, scene);
 
         return (b32)(entity.comp_flags & COMP_TRANSFORM);
@@ -1232,6 +1249,9 @@ namespace scene
 
     static b32 has_particle_component(EntityHandle entity_handle, SceneHandle& scene)
     {
+        if(!entity_exists(entity_handle, scene))
+            return false;
+        
         Entity& entity = get_entity(entity_handle, scene);
 
         return (b32)(entity.comp_flags & COMP_PARTICLES);
@@ -1239,6 +1259,9 @@ namespace scene
 
     static b32 has_light_component(EntityHandle entity_handle, SceneHandle& scene)
     {
+        if(!entity_exists(entity_handle, scene))
+            return false;
+        
         Entity& entity = get_entity(entity_handle, scene);
 
         return (b32)(entity.comp_flags & COMP_LIGHT);
@@ -1925,6 +1948,13 @@ namespace scene
             }
         }
     }
+
+    static void unload_current_scene(SceneManager *scene_manager)
+    {
+        scene::deactivate_particle_systems(scene_manager->loaded_scene);
+        scene_manager->loaded_scene = { -1 , nullptr};
+        scene_manager->scene_loaded = false;
+    }
     
     static void load_scene(SceneHandle handle, u64 load_flags)
     {
@@ -2116,6 +2146,12 @@ namespace scene
 
     static void remove_from_render_pass(rendering::RenderPassHandle render_pass_handle, scene::EntityHandle entity, SceneHandle& scene)
     {
+        if(!has_render_component(entity, scene))
+        {
+            // @Incomplete/@Hack: Fix this some other way?
+            return;
+        }
+        
         RenderComponent &render_comp = get_render_comp(entity, scene);
         for(i32 i = 0; i < render_comp.render_pass_count; i++)
         {
@@ -2436,11 +2472,6 @@ namespace scene
 
 								char shader_file[256];
 								sscanf(buffer, "shd: %s", shader_file);
-
-                                if(strcmp(shader_file, "../assets/shaders/dissolve.shd") == 0)
-                                {
-                                    debug("Hey\n");
-                                }
 
 								rendering::ShaderHandle shader = rendering::load_shader(scene.renderer, shader_file);
 								pass_mat.material = create_material_copyable(scene.renderer, shader);
@@ -3626,6 +3657,7 @@ namespace scene
         child.parent = parent_handle;
         
         child_transform.transform.position -= parent_transform.transform.position;
+        child_transform.transform.position /= parent_transform.transform.scale;
         child_transform.transform.euler_angles -= parent_transform.transform.euler_angles;
         child_transform.transform.scale /= parent_transform.transform.scale;
         child_transform.transform.dirty = true;
@@ -3645,6 +3677,7 @@ namespace scene
                 child.parent = EMPTY_ENTITY_HANDLE;
 
                 child_transform.transform.position += parent_transform.transform.position;
+                child_transform.transform.position *= parent_transform.transform.scale;
                 child_transform.transform.euler_angles += parent_transform.transform.euler_angles;
                 child_transform.transform.scale *= parent_transform.transform.scale;
                 child_transform.transform.dirty = true;
@@ -3656,15 +3689,24 @@ namespace scene
         }
     }
 
-    static void add_parent(EntityHandle child_handle, EntityHandle parent_handle, SceneHandle& scene)
+    static b32 has_parent(EntityHandle child_handle, SceneHandle scene)
+    {
+        Entity &child = get_entity(child_handle, scene);
+        return IS_ENTITY_HANDLE_VALID(child.parent);
+    }
+    
+    static void add_parent(EntityHandle child_handle, EntityHandle parent_handle, SceneHandle scene)
     {
         add_child(parent_handle, child_handle, scene);
     }
 
-    static void remove_parent(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
+    static void remove_parent(EntityHandle child_handle, SceneHandle scene)
     {
         Entity& child = get_entity(child_handle, scene);
-        child.parent = EMPTY_ENTITY_HANDLE;
+        if(IS_ENTITY_HANDLE_VALID(child.parent))
+        {
+            remove_child(child.parent, child_handle, scene);
+        }
     }
     
     static void push_scene_for_rendering(scene::Scene &scene, Renderer *renderer)

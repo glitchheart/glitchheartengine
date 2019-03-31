@@ -501,7 +501,7 @@ namespace rendering
 		char *result;
 		b32 instancing_enabled = false;
 
-		size_t temp_current_size = strlen(source) * 15;
+		size_t temp_current_size = strlen(source) * 30;
 		char *temp_result = push_string(&temp_arena, temp_current_size);
 
 		char buffer[256];
@@ -824,9 +824,16 @@ namespace rendering
 
     static int out_count = 0;
 
-	static void load_shader(Renderer *renderer, Shader &shader)
+	static void load_shader(Renderer *renderer, Shader &shader, b32 reload = false, MemoryArena *extra_arena = nullptr)
 	{
 		MemoryArena shader_arena = {};
+
+		MemoryArena *arena = &shader_arena;
+		
+		if (extra_arena)
+		{
+			arena = extra_arena;
+		}
 
 		FILE *file = fopen(shader.path, "r");
 
@@ -835,7 +842,7 @@ namespace rendering
 		if (file)
 		{
 			size_t size = 0;
-			char *source = read_file_into_buffer(&shader_arena, file, &size);
+			char *source = read_file_into_buffer(arena, file, &size);
 
 			shader.vert_shader = nullptr;
 			shader.geo_shader = nullptr;
@@ -854,15 +861,15 @@ namespace rendering
 			{
 				if (starts_with(&source[i], "#vert"))
 				{
-					shader.vert_shader = load_shader_text(renderer, &shader_arena, &source[i + strlen("#vert") + 1], true, shader, &uniforms, &uniform_count, shader.path, &i);
+					shader.vert_shader = load_shader_text(renderer, arena, &source[i + strlen("#vert") + 1], true, shader, &uniforms, &uniform_count, shader.path, &i);
 				}
 				else if (starts_with(&source[i], "#geo"))
 				{
-					shader.geo_shader = load_shader_text(renderer, &shader_arena, &source[i + strlen("#geo") + 1], false, shader, &uniforms, &uniform_count, shader.path, &i);
+					shader.geo_shader = load_shader_text(renderer, arena, &source[i + strlen("#geo") + 1], false, shader, &uniforms, &uniform_count, shader.path, &i);
 				}
 				else if (starts_with(&source[i], "#frag"))
 				{
-					shader.frag_shader = load_shader_text(renderer, &shader_arena, &source[i + strlen("#frag") + 1], false, shader, &uniforms, &uniform_count, shader.path, &i);
+					shader.frag_shader = load_shader_text(renderer, arena, &source[i + strlen("#frag") + 1], false, shader, &uniforms, &uniform_count, shader.path, &i);
 				}
 			}
 
@@ -898,7 +905,8 @@ namespace rendering
 			fclose(file);
 			shader.loaded = shader.vert_shader && shader.frag_shader;
 
-			renderer->api_functions.load_shader(renderer->api_functions.render_state, renderer, shader);
+            if(!reload)
+                renderer->api_functions.load_shader(renderer->api_functions.render_state, renderer, shader);
 			set_last_loaded(shader);
 		}
 		else
@@ -907,7 +915,8 @@ namespace rendering
 			error("File not found", shader.path);
 		}
 
-		clear(&shader_arena);
+		if(!reload)
+			clear(arena);
 	}
 
 
