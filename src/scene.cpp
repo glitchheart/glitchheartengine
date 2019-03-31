@@ -416,11 +416,11 @@ namespace scene
                     {
                         fprintf(file, "tags: ");
 
-                        for(i32 i = 0; i < entity.tags.tag_count; i++)
+                        for(i32 j = 0; j < entity.tags.tag_count; j++)
                         {                            
-                            fprintf(file, "%s", entity.tags.tags[i]);
+                            fprintf(file, "%s", entity.tags.tags[j]);
 
-                            if(i < entity.tags.tag_count - 1)
+                            if(j < entity.tags.tag_count - 1)
                             {
                                 fprintf(file, ", ");
                             }
@@ -2104,8 +2104,6 @@ namespace scene
             return;
         }
 
-        static i32 count = 0;
-        
         Scene &scene = scene::get_scene(handle);
         for(i32 i = 0; i < scene.entity_count; i++)
         {
@@ -3463,7 +3461,6 @@ namespace scene
         {
             debug_log("Entity handle not valid: %d\n", entity_handle.handle);
             assert(false);
-            return {};
         }
         return get_entity(entity_handle, scene_handle).tags;
     }

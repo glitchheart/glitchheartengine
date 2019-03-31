@@ -264,7 +264,7 @@ struct ParticleSystemInfo
     MemoryArena simd_arena;
 };
 
-#define PARTICLE_DATA_SIZE 2048
+#define PARTICLE_DATA_SIZE 8192
 struct ParticleWorkData
 {
     Renderer *renderer;
