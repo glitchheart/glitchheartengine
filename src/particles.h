@@ -264,7 +264,7 @@ struct ParticleSystemInfo
     MemoryArena simd_arena;
 };
 
-#define PARTICLE_DATA_SIZE 8192
+#define PARTICLE_DATA_SIZE 2048
 struct ParticleWorkData
 {
     Renderer *renderer;
@@ -287,9 +287,7 @@ struct ParticleWorkData
     i32 dead_particle_count;
 };
 
-
 typedef ParticleSystemInfo* (*GetParticleSystemInfo)(ParticleSystemHandle handle, Renderer *renderer);
-/* typedef void (*StartParticleSystem)(ParticleSystemInfo &system); */
 typedef void (*StartParticleSystem)(ParticleSystemHandle, Renderer *renderer);
 typedef void (*StopParticleSystem)(ParticleSystemHandle handle, Renderer *renderer);
 typedef void (*PauseParticleSystem)(ParticleSystemHandle handle, Renderer *renderer, b32 paused);
