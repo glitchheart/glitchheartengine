@@ -909,6 +909,7 @@ namespace scene
             InstanceBufferData data = {};
             data.buffer_handle = pair.buffer_handle;
             data.source_material_handle = pair.material_handle;
+            data.pass_handle = pair.pass_handle;
             data.max_count = pair.count;
             // Allocate all buffers
             for(i32 j = 0; j < pair.attribute_count; j++)
@@ -2053,6 +2054,69 @@ namespace scene
         return _add_render_component(scene, entity_handle, cast_shadows);
     }
 
+    static void setup_instance_buffers(scene::RenderComponent &render, Scene &scene)
+    {
+        rendering::BufferUsage usage = render.is_static ? rendering::BufferUsage::STATIC : rendering::BufferUsage::DYNAMIC;
+            
+        for(i32 pass_index = 0; pass_index < render.render_pass_count; pass_index++)
+        {
+            // We have to look for the right instance buffers or allocate them
+            rendering::Material &material_instance = rendering::get_material_instance(render.material_handles[pass_index], scene.renderer);
+                    
+            if(material_instance.instanced_vertex_attribute_count > 0)
+            {
+                InstanceBufferData *data = nullptr;
+                        
+                for(i32 i = 0; i < scene.instance_buffer_data_count; i++)
+                {
+                    InstanceBufferData &current_data = scene.instance_buffer_data[i];
+                    if(current_data.pass_handle.handle == render.render_passes[pass_index].handle && current_data.buffer_handle.handle == render.buffer_handle.handle // The same buffer
+                       && current_data.source_material_handle.handle == material_instance.source_material.handle) // The same source material)
+                    {
+                        data = &current_data;
+                        break;
+                    }
+                }
+
+                if(data)
+                {
+                    data->max_count++;
+                            
+                    for(i32 i = 0; i < material_instance.instanced_vertex_attribute_count; i++)
+                    {
+                        // We got a match!
+                        rendering::InstanceBufferHandle instance_buffer_handle = data->instance_buffer_handles[i];
+                        i32 max = rendering::get_instance_buffer_max(instance_buffer_handle, scene.renderer);
+                                
+                        material_instance.instanced_vertex_attributes[i].instance_buffer_handle = instance_buffer_handle;
+                                    
+                        if(data->max_count > max)
+                        {
+                            i32 new_max = math::next_power_of_two(max + 1);
+                            realloc_instance_buffer(instance_buffer_handle, new_max, scene.renderer);
+                        }
+                    }
+                }
+                else
+                {
+                    // Allocate all the needed buffers
+                    data = &scene.instance_buffer_data[scene.instance_buffer_data_count++];
+                    data->max_count = 1;
+                    data->buffer_handle = render.buffer_handle;
+                    data->source_material_handle = material_instance.source_material;
+                    data->pass_handle = render.render_passes[pass_index];
+                            
+                    for(i32 i = 0; i < material_instance.instanced_vertex_attribute_count; i++)
+                    {
+                        rendering::InstanceBufferHandle instance_buffer_handle = rendering::allocate_instance_buffer(material_instance.instanced_vertex_attributes[i].attribute.type, math::next_power_of_two(1), usage, scene.renderer);
+                        material_instance.instanced_vertex_attributes[i].instance_buffer_handle = instance_buffer_handle;
+                        data->instance_buffer_handles[data->instance_buffer_count++] = instance_buffer_handle;
+                    }
+                }
+            }
+        }
+    }
+
     static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, rendering::MaterialInstanceHandle material, RenderComponent &comp, Renderer *renderer)
     {
         comp.render_passes[comp.render_pass_count] = render_pass_handle;
@@ -2073,10 +2137,16 @@ namespace scene
         add_to_render_pass(render_pass_handle, comp.material_handles[0], comp, renderer);
     }
 
-    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, EntityHandle entity, SceneHandle &scene)
+    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, EntityHandle entity, SceneHandle &scene_handle)
     {
-        RenderComponent &render_comp = get_render_comp(entity, scene);
-        add_to_render_pass(render_pass_handle, render_comp, scene.manager->renderer);
+        RenderComponent &render_comp = get_render_comp(entity, scene_handle);
+        add_to_render_pass(render_pass_handle, render_comp, scene_handle.manager->renderer);
+        
+        Scene &scene = get_scene(scene_handle);
+        if(scene.loaded)
+        {
+            setup_instance_buffers(render_comp, scene);
+        }
     }
 
     static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, rendering::MaterialInstanceHandle material, EntityHandle entity, SceneHandle &scene)
@@ -2992,66 +3062,9 @@ namespace scene
             
 			render.render_pass_count = templ.render.render_pass_count;
 
-            rendering::BufferUsage usage = render.is_static ? rendering::BufferUsage::STATIC : rendering::BufferUsage::DYNAMIC;
-            
             if(scene.loaded)
             {
-                for(i32 pass_index = 0; pass_index < templ.render.render_pass_count; pass_index++)
-                {
-                    // We have to look for the right instance buffers or allocate them
-                    rendering::Material &material_instance = rendering::get_material_instance(render.material_handles[pass_index], scene.renderer);
-                    
-                    if(material_instance.instanced_vertex_attribute_count > 0)
-                    {
-                        InstanceBufferData *data = nullptr;
-                        
-                        for(i32 i = 0; i < scene.instance_buffer_data_count; i++)
-                        {
-                            InstanceBufferData &current_data = scene.instance_buffer_data[i];
-                            if(current_data.buffer_handle.handle == render.buffer_handle.handle // The same buffer
-                               && current_data.source_material_handle.handle == material_instance.source_material.handle) // The same source material)
-                            {
-                                data = &current_data;
-                                break;
-                            }
-                        }
-
-                        if(data)
-                        {
-                            data->max_count++;
-                            
-                            for(i32 i = 0; i < material_instance.instanced_vertex_attribute_count; i++)
-                            {
-                                // We got a match!
-                                rendering::InstanceBufferHandle instance_buffer_handle = data->instance_buffer_handles[i];
-                                i32 max = rendering::get_instance_buffer_max(instance_buffer_handle, scene.renderer);
-                                
-                                material_instance.instanced_vertex_attributes[i].instance_buffer_handle = instance_buffer_handle;
-                                    
-                                if(data->max_count > max)
-                                {
-                                    i32 new_max = math::next_power_of_two(max + 1);
-                                    realloc_instance_buffer(instance_buffer_handle, new_max, scene.renderer);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            // Allocate all the needed buffers
-                            data = &scene.instance_buffer_data[scene.instance_buffer_data_count++];
-                            data->max_count = 1;
-                            data->buffer_handle = render.buffer_handle;
-                            data->source_material_handle = material_instance.source_material;
-                            
-                            for(i32 i = 0; i < material_instance.instanced_vertex_attribute_count; i++)
-                            {
-                                rendering::InstanceBufferHandle instance_buffer_handle = rendering::allocate_instance_buffer(material_instance.instanced_vertex_attributes[i].attribute.type, math::next_power_of_two(1), usage, scene.renderer);
-                                material_instance.instanced_vertex_attributes[i].instance_buffer_handle = instance_buffer_handle;
-                                data->instance_buffer_handles[data->instance_buffer_count++] = instance_buffer_handle;
-                            }
-                        }
-                    }
-                }
+                setup_instance_buffers(render, scene);
             }
         }
         
