@@ -96,9 +96,10 @@ namespace scene
         i32 tag_count;
     };
 
+    #define ENTITY_LIST_SIZE 512
     struct EntityList
     {
-        EntityHandle handles[64];
+        EntityHandle handles[ENTITY_LIST_SIZE];
         i32 entity_count;
     };
 
