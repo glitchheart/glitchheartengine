@@ -290,7 +290,8 @@ namespace scene
     {
         rendering::BufferHandle buffer_handle;
         rendering::MaterialHandle source_material_handle;
-
+        rendering::RenderPassHandle pass_handle;
+        
         rendering::InstanceBufferHandle instance_buffer_handles[MAX_INSTANCE_BUFFER_HANDLES];
         i32 instance_buffer_count;
 
