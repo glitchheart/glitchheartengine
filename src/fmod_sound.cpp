@@ -13,12 +13,20 @@ void fmod_error_check(FMOD_RESULT result)
     }
 }
 
-static void load_sound(const char* file_path, SoundDevice* device)
+static void load_sound(const char* file_path, SoundDevice* device, sound::SoundCreateFlag create_flag = sound::SoundCreateFlag::CREATE)
 {
     assert(device->sound_count + 1 < global_max_sounds);
 
-    // auto result = FMOD_System_CreateSound(device->system, file_path, 0, nullptr, &device->sounds[device->sound_count++]);
-    auto result = FMOD_System_CreateStream(device->system, file_path, 0, nullptr, &device->sounds[device->sound_count++]);
+    FMOD_RESULT result = FMOD_OK;
+    
+    if(create_flag == sound::SoundCreateFlag::CREATE)
+    {
+        result = FMOD_System_CreateSound(device->system, file_path, 0, nullptr, &device->sounds[device->sound_count++]);
+    }
+    else if(create_flag == sound::SoundCreateFlag::STREAM)
+    {
+        result = FMOD_System_CreateStream(device->system, file_path, 0, nullptr, &device->sounds[device->sound_count++]);
+    }
     
     if(result != FMOD_OK)
     {
