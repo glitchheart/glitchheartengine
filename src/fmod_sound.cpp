@@ -17,7 +17,8 @@ static void load_sound(const char* file_path, SoundDevice* device)
 {
     assert(device->sound_count + 1 < global_max_sounds);
 
-    auto result = FMOD_System_CreateSound(device->system, file_path, 0, nullptr, &device->sounds[device->sound_count++]);
+    // auto result = FMOD_System_CreateSound(device->system, file_path, 0, nullptr, &device->sounds[device->sound_count++]);
+    auto result = FMOD_System_CreateStream(device->system, file_path, 0, nullptr, &device->sounds[device->sound_count++]);
     
     if(result != FMOD_OK)
     {
