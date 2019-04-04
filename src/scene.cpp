@@ -1148,7 +1148,6 @@ namespace scene
         if(IS_ENTITY_HANDLE_VALID(handle.manager->selected_entity))
         {
             TransformComponent &selected_transform = get_transform_comp(handle.manager->selected_entity, handle);
-            
             math::BoundingBox box;
             math::Vec3 real_scale = math::Vec3(1, 1, 1) * handle.manager->gizmos.current_distance_to_camera;
             
@@ -3449,6 +3448,7 @@ namespace scene
             const Entity& entity = scene.entities[i];
             if(has_tag(tag, entity.handle, scene_handle))
             {
+                assert(list.entity_count < ENTITY_LIST_SIZE);
                 list.handles[list.entity_count++] = entity.handle;
             }
         }
