@@ -304,6 +304,18 @@ namespace scene
         SceneManager *manager;
     };
 
+    struct Settings
+    {
+        struct
+        {
+            r32 near_plane;
+            r32 far_plane;
+            r32 fov;
+            i32 map_width;
+            i32 map_height;
+        } shadows;
+    };
+
     #define GIZMO_TOLERANCE 0.07f
     struct Scene
     {
@@ -327,6 +339,8 @@ namespace scene
         i32 current_internal_handle;
         b32 *active_entities;
         i32 entity_count;
+
+        Settings settings;
         
         TransformComponent *transform_components;
         i32 transform_component_count;
