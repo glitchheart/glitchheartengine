@@ -893,7 +893,6 @@ static void _reload_framebuffer(rendering::FramebufferInfo &info, Framebuffer &f
     {
     case 0:
     return;
-    break;
     default:
     info.width = width * info.size_ratio;
     info.height = height * info.size_ratio;

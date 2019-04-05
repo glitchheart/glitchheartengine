@@ -54,7 +54,7 @@ namespace scene
         COMP_TRANSFORM = 1 << 0,
         COMP_RENDER = 1 << 1,
         COMP_PARTICLES = 1 << 2,
-        COMP_LIGHT = 1 << 3
+        COMP_LIGHT = 1 << 3,
     };
 
     struct EntityData
@@ -314,6 +314,15 @@ namespace scene
             i32 map_width;
             i32 map_height;
         } shadows;
+        struct
+        {
+            math::Vec3 position;
+            math::Vec3 target;
+            r32 fov;
+            r32 z_near;
+            r32 z_far;
+            
+        } camera;
     };
 
     #define GIZMO_TOLERANCE 0.07f
@@ -328,8 +337,6 @@ namespace scene
         b32 persistent; // When true the scene is not freed, when a new scene is loaded
 
         MemoryArena memory_arena;
-
-        Camera camera;
 
         InstanceBufferData instance_buffer_data[MAX_INSTANCE_BUFFER_HANDLES];
         i32 instance_buffer_data_count;
@@ -353,6 +360,8 @@ namespace scene
         
         LightComponent *light_components;
         i32 light_component_count;
+
+        Camera main_camera;
 
         i32 max_entity_count;
         
@@ -433,8 +442,8 @@ namespace scene
         i32 current_internal_index;
 
         SceneMode mode;
+        Camera editor_camera;
 
-        Camera play_camera;
         EntityHandle selected_entity;
 
         b32 dragging;
