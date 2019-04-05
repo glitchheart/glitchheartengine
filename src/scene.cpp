@@ -28,6 +28,7 @@ namespace scene
     static ParticleSystemComponent& get_particle_system_comp(EntityHandle handle, SceneHandle scene);
     static LightComponent &get_light_comp(EntityHandle handle, SceneHandle scene);
     static Camera & get_scene_camera(SceneHandle handle);
+    static Camera& get_editor_camera(SceneHandle handle);
     static EntityHandle pick_entity(i32 mouse_x, i32 mouse_y);
     static Entity& get_entity(EntityHandle handle, Scene &scene);
     static Entity& get_entity(EntityHandle handle, SceneHandle& scene_handle);
@@ -395,6 +396,15 @@ namespace scene
             fprintf(file, "shadows::fov: %f\n", scene.settings.shadows.fov);
             fprintf(file, "shadows::map_width: %d\n", scene.settings.shadows.map_width);
             fprintf(file, "shadows::map_height: %d\n", scene.settings.shadows.map_height);
+
+            math::Vec3 camera_pos = scene.settings.camera.position;
+            math::Vec3 camera_target = scene.settings.camera.target;
+            
+            fprintf(file, "camera::position: %f %f %f\n", camera_pos.x, camera_pos.y, camera_pos.z);
+            fprintf(file, "camera::target: %f %f %f\n", camera_target.x, camera_target.y, camera_target.z);
+            fprintf(file, "camera::fov: %f\n", scene.settings.camera.fov);
+            fprintf(file, "camera::near: %f\n", scene.settings.camera.z_near);
+            fprintf(file, "camera::far: %f\n", scene.settings.camera.z_far);
 
             fprintf(file, "\n");
             
@@ -804,6 +814,12 @@ namespace scene
         settings.shadows.map_width = 1024;
         settings.shadows.map_height = 1024;
 
+        settings.camera.position = math::Vec3(0, 0, 0);
+        settings.camera.target = math::Vec3(0, 0, 0);
+        settings.camera.fov = 90 * DEGREE_IN_RADIANS;
+        settings.camera.z_near = 0.1f;
+        settings.camera.z_far = 50.0f;
+
         char buffer[256];
         while(fgets(buffer, 256, file))
         {
@@ -829,6 +845,26 @@ namespace scene
             else if(starts_with(buffer, "shadows::map_height"))
             {
                 sscanf(buffer, "shadows::map_height: %d", &settings.shadows.map_height);
+            }
+            else if(starts_with(buffer, "camera::position"))
+            {
+                sscanf(buffer, "camera::position: %f %f %f", &settings.camera.position.x, &settings.camera.position.y, &settings.camera.position.z);
+            }
+            else if(starts_with(buffer, "camera::target"))
+            {
+                sscanf(buffer, "camera::target: %f %f %f", &settings.camera.target.x, &settings.camera.target.y, &settings.camera.target.z);
+            }
+            else if(starts_with(buffer, "camera::fov"))
+            {
+                sscanf(buffer, "camera::fov: %f", &settings.camera.fov);
+            }
+            else if(starts_with(buffer, "camera::near"))
+            {
+                sscanf(buffer, "camera::near: %f", &settings.camera.z_near);
+            }
+            else if(starts_with(buffer, "camera::far"))
+            {
+                sscanf(buffer, "camera::far: %f", &settings.camera.z_far);
             }
         }
     }
@@ -1101,7 +1137,7 @@ namespace scene
     {
         i32 width = scene.renderer->window_width;
         i32 height = scene.renderer->window_height;
-        Camera &camera = scene.camera;
+        Camera &camera = scene.scene_manager->editor_camera;
         
         r32 x = (2.0f * mouse_x) / width - 1.0f;
         r32 y = 1.0f - (2.0f * mouse_y) / height;
@@ -1244,7 +1280,7 @@ namespace scene
                     if(aabb_ray_intersection(ray, box, &intersection_point))
                     {
 
-                        r32 new_dist = math::distance(scene.camera.position, intersection_point);
+                        r32 new_dist = math::distance(scene.scene_manager->editor_camera.position, intersection_point);
                     
                         if(new_dist < dist)
                         {
@@ -1796,8 +1832,18 @@ namespace scene
         if(info.width != (u32)settings.shadows.map_width ||
            info.height != (u32)settings.shadows.map_height)
         {
-            rendering::reload_framebuffer(framebuffer_handle, settings.shadows.map_width, settings.shadows.map_height,renderer);
+            // rendering::reload_framebuffer(framebuffer_handle, settings.shadows.map_width, settings.shadows.map_height,renderer);
         }
+    }
+
+    static void update_scene_camera(SceneHandle handle)
+    {
+        Scene& scene = get_scene(handle);
+        Settings& settings = scene.settings;
+
+        math::Mat4 projection = math::perspective((r32)handle.manager->renderer->window_width / (r32)handle.manager->renderer->window_height, settings.camera.fov, settings.camera.z_near, settings.camera.z_far);
+        
+        scene.main_camera = create_camera(settings.camera.position, settings.camera.target, projection);
     }
 
     static void update_scene_settings(SceneHandle handle)
@@ -1811,6 +1857,7 @@ namespace scene
         renderer->render.shadow_settings.fov = settings.shadows.fov;
 
         update_shadow_framebuffer(handle);
+        update_scene_camera(handle);
     }
     
     static void update_scene_editor(SceneHandle handle, InputController *input_controller, r64 delta_time)
@@ -1832,8 +1879,8 @@ namespace scene
                 
                 if(manager->callbacks.on_started_edit_mode)
                     manager->callbacks.on_started_edit_mode(handle);
-                
-                manager->play_camera = scene.camera;
+
+                manager->editor_camera = get_scene_camera(handle);
             }
             else
             {
@@ -1846,7 +1893,7 @@ namespace scene
                 if(manager->callbacks.on_exited_edit_mode)
                     manager->callbacks.on_exited_edit_mode(handle);
 
-                scene.camera = manager->play_camera;
+                // scene.settings.camera = manager->play_camera;
 
                 // Disable gizmos
                 manager->gizmos.active = false;
@@ -1863,7 +1910,7 @@ namespace scene
             // if(!manager->dragging)
             //_deselect_gizmos(handle);
 
-            Camera &camera = scene.camera;
+            Camera &camera = manager->editor_camera;
             
             if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
             {
@@ -2091,6 +2138,7 @@ namespace scene
         scene_manager->renderer->render.shadow_settings.fov = settings.shadows.fov;
 
         update_shadow_framebuffer(scene_manager->loaded_scene);
+        update_scene_camera(handle);       
         
         scene_manager->scene_loaded = true;
 
@@ -2239,11 +2287,10 @@ namespace scene
     static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, RenderComponent &comp, Renderer *renderer)
     {
         add_to_render_pass(render_pass_handle, comp.material_handles[0], comp, renderer);
-    }
+    }      
 
-    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, EntityHandle entity, SceneHandle &scene_handle)
+    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, RenderComponent& render_comp, SceneHandle &scene_handle)
     {
-        RenderComponent &render_comp = get_render_comp(entity, scene_handle);
         add_to_render_pass(render_pass_handle, render_comp, scene_handle.manager->renderer);
         
         Scene &scene = get_scene(scene_handle);
@@ -2251,6 +2298,12 @@ namespace scene
         {
             setup_instance_buffers(render_comp, scene);
         }
+    }
+
+    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, EntityHandle entity, SceneHandle &scene_handle)
+    {
+        RenderComponent &render_comp = get_render_comp(entity, scene_handle);
+        add_to_render_pass(render_pass_handle, render_comp, scene_handle);
     }
 
     static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, rendering::MaterialInstanceHandle material, EntityHandle entity, SceneHandle &scene)
@@ -2264,7 +2317,7 @@ namespace scene
         Scene &scene = scene::get_scene(handle);
         for(i32 i = 0; i < scene.render_component_count; i++)
         {
-            add_to_render_pass(render_pass_handle, scene.render_components[i], handle.manager->renderer);
+            add_to_render_pass(render_pass_handle, scene.render_components[i], handle);
         }
     }
 
@@ -3710,11 +3763,26 @@ namespace scene
         Scene &scene = get_scene(scene_handle);
         return _get_light_comp(handle, scene);
     }
-    
-    static Camera & get_scene_camera(SceneHandle handle)
+
+    static Camera& get_scene_camera(SceneHandle handle)
     {
-        i32 real_handle = handle.manager->_internal_scene_handles[handle.handle - 1];
-        return handle.manager->scenes[real_handle].camera;
+        Scene& scene = get_scene(handle);
+        return scene.main_camera;
+    }
+
+    static Camera& get_editor_camera(SceneHandle handle)
+    {
+        return handle.manager->editor_camera;
+    }
+
+    static Camera& get_current_camera(SceneHandle handle)
+    {
+        if(handle.manager->mode == SceneMode::RUNNING)
+        {
+            return get_scene_camera(handle);
+        }
+        else
+            return get_editor_camera(handle);
     }
     
 #define SET_MAT_ARRAY_VALUE(type) static void set_uniform_array_value(scene::EntityHandle handle, const char *array_name, i32 index, const char *variable_name, type value, scene::SceneHandle &scene) \
@@ -3825,14 +3893,13 @@ namespace scene
     
     static void push_scene_for_rendering(scene::Scene &scene, Renderer *renderer)
     {
-        renderer->camera = scene.camera;
-
         for(i32 i = 0; i < renderer->render.pass_count; i++)
         {
             rendering::RenderPass &pass = renderer->render.passes[i];
             if(pass.use_scene_camera)
             {
-                pass.camera = scene.camera;
+                // pass.camera = get_scene_camera(scene.scene_manager->loaded_scene);
+                pass.camera = get_current_camera(scene.scene_manager->loaded_scene);
             }
         }
     
@@ -3896,7 +3963,7 @@ namespace scene
                     {
                     case scene::LightType::DIRECTIONAL:
                     {
-                        Camera &camera = scene.camera;
+                        Camera &camera = get_scene_camera(scene.scene_manager->loaded_scene);
                         renderer->render.directional_lights[renderer->render.dir_light_count++] = light_comp.dir_light;
                         rendering::calculate_light_space_matrices(renderer, camera, light_comp.dir_light.direction);
                     }
