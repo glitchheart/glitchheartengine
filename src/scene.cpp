@@ -389,6 +389,15 @@ namespace scene
 
         if(file)
         {
+            fprintf(file, "settings\n");
+            fprintf(file, "shadows::near: %f\n", scene.settings.shadows.near_plane);
+            fprintf(file, "shadows::far: %f\n", scene.settings.shadows.far_plane);
+            fprintf(file, "shadows::fov: %f\n", scene.settings.shadows.fov);
+            fprintf(file, "shadows::map_width: %d\n", scene.settings.shadows.map_width);
+            fprintf(file, "shadows::map_height: %d\n", scene.settings.shadows.map_height);
+
+            fprintf(file, "\n");
+            
             for(i32 i = 0; i < scene.entity_count; i++)
             {
                 Entity &entity = scene.entities[i];
@@ -428,7 +437,6 @@ namespace scene
 
                         fprintf(file, "\n");
                     }
-                    
                     
                     fprintf(file, "position: %f %f %f\n", transform.transform.position.x, transform.transform.position.y, transform.transform.position.z);
                     fprintf(file, "scale: %f %f %f\n", transform.transform.scale.x, transform.transform.scale.y, transform.transform.scale.z);
@@ -784,12 +792,58 @@ namespace scene
             set_hide_in_ui(handle, hide_in_ui, scene);
         }
     }
+
+    static void parse_scene_settings(FILE* file, SceneHandle handle)
+    {
+        Scene& scene = get_scene(handle);
+
+        Settings& settings = scene.settings;
+        settings.shadows.near_plane = 0.1f;
+        settings.shadows.far_plane = 10.0f;
+        settings.shadows.fov = 110.0f;
+        settings.shadows.map_width = 1024;
+        settings.shadows.map_height = 1024;
+
+        char buffer[256];
+        while(fgets(buffer, 256, file))
+        {
+            if(starts_with(buffer, "\n"))
+                break;
+
+            if(starts_with(buffer, "shadows::near"))
+            {
+                sscanf(buffer, "shadows::near: %f", &settings.shadows.near_plane);
+            }
+            else if(starts_with(buffer, "shadows::far"))
+            {
+                sscanf(buffer, "shadows::far: %f", &settings.shadows.far_plane);            
+            }
+            else if(starts_with(buffer, "shadows::fov"))
+            {
+                sscanf(buffer, "shadows::fov: %f", &settings.shadows.fov);
+            }
+            else if(starts_with(buffer, "shadows::map_width"))
+            {
+                sscanf(buffer, "shadows::map_width: %d", &settings.shadows.map_width);
+            }
+            else if(starts_with(buffer, "shadows::map_height"))
+            {
+                sscanf(buffer, "shadows::map_height: %d", &settings.shadows.map_height);
+            }
+        }
+    }
     
     static void _create_scene_from_file(const char *scene_file_path, SceneManager *scene_manager, SceneHandle handle)
     {
-
         Scene &scene = get_scene(handle);
         strcpy(scene.file_path, scene_file_path);
+
+        Settings& settings = scene.settings;
+        settings.shadows.near_plane = 0.1f;
+        settings.shadows.far_plane = 10.0f;
+        settings.shadows.fov = 110.0f;
+        settings.shadows.map_width = 1024;
+        settings.shadows.map_height = 1024;
         
         FILE *file = fopen(scene_file_path, "r");
         
@@ -801,6 +855,10 @@ namespace scene
                 if(starts_with(line_buffer, "obj"))
                 {
                     parse_scene_object(file, handle);
+                }
+                else if(starts_with(line_buffer, "settings"))
+                {
+                    parse_scene_settings(file, handle);
                 }
             }
                 
@@ -1724,6 +1782,36 @@ namespace scene
             set_hide_in_ui(manager->gizmos.scale_cubes[i], true, manager->loaded_scene);
         }
     }
+
+    static void update_shadow_framebuffer(SceneHandle handle)
+    {
+        Renderer* renderer = handle.manager->renderer;
+        Scene& scene = get_scene(handle);
+        Settings& settings = scene.settings;
+        
+        rendering::FramebufferHandle framebuffer_handle = rendering::get_write_framebuffer_from_pass(renderer->render.shadow_pass, renderer);
+
+        rendering::FramebufferInfo& info = rendering::get_framebuffer(framebuffer_handle, renderer);
+
+        if(info.width != (u32)settings.shadows.map_width ||
+           info.height != (u32)settings.shadows.map_height)
+        {
+            rendering::reload_framebuffer(framebuffer_handle, settings.shadows.map_width, settings.shadows.map_height,renderer);
+        }
+    }
+
+    static void update_scene_settings(SceneHandle handle)
+    {
+        const Scene& scene = get_scene(handle);
+        const Settings& settings = scene.settings;
+        Renderer* renderer = handle.manager->renderer;
+
+        renderer->render.shadow_settings.z_near = settings.shadows.near_plane;
+        renderer->render.shadow_settings.z_far = settings.shadows.far_plane;
+        renderer->render.shadow_settings.fov = settings.shadows.fov;
+
+        update_shadow_framebuffer(handle);
+    }
     
     static void update_scene_editor(SceneHandle handle, InputController *input_controller, r64 delta_time)
     {
@@ -1731,6 +1819,8 @@ namespace scene
         
         SceneManager *manager = handle.manager;
 
+        update_scene_settings(handle);
+        
 #if DEBUG
         if(KEY_DOWN(Key_E) && KEY(Key_LeftCtrl))
         {
@@ -1993,6 +2083,14 @@ namespace scene
         }
         
         activate_particle_systems(handle);
+
+        Settings& settings = scene->settings;
+        
+        scene_manager->renderer->render.shadow_settings.z_near = settings.shadows.near_plane;
+        scene_manager->renderer->render.shadow_settings.z_far = settings.shadows.far_plane;
+        scene_manager->renderer->render.shadow_settings.fov = settings.shadows.fov;
+
+        update_shadow_framebuffer(scene_manager->loaded_scene);
         
         scene_manager->scene_loaded = true;
 
@@ -2003,6 +2101,12 @@ namespace scene
             if(scene_manager->callbacks.on_load)
                 scene_manager->callbacks.on_load(handle);
         }
+    }
+
+    Settings& get_scene_settings(SceneHandle handle)
+    {
+        Scene& scene = get_scene(handle);
+        return scene.settings;
     }
     
     i32 _unused_entity_handle(Scene &scene)

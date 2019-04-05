@@ -458,6 +458,7 @@ struct ParticleSystemInfo;
 struct RenderState;
 struct Buffer;
 struct Texture;
+struct Framebuffer;
 
 //@Cleanup: Move out of rendering
 typedef void (*SetWindowCursor)(RenderState* render_state, CursorType cursor);
@@ -465,6 +466,7 @@ typedef void (*SetWindowCursor)(RenderState* render_state, CursorType cursor);
 typedef math::Vec2i (*GetTextureSize)(Texture* texture);
 typedef void (*LoadTexture)(Texture* texture, TextureFiltering filtering, TextureWrap wrap, TextureFormat format, i32 width, i32 height, unsigned char* image_data, RenderState* render_state, Renderer* renderer);
 typedef void (*CreateFramebuffer)(rendering::FramebufferInfo &framebuffer_info, RenderState *render_state, Renderer *renderer);
+typedef void (*ReloadFramebuffer)(rendering::FramebufferHandle handle, RenderState* render_state, Renderer* renderer, i32 width, i32 height);
 typedef void(*CreateInstanceBuffer)(Buffer *buffer, size_t buffer_size, rendering::BufferUsage usage, RenderState *render_state, Renderer *renderer);
 typedef rendering::BufferUsage (*GetBufferUsage)(Buffer *buffer);
 typedef void (*DeleteInstanceBuffer)(Buffer *buffer, RenderState *render_state, Renderer *renderer);
@@ -479,12 +481,14 @@ typedef void (*SetVSync)(RenderState *render_state, b32 value);
 typedef b32 (*GetVSync)(RenderState *render_state);
 typedef void (*LoadShader)(RenderState *render_state, Renderer *renderer, rendering::Shader &shader);
 
+
 struct GraphicsAPI
 {
     SetWindowCursor set_window_cursor;
     GetTextureSize get_texture_size;
     LoadTexture load_texture;
     CreateFramebuffer create_framebuffer;
+    ReloadFramebuffer reload_framebuffer;
 	CreateInstanceBuffer create_instance_buffer;
 	GetBufferUsage get_buffer_usage;
     DeleteInstanceBuffer delete_instance_buffer;
@@ -665,7 +669,6 @@ struct Renderer
             r32 z_near;
             r32 z_far;
             r32 fov;
-            r32 light_offset;
         } shadow_settings;
 
         struct
