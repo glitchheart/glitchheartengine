@@ -2495,11 +2495,21 @@ namespace scene
 
         return(handle);
     }
-
+    
     static EntityHandle register_entity(u64 comp_flags, SceneHandle scene_handle, b32 savable = false)
     {
         Scene &scene = get_scene(scene_handle);
         return _register_entity(comp_flags, scene, savable);
+    }
+
+    static EntityHandle register_entity_with_entity_data(u32 type_id, EntityData *data, SceneHandle scene_handle, b32 savable = false)
+    {
+        EntityHandle handle = register_entity(COMP_TRANSFORM, scene_handle, savable);
+        Entity &entity = get_entity(handle, scene_handle);
+        entity.entity_data = data;
+        entity.type_info = *get_registered_type(type_id, scene_handle.manager);
+        entity.type = type_id;
+        return handle;
     }
     
     static TemplateHandle _create_template_copy_with_new_render_data(rendering::Material *temp_materials, EntityTemplate *template_to_copy, EntityTemplateState &template_state, Renderer *renderer, const rendering::MeshObjectData &obj_data)
