@@ -321,7 +321,6 @@ namespace scene
             r32 fov;
             r32 z_near;
             r32 z_far;
-            
         } camera;
     };
 

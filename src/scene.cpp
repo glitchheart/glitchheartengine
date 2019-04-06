@@ -880,6 +880,11 @@ namespace scene
         settings.shadows.fov = 110.0f;
         settings.shadows.map_width = 1024;
         settings.shadows.map_height = 1024;
+        settings.camera.position = math::Vec3(0.0f, 15.0f, -2.0f);
+        settings.camera.target = math::Vec3(0.0f, 0.0f, 2.0f);
+        settings.camera.fov = 90 * DEGREE_IN_RADIANS;
+        settings.camera.z_near = 0.1f;
+        settings.camera.z_far = 50.0f;
         
         FILE *file = fopen(scene_file_path, "r");
         
@@ -1826,13 +1831,12 @@ namespace scene
         Settings& settings = scene.settings;
         
         rendering::FramebufferHandle framebuffer_handle = rendering::get_write_framebuffer_from_pass(renderer->render.shadow_pass, renderer);
-
         rendering::FramebufferInfo& info = rendering::get_framebuffer(framebuffer_handle, renderer);
 
         if(info.width != (u32)settings.shadows.map_width ||
            info.height != (u32)settings.shadows.map_height)
         {
-            // rendering::reload_framebuffer(framebuffer_handle, settings.shadows.map_width, settings.shadows.map_height,renderer);
+            rendering::reload_framebuffer(framebuffer_handle, settings.shadows.map_width, settings.shadows.map_height,renderer);
         }
     }
 
