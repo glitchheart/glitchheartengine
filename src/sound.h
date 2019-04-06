@@ -22,6 +22,12 @@ enum ChannelType
     SFX
 };
 
+enum SoundCreateFlag
+{
+    STREAM,
+    CREATE
+};
+
 enum LoopType
 {
     LOOP_OFF,
@@ -198,7 +204,7 @@ struct SoundCommand
     };
 };
 
-typedef void (*LoadSound)(const char *file_path, SoundDevice *device);
+typedef void (*LoadSound)(const char *file_path, SoundDevice *device, SoundCreateFlag create_flag);
 
 struct SoundApi
 {

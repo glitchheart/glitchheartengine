@@ -900,6 +900,31 @@ namespace rendering
         return handle;
     }
 
+    static void reload_framebuffer(FramebufferHandle handle, i32 width, i32 height, Renderer* renderer)
+    {
+        renderer->api_functions.reload_framebuffer(handle, renderer->api_functions.render_state, renderer, width, height);
+    }
+
+    static FramebufferHandle get_read_framebuffer_from_pass(RenderPassHandle pass_handle, Renderer *renderer)
+    {
+        assert(pass_handle.handle > 0);
+        RenderPass& pass = renderer->render.passes[pass_handle.handle - 1];
+        return pass.read_framebuffer;
+    }
+
+    static FramebufferHandle get_write_framebuffer_from_pass(RenderPassHandle pass_handle, Renderer *renderer)
+    {
+        assert(pass_handle.handle > 0);
+        RenderPass& pass = renderer->render.passes[pass_handle.handle - 1];
+        return pass.framebuffer;
+    }
+
+    static FramebufferInfo& get_framebuffer(FramebufferHandle handle, Renderer* renderer)
+    {
+        assert(handle.handle > 0);
+        return renderer->render.framebuffers[handle.handle - 1];
+    }
+
     static RenderPassHandle get_render_pass_handle_for_name(const char *name, Renderer *renderer)
     {
         for(i32 i = 0; i < renderer->render.pass_count; i++)
@@ -913,6 +938,7 @@ namespace rendering
         return { -1 };
     }
 
+    
     static TextureHandle get_texture_from_framebuffer(i32 texture_index, FramebufferHandle framebuffer, Renderer *renderer)
     {
         FramebufferInfo &info = renderer->render.framebuffers[framebuffer.handle - 1];

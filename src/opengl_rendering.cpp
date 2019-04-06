@@ -887,20 +887,37 @@ static void create_new_framebuffer(rendering::FramebufferInfo &info, Framebuffer
     }
 }
 
-static void reload_framebuffer(rendering::FramebufferInfo &info, Framebuffer &framebuffer, RenderState &render_state, Renderer *renderer, i32 width, i32 height)
+static void _reload_framebuffer(rendering::FramebufferInfo &info, Framebuffer &framebuffer, RenderState &render_state, Renderer *renderer, i32 width, i32 height)
 {
     switch (info.size_ratio)
     {
     case 0:
-        return;
-        break;
+    return;
+    break;
     default:
-        info.width = width * info.size_ratio;
-        info.height = height * info.size_ratio;
-        break;
+    info.width = width * info.size_ratio;
+    info.height = height * info.size_ratio;
+    break;
     }
     // @Note(Daniel): Right now this call is identical to create_new_framebuffer, but we might want to do more here later
     create_new_framebuffer(info, framebuffer, render_state, renderer);
+}
+
+
+static void reload_framebuffer(rendering::FramebufferHandle handle, RenderState *render_state, Renderer *renderer, i32 width, i32 height)
+{
+    rendering::FramebufferInfo& info = renderer->render.framebuffers[handle.handle - 1];
+    Framebuffer &framebuffer = render_state->v2.framebuffers[handle.handle - 1];
+
+    if(width <= 0 || height <= 0)
+    {
+        return;
+    }
+
+    info.width = width;
+    info.height = height;
+    
+    create_new_framebuffer(info, framebuffer,  *render_state, renderer);
 }
 
 // @Incomplete: Revisit this for pausing rendering
@@ -918,7 +935,7 @@ void window_iconify_callback(GLFWwindow *window, i32 iconified)
     }
 }
 
-static void reload_framebuffer(rendering::FramebufferInfo &info, Framebuffer &framebuffer, RenderState &render_state, Renderer *renderer, i32 width, i32 height);
+static void _reload_framebuffer(rendering::FramebufferInfo &info, Framebuffer &framebuffer, RenderState &render_state, Renderer *renderer, i32 width, i32 height);
 
 void frame_buffer_size_callback(GLFWwindow *window, int width, int height)
 {
@@ -941,7 +958,7 @@ void frame_buffer_size_callback(GLFWwindow *window, int width, int height)
         {
             rendering::FramebufferInfo &info = renderer->render.framebuffers[i];
             Framebuffer &framebuffer = render_state->v2.framebuffers[i];
-            reload_framebuffer(info, framebuffer, *render_state, renderer, width, height);
+            _reload_framebuffer(info, framebuffer, *render_state, renderer, width, height);
         }
 
         rendering::FramebufferInfo &ui_framebuffer = renderer->render.framebuffers[renderer->render.ui.pass.framebuffer.handle - 1];
@@ -1318,6 +1335,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     renderer->api_functions.get_texture_size = &get_texture_size;
     renderer->api_functions.load_texture = &load_texture;
     renderer->api_functions.create_framebuffer = &create_framebuffer;
+    renderer->api_functions.reload_framebuffer = &reload_framebuffer;
 	renderer->api_functions.create_instance_buffer = &create_instance_buffer;
 	renderer->api_functions.get_buffer_usage = &get_buffer_usage;
     renderer->api_functions.delete_instance_buffer = &delete_instance_buffer;
@@ -1881,7 +1899,8 @@ static void set_uniform(rendering::Transform transform, const rendering::RenderP
 
         Texture *texture = renderer->render.textures[handle.handle - 1];
         set_texture_uniform(gl_shader.program, texture->handle, *texture_count);
-        (*texture_count++);
+        *texture_count += 1;
+        // (*texture_count++);
     }
     break;
     case rendering::UniformMappingType::SHADOW_VIEW_POSITION:
@@ -2549,8 +2568,8 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
     glEnable(GL_CLIP_PLANE0);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    rendering::RenderPass &pass = renderer->render.passes[renderer->render.shadow_pass.handle - 1];
-    render_pass(render_state, renderer, pass);
+    rendering::RenderPass &shadow_pass = renderer->render.passes[renderer->render.shadow_pass.handle - 1];
+    render_pass(render_state, renderer, shadow_pass);
         
     // Go backwards through the array to enable easy render pass adding
     for (i32 pass_index = renderer->render.pass_count - 1; pass_index >= 0; pass_index--)

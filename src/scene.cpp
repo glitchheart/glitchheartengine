@@ -389,6 +389,15 @@ namespace scene
 
         if(file)
         {
+            fprintf(file, "settings\n");
+            fprintf(file, "shadows::near: %f\n", scene.settings.shadows.near_plane);
+            fprintf(file, "shadows::far: %f\n", scene.settings.shadows.far_plane);
+            fprintf(file, "shadows::fov: %f\n", scene.settings.shadows.fov);
+            fprintf(file, "shadows::map_width: %d\n", scene.settings.shadows.map_width);
+            fprintf(file, "shadows::map_height: %d\n", scene.settings.shadows.map_height);
+
+            fprintf(file, "\n");
+            
             for(i32 i = 0; i < scene.entity_count; i++)
             {
                 Entity &entity = scene.entities[i];
@@ -416,11 +425,11 @@ namespace scene
                     {
                         fprintf(file, "tags: ");
 
-                        for(i32 i = 0; i < entity.tags.tag_count; i++)
+                        for(i32 j = 0; j < entity.tags.tag_count; j++)
                         {                            
-                            fprintf(file, "%s", entity.tags.tags[i]);
+                            fprintf(file, "%s", entity.tags.tags[j]);
 
-                            if(i < entity.tags.tag_count - 1)
+                            if(j < entity.tags.tag_count - 1)
                             {
                                 fprintf(file, ", ");
                             }
@@ -428,7 +437,6 @@ namespace scene
 
                         fprintf(file, "\n");
                     }
-                    
                     
                     fprintf(file, "position: %f %f %f\n", transform.transform.position.x, transform.transform.position.y, transform.transform.position.z);
                     fprintf(file, "scale: %f %f %f\n", transform.transform.scale.x, transform.transform.scale.y, transform.transform.scale.z);
@@ -784,12 +792,58 @@ namespace scene
             set_hide_in_ui(handle, hide_in_ui, scene);
         }
     }
+
+    static void parse_scene_settings(FILE* file, SceneHandle handle)
+    {
+        Scene& scene = get_scene(handle);
+
+        Settings& settings = scene.settings;
+        settings.shadows.near_plane = 0.1f;
+        settings.shadows.far_plane = 10.0f;
+        settings.shadows.fov = 110.0f;
+        settings.shadows.map_width = 1024;
+        settings.shadows.map_height = 1024;
+
+        char buffer[256];
+        while(fgets(buffer, 256, file))
+        {
+            if(starts_with(buffer, "\n"))
+                break;
+
+            if(starts_with(buffer, "shadows::near"))
+            {
+                sscanf(buffer, "shadows::near: %f", &settings.shadows.near_plane);
+            }
+            else if(starts_with(buffer, "shadows::far"))
+            {
+                sscanf(buffer, "shadows::far: %f", &settings.shadows.far_plane);            
+            }
+            else if(starts_with(buffer, "shadows::fov"))
+            {
+                sscanf(buffer, "shadows::fov: %f", &settings.shadows.fov);
+            }
+            else if(starts_with(buffer, "shadows::map_width"))
+            {
+                sscanf(buffer, "shadows::map_width: %d", &settings.shadows.map_width);
+            }
+            else if(starts_with(buffer, "shadows::map_height"))
+            {
+                sscanf(buffer, "shadows::map_height: %d", &settings.shadows.map_height);
+            }
+        }
+    }
     
     static void _create_scene_from_file(const char *scene_file_path, SceneManager *scene_manager, SceneHandle handle)
     {
-
         Scene &scene = get_scene(handle);
         strcpy(scene.file_path, scene_file_path);
+
+        Settings& settings = scene.settings;
+        settings.shadows.near_plane = 0.1f;
+        settings.shadows.far_plane = 10.0f;
+        settings.shadows.fov = 110.0f;
+        settings.shadows.map_width = 1024;
+        settings.shadows.map_height = 1024;
         
         FILE *file = fopen(scene_file_path, "r");
         
@@ -801,6 +855,10 @@ namespace scene
                 if(starts_with(line_buffer, "obj"))
                 {
                     parse_scene_object(file, handle);
+                }
+                else if(starts_with(line_buffer, "settings"))
+                {
+                    parse_scene_settings(file, handle);
                 }
             }
                 
@@ -909,6 +967,7 @@ namespace scene
             InstanceBufferData data = {};
             data.buffer_handle = pair.buffer_handle;
             data.source_material_handle = pair.material_handle;
+            data.pass_handle = pair.pass_handle;
             data.max_count = pair.count;
             // Allocate all buffers
             for(i32 j = 0; j < pair.attribute_count; j++)
@@ -1148,7 +1207,6 @@ namespace scene
         if(IS_ENTITY_HANDLE_VALID(handle.manager->selected_entity))
         {
             TransformComponent &selected_transform = get_transform_comp(handle.manager->selected_entity, handle);
-            
             math::BoundingBox box;
             math::Vec3 real_scale = math::Vec3(1, 1, 1) * handle.manager->gizmos.current_distance_to_camera;
             
@@ -1724,6 +1782,36 @@ namespace scene
             set_hide_in_ui(manager->gizmos.scale_cubes[i], true, manager->loaded_scene);
         }
     }
+
+    static void update_shadow_framebuffer(SceneHandle handle)
+    {
+        Renderer* renderer = handle.manager->renderer;
+        Scene& scene = get_scene(handle);
+        Settings& settings = scene.settings;
+        
+        rendering::FramebufferHandle framebuffer_handle = rendering::get_write_framebuffer_from_pass(renderer->render.shadow_pass, renderer);
+
+        rendering::FramebufferInfo& info = rendering::get_framebuffer(framebuffer_handle, renderer);
+
+        if(info.width != (u32)settings.shadows.map_width ||
+           info.height != (u32)settings.shadows.map_height)
+        {
+            rendering::reload_framebuffer(framebuffer_handle, settings.shadows.map_width, settings.shadows.map_height,renderer);
+        }
+    }
+
+    static void update_scene_settings(SceneHandle handle)
+    {
+        const Scene& scene = get_scene(handle);
+        const Settings& settings = scene.settings;
+        Renderer* renderer = handle.manager->renderer;
+
+        renderer->render.shadow_settings.z_near = settings.shadows.near_plane;
+        renderer->render.shadow_settings.z_far = settings.shadows.far_plane;
+        renderer->render.shadow_settings.fov = settings.shadows.fov;
+
+        update_shadow_framebuffer(handle);
+    }
     
     static void update_scene_editor(SceneHandle handle, InputController *input_controller, r64 delta_time)
     {
@@ -1731,6 +1819,8 @@ namespace scene
         
         SceneManager *manager = handle.manager;
 
+        update_scene_settings(handle);
+        
 #if DEBUG
         if(KEY_DOWN(Key_E) && KEY(Key_LeftCtrl))
         {
@@ -1993,6 +2083,14 @@ namespace scene
         }
         
         activate_particle_systems(handle);
+
+        Settings& settings = scene->settings;
+        
+        scene_manager->renderer->render.shadow_settings.z_near = settings.shadows.near_plane;
+        scene_manager->renderer->render.shadow_settings.z_far = settings.shadows.far_plane;
+        scene_manager->renderer->render.shadow_settings.fov = settings.shadows.fov;
+
+        update_shadow_framebuffer(scene_manager->loaded_scene);
         
         scene_manager->scene_loaded = true;
 
@@ -2003,6 +2101,12 @@ namespace scene
             if(scene_manager->callbacks.on_load)
                 scene_manager->callbacks.on_load(handle);
         }
+    }
+
+    Settings& get_scene_settings(SceneHandle handle)
+    {
+        Scene& scene = get_scene(handle);
+        return scene.settings;
     }
     
     i32 _unused_entity_handle(Scene &scene)
@@ -2054,6 +2158,69 @@ namespace scene
         return _add_render_component(scene, entity_handle, cast_shadows);
     }
 
+    static void setup_instance_buffers(scene::RenderComponent &render, Scene &scene)
+    {
+        rendering::BufferUsage usage = render.is_static ? rendering::BufferUsage::STATIC : rendering::BufferUsage::DYNAMIC;
+            
+        for(i32 pass_index = 0; pass_index < render.render_pass_count; pass_index++)
+        {
+            // We have to look for the right instance buffers or allocate them
+            rendering::Material &material_instance = rendering::get_material_instance(render.material_handles[pass_index], scene.renderer);
+                    
+            if(material_instance.instanced_vertex_attribute_count > 0)
+            {
+                InstanceBufferData *data = nullptr;
+                        
+                for(i32 i = 0; i < scene.instance_buffer_data_count; i++)
+                {
+                    InstanceBufferData &current_data = scene.instance_buffer_data[i];
+                    if(current_data.pass_handle.handle == render.render_passes[pass_index].handle && current_data.buffer_handle.handle == render.buffer_handle.handle // The same buffer
+                       && current_data.source_material_handle.handle == material_instance.source_material.handle) // The same source material)
+                    {
+                        data = &current_data;
+                        break;
+                    }
+                }
+
+                if(data)
+                {
+                    data->max_count++;
+                            
+                    for(i32 i = 0; i < material_instance.instanced_vertex_attribute_count; i++)
+                    {
+                        // We got a match!
+                        rendering::InstanceBufferHandle instance_buffer_handle = data->instance_buffer_handles[i];
+                        i32 max = rendering::get_instance_buffer_max(instance_buffer_handle, scene.renderer);
+                                
+                        material_instance.instanced_vertex_attributes[i].instance_buffer_handle = instance_buffer_handle;
+                                    
+                        if(data->max_count > max)
+                        {
+                            i32 new_max = math::next_power_of_two(max + 1);
+                            realloc_instance_buffer(instance_buffer_handle, new_max, scene.renderer);
+                        }
+                    }
+                }
+                else
+                {
+                    // Allocate all the needed buffers
+                    data = &scene.instance_buffer_data[scene.instance_buffer_data_count++];
+                    data->max_count = 1;
+                    data->buffer_handle = render.buffer_handle;
+                    data->source_material_handle = material_instance.source_material;
+                    data->pass_handle = render.render_passes[pass_index];
+                            
+                    for(i32 i = 0; i < material_instance.instanced_vertex_attribute_count; i++)
+                    {
+                        rendering::InstanceBufferHandle instance_buffer_handle = rendering::allocate_instance_buffer(material_instance.instanced_vertex_attributes[i].attribute.type, math::next_power_of_two(1), usage, scene.renderer);
+                        material_instance.instanced_vertex_attributes[i].instance_buffer_handle = instance_buffer_handle;
+                        data->instance_buffer_handles[data->instance_buffer_count++] = instance_buffer_handle;
+                    }
+                }
+            }
+        }
+    }
+
     static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, rendering::MaterialInstanceHandle material, RenderComponent &comp, Renderer *renderer)
     {
         comp.render_passes[comp.render_pass_count] = render_pass_handle;
@@ -2074,10 +2241,16 @@ namespace scene
         add_to_render_pass(render_pass_handle, comp.material_handles[0], comp, renderer);
     }
 
-    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, EntityHandle entity, SceneHandle &scene)
+    static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, EntityHandle entity, SceneHandle &scene_handle)
     {
-        RenderComponent &render_comp = get_render_comp(entity, scene);
-        add_to_render_pass(render_pass_handle, render_comp, scene.manager->renderer);
+        RenderComponent &render_comp = get_render_comp(entity, scene_handle);
+        add_to_render_pass(render_pass_handle, render_comp, scene_handle.manager->renderer);
+        
+        Scene &scene = get_scene(scene_handle);
+        if(scene.loaded)
+        {
+            setup_instance_buffers(render_comp, scene);
+        }
     }
 
     static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, rendering::MaterialInstanceHandle material, EntityHandle entity, SceneHandle &scene)
@@ -2104,8 +2277,6 @@ namespace scene
             return;
         }
 
-        static i32 count = 0;
-        
         Scene &scene = scene::get_scene(handle);
         for(i32 i = 0; i < scene.entity_count; i++)
         {
@@ -2271,11 +2442,21 @@ namespace scene
 
         return(handle);
     }
-
+    
     static EntityHandle register_entity(u64 comp_flags, SceneHandle scene_handle, b32 savable = false)
     {
         Scene &scene = get_scene(scene_handle);
         return _register_entity(comp_flags, scene, savable);
+    }
+
+    static EntityHandle register_entity_with_entity_data(u32 type_id, EntityData *data, SceneHandle scene_handle, b32 savable = false)
+    {
+        EntityHandle handle = register_entity(COMP_TRANSFORM, scene_handle, savable);
+        Entity &entity = get_entity(handle, scene_handle);
+        entity.entity_data = data;
+        entity.type_info = *get_registered_type(type_id, scene_handle.manager);
+        entity.type = type_id;
+        return handle;
     }
     
     static TemplateHandle _create_template_copy_with_new_render_data(rendering::Material *temp_materials, EntityTemplate *template_to_copy, EntityTemplateState &template_state, Renderer *renderer, const rendering::MeshObjectData &obj_data)
@@ -2995,66 +3176,9 @@ namespace scene
             
 			render.render_pass_count = templ.render.render_pass_count;
 
-            rendering::BufferUsage usage = render.is_static ? rendering::BufferUsage::STATIC : rendering::BufferUsage::DYNAMIC;
-            
             if(scene.loaded)
             {
-                for(i32 pass_index = 0; pass_index < templ.render.render_pass_count; pass_index++)
-                {
-                    // We have to look for the right instance buffers or allocate them
-                    rendering::Material &material_instance = rendering::get_material_instance(render.material_handles[pass_index], scene.renderer);
-                    
-                    if(material_instance.instanced_vertex_attribute_count > 0)
-                    {
-                        InstanceBufferData *data = nullptr;
-                        
-                        for(i32 i = 0; i < scene.instance_buffer_data_count; i++)
-                        {
-                            InstanceBufferData &current_data = scene.instance_buffer_data[i];
-                            if(current_data.buffer_handle.handle == render.buffer_handle.handle // The same buffer
-                               && current_data.source_material_handle.handle == material_instance.source_material.handle) // The same source material)
-                            {
-                                data = &current_data;
-                                break;
-                            }
-                        }
-
-                        if(data)
-                        {
-                            data->max_count++;
-                            
-                            for(i32 i = 0; i < material_instance.instanced_vertex_attribute_count; i++)
-                            {
-                                // We got a match!
-                                rendering::InstanceBufferHandle instance_buffer_handle = data->instance_buffer_handles[i];
-                                i32 max = rendering::get_instance_buffer_max(instance_buffer_handle, scene.renderer);
-                                
-                                material_instance.instanced_vertex_attributes[i].instance_buffer_handle = instance_buffer_handle;
-                                    
-                                if(data->max_count > max)
-                                {
-                                    i32 new_max = math::next_power_of_two(max + 1);
-                                    realloc_instance_buffer(instance_buffer_handle, new_max, scene.renderer);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            // Allocate all the needed buffers
-                            data = &scene.instance_buffer_data[scene.instance_buffer_data_count++];
-                            data->max_count = 1;
-                            data->buffer_handle = render.buffer_handle;
-                            data->source_material_handle = material_instance.source_material;
-                            
-                            for(i32 i = 0; i < material_instance.instanced_vertex_attribute_count; i++)
-                            {
-                                rendering::InstanceBufferHandle instance_buffer_handle = rendering::allocate_instance_buffer(material_instance.instanced_vertex_attributes[i].attribute.type, math::next_power_of_two(1), usage, scene.renderer);
-                                material_instance.instanced_vertex_attributes[i].instance_buffer_handle = instance_buffer_handle;
-                                data->instance_buffer_handles[data->instance_buffer_count++] = instance_buffer_handle;
-                            }
-                        }
-                    }
-                }
+                setup_instance_buffers(render, scene);
             }
         }
         
@@ -3451,6 +3575,7 @@ namespace scene
             const Entity& entity = scene.entities[i];
             if(has_tag(tag, entity.handle, scene_handle))
             {
+                assert(list.entity_count < ENTITY_LIST_SIZE);
                 list.handles[list.entity_count++] = entity.handle;
             }
         }
@@ -3463,7 +3588,6 @@ namespace scene
         {
             debug_log("Entity handle not valid: %d\n", entity_handle.handle);
             assert(false);
-            return {};
         }
         return get_entity(entity_handle, scene_handle).tags;
     }

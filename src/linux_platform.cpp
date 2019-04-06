@@ -307,7 +307,7 @@ PLATFORM_GET_ALL_FILES_WITH_EXTENSION(linux_get_all_files_with_extension)
             {
                 char sub_path[2048];
                 sprintf(sub_path, "%s%s/", directory_path, de->d_name);
-                linux_get_all_files_with_extension(sub_path, "gsc", directory_data, true);
+                linux_get_all_files_with_extension(sub_path, extension, directory_data, true);
             }
         }
         else if(de->d_type == DT_REG)

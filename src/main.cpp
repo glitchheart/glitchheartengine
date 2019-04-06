@@ -362,7 +362,8 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
 
     renderer->particles.system_work_queue = (WorkQueue*)malloc(sizeof(WorkQueue));
     renderer->particles.system_threads = push_array(&renderer->particle_arena, global_max_particle_systems, ThreadInfo);
-    platform.make_queue(renderer->particles.system_work_queue, global_max_particle_systems, renderer->particles.system_threads);
+    i32 particle_threads = 4;
+    platform.make_queue(renderer->particles.system_work_queue, particle_threads, renderer->particles.system_threads);
     
     PushParams params = default_push_params();
     params.alignment = math::multiple_of_number_uint(member_size(RandomSeries, state), 16);
