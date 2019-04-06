@@ -174,23 +174,25 @@ void save_config(const char *file_path, Renderer* renderer, SoundDevice *sound_d
         i32 width = core.config_data.screen_width;
         i32 height = core.config_data.screen_height;
         WindowMode window_mode = core.config_data.window_mode;
+		b32 vsync = true;
 
         if (renderer)
         {
             width = renderer->window_width;
             height = renderer->window_height;
             window_mode = renderer->window_mode;
-        }
+			vsync = renderer->api_functions.get_v_sync(renderer->api_functions.render_state);
+		}
 
         fprintf(file, "screen_width %d\n", width);
         fprintf(file, "screen_height %d\n", height);
         fprintf(file, "window_mode %d\n", window_mode);
+		fprintf(file, "vsync %d\n", vsync);
 
         b32 muted = false;
         r32 sfx_vol = 1.0f;
         r32 music_vol = 1.0f;
         r32 master_vol = 1.0f;
-        b32 vsync = renderer->api_functions.get_v_sync(renderer->api_functions.render_state);
 
         if (sound_device)
         {
@@ -204,7 +206,6 @@ void save_config(const char *file_path, Renderer* renderer, SoundDevice *sound_d
         fprintf(file, "sfx_volume %.2f\n", sfx_vol);
         fprintf(file, "music_volume %.2f\n", music_vol);
         fprintf(file, "master_volume %.2f\n", master_vol);
-        fprintf(file, "vsync %d\n", vsync);
 
         fclose(file);
 
