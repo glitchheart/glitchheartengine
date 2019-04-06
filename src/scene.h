@@ -96,9 +96,10 @@ namespace scene
         i32 tag_count;
     };
 
+    #define ENTITY_LIST_SIZE 512
     struct EntityList
     {
-        EntityHandle handles[64];
+        EntityHandle handles[ENTITY_LIST_SIZE];
         i32 entity_count;
     };
 
@@ -289,7 +290,8 @@ namespace scene
     {
         rendering::BufferHandle buffer_handle;
         rendering::MaterialHandle source_material_handle;
-
+        rendering::RenderPassHandle pass_handle;
+        
         rendering::InstanceBufferHandle instance_buffer_handles[MAX_INSTANCE_BUFFER_HANDLES];
         i32 instance_buffer_count;
 
@@ -300,6 +302,18 @@ namespace scene
     {
         i32 handle;
         SceneManager *manager;
+    };
+
+    struct Settings
+    {
+        struct
+        {
+            r32 near_plane;
+            r32 far_plane;
+            r32 fov;
+            i32 map_width;
+            i32 map_height;
+        } shadows;
     };
 
     #define GIZMO_TOLERANCE 0.07f
@@ -325,6 +339,8 @@ namespace scene
         i32 current_internal_handle;
         b32 *active_entities;
         i32 entity_count;
+
+        Settings settings;
         
         TransformComponent *transform_components;
         i32 transform_component_count;

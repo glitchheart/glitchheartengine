@@ -124,130 +124,155 @@ r32 plane_uvs[] =
 r32 cube_normals[] =
 {
     0.0f,  0.0f, -1.0f,
+    0.0f,  0.0f, -1.0f,
     0.0f,  0.0f, -1.0f, 
+    
+    
+    0.0f,  0.0f, -1.0f,
+    0.0f,  0.0f, -1.0f,
     0.0f,  0.0f, -1.0f, 
-    0.0f,  0.0f, -1.0f, 
-    0.0f,  0.0f, -1.0f, 
-    0.0f,  0.0f, -1.0f, 
+
     0.0f,  0.0f, 1.0f,
     0.0f,  0.0f, 1.0f,
     0.0f,  0.0f, 1.0f,
+    
     0.0f,  0.0f, 1.0f,
     0.0f,  0.0f, 1.0f,
     0.0f,  0.0f, 1.0f,
+    
     -1.0f,  0.0f,  0.0f,
     -1.0f,  0.0f,  0.0f,
     -1.0f,  0.0f,  0.0f,
+
     -1.0f,  0.0f,  0.0f,
     -1.0f,  0.0f,  0.0f,
     -1.0f,  0.0f,  0.0f,
+    
     1.0f,  0.0f,  0.0f,
     1.0f,  0.0f,  0.0f,
     1.0f,  0.0f,  0.0f,
+    
     1.0f,  0.0f,  0.0f,
     1.0f,  0.0f,  0.0f,
     1.0f,  0.0f,  0.0f,
+    
     0.0f, -1.0f,  0.0f,
     0.0f, -1.0f,  0.0f,
     0.0f, -1.0f,  0.0f,
+
     0.0f, -1.0f,  0.0f,
     0.0f, -1.0f,  0.0f,
     0.0f, -1.0f,  0.0f,
+    
     0.0f,  1.0f,  0.0f,
     0.0f,  1.0f,  0.0f,
     0.0f,  1.0f,  0.0f,
+
     0.0f,  1.0f,  0.0f,
     0.0f,  1.0f,  0.0f,
     0.0f,  1.0f,  0.0f
 };
 
-r32 cube_vertices[] = {
+r32 cube_vertices[] =
+{
     -0.5f, -0.5f, -0.5f,  
-    0.5f, -0.5f, -0.5f,  
-    0.5f,  0.5f, -0.5f, 
-    0.5f,  0.5f, -0.5f, 
-    -0.5f,  0.5f, -0.5f,
-    -0.5f, -0.5f, -0.5f,
-    
-    -0.5f, -0.5f,  0.5f,
-    0.5f, -0.5f,  0.5f,
-    0.5f,  0.5f,  0.5f,  
-    0.5f,  0.5f,  0.5f, 
-    -0.5f,  0.5f,  0.5f,
-    -0.5f, -0.5f,  0.5f, 
-    
-    -0.5f,  0.5f,  0.5f,
-    -0.5f,  0.5f, -0.5f,
-    -0.5f, -0.5f, -0.5f,
-    -0.5f, -0.5f, -0.5f,
-    -0.5f, -0.5f,  0.5f,
-    -0.5f,  0.5f,  0.5f,
-    
-    0.5f,  0.5f,  0.5f, 
     0.5f,  0.5f, -0.5f,
-    0.5f, -0.5f, -0.5f,
-    0.5f, -0.5f, -0.5f,
-    0.5f, -0.5f,  0.5f,
+    0.5f, -0.5f, -0.5f,  
+
+    0.5f,  0.5f, -0.5f, 
+    -0.5f, -0.5f, -0.5f,
+    -0.5f,  0.5f, -0.5f,
+
+    -0.5f, -0.5f,  0.5f,
     0.5f,  0.5f,  0.5f,
+    0.5f, -0.5f,  0.5f,
+    
+    0.5f,  0.5f,  0.5f, 
+    -0.5f, -0.5f,  0.5f, 
+    -0.5f,  0.5f,  0.5f,
+    
+    -0.5f,  0.5f,  0.5f,
+    -0.5f, -0.5f, -0.5f,
+    -0.5f,  0.5f, -0.5f,
     
     -0.5f, -0.5f, -0.5f,
-    0.5f, -0.5f, -0.5f,
-    0.5f, -0.5f,  0.5f,  
-    0.5f, -0.5f,  0.5f,  
-    -0.5f, -0.5f,  0.5f, 
-    -0.5f, -0.5f, -0.5f, 
+    -0.5f,  0.5f,  0.5f,
+    -0.5f, -0.5f,  0.5f,
     
-    -0.5f,  0.5f, -0.5f, 
-    0.5f,  0.5f, -0.5f, 
     0.5f,  0.5f,  0.5f, 
+    0.5f, -0.5f, -0.5f,
+    0.5f,  0.5f, -0.5f,
+    
+    0.5f, -0.5f, -0.5f,
+    0.5f,  0.5f,  0.5f,
+    0.5f, -0.5f,  0.5f,
+
+    -0.5f, -0.5f, -0.5f,
+    0.5f, -0.5f,  0.5f,
+    0.5f, -0.5f, -0.5f,
+
+    0.5f, -0.5f,  0.5f,  
+    -0.5f, -0.5f, -0.5f, 
+    -0.5f, -0.5f,  0.5f, 
+
+    -0.5f,  0.5f, -0.5f, 
+    0.5f,  0.5f,  0.5f,
+    0.5f,  0.5f, -0.5f, 
+
     0.5f,  0.5f,  0.5f,  
-    -0.5f,  0.5f,  0.5f, 
     -0.5f,  0.5f, -0.5f,  
+    -0.5f,  0.5f,  0.5f
 };
 
 r32 cube_uvs[] =
 {
     0.000059f, 1.0f - 0.000004f,
-    0.000103f, 1.0f - 0.336048f,
     0.335973f, 1.0f - 0.335903f,
+    0.000103f, 1.0f - 0.336048f,
+    
     1.000023f, 1.0f - 0.000013f,
-    0.667979f, 1.0f - 0.335851f,
     0.999958f, 1.0f - 0.336064f,
-    
     0.667979f, 1.0f - 0.335851f,
-    0.336024f, 1.0f - 0.671877f,
+
+    0.667979f, 1.0f - 0.335851f,
     0.667969f, 1.0f - 0.671889f,
+    0.336024f, 1.0f - 0.671877f,
+
     1.000023f, 1.0f - 0.000013f,
-    0.668104f, 1.0f - 0.000013f,
     0.667979f, 1.0f - 0.335851f,
-    
+    0.668104f, 1.0f - 0.000013f,
+
     0.000059f, 1.0f - 0.000004f,
-    0.335973f, 1.0f - 0.335903f,
     0.336098f, 1.0f - 0.000071f,
-    0.667979f, 1.0f - 0.335851f,
     0.335973f, 1.0f - 0.335903f,
+
+    0.667979f, 1.0f - 0.335851f,
     0.336024f, 1.0f - 0.671877f,
-    
+    0.335973f, 1.0f - 0.335903f,
+
     1.000004f, 1.0f - 0.671847f,
+    0.667979f, 1.0f - 0.335851f,
     0.999958f, 1.0f - 0.336064f,
-    0.667979f, 1.0f - 0.335851f,
+
     0.668104f, 1.0f - 0.000013f,
-    0.335973f, 1.0f - 0.335903f,
     0.667979f, 1.0f - 0.335851f,
-    
     0.335973f, 1.0f - 0.335903f,
-    0.668104f, 1.0f - 0.000013f,
+
+    0.335973f, 1.0f - 0.335903f,
     0.336098f, 1.0f - 0.000071f,
+    0.668104f, 1.0f - 0.000013f,
+
     0.000103f, 1.0f - 0.336048f,
-    0.000004f, 1.0f - 0.671870f,
     0.336024f, 1.0f - 0.671877f,
+    0.000004f, 1.0f - 0.671870f,
     
     0.000103f, 1.0f - 0.336048f,
-    0.336024f, 1.0f - 0.671877f,
     0.335973f, 1.0f - 0.335903f,
+    0.336024f, 1.0f - 0.671877f,
+    
     0.667969f, 1.0f - 0.671889f,
-    1.000004f, 1.0f - 0.671847f,
-    0.667979f, 1.0f - 0.335851f
+    0.667979f, 1.0f - 0.335851f,
+    1.000004f, 1.0f - 0.671847f
 };
 
 u16 cube_indices[] = 
@@ -433,6 +458,7 @@ struct ParticleSystemInfo;
 struct RenderState;
 struct Buffer;
 struct Texture;
+struct Framebuffer;
 
 //@Cleanup: Move out of rendering
 typedef void (*SetWindowCursor)(RenderState* render_state, CursorType cursor);
@@ -440,6 +466,7 @@ typedef void (*SetWindowCursor)(RenderState* render_state, CursorType cursor);
 typedef math::Vec2i (*GetTextureSize)(Texture* texture);
 typedef void (*LoadTexture)(Texture* texture, TextureFiltering filtering, TextureWrap wrap, TextureFormat format, i32 width, i32 height, unsigned char* image_data, RenderState* render_state, Renderer* renderer);
 typedef void (*CreateFramebuffer)(rendering::FramebufferInfo &framebuffer_info, RenderState *render_state, Renderer *renderer);
+typedef void (*ReloadFramebuffer)(rendering::FramebufferHandle handle, RenderState* render_state, Renderer* renderer, i32 width, i32 height);
 typedef void(*CreateInstanceBuffer)(Buffer *buffer, size_t buffer_size, rendering::BufferUsage usage, RenderState *render_state, Renderer *renderer);
 typedef rendering::BufferUsage (*GetBufferUsage)(Buffer *buffer);
 typedef void (*DeleteInstanceBuffer)(Buffer *buffer, RenderState *render_state, Renderer *renderer);
@@ -454,12 +481,14 @@ typedef void (*SetVSync)(RenderState *render_state, b32 value);
 typedef b32 (*GetVSync)(RenderState *render_state);
 typedef void (*LoadShader)(RenderState *render_state, Renderer *renderer, rendering::Shader &shader);
 
+
 struct GraphicsAPI
 {
     SetWindowCursor set_window_cursor;
     GetTextureSize get_texture_size;
     LoadTexture load_texture;
     CreateFramebuffer create_framebuffer;
+    ReloadFramebuffer reload_framebuffer;
 	CreateInstanceBuffer create_instance_buffer;
 	GetBufferUsage get_buffer_usage;
     DeleteInstanceBuffer delete_instance_buffer;
@@ -640,7 +669,6 @@ struct Renderer
             r32 z_near;
             r32 z_far;
             r32 fov;
-            r32 light_offset;
         } shadow_settings;
 
         struct
