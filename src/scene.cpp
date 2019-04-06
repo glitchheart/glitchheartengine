@@ -814,8 +814,8 @@ namespace scene
         settings.shadows.map_width = 1024;
         settings.shadows.map_height = 1024;
 
-        settings.camera.position = math::Vec3(0, 0, 0);
-        settings.camera.target = math::Vec3(0, 0, 0);
+        settings.camera.position = math::Vec3(0.0f, 15.0f, -2.0f);
+        settings.camera.target = math::Vec3(0.0f, 0.0f, 2.0f);
         settings.camera.fov = 90 * DEGREE_IN_RADIANS;
         settings.camera.z_near = 0.1f;
         settings.camera.z_far = 50.0f;
