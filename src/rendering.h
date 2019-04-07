@@ -533,7 +533,7 @@ struct Renderer
     
 	WindowMode window_mode;
 
-    Camera camera;
+    /* Camera camera; */
 	
 	MemoryArena command_arena;
     

@@ -581,11 +581,6 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
 
             if(attachment.flags & rendering::ColorAttachmentFlags::MULTISAMPLED)
             {
-                if (framebuffer.tex_color_buffer_handles[i] != 0)
-                {
-                    glDeleteRenderbuffers(1, &framebuffer.tex_color_buffer_handles[i]);
-                }
-
                 glGenRenderbuffers(1, &framebuffer.tex_color_buffer_handles[i]);
                 glBindRenderbuffer(GL_RENDERBUFFER, framebuffer.tex_color_buffer_handles[i]);
 
@@ -694,11 +689,22 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
 
 static void _create_framebuffer_depth_texture_attachment(rendering::DepthAttachment &attachment, i32 index, Framebuffer &framebuffer, i32 width, i32 height, Renderer *renderer)
 {
+	Texture* texture = nullptr;
+	i32 handle = 0;
+	if (framebuffer.depth_buffer_handles[index] != 0)
+	{
+		texture = renderer->render.textures[framebuffer.depth_buffer_handles[index] - 1];
+		glDeleteTextures(1, &texture->handle);
+		handle = framebuffer.depth_buffer_handles[index];
+	}
+	else
+	{
+		texture = renderer->render.textures[renderer->render.texture_count++];
+		handle = renderer->render.texture_count;
+	}
+
     if(attachment.flags & rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED)
     {
-        Texture* texture = renderer->render.textures[renderer->render.texture_count++];
-        i32 handle = renderer->render.texture_count;
-    
         glGenTextures(1, &texture->handle);
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture->handle);
         
@@ -721,9 +727,6 @@ static void _create_framebuffer_depth_texture_attachment(rendering::DepthAttachm
     }
     else
     {
-        Texture* texture = renderer->render.textures[renderer->render.texture_count++];
-        i32 handle = renderer->render.texture_count;
-    
         glGenTextures(1, &texture->handle);
         glBindTexture(GL_TEXTURE_2D, texture->handle);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
@@ -819,8 +822,13 @@ static void create_shadow_map(Framebuffer &framebuffer, i32 width, i32 height)
 
 static void create_new_framebuffer(rendering::FramebufferInfo &info, Framebuffer &framebuffer, RenderState &render_state, Renderer *renderer)
 {
-    framebuffer.width = info.width;
-    framebuffer.height = info.height;
+	framebuffer.width = info.width;
+	framebuffer.height = info.height;
+
+	if (framebuffer.buffer_handle != 0)
+	{
+		glDeleteFramebuffers(1, &framebuffer.buffer_handle);
+	}
 
     glGenFramebuffers(1, &framebuffer.buffer_handle);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
@@ -893,7 +901,6 @@ static void _reload_framebuffer(rendering::FramebufferInfo &info, Framebuffer &f
     {
     case 0:
     return;
-    break;
     default:
     info.width = width * info.size_ratio;
     info.height = height * info.size_ratio;
