@@ -1024,9 +1024,6 @@ namespace rendering
         return renderer->api_functions.get_texture_size(texture);
     }
 
-        
-
-
     static void set_bloom_shader(Renderer *renderer, const char *path)
     {
         renderer->render.bloom_shader = load_shader(renderer, path);
@@ -4738,7 +4735,7 @@ namespace rendering
         scaled_info.transform.position = pos;
         scaled_info.z_layer = info.z_layer;
 
-        scaled_info.transform.scale = get_relative_size(renderer, absolute_scale, info.scaling_flag);
+        scaled_info.transform.scale = get_relative_size(renderer, info.transform.scale, info.scaling_flag);
         scaled_info.clip_rect = scale_clip_rect(renderer, info.clip_rect, 0);
 
         if(scaled_info.clip_rect.width == 0.0f || scaled_info.clip_rect.height == 0.0f)
