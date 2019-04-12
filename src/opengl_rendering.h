@@ -1,6 +1,7 @@
 #ifndef OPENGL_H
 #define OPENGL_H
 
+#define GLFW_INCLUDE_GLCOREARB
 #include <GLFW/glfw3.h>
 
 struct ShaderGL
