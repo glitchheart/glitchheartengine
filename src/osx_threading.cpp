@@ -6,7 +6,7 @@
 #include <semaphore.h>
 
 // Define platform-specific functions
-#define SemaphoreHandle sem_t
+#define SemaphoreHandle sem_t*
 #define WRITE_BARRIER OSMemoryBarrier(); _mm_sfence()
 #define THREAD_PROC(name) static void* name(void* parameters)
 typedef void* (*ThreadProc)(void* parameters);
@@ -26,18 +26,27 @@ static inline void interlocked_increment(u32 volatile *ptr)
 
 static inline void release_semaphore(SemaphoreHandle& semaphore_handle)
 {
-    sem_post(&semaphore_handle);
+    sem_post(semaphore_handle);
 }
 
 static inline void wait_for_semaphore(SemaphoreHandle& semaphore_handle)
 {
-    sem_wait(&semaphore_handle);
+    i32 wait = sem_wait(semaphore_handle);
+    i32 shit = 0;
 }
 
+static i32 __id_count = 0;
 static inline SemaphoreHandle create_semaphore(u32 initial_count, u32 thread_count)
 {
-    sem_t sem;
-    sem_init(&sem, thread_count, initial_count);
+    sem_t* sem;
+    char buf[256];
+    sprintf(buf, "/s_%d", __id_count++);
+    sem = sem_open(buf, O_CREAT, 0644, 1);
+    if(sem == SEM_FAILED)
+    {
+        i32 fuck = 0;
+    } 
+    //sem_init(&sem, thread_count, initial_count);
     return(sem);
 }
 
