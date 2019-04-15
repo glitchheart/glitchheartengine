@@ -42,11 +42,7 @@ static inline SemaphoreHandle create_semaphore(u32 initial_count, u32 thread_cou
     char buf[256];
     sprintf(buf, "/s_%d", __id_count++);
     sem = sem_open(buf, O_CREAT, 0644, 1);
-    if(sem == SEM_FAILED)
-    {
-        i32 fuck = 0;
-    } 
-    //sem_init(&sem, thread_count, initial_count);
+    
     return(sem);
 }
 

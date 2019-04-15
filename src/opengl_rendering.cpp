@@ -590,7 +590,7 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
                 }
                 else
                 {
-                    glRenderbufferStorageMultisample(GL_RENDERBUFFER, attachment.samples, GL_RGB, width, height);
+                    glRenderbufferStorageMultisample(GL_RENDERBUFFER, attachment.samples, GL_RGBA, width, height);
                 }
 
                 glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_RENDERBUFFER,
@@ -646,7 +646,7 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
                 }
                 else
                 {
-                    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, attachment.samples, GL_RGB, width, height, GL_TRUE);
+                    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, attachment.samples, GL_RGBA, width, height, GL_TRUE);
                     //glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
                 }
 
@@ -663,7 +663,7 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
                 }
                 else
                 {
-                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
                 }
 
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, texture->handle, NULL);
@@ -2447,24 +2447,10 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
             rendering::Material material = get_material_instance(command.material, renderer);
             ShaderGL *shader = &render_state.gl_shaders[material.shader.handle];
 
-            //assert(material.shader.handle == command.pass.shader_handle.handle);
-                
             switch(command.type)
             {
             case rendering::RenderCommandType::BUFFER:
             {
-                /*if(pass_index == renderer->render.shadow_pass.handle - 1)
-                  {
-                  material = renderer->render.materials[renderer->render.shadow_map_material.handle];
-                        
-                  if(rendering::VertexAttributeInstanced* original_mapping = rendering::get_attrib_mapping(command.material, rendering::VertexAttributeMappingType::MODEL, renderer))
-                  {
-                  rendering::VertexAttributeInstanced* mapping = rendering::attrib_mapping(material, rendering::VertexAttributeMappingType::MODEL);
-
-                  mapping->instance_buffer_handle = original_mapping->instance_buffer_handle;
-                  }
-                  }*/
-
                 render_buffer(command.buffer.primitive_type, command.transform, command.buffer.buffer, pass, render_state, renderer, material, pass.camera, command.count, shader);
             }
             break;
