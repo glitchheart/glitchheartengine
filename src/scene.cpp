@@ -803,6 +803,21 @@ namespace scene
         }
     }
 
+static Camera get_standard_camera(SceneManager& manager)
+{
+    Camera camera = {};
+    math::Vec3 position = math::Vec3(0.0f, 15.0f, -2.0f);
+    math::Vec3 target = math::Vec3(0.0f, 0.0f, 2.0f);
+    r32 fov = 90 * DEGREE_IN_RADIANS;
+    r32 z_near = 0.1f;
+    r32 z_far = 50.0f;
+
+    math::Mat4 projection = math::perspective((r32)manager.renderer->window_width / (r32)manager.renderer->window_height, fov, z_near, z_far);
+
+    camera = create_camera(position, target, projection);
+    return camera;
+}
+
     static void parse_scene_settings(FILE* file, SceneHandle handle)
     {
         Scene& scene = get_scene(handle);
@@ -1882,9 +1897,7 @@ namespace scene
                 find_all_template_files(manager);
                 
                 if(manager->callbacks.on_started_edit_mode)
-                    manager->callbacks.on_started_edit_mode(handle);
-
-                manager->editor_camera = get_scene_camera(handle);
+                    manager->callbacks.on_started_edit_mode(handle);                
             }
             else
             {
