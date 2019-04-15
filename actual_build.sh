@@ -13,7 +13,6 @@ WIGNORE="-Wno-nested-anon-types -Wno-variadic-macros -Wno-old-style-cast -Wno-si
 
 CommonLinkerFlags="-L../libs/glad -L/usr/local/lib -L../libs/glfw/libglfw3.a -L../libs/glfw -L../libs/fmod/lib -ldl -lm -lpng -lz -lfmod -lglad -lglfw -latomic -o $EXECUTABLE -Wl,-rpath,\$ORIGIN/../build"
 
-
 pushd build
 
 clang --std=c++17 -stdlib=libstdc++ -Weverything $WIGNORE -msse2  $DEBUG $CommonCompilerFlags $SYMBOLS $OPT ../src/main.cpp $CommonLinkerFlags -fno-exceptions
