@@ -1021,6 +1021,7 @@ int main(int argc, char **args)
             update_sound_commands(&sound_device, &sound_system, delta_time, &do_save_config);
 
         render(render_state, renderer, delta_time);
+        
         if (do_save_config)
         {
             save_config("../.config", renderer, &sound_device);
