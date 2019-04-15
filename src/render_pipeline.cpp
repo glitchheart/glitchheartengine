@@ -975,7 +975,7 @@ namespace rendering
     
     static void add_color_attachment(AttachmentType type, u64 flags, FramebufferInfo &info, u32 samples = 0)
     {
-        ColorAttachment attachment;
+        ColorAttachment attachment = {};
         attachment.type = type;
         attachment.flags = flags;
 
@@ -991,7 +991,7 @@ namespace rendering
 
     static void add_depth_attachment(AttachmentType type, u64 flags, FramebufferInfo &info, u32 samples = 0)
     {
-        DepthAttachment attachment;
+        DepthAttachment attachment = {};
         attachment.type = type;
         attachment.flags = flags;
         
