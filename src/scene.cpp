@@ -810,7 +810,7 @@ static Camera get_standard_camera(SceneManager& manager)
     math::Vec3 target = math::Vec3(0.0f, 0.0f, 2.0f);
     r32 fov = 90 * DEGREE_IN_RADIANS;
     r32 z_near = 0.1f;
-    r32 z_far = 50.0f;
+    r32 z_far = 200.0f;
 
     math::Mat4 projection = math::perspective((r32)manager.renderer->window_width / (r32)manager.renderer->window_height, fov, z_near, z_far);
 

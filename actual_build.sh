@@ -1,7 +1,7 @@
 #!/bin/bash
 
-DEBUG=-DDEBUG=0
-OPT=-O3
+DEBUG=-DDEBUG=1
+OPT=-O0
 SYMBOLS=-g
 EXECUTABLE=altered
 
