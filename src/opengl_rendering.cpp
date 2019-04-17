@@ -1084,76 +1084,96 @@ static void create_framebuffer(rendering::FramebufferInfo &info, RenderState *re
     create_new_framebuffer(info, framebuffer, *render_state, renderer);
 }
 
-static void load_texture(Texture* texture, TextureFiltering filtering, TextureWrap wrap, TextureFormat format, i32 width, i32 height, unsigned char* image_data, RenderState* render_state, Renderer* renderer)
+static void load_texture(Texture* texture, TextureFiltering filtering, TextureWrap wrap, TextureFormat format, i32 width, i32 height, unsigned char* image_data, RenderState* render_state, Renderer* renderer, TextureUsage usage = TextureUsage::STATIC)
 {
-   if (texture->handle == 0)
+    b32 existing_tex = true;
+    
+    if (texture->handle == 0)
     {
+        existing_tex = false;
         glGenTextures(1, &texture->handle);
     }
 
-   GLenum gl_format = GL_RGBA8;
-   GLenum img_format = GL_RGBA;
+    GLenum gl_format = GL_RGBA8;
+    GLenum img_format = GL_RGBA;
 
-   switch (format)
-   {
-   case TextureFormat::RGBA:
-   {
-       gl_format = GL_RGBA8;
-       img_format = GL_RGBA;
-   }
-   break;
-   case TextureFormat::RGB:
-   {
-       gl_format = GL_RGB8;
-       img_format = GL_RGB;
-   }
-   break;
-   case TextureFormat::RED:
-   {
-       gl_format = GL_R8;
-       img_format = GL_RED;
-   }
-   break;
-   }
+    switch (format)
+    {
+    case TextureFormat::RGBA:
+    {
+        gl_format = GL_RGBA8;
+        img_format = GL_RGBA;
+    }
+    break;
+    case TextureFormat::RGB:
+    {
+        gl_format = GL_RGB8;
+        img_format = GL_RGB;
+    }
+    break;
+    case TextureFormat::RED:
+    {
+        gl_format = GL_R8;
+        img_format = GL_RED;
+    }
+    break;
+    }
 
-   glBindTexture(GL_TEXTURE_2D, texture->handle);
+    glBindTexture(GL_TEXTURE_2D, texture->handle);
 
-   if (wrap == REPEAT)
-   {
-       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-   }
-   else
-   {
-       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-   }
+    if (wrap == REPEAT)
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    }
+    else
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    }
 
-   if (filtering == LINEAR)
-   {
-       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-   }
-   else if (filtering == NEAREST)
-   {
-       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-   }
+    if (filtering == LINEAR)
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+    else if (filtering == NEAREST)
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    }
     
-   texture->width = width;
-   texture->height = height;
+    texture->width = width;
+    texture->height = height;
 
-   i32 mip = 4;
+#if __APPLE__
+    glTexImage2D(GL_TEXTURE_2D, 0, gl_format, width, height, 0, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    
+#else
+    i32 mip = 4;
 
-   glTexStorage2D(GL_TEXTURE_2D, mip, gl_format, width, height);
-   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
+    if(usage == TextureUsage::STATIC)
+    {
+        if(!existing_tex)
+        {
+            glTexStorage2D(GL_TEXTURE_2D, mip, gl_format, width, height);
+        }
 
-   glGenerateMipmap(GL_TEXTURE_2D);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, gl_format, width, height, 0, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    
+#endif
 
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mip);
-   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, -1);
-
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mip);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, -1);
 }
 
 static math::Vec2i get_texture_size(Texture* texture)

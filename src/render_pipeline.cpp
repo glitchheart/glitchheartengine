@@ -1354,7 +1354,7 @@ namespace rendering
         }
     }
 
-    static void load_texture(Renderer *renderer, TextureFiltering filtering, TextureWrap wrap, unsigned char *data, i32 width, i32 height, TextureFormat format, TextureHandle &handle)
+    static void load_texture(Renderer *renderer, TextureFiltering filtering, TextureWrap wrap, unsigned char *data, i32 width, i32 height, TextureFormat format, TextureUsage usage, TextureHandle &handle)
     {
         if (handle.handle == 0)
         {
@@ -1364,10 +1364,10 @@ namespace rendering
 
         Texture* texture = renderer->render.textures[handle.handle - 1];
 
-        renderer->api_functions.load_texture(texture, filtering, wrap, format, width, height, data, renderer->api_functions.render_state, renderer);
+        renderer->api_functions.load_texture(texture, filtering, wrap, format, width, height, data, renderer->api_functions.render_state, renderer, usage);
     }
 
-    static void load_texture(const char *full_texture_path, Renderer *renderer, TextureFiltering filtering, TextureWrap wrap, TextureFormat format, TextureHandle &handle)
+    static void load_texture(const char *full_texture_path, Renderer *renderer, TextureFiltering filtering, TextureWrap wrap, TextureFormat format, TextureUsage usage, TextureHandle &handle)
     {
         if(handle.handle == 0)
         {
@@ -1398,7 +1398,7 @@ namespace rendering
 
             Texture* texture = renderer->render.textures[handle.handle - 1];
             
-            renderer->api_functions.load_texture(texture, filtering, wrap, format, width, height, image_data, renderer->api_functions.render_state, renderer);
+            renderer->api_functions.load_texture(texture, filtering, wrap, format, width, height, image_data, renderer->api_functions.render_state, renderer, usage);
 
             stbi_image_free(image_data);
         }
@@ -1695,7 +1695,7 @@ namespace rendering
 
         stbtt_PackEnd(&context);       
 
-        load_texture(renderer, TextureFiltering::LINEAR, TextureWrap::CLAMP_TO_EDGE, temp_bitmap, font_info.atlas_width, font_info.atlas_height, TextureFormat::RED, texture);
+        load_texture(renderer, TextureFiltering::LINEAR, TextureWrap::CLAMP_TO_EDGE, temp_bitmap, font_info.atlas_width, font_info.atlas_height, TextureFormat::RED, TextureUsage::DYNAMIC, texture);
 
         font_info.texture = texture;
 
@@ -1843,9 +1843,9 @@ namespace rendering
                         sscanf(buffer, "map_Ka %s", name);
 
                         if (name[0] == '.')
-                            load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                            load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, TextureUsage::STATIC, u->texture);
                         else
-                            load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                            load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, TextureUsage::STATIC, u->texture);
                     }
                 }
                 else if (starts_with(buffer, "map_Kd")) // diffuse map
@@ -1856,9 +1856,9 @@ namespace rendering
                         sscanf(buffer, "map_Kd %s", name);
 
                         if (name[0] == '.')
-                            load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                            load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, TextureUsage::STATIC, u->texture);
                         else
-                            load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                            load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, TextureUsage::STATIC, u->texture);
                     }
                 }
                 else if (starts_with(buffer, "map_Ks")) // specular map
@@ -1869,9 +1869,9 @@ namespace rendering
                         sscanf(buffer, "map_Ks %s", name);
 
                         if (name[0] == '.')
-                            load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                            load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, TextureUsage::STATIC, u->texture);
                         else
-                            load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                            load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, TextureUsage::STATIC, u->texture);
                     }
                 }
                 else if (starts_with(buffer, "map_Ns")) // specular intensity map
@@ -1882,9 +1882,9 @@ namespace rendering
                         sscanf(buffer, "map_Ns %s", name);
 
                         if (name[0] == '.')
-                            load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                            load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, TextureUsage::STATIC, u->texture);
                         else
-                            load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                            load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, TextureUsage::STATIC, u->texture);
                     }
                 }
             }
@@ -2754,9 +2754,9 @@ namespace rendering
                             sscanf(buffer, "map_Ka %s", name);
 
                             if (name[0] == '.' || name[1] == ':')
-                                load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                                load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, TextureUsage::STATIC, u->texture);
                             else
-                                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, TextureUsage::STATIC, u->texture);
                         }
                     }
                 }
@@ -2773,9 +2773,9 @@ namespace rendering
                             sscanf(buffer, "map_bump %s", name);
 
                             if (name[0] == '.' || name[1] == ':')
-                                load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                                load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, TextureUsage::STATIC, u->texture);
                             else
-                                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, TextureUsage::STATIC, u->texture);
                         }
                     }
                 }
@@ -2792,9 +2792,9 @@ namespace rendering
                             sscanf(buffer, "map_Kd %s", name);
 
                             if (name[0] == '.' || name[1] == ':')
-                                load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                                load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, TextureUsage::STATIC, u->texture);
                             else
-                                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, TextureUsage::STATIC, u->texture);
                         }
                     }
                 }
@@ -2811,9 +2811,9 @@ namespace rendering
                             sscanf(buffer, "map_Ks %s", name);
 
                             if (name[0] == '.' || name[1] == ':')
-                                load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                                load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, TextureUsage::STATIC, u->texture);
                             else
-                                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, TextureUsage::STATIC, u->texture);
                         }
                     }
                 }
@@ -2830,9 +2830,9 @@ namespace rendering
                             sscanf(buffer, "map_Ns %s", name);
 
                             if (name[0] == '.' || name[1] == ':')
-                                load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                                load_texture(name, renderer, LINEAR, REPEAT, TextureFormat::RGBA, TextureUsage::STATIC, u->texture);
                             else
-                                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, u->texture);
+                                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, REPEAT, TextureFormat::RGBA, TextureUsage::STATIC, u->texture);
                         }
                     }
                 }
