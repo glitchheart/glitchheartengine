@@ -1091,65 +1091,69 @@ static void load_texture(Texture* texture, TextureFiltering filtering, TextureWr
         glGenTextures(1, &texture->handle);
     }
 
-    glBindTexture(GL_TEXTURE_2D, texture->handle);
+   GLenum gl_format = GL_RGBA8;
+   GLenum img_format = GL_RGBA;
 
-    if (wrap == REPEAT)
-    {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    }
-    else
-    {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    }
+   switch (format)
+   {
+   case TextureFormat::RGBA:
+   {
+       gl_format = GL_RGBA8;
+       img_format = GL_RGBA;
+   }
+   break;
+   case TextureFormat::RGB:
+   {
+       gl_format = GL_RGB8;
+       img_format = GL_RGB;
+   }
+   break;
+   case TextureFormat::RED:
+   {
+       gl_format = GL_R8;
+       img_format = GL_RED;
+   }
+   break;
+   }
 
-    if (filtering == LINEAR)
-    {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    }
-    else if (filtering == NEAREST)
-    {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    }
+   glBindTexture(GL_TEXTURE_2D, texture->handle);
+
+   if (wrap == REPEAT)
+   {
+       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+   }
+   else
+   {
+       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+   }
+
+   if (filtering == LINEAR)
+   {
+       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+   }
+   else if (filtering == NEAREST)
+   {
+       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+   }
     
-    GLenum gl_format = GL_RGBA;
+   texture->width = width;
+   texture->height = height;
 
-    switch (format)
-    {
-    case TextureFormat::RGBA:
-    {
-        gl_format = GL_RGBA;
-    }
-    break;
-    case TextureFormat::RGB:
-    {
-        gl_format = GL_RGB;
-    }
-    break;
-    case TextureFormat::RED:
-    {
-        gl_format = GL_RED;
-    }
-    break;
-    }
+   i32 mip = 4;
 
-    texture->width = width;
-    texture->height = height;
-    
-    glTexImage2D(GL_TEXTURE_2D, 0, gl_format, width, height, 0, gl_format,
-                 GL_UNSIGNED_BYTE, (GLvoid *)image_data);
+   glTexStorage2D(GL_TEXTURE_2D, mip, gl_format, width, height);
+   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
 
-    glGenerateMipmap(GL_TEXTURE_2D);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+   glGenerateMipmap(GL_TEXTURE_2D);
 
-    i32 mip_max_level = math::ceil(log2(MAX(width,height))) + 1;
-    
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mip_max_level);
-    //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, -1);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mip);
+   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, -1);
+
 }
 
 static math::Vec2i get_texture_size(Texture* texture)
@@ -1351,7 +1355,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     //@Incomplete: Figure something out here. Ask for compatible version etc
 #ifdef _WIN32
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
 #elif __linux
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
