@@ -436,6 +436,12 @@ enum TextureFormat
     RED
 };
 
+enum class TextureUsage
+{
+    STATIC,
+    DYNAMIC
+};
+
 struct Resolution
 {
 	i32 width;
@@ -464,7 +470,7 @@ struct Framebuffer;
 typedef void (*SetWindowCursor)(RenderState* render_state, CursorType cursor);
 
 typedef math::Vec2i (*GetTextureSize)(Texture* texture);
-typedef void (*LoadTexture)(Texture* texture, TextureFiltering filtering, TextureWrap wrap, TextureFormat format, i32 width, i32 height, unsigned char* image_data, RenderState* render_state, Renderer* renderer);
+typedef void (*LoadTexture)(Texture* texture, TextureFiltering filtering, TextureWrap wrap, TextureFormat format, i32 width, i32 height, unsigned char* image_data, RenderState* render_state, Renderer* renderer, TextureUsage usage);
 typedef void (*CreateFramebuffer)(rendering::FramebufferInfo &framebuffer_info, RenderState *render_state, Renderer *renderer);
 typedef void (*ReloadFramebuffer)(rendering::FramebufferHandle handle, RenderState* render_state, Renderer* renderer, i32 width, i32 height);
 typedef void(*CreateInstanceBuffer)(Buffer *buffer, size_t buffer_size, rendering::BufferUsage usage, RenderState *render_state, Renderer *renderer);
