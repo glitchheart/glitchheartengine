@@ -49,50 +49,50 @@ static void debug_vao()
 #define error_gl() _error_gl(__LINE__, __FILE__)
 void _error_gl(i32 line, const char *file)
 {
-    // GLenum err = glGetError();
-    // switch (err)
-    // {
-    // case GL_INVALID_ENUM:
-    // {
-    //     log_error("OpenGL Error: GL_INVALID_ENUM on line %d in file %s", line, file);
-    // }
-    // break;
-    // case GL_INVALID_VALUE:
-    // {
-    //     log_error("OpenGL Error: GL_INVALID_VALUE on line %d in file %s", line, file);
-    // }
-    // break;
-    // case GL_INVALID_OPERATION:
-    // {
-    //     log_error("OpenGL Error: GL_INVALID_OPERATION on line %d in file %s", line, file);
-    // }
-    // break;
-    // case GL_STACK_OVERFLOW:
-    // {
-    //     log_error("OpenGL Error: GL_STACK_OVERFLOW on line %d in file %s", line, file);
-    // }
-    // break;
-    // case GL_OUT_OF_MEMORY:
-    // {
-    //     log_error("OpenGL Error: GL_OUT_OF_MEMORY on line %d in file %s", line, file);
-    // }
-    // break;
-    // case GL_INVALID_FRAMEBUFFER_OPERATION:
-    // {
-    //     log_error("OpenGL Error: GL_INVALID_FRAMEBUFFER_OPERATION on line %d in file %s", line, file);
-    // }
-    // break;
-    // case GL_CONTEXT_LOST:
-    // {
-    //     log_error("OpenGL Error: GL_CONTEXT_LOST on line %d in file %sx", line, file);
-    // }
-    // break;
-    // case GL_TABLE_TOO_LARGE:
-    // {
-    //     log_error("OpenGL Error: GL_TABLE_TOO_LARGE on line %d in file %s", line, file);
-    // }
-    // break;
-    // }
+    GLenum err = glGetError();
+    switch (err)
+    {
+    case GL_INVALID_ENUM:
+    {
+        log_error("OpenGL Error: GL_INVALID_ENUM on line %d in file %s", line, file);
+    }
+    break;
+    case GL_INVALID_VALUE:
+    {
+        log_error("OpenGL Error: GL_INVALID_VALUE on line %d in file %s", line, file);
+    }
+    break;
+    case GL_INVALID_OPERATION:
+    {
+        log_error("OpenGL Error: GL_INVALID_OPERATION on line %d in file %s", line, file);
+    }
+    break;
+    case GL_STACK_OVERFLOW:
+    {
+        log_error("OpenGL Error: GL_STACK_OVERFLOW on line %d in file %s", line, file);
+    }
+    break;
+    case GL_OUT_OF_MEMORY:
+    {
+        log_error("OpenGL Error: GL_OUT_OF_MEMORY on line %d in file %s", line, file);
+    }
+    break;
+    case GL_INVALID_FRAMEBUFFER_OPERATION:
+    {
+        log_error("OpenGL Error: GL_INVALID_FRAMEBUFFER_OPERATION on line %d in file %s", line, file);
+    }
+    break;
+    case GL_CONTEXT_LOST:
+    {
+        log_error("OpenGL Error: GL_CONTEXT_LOST on line %d in file %sx", line, file);
+    }
+    break;
+    case GL_TABLE_TOO_LARGE:
+    {
+        log_error("OpenGL Error: GL_TABLE_TOO_LARGE on line %d in file %s", line, file);
+    }
+    break;
+    }
 }
 
 void message_callback(GLenum source,
@@ -590,7 +590,7 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
                 }
                 else
                 {
-                    glRenderbufferStorageMultisample(GL_RENDERBUFFER, attachment.samples, GL_RGBA8, width, height);
+                    glRenderbufferStorageMultisample(GL_RENDERBUFFER, attachment.samples, GL_RGBA, width, height);
                 }
 
                 glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_RENDERBUFFER,
@@ -607,7 +607,7 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
                 }
                 else
                 {
-                    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, width, height);
+                    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB, width, height);
                 }
 
                 glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_RENDERBUFFER,
@@ -663,15 +663,15 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
                 }
                 else
                 {
-                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
                 }
 
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, texture->handle, NULL);
 
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
                 
-                if(attachment.flags & rendering::ColorAttachmentFlags::CLAMP_TO_EDGE)
+                if(attachment.flags & rendering::ColorAttachmentFlags::CLAMP_TO_EDGE)   
                 {
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -691,6 +691,7 @@ static void _create_framebuffer_depth_texture_attachment(rendering::DepthAttachm
 {
 	Texture* texture = nullptr;
 	i32 handle = 0;
+
 	if (framebuffer.depth_buffer_handles[index] != 0)
 	{
 		texture = renderer->render.textures[framebuffer.depth_buffer_handles[index] - 1];
@@ -708,7 +709,7 @@ static void _create_framebuffer_depth_texture_attachment(rendering::DepthAttachm
         glGenTextures(1, &texture->handle);
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture->handle);
         
-        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, attachment.samples, GL_DEPTH_COMPONENT, width, height, GL_TRUE);
+        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, attachment.samples, GL_DEPTH24_STENCIL8, width, height, GL_TRUE);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -729,7 +730,7 @@ static void _create_framebuffer_depth_texture_attachment(rendering::DepthAttachm
     {
         glGenTextures(1, &texture->handle);
         glBindTexture(GL_TEXTURE_2D, texture->handle);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
 
         // Prevent shadows outside of the shadow map
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -761,11 +762,11 @@ static void _create_framebuffer_depth_render_buffer_attachment(rendering::DepthA
 
     if(attachment.flags & rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED)
     {
-        glRenderbufferStorageMultisample(GL_RENDERBUFFER, attachment.samples, GL_DEPTH_COMPONENT, width, height);
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, attachment.samples, GL_DEPTH24_STENCIL8, width, height);
     }
     else
     {
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
     }
 
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, framebuffer.depth_buffer_handles[index]);
@@ -773,7 +774,7 @@ static void _create_framebuffer_depth_render_buffer_attachment(rendering::DepthA
 
 static void create_framebuffer_depth_attachment(rendering::FramebufferInfo &info, Framebuffer &framebuffer, i32 width, i32 height, Renderer *renderer)
 {
-    framebuffer.depth_buffer_count = info.color_attachments.count;
+    framebuffer.depth_buffer_count = info.depth_attachments.count;
     
     for (i32 i = 0; i < info.depth_attachments.count; i++)
     {
@@ -788,36 +789,6 @@ static void create_framebuffer_depth_attachment(rendering::FramebufferInfo &info
             _create_framebuffer_depth_render_buffer_attachment(attachment, i, framebuffer, width, height);
         }
     }
-}
-
-// @Incomplete: We should probably have a good way to link one or multiple light sources to this
-static void create_shadow_map(Framebuffer &framebuffer, i32 width, i32 height)
-{
-    framebuffer.shadow_map.width = width;
-    framebuffer.shadow_map.height = height;
-
-    glGenFramebuffers(1, &framebuffer.buffer_handle);
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
-
-    glGenTextures(1, &framebuffer.shadow_map_handle);
-    glBindTexture(GL_TEXTURE_2D, framebuffer.shadow_map_handle);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-
-    // Prevent shadows outside of the shadow map
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, framebuffer.shadow_map_handle, 0);
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-    {
-        debug("Error: Shadow map incomplete\n");
-        error_gl();
-    }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 static void create_new_framebuffer(rendering::FramebufferInfo &info, Framebuffer &framebuffer, RenderState &render_state, Renderer *renderer)
@@ -1262,7 +1233,7 @@ static void update_buffer(Buffer *buffer, rendering::BufferType buffer_type, voi
 
 static void set_v_sync(RenderState *render_state, b32 value)
 {
-    glfwSwapInterval(value ? 1 : 0);
+    glfwSwapInterval(0);
     render_state->vsync_active = value;
 }
 
@@ -1382,7 +1353,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
 #elif __APPLE__
     // @Note: Apple only __really__ supports OpenGL Core 3.3
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
@@ -2377,8 +2348,9 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
                 glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
             }
 
-            render_buffer(rendering::PrimitiveType::TRIANGLES, {}, command.buffer, pass, render_state, renderer, command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
-            
+            render_buffer(rendering::PrimitiveType::TRIANGLES, {}, command.buffer, pass, render_state, renderer,
+                          command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
+
             if (command.clip)
             {
                 glDisable(GL_SCISSOR_TEST);
@@ -2476,24 +2448,10 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
             rendering::Material material = get_material_instance(command.material, renderer);
             ShaderGL *shader = &render_state.gl_shaders[material.shader.handle];
 
-            //assert(material.shader.handle == command.pass.shader_handle.handle);
-                
             switch(command.type)
             {
             case rendering::RenderCommandType::BUFFER:
             {
-                /*if(pass_index == renderer->render.shadow_pass.handle - 1)
-                  {
-                  material = renderer->render.materials[renderer->render.shadow_map_material.handle];
-                        
-                  if(rendering::VertexAttributeInstanced* original_mapping = rendering::get_attrib_mapping(command.material, rendering::VertexAttributeMappingType::MODEL, renderer))
-                  {
-                  rendering::VertexAttributeInstanced* mapping = rendering::attrib_mapping(material, rendering::VertexAttributeMappingType::MODEL);
-
-                  mapping->instance_buffer_handle = original_mapping->instance_buffer_handle;
-                  }
-                  }*/
-
                 render_buffer(command.buffer.primitive_type, command.transform, command.buffer.buffer, pass, render_state, renderer, material, pass.camera, command.count, shader);
             }
             break;
@@ -2541,6 +2499,7 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
         pass.commands.render_command_count = 0;
         pass.commands.depth_free_command_count = 0;
         glDisable(GL_CULL_FACE);
+
     }
     else if(pass.type == rendering::RenderPassType::READ_DRAW)
     {
@@ -2557,6 +2516,7 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
             glDrawBuffer(GL_COLOR_ATTACHMENT0 + i);
             
             glBlitFramebuffer(0, 0, draw_framebuffer.width, draw_framebuffer.height, 0, 0, draw_framebuffer.width, draw_framebuffer.height, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+            error_gl();
         }
             
         glReadBuffer(GL_COLOR_ATTACHMENT0);
@@ -2577,7 +2537,7 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
 
     rendering::RenderPass &shadow_pass = renderer->render.passes[renderer->render.shadow_pass.handle - 1];
     render_pass(render_state, renderer, shadow_pass);
-        
+    
     // Go backwards through the array to enable easy render pass adding
     for (i32 pass_index = renderer->render.pass_count - 1; pass_index >= 0; pass_index--)
     {
@@ -2586,6 +2546,7 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
         
         rendering::RenderPass &pass = renderer->render.passes[pass_index];
         render_pass(render_state, renderer, pass);
+        error_gl();
     }
 
     //glBindFramebuffer(GL_FRAMEBUFFER, 0);

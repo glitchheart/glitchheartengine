@@ -508,6 +508,8 @@ namespace scene
         } callbacks;
     };
 
+    static Camera get_standard_camera(SceneManager& manager);
+
     static SceneManager* create_scene_manager(MemoryArena *arena, Renderer *renderer)
     {
         SceneManager *scene_manager = push_struct(arena, SceneManager);
@@ -537,6 +539,8 @@ namespace scene
         scene_manager->gizmos.x_material = rendering::create_material_instance(renderer, scene_manager->gizmos.line_material);
         scene_manager->gizmos.y_material = rendering::create_material_instance(renderer, scene_manager->gizmos.line_material);
         scene_manager->gizmos.z_material = rendering::create_material_instance(renderer, scene_manager->gizmos.line_material);
+
+        scene_manager->editor_camera = get_standard_camera(*scene_manager);
         
         return scene_manager;
     }
