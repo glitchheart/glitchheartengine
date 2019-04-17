@@ -463,7 +463,6 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     rendering::set_blur_shader(renderer, "../engine_assets/standard_shaders/blur.shd");
     rendering::set_hdr_shader(renderer, "../engine_assets/standard_shaders/hdr.shd");
 
-    
     rendering::ShaderHandle blur_shader = renderer->render.blur_shader;
     rendering::ShaderHandle bloom_shader = renderer->render.bloom_shader;
 
@@ -833,7 +832,8 @@ int main(int argc, char **args)
         Framebuffer &framebuffer = render_state.v2.framebuffers[j];
         for(i32 i = 0; i < 4; i++)
         {
-            framebuffer.tex_color_buffer_handles[i] = 0;       
+            framebuffer.tex_color_buffer_handles[i] = 0;
+            framebuffer.depth_buffer_handles[i] = 0;
         }
     }
 
@@ -853,7 +853,7 @@ int main(int argc, char **args)
     b32 do_save_config = false;
     
     if constexpr(global_graphics_api == GRAPHICS_VULKAN)
-                {
+    {
 #if defined(__linux) || defined(_WIN32)
         //VkRenderState vk_render_state;
         //initialize_vulkan(vk_render_state, renderer, config_data);
@@ -1014,13 +1014,14 @@ int main(int argc, char **args)
         
         update_particle_systems(renderer, delta_time);
 
-        tick_animation_controllers(renderer, &sound_system, &input_controller, timer_controller, delta_time);
+        //tick_animation_controllers(renderer, &sound_system, &input_controller, timer_controller, delta_time);
         tick_timers(timer_controller, delta_time);
 
         if(sound_system.update)
             update_sound_commands(&sound_device, &sound_system, delta_time, &do_save_config);
 
         render(render_state, renderer, delta_time);
+        
         if (do_save_config)
         {
             save_config("../.config", renderer, &sound_device);
