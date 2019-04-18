@@ -1084,11 +1084,39 @@ static void create_framebuffer(rendering::FramebufferInfo &info, RenderState *re
     create_new_framebuffer(info, framebuffer, *render_state, renderer);
 }
 
-static void load_texture(Texture* texture, TextureFiltering filtering, TextureWrap wrap, TextureFormat format, i32 width, i32 height, unsigned char* image_data, RenderState* render_state, Renderer* renderer)
+static void load_texture(Texture* texture, TextureFiltering filtering, TextureWrap wrap, TextureFormat format, i32 width, i32 height, unsigned char* image_data, RenderState* render_state, Renderer* renderer, TextureUsage usage = TextureUsage::STATIC)
 {
-   if (texture->handle == 0)
+    b32 existing_tex = true;
+    
+    if (texture->handle == 0)
     {
+        existing_tex = false;
         glGenTextures(1, &texture->handle);
+    }
+
+    GLenum gl_format = GL_RGBA8;
+    GLenum img_format = GL_RGBA;
+
+    switch (format)
+    {
+    case TextureFormat::RGBA:
+    {
+        gl_format = GL_RGBA8;
+        img_format = GL_RGBA;
+    }
+    break;
+    case TextureFormat::RGB:
+    {
+        gl_format = GL_RGB8;
+        img_format = GL_RGB;
+    }
+    break;
+    case TextureFormat::RED:
+    {
+        gl_format = GL_R8;
+        img_format = GL_RED;
+    }
+    break;
     }
 
     glBindTexture(GL_TEXTURE_2D, texture->handle);
@@ -1106,7 +1134,7 @@ static void load_texture(Texture* texture, TextureFiltering filtering, TextureWr
 
     if (filtering == LINEAR)
     {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }
     else if (filtering == NEAREST)
@@ -1115,36 +1143,37 @@ static void load_texture(Texture* texture, TextureFiltering filtering, TextureWr
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     }
     
-    GLenum gl_format = GL_RGBA;
-
-    switch (format)
-    {
-    case TextureFormat::RGBA:
-    {
-        gl_format = GL_RGBA;
-    }
-    break;
-    case TextureFormat::RGB:
-    {
-        gl_format = GL_RGB;
-    }
-    break;
-    case TextureFormat::RED:
-    {
-        gl_format = GL_RED;
-    }
-    break;
-    }
-
     texture->width = width;
     texture->height = height;
-    
-    glTexImage2D(GL_TEXTURE_2D, 0, gl_format, width, height, 0, gl_format,
-                 GL_UNSIGNED_BYTE, (GLvoid *)image_data);
 
+#if __APPLE__
+    glTexImage2D(GL_TEXTURE_2D, 0, gl_format, width, height, 0, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
     glGenerateMipmap(GL_TEXTURE_2D);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, -1);
+    
+#else
+    i32 mip = 4;
+
+    if(usage == TextureUsage::STATIC)
+    {
+        if(!existing_tex)
+        {
+            glTexStorage2D(GL_TEXTURE_2D, mip, gl_format, width, height);
+        }
+
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, gl_format, width, height, 0, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    
+#endif
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mip);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, -1);
 }
 
 static math::Vec2i get_texture_size(Texture* texture)
@@ -1346,7 +1375,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     //@Incomplete: Figure something out here. Ask for compatible version etc
 #ifdef _WIN32
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
 #elif __linux
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
@@ -2348,8 +2377,9 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
                 glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
             }
 
-            render_buffer(rendering::PrimitiveType::TRIANGLES, {}, command.buffer, pass, render_state, renderer, command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
-            
+            render_buffer(rendering::PrimitiveType::TRIANGLES, {}, command.buffer, pass, render_state, renderer,
+                          command.material, pass.camera, 0, &render_state.gl_shaders[command.shader_handle.handle]);
+
             if (command.clip)
             {
                 glDisable(GL_SCISSOR_TEST);
