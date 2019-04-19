@@ -1146,11 +1146,11 @@ static void load_texture(Texture* texture, TextureFiltering filtering, TextureWr
     texture->width = width;
     texture->height = height;
 
-#if __APPLE__
-    glTexImage2D(GL_TEXTURE_2D, 0, gl_format, width, height, 0, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
-    glGenerateMipmap(GL_TEXTURE_2D);
+// #if __APPLE__
+//     glTexImage2D(GL_TEXTURE_2D, 0, gl_format, width, height, 0, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
+//     glGenerateMipmap(GL_TEXTURE_2D);
     
-#else
+// #else
     i32 mip = 4;
 
     if(usage == TextureUsage::STATIC)
@@ -1169,7 +1169,7 @@ static void load_texture(Texture* texture, TextureFiltering filtering, TextureWr
         glGenerateMipmap(GL_TEXTURE_2D);
     }
     
-#endif
+// #endif
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mip);
@@ -2681,8 +2681,6 @@ static void render_post_processing_passes(RenderState &render_state, Renderer *r
 static void render(RenderState &render_state, Renderer *renderer, r64 delta_time)
 {
     reload_shaders(render_state, renderer);
-	
-	//clear(&renderer->shader_arena);
 
     b32 should_render = renderer->window_width != 0;
 
