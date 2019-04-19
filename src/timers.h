@@ -63,6 +63,7 @@ static TimerHandle register_timer(r64 timer_max, TimerController& timer_controll
 
 static void start_timer(TimerHandle handle, TimerController& timer_controller)
 {
+    timer_controller.timers[handle.handle - 1].running = true;
     timer_controller.timers[handle.handle - 1].current_time = 0.0f;
 }
 
@@ -95,23 +96,23 @@ static void tick_timers(TimerController& timer_controller, r64 delta_time)
     {
         for(i32 index = 0; index < timer_controller.timer_count; index++)
         {
-	    Timer &timer = timer_controller.timers[index];
-	    if(timer.running)
-	    {
-		if(timer.current_time >= timer.timer_max)
-		{
-		    timer.running = false;
+            Timer &timer = timer_controller.timers[index];
+            if(timer.running)
+            {
+                if(timer.current_time >= timer.timer_max)
+                {
+                    timer.running = false;
 		    
-		    if(timer.callback)
-		    {
-			timer.callback(timer.callback_data);
-			timer.callback = nullptr;
-			timer.callback_data = nullptr;
-		    }
-		}
+                    if(timer.callback)
+                    {
+                        timer.callback(timer.callback_data);
+                        timer.callback = nullptr;
+                        timer.callback_data = nullptr;
+                    }
+                }
 		
-		timer.current_time += delta_time;
-	    }
+                timer.current_time += delta_time;
+            }
         }
     }
 }
