@@ -2333,33 +2333,36 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
         i32* command_indices = pass.ui.text_z_layers[i];
         i32 command_count = pass.ui.text_z_layer_counts[i];
 
-        bind_vertex_array(font_buffer.vao, render_state);
-        glBindBuffer(GL_ARRAY_BUFFER, font_buffer.vbo);
-        
-        for(i32 j = 0; j < command_count; j++)
+        if(command_count > 0)
         {
-            rendering::TextRenderCommand &command = pass.ui.text_commands[command_indices[j]];
-
-            if (command.clip)
+            bind_vertex_array(font_buffer.vao, render_state);
+            glBindBuffer(GL_ARRAY_BUFFER, font_buffer.vbo);
+        
+            for(i32 j = 0; j < command_count; j++)
             {
-                glEnable(GL_SCISSOR_TEST);
-                math::Rect clip_rect = command.clip_rect;
-                glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
-            }
+                rendering::TextRenderCommand &command = pass.ui.text_commands[command_indices[j]];
 
-            rendering::CharacterBufferHandle char_buf_handle = command.buffer;
-            rendering::CharacterData *coords = pass.ui.coords[char_buf_handle.handle];
+                if (command.clip)
+                {
+                    glEnable(GL_SCISSOR_TEST);
+                    math::Rect clip_rect = command.clip_rect;
+                    glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
+                }
 
-            i32 vertex_buffer_size = (i32)(6 * command.text_length * sizeof(rendering::CharacterData));
-            i32 vertex_count = (i32)(6 * command.text_length * 3);
-            r32* vertex_buffer = (r32 *)coords;
+                rendering::CharacterBufferHandle char_buf_handle = command.buffer;
+                rendering::CharacterData *coords = pass.ui.coords[char_buf_handle.handle];
 
-            update_buffer(&font_buffer, rendering::BufferType::VERTEX, vertex_buffer, vertex_count, vertex_buffer_size, rendering::BufferUsage::DYNAMIC, &render_state, renderer);
-            render_buffer(rendering::PrimitiveType::TRIANGLES, {}, renderer->render.ui.font_buffer, pass, render_state, renderer, command.material, pass.camera, 0 ,&render_state.gl_shaders[command.shader_handle.handle]);
+                i32 vertex_buffer_size = (i32)(6 * command.text_length * sizeof(rendering::CharacterData));
+                i32 vertex_count = (i32)(6 * command.text_length * 3);
+                r32* vertex_buffer = (r32 *)coords;
 
-            if (command.clip)
-            {
-                glDisable(GL_SCISSOR_TEST);
+                update_buffer(&font_buffer, rendering::BufferType::VERTEX, vertex_buffer, vertex_count, vertex_buffer_size, rendering::BufferUsage::DYNAMIC, &render_state, renderer);
+                render_buffer(rendering::PrimitiveType::TRIANGLES, {}, renderer->render.ui.font_buffer, pass, render_state, renderer, command.material, pass.camera, 0 ,&render_state.gl_shaders[command.shader_handle.handle]);
+
+                if (command.clip)
+                {
+                    glDisable(GL_SCISSOR_TEST);
+                }
             }
         }
 
