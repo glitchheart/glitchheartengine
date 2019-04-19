@@ -1521,7 +1521,7 @@ namespace rendering
     static TrueTypeFontInfo get_tt_font_info(Renderer *renderer, i32 handle)
     {
         assert(handle >= 0 && handle < renderer->tt_font_count);
-        return renderer->tt_font_infos[handle];
+        return renderer->tt_font_infos[handle - 1];
     }
 
     static LineData get_line_size_data(const char *text, TrueTypeFontInfo font)
@@ -1634,11 +1634,12 @@ namespace rendering
 
         if (index == 0)
         {
-            handle.handle = renderer->tt_font_count++;
+            handle.handle = { renderer->tt_font_count + 1 };
+            renderer->tt_font_count++;
             index = handle.handle;
         }
         
-        TrueTypeFontInfo &font_info = renderer->tt_font_infos[index];
+        TrueTypeFontInfo &font_info = renderer->tt_font_infos[index - 1];
         char buf[256];
         strncpy(buf, path, strlen(path) + 1);
 
@@ -4563,7 +4564,7 @@ namespace rendering
         command.font = info.font;
 
         FramebufferInfo *framebuffer = &renderer->render.framebuffers[pass.framebuffer.handle - 1];
-        TrueTypeFontInfo &font_info = renderer->tt_font_infos[info.font.handle];
+        TrueTypeFontInfo &font_info = renderer->tt_font_infos[info.font.handle - 1];
 
         if (font_info.resolution_loaded_for.width != (i32)framebuffer->width || font_info.resolution_loaded_for.height != (i32)framebuffer->height)
         {
