@@ -192,6 +192,7 @@ namespace scene
         char file_path[256];
         u64 comp_flags;
         b32 hide_in_ui;
+        Tags tags;
         
         struct
         {

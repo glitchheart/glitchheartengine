@@ -2636,6 +2636,19 @@ static Camera get_standard_camera(SceneManager& manager)
                         }
                     }
                 }
+                else if(starts_with(buffer, "-tags"))
+                {
+                    while(fgets(buffer, 256, file) && !starts_with(buffer, "-"))
+                    {
+                        char tag_buf[256];
+                        sscanf(buffer, "%s", tag_buf);
+
+                        if(templ->tags.tag_count < MAX_ENTITY_TAGS)
+                        {
+                            strncpy(templ->tags.tags[templ->tags.tag_count++], tag_buf, strlen(tag_buf) + 1);
+                        }
+                    }
+                }
 				else if (starts_with(buffer, "-render"))
 				{
 					templ->comp_flags |= COMP_RENDER;
@@ -3215,6 +3228,11 @@ static Camera get_standard_camera(SceneManager& manager)
         _set_entity_name(handle, templ.name, scene);
         _set_entity_template_path(handle, templ.file_path, scene);
         set_hide_in_ui(handle, templ.hide_in_ui, scene.handle);
+
+        for(i32 i = 0; i < templ.tags.tag_count; i++)
+        {
+            set_entity_tag(templ.tags.tags[i], handle, scene.handle);
+        }
         
         if(templ.comp_flags & COMP_TRANSFORM)
         {

@@ -2406,7 +2406,7 @@ static void render_line(rendering::RenderCommand& command, rendering::Material& 
     line[0] = 2.0f * command.line.p0 - command.line.p1;
     line[1] = command.line.p0;
     line[2] = command.line.p1;
-    line[3] = 2.0f * line[2] - line[3];
+    line[3] = 2.0f * line[2] - line[1];
 
     rendering::update_buffer(renderer->render.line_buffer, rendering::BufferType::VERTEX, rendering::BufferUsage::DYNAMIC, (r32*)line, 4, sizeof(math::Vec3) * 4, renderer);
                     
