@@ -306,7 +306,6 @@ char* push_string(MemoryArena* arena, size_t length)
     return result;
 }
 
-
 inline void push_string(MemoryArena* arena, char** dst_buffer, const char* format, ...)
 {
     va_list args;
@@ -335,47 +334,47 @@ char* push_string(MemoryArena* arena, char* source)
     return dest;
 }
 
-char* push_string(MemoryArena* arena, const char* source)
-{
-    auto length = strlen(source);
-    char* dest = push_string(arena, (u32)length);
-    for(u32 char_index = 0; char_index < length + 1; char_index++)
-    {
-        dest[char_index] = source[char_index];
-    }
-    dest[length] = 0;
+/* char* push_string(MemoryArena* arena, const char* source) */
+/* { */
+/*     auto length = strlen(source); */
+/*     char* dest = push_string(arena, (u32)length); */
+/*     for(u32 char_index = 0; char_index < length + 1; char_index++) */
+/*     { */
+/*         dest[char_index] = source[char_index]; */
+/*     } */
+/*     dest[length] = 0; */
     
-    return dest;
-}
+/*     return dest; */
+/* } */
 
-char* push_string(MemoryArena* arena, u32 length, char* source)
-{
-    char* dest = (char*)push_size_(arena, length + 1);
-    for(u32 char_index = 0; char_index < length; char_index++)
-    {
-        dest[char_index] = source[char_index];
-    }
-    dest[length] = 0;
+/* char* push_string(MemoryArena* arena, u32 length, char* source) */
+/* { */
+/*     char* dest = (char*)push_size_(arena, length + 1); */
+/*     for(u32 char_index = 0; char_index < length; char_index++) */
+/*     { */
+/*         dest[char_index] = source[char_index]; */
+/*     } */
+/*     dest[length] = 0; */
     
-    return dest;
-}
+/*     return dest; */
+/* } */
 
-char* push_string(MemoryArena* arena, u32 length, const char* source)
-{
-    char* dest = (char*)push_size_(arena, length + 1);
-    for(u32 char_index = 0; char_index < length; char_index++)
-    {
-        dest[char_index] = source[char_index];
-    }
-    dest[length] = 0;
+/* char* push_string(MemoryArena* arena, u32 length, const char* source) */
+/* { */
+/*     char* dest = (char*)push_size_(arena, length + 1); */
+/*     for(u32 char_index = 0; char_index < length; char_index++) */
+/*     { */
+/*         dest[char_index] = source[char_index]; */
+/*     } */
+/*     dest[length] = 0; */
     
-    return dest;
-}
+/*     return dest; */
+/* } */
 
-char* push_string(MemoryArena* arena, umm length, char* source)
-{
-    return push_string(arena, (u32)length, source);
-}
+/* char* push_string(MemoryArena* arena, umm length, char* source) */
+/* { */
+/*     return push_string(arena, (u32)length, source); */
+/* } */
 
 #define bootstrap_push_struct(type, member, ...) (type*)bootstrap_push_size_(sizeof(type), offset_of(type, member), ## __VA_ARGS__)
 inline void* bootstrap_push_size_(umm struct_size, umm offset_to_arena,

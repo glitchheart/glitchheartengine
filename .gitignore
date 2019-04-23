@@ -2,6 +2,9 @@
 *.exe
 *.gs
 
+x86_64/
+x86/
+
 
 ### Emacs ###
 # -*- mode: gitignore; -*-
