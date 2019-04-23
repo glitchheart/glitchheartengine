@@ -1343,8 +1343,8 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     renderer->api_functions.load_texture = &load_texture;
     renderer->api_functions.create_framebuffer = &create_framebuffer;
     renderer->api_functions.reload_framebuffer = &reload_framebuffer;
-	renderer->api_functions.create_instance_buffer = &create_instance_buffer;
-	renderer->api_functions.get_buffer_usage = &get_buffer_usage;
+    renderer->api_functions.create_instance_buffer = &create_instance_buffer;
+    renderer->api_functions.get_buffer_usage = &get_buffer_usage;
     renderer->api_functions.delete_instance_buffer = &delete_instance_buffer;
     renderer->api_functions.create_buffer = &create_buffer;
     renderer->api_functions.delete_buffer = &delete_buffer;
