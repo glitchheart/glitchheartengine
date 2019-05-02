@@ -1720,6 +1720,11 @@ namespace rendering
 
         end_temporary_memory(temp_mem);
     }
+    
+    static void register_ubo_layout(Renderer *renderer, UniformBufferLayout layout, UniformBufferMappingType mapping_type)
+    {
+        renderer->render.ubo_layouts[(i32)mapping_type] = layout;
+    }
 
     static RegisterBufferInfo create_register_buffer_info()
     {

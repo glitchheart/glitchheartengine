@@ -803,6 +803,8 @@ struct Renderer
         rendering::RenderPassHandle standard_pass;
         rendering::RenderPassHandle shadow_pass;
         rendering::MaterialHandle shadow_map_material;
+
+        rendering::UniformBufferLayout ubo_layouts[rendering::UniformBufferMappingType::DIRECTIONAL];
         
 	} render;
 };

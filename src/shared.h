@@ -120,10 +120,105 @@ inline char* concat(const char *s1, const char *s2, MemoryArena* arena = nullptr
 
 struct TextureData;
 
+static void eat_spaces(char **source)
+{
+    while (*source[0] == ' ')
+        (*source)++;
+}
+static void eat_char(char **source, char delim)
+{
+    while (*source[0] == delim)
+        (*source)++;
+}
+
+static void eat_spaces_and_newlines(char **source)
+{
+    while (*source[0] == ' ' || *source[0] == '\n')
+        (*source)++;
+}
+
+static void eat_word(char **source)
+{
+    eat_spaces(source);
+    while (*source[0] != ' ' && *source[0] != '\n' && *source[0] != ';' && *source[0] != ':')
+        (*source)++;
+}
+
+static void eat_words(char **source, size_t count)
+{
+    for(size_t i = 0; i < count; i++)
+    {
+        eat_word(source);
+    }
+}
+
+// Eats a word and ignores new-lines
+static void parse_word(char **source, char *buffer)
+{
+    i32 index = 0;
+
+    while (*source[0] != ' ' && *source[0] != '\n' && *source[0] != ';')
+    {
+        buffer[index++] = **source;
+        (*source)++;
+    }
+
+    buffer[index] = '\0';
+}
+
 inline b32 starts_with(const char *a, const char *b)
 {
     if(strncmp(a, b, strlen(b)) == 0) return 1;
     return 0;
+}
+
+inline b32 equals(const char *a, const char *b)
+{
+    if(strlen(a) != strlen(b))
+        return false;
+
+    return strncmp(a, b, strlen(a)) == 0;
+}
+
+struct Tokens
+{
+    char tokens[16][32];
+    i32 count;
+};
+
+static void tokenize(char *str, Tokens& tokens, char delimiter, b32 eat_subsequent = false)
+{
+    // @Note: Make sure we reset the tokens
+    tokens.count = 0;
+    size_t last_token_pos = 0;
+    char cur_tok[64];
+    i32 cur_tok_index = 0;
+
+    while(str[last_token_pos] != '\n')
+    {
+        if(str[last_token_pos] == delimiter)
+        {
+            if(eat_subsequent)
+            {
+                eat_char(&str, delimiter);
+            }
+            
+            cur_tok[cur_tok_index] = '\0';
+            strncpy(&tokens.tokens[tokens.count][0], &str[last_token_pos - strlen(cur_tok)], strlen(cur_tok));
+            tokens.tokens[tokens.count++][strlen(cur_tok)] = '\0';
+            cur_tok_index = 0;
+            last_token_pos++;
+        }
+        else
+        {
+            cur_tok[cur_tok_index++] = str[last_token_pos];
+            last_token_pos++;
+        }
+    }
+    
+    cur_tok[cur_tok_index] = '\0';
+    strncpy(&tokens.tokens[tokens.count][0], &str[last_token_pos - strlen(cur_tok)], strlen(cur_tok));
+    tokens.tokens[tokens.count++][strlen(cur_tok)] = '\0';
 }
 
 static char *read_line_from_buffer(char *out, size_t size, char **in)

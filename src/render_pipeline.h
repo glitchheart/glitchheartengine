@@ -112,6 +112,14 @@ namespace rendering
         InstanceBufferHandle instance_buffer_handle;
     };
 
+    enum class UniformBufferMappingType
+    {
+        NONE,
+        VP,
+        POINT,
+        DIRECTIONAL
+    };
+
     enum UniformMappingType
     {
 		NONE,
@@ -240,6 +248,27 @@ namespace rendering
 		UniformValue () {}
 	};
 
+    struct UniformBuffer
+    {
+        char name[32];
+        UniformBufferMappingType mapping_type;
+
+        // @Incomplete: Decide whether or not we want unmapped UBO's
+        //              If UBO's use a mapping type, we should already know
+        //              the offsets etc.
+        //              If the order of uniforms in the mapped UBO are wrong
+        //              The shader should not be loaded.
+        /* char name[32]; */
+        /* Uniform uniforms[32]; */
+        /* i32 uniform_count; */
+    };
+
+    struct UniformBufferLayout
+    {
+        ValueType values[16];
+        i32 value_count;
+    };
+
     struct UniformEntry
     {
         UniformValue values[32];
@@ -284,6 +313,9 @@ namespace rendering
 
 		Uniform *uniforms;
 		i32 uniform_count;
+
+        UniformBuffer uniform_buffers[4];
+        i32 ubo_count;
 
         Structure structures[32];
         i32 structure_count;
