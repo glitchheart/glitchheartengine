@@ -463,6 +463,7 @@ struct ParticleSystemInfo;
 
 struct RenderState;
 struct Buffer;
+struct UniformBuffer;
 struct Texture;
 struct Framebuffer;
 
@@ -806,6 +807,9 @@ struct Renderer
         rendering::MaterialHandle shadow_map_material;
 
         rendering::UniformBufferLayout ubo_layouts[rendering::UniformBufferMappingType::DIRECTIONAL];
+
+        rendering::UniformValue matrix_ubo_values[2];
+        UniformBuffer *matrix_ubo;
         
 	} render;
 };

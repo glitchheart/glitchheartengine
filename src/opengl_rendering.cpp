@@ -296,6 +296,13 @@ static void set_all_uniform_locations(rendering::Shader &shader, ShaderGL &gl_sh
             gl_shader.uniform_locations[gl_shader.location_count++] = location;
         }
     }
+
+    for(i32 i = 0; i < shader.ubo_count; i++)
+    {
+        rendering::UniformBuffer ubo = shader.uniform_buffers[i];
+        u32 block_index = glGetUniformBlockIndex(gl_shader.program, ubo.name);
+        glUniformBlockBinding(gl_shader.program, block_index, (i32)ubo.mapping_type);
+    }
 }
 
 static GLuint load_shader(Renderer *renderer, rendering::Shader &shader, ShaderGL &gl_shader)
@@ -453,6 +460,31 @@ static rendering::BufferUsage get_buffer_usage(Buffer *buffer)
 static void delete_buffer(Buffer *buffer, RenderState *render_state, Renderer *renderer)
 {
     glDeleteBuffers(1, &buffer->vbo);
+}
+
+static void create_uniform_buffer(UniformBuffer *buffer, rendering::BufferUsage buffer_usage, size_t size, Renderer* renderer)
+{
+    *buffer = {};
+    
+    if(buffer->ubo == 0)
+    {
+        glGenBuffers(1, &buffer->ubo);
+    }
+
+    buffer->size = math::multiple_of_number((i32)size, 4);
+    buffer->memory = (u8*)malloc(size);
+    buffer->usage = get_usage(buffer_usage);
+
+    glBindBuffer(GL_UNIFORM_BUFFER, buffer->ubo);
+    glBufferData(GL_UNIFORM_BUFFER, buffer->size, NULL, buffer->usage);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+
+static void update_uniform_buffer(UniformBuffer *buffer, u8* ubo_data, size_t size, size_t offset = 0)
+{
+    glBindBuffer(GL_UNIFORM_BUFFER, buffer->ubo);
+    glBufferSubData(GL_UNIFORM_BUFFER, offset, size, ubo_data);
 }
 
 static void create_buffer(Buffer *buffer, rendering::RegisterBufferInfo info, RenderState *render_state, Renderer *renderer)
@@ -2234,94 +2266,6 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
     }
 }
 
-static void render_shadow_buffer(rendering::ShadowCommand &shadow_command, RenderState &render_state, Renderer *renderer)
-{
-    Buffer &buffer = get_internal_buffer(renderer, render_state, shadow_command.buffer);
-
-    bind_vertex_array(buffer.vao, render_state);
-
-    ShaderGL gl_shader = render_state.gl_shaders[renderer->render.shadow_map_shader.handle];
-
-    if (render_state.current_state.shader_program != gl_shader.program)
-    {
-        glUseProgram(gl_shader.program);
-        render_state.current_state.shader_program = gl_shader.program;
-    }
-
-    static GLint lsLoc = glGetUniformLocation(gl_shader.program, "lightSpaceMatrix");
-    static GLint mLoc = glGetUniformLocation(gl_shader.program, "model");
-
-    set_mat4_uniform(gl_shader.program, lsLoc, renderer->render.light_space_matrix);
-    set_mat4_uniform(gl_shader.program, mLoc, shadow_command.transform.model);
-
-    if (buffer.ibo)
-    {
-        glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void *)nullptr);
-    }
-    else
-    {
-        glDrawArrays(GL_TRIANGLES, 0, buffer.vertex_count);
-    }
-
-    bind_vertex_array(0, render_state);
-}
-
-static void render_instanced_shadow_buffer(rendering::ShadowCommand &shadow_command, rendering::Material &material, RenderState &render_state, Renderer *renderer)
-{
-    Buffer &buffer = get_internal_buffer(renderer, render_state, shadow_command.buffer);
-
-    bind_vertex_array(buffer.vao, render_state);
-
-    ShaderGL gl_shader = render_state.gl_shaders[renderer->render.shadow_map_shader.handle];
-    rendering::Shader &shader_info = renderer->render.shaders[renderer->render.shadow_map_shader.handle];
-
-    glUseProgram(gl_shader.program);
-
-    setup_instanced_vertex_attribute_buffers(material.instanced_vertex_attributes, material.instanced_vertex_attribute_count, shader_info, render_state, renderer);
-
-    static GLint lsLoc = glGetUniformLocation(gl_shader.program, "lightSpaceMatrix");
-    set_mat4_uniform(gl_shader.program, lsLoc, renderer->render.light_space_matrix);
-
-    if (buffer.ibo)
-    {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
-        glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void *)nullptr, shadow_command.count);
-    }
-    else
-    {
-        glDrawArrays(GL_TRIANGLES, 0, buffer.vertex_count);
-    }
-
-    bind_vertex_array(0, render_state);
-}
-
-static void render_shadows(RenderState &render_state, Renderer *renderer, Framebuffer &framebuffer)
-{
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_FRONT); // KILL PETER PAN!
-    glViewport(0, 0, framebuffer.shadow_map.width, framebuffer.shadow_map.height);
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
-    glClear(GL_DEPTH_BUFFER_BIT);
-
-    glEnable(GL_DEPTH_TEST);
-
-    for (i32 i = 0; i < renderer->render.shadow_command_count; i++)
-    {
-        rendering::ShadowCommand &shadow_command = renderer->render.shadow_commands[i];
-        rendering::Material &material = get_material_instance(shadow_command.material, renderer);
-        
-        //if (shadow_command.count > 1)
-            render_instanced_shadow_buffer(shadow_command, material, render_state, renderer);
-            //else
-            //render_shadow_buffer(shadow_command, render_state, renderer);
-    }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glCullFace(GL_BACK);
-    glDisable(GL_CULL_FACE);
-    renderer->render.shadow_command_count = 0;
-}
-
 static void render_ui_pass(RenderState &render_state, Renderer *renderer)
 {
     rendering::RenderPass &pass = renderer->render.ui.pass;
@@ -2435,6 +2379,23 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
             return;
         }
 
+        rendering::UniformBufferUpdate matrix_ubo = {};
+        matrix_ubo.update_pairs[0].value = renderer->render.matrix_ubo_values[0];
+        matrix_ubo.update_pairs[1].value = renderer->render.matrix_ubo_values[1];
+        matrix_ubo.update_pairs[0].index = 0;
+        matrix_ubo.update_pairs[1].index = 1;
+        matrix_ubo.update_pairs[0].value.mat4_val = math::transpose(pass.camera.projection_matrix);
+        matrix_ubo.update_pairs[1].value.mat4_val = math::transpose(pass.camera.view_matrix);
+        matrix_ubo.value_count = 2;
+        
+        rendering::UniformBufferLayout mat_layout = renderer->render.ubo_layouts[(i32)rendering::UniformBufferMappingType::VP];
+        
+        size_t mat_sz = rendering::generate_ubo_update_data(mat_layout, matrix_ubo, renderer->render.matrix_ubo->memory);
+        
+        glBindBufferRange(GL_UNIFORM_BUFFER, (i32)rendering::UniformBufferMappingType::VP, renderer->render.matrix_ubo->ubo, 0, sizeof(math::Mat4) * 2);
+        
+        update_uniform_buffer(renderer->render.matrix_ubo, renderer->render.matrix_ubo->memory, mat_sz);
+        
         Framebuffer &framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
 
         glEnable(GL_CULL_FACE);
@@ -2571,7 +2532,7 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
 
     // @Incomplete: Create a better way for enabling/disabling the clipping planes
     // Check if we have clipping planes
-    glEnable(GL_CLIP_PLANE0);
+    // glEnable(GL_CLIP_PLANE0);
 
     glDisable(GL_BLEND);
     rendering::RenderPass &shadow_pass = renderer->render.passes[renderer->render.shadow_pass.handle - 1];

@@ -512,9 +512,8 @@ namespace rendering
                     {
                         should_break = true;
                     }
-                    else if(starts_with(rest, "uniform"))
+                    else
                     {
-                        eat_word(&rest);
                         eat_spaces(&rest);
                         ValueType type = get_value_type(&rest, file_path);
                         if(type != ValueType::INVALID)

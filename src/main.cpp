@@ -748,9 +748,29 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     renderer->particles.textured_quad_buffer = rendering::register_buffer(renderer, particle_buffer);
 
     rendering::UniformBufferLayout vp_ubo_layout = {};
+    vp_ubo_layout.value_count = 2;
     vp_ubo_layout.values[0] = rendering::ValueType::MAT4; // projection
     vp_ubo_layout.values[1] = rendering::ValueType::MAT4; // view
     rendering::register_ubo_layout(renderer, vp_ubo_layout, rendering::UniformBufferMappingType::VP);
+
+    // Create the uniforms that we update during runtime
+    rendering::Uniform projection_uniform = {};
+    projection_uniform.mapping_type = rendering::UniformMappingType::NONE;
+    projection_uniform.type = rendering::ValueType::MAT4;
+    rendering::UniformValue p_value = {};
+    p_value.uniform = projection_uniform;
+
+    rendering::Uniform view_uniform = {};
+    view_uniform.mapping_type = rendering::UniformMappingType::NONE;
+    view_uniform.type = rendering::ValueType::MAT4;
+    rendering::UniformValue v_value = {};
+    v_value.uniform = view_uniform;
+
+    renderer->render.matrix_ubo = (UniformBuffer*)malloc(sizeof(UniformBuffer));
+    create_uniform_buffer(renderer->render.matrix_ubo, rendering::BufferUsage::DYNAMIC, rendering::get_ubo_size(vp_ubo_layout), renderer);
+
+    renderer->render.matrix_ubo_values[0] = p_value;
+    renderer->render.matrix_ubo_values[1] = v_value;
     
     end_temporary_memory(temp_mem);
 }

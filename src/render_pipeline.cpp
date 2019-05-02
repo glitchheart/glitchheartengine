@@ -1726,6 +1726,147 @@ namespace rendering
         renderer->render.ubo_layouts[(i32)mapping_type] = layout;
     }
 
+    
+    static size_t get_ubo_base_offset(ValueType value_type)
+    {
+        switch(value_type)
+        {
+        case ValueType::FLOAT:
+        {
+            return 4;
+        }
+        break;
+        case ValueType::FLOAT2:
+        {
+            return 8;
+        }
+        break;
+        case ValueType::FLOAT3:
+        {
+            return 16;
+        }
+        break;
+        case ValueType::FLOAT4:
+        {
+            return 4;
+        }
+        break;
+        case ValueType::INTEGER:
+        {
+            return 4;
+        }
+        break;
+        case ValueType::BOOL:
+        {
+            return 4;
+        }
+        break;
+        case ValueType::MAT4:
+        {
+            return 16 * 4;        
+        }
+        break;
+        case ValueType::INVALID:
+        {
+            assert(false);
+            return 0;
+        }
+        break;
+        default:
+        break;
+        }
+
+        return 0;
+    }
+
+    static size_t generate_ubo_update_data(UniformBufferLayout layout, UniformBufferUpdate update_data, u8* memory)
+    {
+        size_t total_size = 0;
+        for(i32 i = 0; i < update_data.value_count; i++)
+        {
+            auto[index, value] = update_data.update_pairs[i];
+            assert(layout.values[index] == value.uniform.type);
+            Uniform uniform = value.uniform;
+
+            if(value.uniform.is_array)
+            {
+                // UniformArray &array = material.arrays[uniform_value.array_index];
+                // for (i32 j = 0; j < array.entry_count; j++)
+                // {
+                //     UniformEntry &entry = array.entries[j];
+                //     for (i32 k = 0; k < entry.value_count; k++)
+                //     {
+                //         UniformValue &value = entry.values[k];
+                    
+                //     }
+                // }
+            }
+            else
+            {
+                size_t offset = 0;
+                for(i32 j = 0; j < index; j++)
+                {
+                    ValueType type = layout.values[j];
+                    offset += get_ubo_base_offset(type);
+                }
+
+                u8* u_v = nullptr;
+                size_t u_sz = 0;
+
+                switch(uniform.type)
+                {
+                case ValueType::FLOAT:
+                u_v = (u8*)&value.float_val;
+                u_sz = sizeof(r32);
+                break;
+                case ValueType::FLOAT2:
+                u_v = (u8*)&value.float2_val;
+                u_sz = sizeof(math::Vec2);
+                break;
+                case ValueType::FLOAT3:
+                u_v = (u8*)&value.float3_val;
+                u_sz = sizeof(math::Vec3);
+                break;
+                case ValueType::FLOAT4:
+                u_v = (u8*)&value.float4_val;
+                u_sz = sizeof(math::Vec4);
+                break;
+                case ValueType::MAT4:
+                u_v = (u8*)&value.mat4_val;
+                u_sz = sizeof(math::Mat4);
+                break;
+                case ValueType::INTEGER:
+                u_v = (u8*)&value.integer_val;
+                u_sz = sizeof(i32);
+                break;
+                case ValueType::BOOL:
+                u_v = (u8*)&value.boolean_val;
+                u_sz = sizeof(b32);
+                break;
+                default:
+                return 0;
+                break;
+                }
+            
+                memcpy(memory + offset, u_v, u_sz);
+                total_size += u_sz;
+            }
+        }
+
+        return total_size;
+    }
+    
+    static size_t get_ubo_size(rendering::UniformBufferLayout layout)
+    {
+        size_t offset = 0;
+        for(i32 i = 0; i < layout.value_count; i++)
+        {
+            offset += get_ubo_base_offset(layout.values[i]);
+        }
+        return offset;
+    }
+
+
     static RegisterBufferInfo create_register_buffer_info()
     {
         RegisterBufferInfo info = {};
