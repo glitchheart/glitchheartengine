@@ -1874,6 +1874,7 @@ static Camera get_standard_camera(SceneManager& manager)
         renderer->render.shadow_settings.z_near = settings.shadows.near_plane;
         renderer->render.shadow_settings.z_far = settings.shadows.far_plane;
         renderer->render.shadow_settings.fov = settings.shadows.fov;
+        renderer->render.shadow_settings.size = settings.shadows.map_width;
 
         update_shadow_framebuffer(handle);
         update_scene_camera(handle);

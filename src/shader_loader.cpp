@@ -231,6 +231,10 @@ namespace rendering
         {
             type = UniformMappingType::BUMP_TEX;
         }
+        else if (starts_with(mapped_buffer, "SHADOW_MAP_SIZE"))
+        {
+            type = UniformMappingType::SHADOW_MAP_SIZE;
+        }
         else if (starts_with(mapped_buffer, "SHADOW_MAP"))
         {
             type = UniformMappingType::SHADOW_MAP;
