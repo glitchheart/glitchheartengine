@@ -1048,8 +1048,6 @@ static const GLFWvidmode *create_open_gl_window(RenderState &render_state, Windo
     glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
     glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
 
-    //glfwWindowHint(GLFW_SAMPLES, 8);
-
     debug_log("refresh rate %d", mode->refreshRate);
 
     if (window_mode == FM_WINDOWED)
@@ -1146,12 +1144,13 @@ static void load_texture(Texture* texture, TextureFiltering filtering, TextureWr
     texture->width = width;
     texture->height = height;
 
-// #if __APPLE__
-//     glTexImage2D(GL_TEXTURE_2D, 0, gl_format, width, height, 0, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
-//     glGenerateMipmap(GL_TEXTURE_2D);
-    
-// #else
     i32 mip = 4;
+
+#if __APPLE__
+     glTexImage2D(GL_TEXTURE_2D, 0, gl_format, width, height, 0, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
+     glGenerateMipmap(GL_TEXTURE_2D);
+    
+ #else
 
     if(usage == TextureUsage::STATIC)
     {
@@ -1169,7 +1168,7 @@ static void load_texture(Texture* texture, TextureFiltering filtering, TextureWr
         glGenerateMipmap(GL_TEXTURE_2D);
     }
     
-// #endif
+#endif
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mip);
@@ -1262,7 +1261,7 @@ static void update_buffer(Buffer *buffer, rendering::BufferType buffer_type, voi
 
 static void set_v_sync(RenderState *render_state, b32 value)
 {
-    glfwSwapInterval(0);
+    glfwSwapInterval(value ? 1 : 0);
     render_state->vsync_active = value;
 }
 
@@ -1520,7 +1519,8 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
             {
                 renderer->available_resolutions[renderer->available_resolutions_count++] = {vm.width, vm.height};
 
-                if (renderer->window_width == vm.width && renderer->window_height == vm.height)
+                if ((renderer->window_width == vm.width && renderer->window_height == vm.height) || (renderer->window_width == vm.width && ABS(renderer->window_height - vm.height) < 50)
+                || (renderer->window_height == vm.height && ABS(renderer->window_width - vm.width) < 50))
                 {
                     renderer->current_resolution_index = renderer->available_resolutions_count - 1;
                     //auto res = renderer->available_resolutions[renderer->current_resolution_index];
