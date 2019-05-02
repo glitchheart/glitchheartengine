@@ -1010,8 +1010,9 @@ int main(int argc, char **args)
         reload_libraries(&game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
         //#endif
         //auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
-
         
+        poll_events();
+
         if (controller_present())
         {
             controller_keys(GLFW_JOYSTICK_1);
@@ -1058,7 +1059,6 @@ int main(int argc, char **args)
         update_log();
         
         swap_buffers(render_state);
-        poll_events();
 
         frames++;
 
