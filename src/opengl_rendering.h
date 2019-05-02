@@ -42,7 +42,10 @@ struct Buffer
 
 struct UniformBuffer
 {
-    
+    GLuint ubo;
+    size_t size;
+    GLenum usage;
+    u8* memory;
 };
 
 struct Framebuffer

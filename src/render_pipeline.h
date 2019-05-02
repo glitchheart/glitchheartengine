@@ -213,7 +213,7 @@ namespace rendering
         CustomUniformHandle custom_mapping;
         
         i32 structure_index; // If the uniforms is a structure we should save the index of the structure for later
-
+        
         b32 is_array;
         i32 array_size;
 
@@ -267,6 +267,17 @@ namespace rendering
     struct UniformBufferLayout
     {
         ValueType values[16];
+        i32 value_count;
+    };
+
+    struct UniformBufferUpdate
+    {
+        struct
+        {
+            i32 index;
+            UniformValue value;
+        } update_pairs[16];
+        
         i32 value_count;
     };
 
