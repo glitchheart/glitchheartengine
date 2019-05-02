@@ -129,6 +129,7 @@ namespace rendering
 		DISSOLVE,
 	
 		SHADOW_MAP,
+        SHADOW_MAP_SIZE,
         SHADOW_VIEW_POSITION,
 		MODEL,
 		VIEW,

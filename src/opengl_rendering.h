@@ -7,7 +7,6 @@
 
 #include <GLFW/glfw3.h>
 
-
 struct ShaderGL
 {
 	GLuint program;
