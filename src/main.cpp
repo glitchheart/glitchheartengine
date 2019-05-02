@@ -482,9 +482,9 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     standard_info.width = renderer->framebuffer_width;
     standard_info.height = renderer->framebuffer_height;
     
-    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 8);
-    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 8);
-    rendering::add_depth_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, standard_info, 8);
+    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 2);
+    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 2);
+    rendering::add_depth_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, standard_info, 2);
 
     rendering::FramebufferHandle standard_framebuffer = rendering::create_framebuffer(standard_info, renderer);
     rendering::RenderPassHandle standard = rendering::create_render_pass(STANDARD_PASS, standard_framebuffer, renderer);
@@ -517,8 +517,8 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     final_info.width = renderer->framebuffer_width;
     final_info.height = renderer->framebuffer_height;
     
-    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, final_info, 8);
-    rendering::add_depth_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::DepthAttachmentFlags::DEPTH_TEXTURE | rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, final_info, 8);
+    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, final_info, 4);
+    rendering::add_depth_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::DepthAttachmentFlags::DEPTH_TEXTURE | rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, final_info, 4);
 
     rendering::FramebufferHandle final_framebuffer = rendering::create_framebuffer(final_info, renderer);
     rendering::set_final_framebuffer(renderer, final_framebuffer);
@@ -959,7 +959,6 @@ int main(int argc, char **args)
     //u32 target_fps = (u32)refresh_rate;
     //r32 expected_frames_per_update = 1.0f;
     //r32 seconds_per_frame = expected_frames_per_update / target_fps;
-
     r64 last_frame = get_time();
     r64 delta_time = 0.0;
     renderer->frame_lock = 0;
@@ -992,7 +991,6 @@ int main(int argc, char **args)
         //#endif
         //auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
 
-        poll_events();
         
         if (controller_present())
         {
@@ -1040,9 +1038,12 @@ int main(int argc, char **args)
         update_log();
         
         swap_buffers(render_state);
+        poll_events();
 
         frames++;
-        r64 end_counter = get_time();
+
+        r64 time = get_time();
+        r64 end_counter = time;
         if (end_counter - last_second_check >= 1.0)
         {
             last_second_check = end_counter;
@@ -1050,12 +1051,12 @@ int main(int argc, char **args)
             frames = 0;
         }
 
-        delta_time = get_time() - last_frame;
+        delta_time = time - last_frame;
 
         // @Incomplete: Fix this!
         delta_time = math::clamp(0.0, delta_time, 0.9);
         game_memory.core.delta_time = delta_time;
-        game_memory.core.current_time = get_time();
+        game_memory.core.current_time = time;
         last_frame = end_counter;
     }
 

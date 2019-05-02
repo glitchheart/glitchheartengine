@@ -675,6 +675,7 @@ struct Renderer
             r32 z_near;
             r32 z_far;
             r32 fov;
+            i32 size;
         } shadow_settings;
 
         struct
