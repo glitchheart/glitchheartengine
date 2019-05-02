@@ -747,6 +747,11 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
 
     renderer->particles.textured_quad_buffer = rendering::register_buffer(renderer, particle_buffer);
 
+    rendering::UniformBufferLayout vp_ubo_layout = {};
+    vp_ubo_layout.values[0] = rendering::ValueType::MAT4; // projection
+    vp_ubo_layout.values[1] = rendering::ValueType::MAT4; // view
+    rendering::register_ubo_layout(renderer, vp_ubo_layout, rendering::UniformBufferMappingType::VP);
+    
     end_temporary_memory(temp_mem);
 }
 

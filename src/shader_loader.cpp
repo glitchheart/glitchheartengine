@@ -64,12 +64,6 @@ namespace rendering
         return result;
     }
 
-    static void eat_spaces_and_newlines(char **source)
-    {
-        while (*source[0] == ' ' || *source[0] == '\n')
-            (*source)++;
-    }
-
     static ValueType get_value_type(char **value, const char *file_path, b32 invalid_is_valid = false)
     {
         ValueType result;
@@ -81,19 +75,6 @@ namespace rendering
         return result;
     }
 
-// Eats a word and ignores new-lines
-    static void parse_word(char **source, char *buffer)
-    {
-        i32 index = 0;
-
-        while (*source[0] != ' ' && *source[0] != '\n' && *source[0] != ';')
-        {
-            buffer[index++] = **source;
-            (*source)++;
-        }
-
-        buffer[index] = '\0';
-    }
 
     static i32 get_structure_index(char *type_name, Shader &shader)
     {
@@ -443,6 +424,127 @@ namespace rendering
         return (uniform);
     }
 
+    static b32 validate_ubo_uniform(Renderer *renderer, ValueType type, i32 index, UniformBufferMappingType mapping_type)
+    {
+        UniformBufferLayout layout = renderer->render.ubo_layouts[(i32)mapping_type];
+        return layout.values[index] == type;
+    }
+
+    static void parse_ubo(Renderer *renderer, char **source, char *total_buffer, UniformBuffer &ubo, Shader& shader, const char* file_path)
+    {
+        char buffer[256];
+        size_t i = 0;
+
+        if(read_line(buffer, 256, source))
+        {
+            Tokens tokens = {};
+            tokenize(buffer, tokens, ' ');
+            assert(tokens.count == 5 || tokens.count == 6);
+
+            if(equals(tokens.tokens[2], "uniform") &&
+               equals(tokens.tokens[1], "(std140)"))
+            {
+                strncpy(&ubo.name[0], &tokens.tokens[3][0], strlen(tokens.tokens[3]) + 1);
+
+                if(equals(tokens.tokens[4], ":"))
+                {
+                    b32 found_mapping = false;
+                        
+                    if(equals(tokens.tokens[5], "VP"))
+                    {
+                        found_mapping = true;
+                        ubo.mapping_type = UniformBufferMappingType::VP;
+                    }
+                    else if(equals(tokens.tokens[5], "POINT"))
+                    {
+                        found_mapping = true;
+                        ubo.mapping_type = UniformBufferMappingType::POINT;
+                    }
+                    else if(equals(tokens.tokens[5], "DIRECTIONAL"))
+                    {
+                        found_mapping = true;
+                        ubo.mapping_type = UniformBufferMappingType::DIRECTIONAL;
+                    }
+                    else
+                    {
+                        error("Unmapped UBO's currently unsupported.", file_path);
+                    }
+
+                    char result[256];
+                    i32 result_len = 0;
+                    for(size_t j = 0; j < strlen(buffer); j++)
+                    {
+                        if(buffer[j] == ':')
+                            break;
+
+                        result[result_len++] = buffer[j];
+                    }
+
+                    result[result_len++] = '\n';
+                    result[result_len] = '\0';
+                    strncpy(&total_buffer[i], result, strlen(result));
+                    i += strlen(result);
+                }
+                else
+                {
+                    strncpy(&total_buffer[i], buffer, strlen(buffer));
+                    i += strlen(buffer);
+                }
+
+                b32 should_break = false;
+
+                i32 uniform_count = 0;
+
+                while(read_line(buffer, 256, source))
+                {
+                    char *rest = &buffer[0];
+                    eat_spaces(&rest);
+                        
+                    if(starts_with(rest, "{"))
+                    {
+                            
+                    }
+                    else if(starts_with(rest, "}"))
+                    {
+                        should_break = true;
+                    }
+                    else if(starts_with(rest, "uniform"))
+                    {
+                        eat_word(&rest);
+                        eat_spaces(&rest);
+                        ValueType type = get_value_type(&rest, file_path);
+                        if(type != ValueType::INVALID)
+                        {
+                            
+                            if(ubo.mapping_type != UniformBufferMappingType::NONE)
+                            {
+                                if(!validate_ubo_uniform(renderer, type, uniform_count, ubo.mapping_type))
+                                {
+                                    char error_buf[256];
+                                    sprintf(error_buf, "Invalid UBO uniform type %d for mapping type %d", type, (i32)ubo.mapping_type);
+                                    error(error_buf, file_path);
+                                }
+
+                                uniform_count++;
+                            }
+                        }
+                    }
+
+                    strncpy(&total_buffer[i], buffer, strlen(buffer));
+                    i += strlen(buffer);
+                        
+                    if(should_break)
+                        break;
+                }
+
+            }
+            else
+            {
+                error("UBO declaration missing uniform keyword.", file_path);
+            }
+        }        
+    }
+
     static void parse_structure_variables(Renderer *renderer, char **source, char *total_buffer, Structure &structure, Shader &shader, const char *file_path)
     {
         size_t i = 0;
@@ -678,7 +780,29 @@ namespace rendering
 			}
 			else if (starts_with(buffer, "layout"))
 			{
-				if (is_vertex_shader)
+                b32 is_ubo = false;
+                for(size_t i = 0; i < strlen(buffer); i ++)
+                {
+                    if(starts_with(&buffer[i], "std140"))
+                    {
+                        is_ubo = true;                        
+                        break;
+                    }
+                }
+
+                if(is_ubo)
+                {
+                    source -= strlen(buffer);
+
+                    char total_buffer[1024];
+                    parse_ubo(renderer, &source, total_buffer, shader.uniform_buffers[shader.ubo_count++], shader, file_path);
+
+                    strncpy(&temp_result[i], total_buffer, strlen(total_buffer));
+                    i += strlen(total_buffer);
+
+                    continue;
+                }
+				else if (is_vertex_shader)
 				{
 					VertexAttribute *vertex_attribute = nullptr;
 
@@ -728,7 +852,7 @@ namespace rendering
 								parse_word(&rest, vertex_attribute->name);
 								eat_spaces_and_newlines(&rest);
 
-								if (rest[0] == ':') // Oh boy, we've go a mapping
+								if (rest[0] == ':') // Oh boy, we've got a mapping
 								{
 									char *start = &rest[0];
 									rest += 1;

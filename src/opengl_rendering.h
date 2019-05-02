@@ -7,7 +7,6 @@
 
 #include <GLFW/glfw3.h>
 
-
 struct ShaderGL
 {
 	GLuint program;
@@ -39,6 +38,11 @@ struct Buffer
     GLint index_buffer_size;
     GLint index_buffer_count;
     GLenum usage;
+};
+
+struct UniformBuffer
+{
+    
 };
 
 struct Framebuffer
