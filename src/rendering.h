@@ -806,7 +806,7 @@ struct Renderer
         rendering::RenderPassHandle shadow_pass;
         rendering::MaterialHandle shadow_map_material;
 
-        rendering::UniformBufferLayout ubo_layouts[rendering::UniformBufferMappingType::DIRECTIONAL];
+        rendering::UniformBufferLayout ubo_layouts[(u32)rendering::UniformBufferMappingType::DIRECTIONAL];
 
         rendering::UniformValue matrix_ubo_values[2];
         UniformBuffer *matrix_ubo;
