@@ -3952,6 +3952,17 @@ static Camera get_standard_camera(SceneManager& manager)
         renderer->render.dir_light_count = 0;
         renderer->render.point_light_count = 0;
 
+        // Update the lighting UBO's
+        rendering::UniformBufferHandle dirlight_ubo = renderer->render.mapped_ubos[(i32)rendering::UniformBufferMappingType::DIRECTIONAL];
+
+        rendering::UniformBufferUpdate dirlight_update = rendering::generate_ubo_update(dirlight_ubo, rendering::UniformBufferMappingType::DIRECTIONAL);
+
+        rendering::add_ubo_update_value(dirlight_update, dirlight_ubo
+                                        , 0, math::Vec3(0.0, 1.0, 0.0)
+                                        , renderer);
+        
+        rendering::update_uniform_buffer(dirlight_update, renderer);
+
 		Pass *passes = renderer->render.pass_commands;
 		i32 pass_count = 0;
 

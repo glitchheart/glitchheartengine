@@ -61,6 +61,16 @@ namespace rendering
 
         i32 location_index = 0;
 
+        for(i32 i = 0; i < shader.ubo_count; i++)
+        {
+            if(shader.uniform_buffers[i].mapping_type == UniformBufferMappingType::POINT ||
+               shader.uniform_buffers[i].mapping_type == UniformBufferMappingType::POINT)
+            {
+                material.lighting.receives_light = true;
+                break;
+            }
+        }
+
         // @Incomplete: Get shader uniforms
         for (i32 uni_i = 0; uni_i < shader.uniform_count; uni_i++)
         {
@@ -1720,13 +1730,7 @@ namespace rendering
 
         end_temporary_memory(temp_mem);
     }
-    
-    static void register_ubo_layout(Renderer *renderer, UniformBufferLayout layout, UniformBufferMappingType mapping_type)
-    {
-        renderer->render.ubo_layouts[(i32)mapping_type] = layout;
-    }
-
-    
+        
     static size_t get_ubo_base_offset(ValueType value_type)
     {
         switch(value_type)
@@ -1772,11 +1776,116 @@ namespace rendering
             return 0;
         }
         break;
+        case ValueType::STRUCTURE:
+        {
+            // @Incomplete: Need to handle
+            // Handled by finding structure index
+            // and looking through each type recursively
+            assert(false);
+            return 0;
+        }
+        break;
         default:
         break;
         }
 
         return 0;
+    }
+
+
+    static void add_array_value_to_ubo_layout(UniformBufferLayout& layout, ValueType type, i32 max_count)
+    {
+        i32 count = layout.array_value_count++;
+        layout.array_values[count].type = type;
+        layout.array_values[count].max_entries = max_count;
+    }
+
+    static void add_value_to_ubo_layout(UniformBufferLayout& layout, ValueType type)
+    {
+        layout.values[layout.value_count++] = type;
+    }
+
+    static UniformBufferUpdate generate_ubo_update(UniformBufferHandle handle, UniformBufferMappingType mapping_type)
+    {
+        UniformBufferUpdate update = {};
+        update.handle = handle;
+        update.mapping_type = mapping_type;
+        return update;
+    }
+
+    
+    static void add_ubo_array_update_value(UniformBufferUpdate& update, UniformBufferHandle handle, i32 index, i32 array_index, math::Mat4 value, Renderer *renderer)
+    {
+        UniformArray *uniforms = renderer->render.ubo_array_uniforms[handle.handle - 1];
+        assert(uniforms);
+
+        UniformArray& array = uniforms[index];
+
+        if(array.entry_count == 0)
+        {
+            update.array_value_count++;
+            update.array_update_pairs[index].value = array;
+            update.array_update_pairs[index].index = index;
+        }
+
+        if(array.entries[0].values[0].uniform.type == ValueType::STRUCTURE)
+        {
+            
+        }
+        else
+        {
+            array.entries[array.entry_count++].values[0].mat4_val = value;
+        }
+    }
+
+    static void add_ubo_array_update_value(UniformBufferUpdate& update, UniformBufferHandle handle, i32 index, i32 array_index, math::Vec3 value, Renderer *renderer)
+    {
+        UniformArray *uniforms = renderer->render.ubo_array_uniforms[handle.handle - 1];
+        assert(uniforms);
+
+        UniformArray& array = uniforms[index];
+
+        if(array.entry_count == 0)
+        {
+            update.array_value_count++;
+            update.array_update_pairs[index].value = array;
+            update.array_update_pairs[index].index = index;
+        }
+
+        if(array.entries[0].values[0].uniform.type == ValueType::STRUCTURE)
+        {
+            
+        }
+        else
+        {
+            array.entries[array.entry_count++].values[0].float3_val = value;
+        }
+    }
+
+
+    static void add_ubo_update_value(UniformBufferUpdate& update, UniformBufferHandle handle, i32 index, math::Mat4 value, Renderer *renderer)
+    {
+        UniformValue *uniforms = renderer->render.ubo_uniforms[handle.handle - 1];
+        assert(uniforms);
+        update.value_count++;
+        update.update_pairs[index].value = uniforms[index];
+        update.update_pairs[index].value.mat4_val = value;
+        update.update_pairs[index].index = index;
+    }
+
+    static void add_ubo_update_value(UniformBufferUpdate& update, UniformBufferHandle handle, i32 index, math::Vec3 value, Renderer *renderer)
+    {
+        UniformValue *uniforms = renderer->render.ubo_uniforms[handle.handle - 1];
+        assert(uniforms);
+        update.value_count++;
+        update.update_pairs[index].value = uniforms[index];
+        update.update_pairs[index].value.float3_val = value;
+        update.update_pairs[index].index = index;
+    }
+    
+    static void register_ubo_layout(Renderer *renderer, UniformBufferLayout layout, UniformBufferMappingType mapping_type)
+    {
+        renderer->render.ubo_layouts[(i32)mapping_type] = layout;
     }
 
     static size_t generate_ubo_update_data(UniformBufferLayout layout, UniformBufferUpdate update_data, u8* memory)
@@ -1866,6 +1975,62 @@ namespace rendering
         return offset;
     }
 
+    static UniformBuffer* get_uniform_buffer(UniformBufferHandle handle, Renderer *renderer)
+    {
+        return renderer->render.uniform_buffers[handle.handle - 1];
+    }
+
+    static void update_uniform_buffer(UniformBufferUpdate update, Renderer *renderer)
+    {
+        rendering::UniformBufferLayout layout = renderer->render.ubo_layouts[(i32)update.mapping_type];
+        UniformBuffer* ubo = get_uniform_buffer(update.handle, renderer);
+        renderer->api_functions.update_uniform_buffer(ubo, update, renderer);
+    }
+
+    static UniformBufferHandle create_uniform_buffer(BufferUsage usage, UniformBufferLayout layout, Renderer* renderer)
+    {
+        UniformBufferHandle handle = { renderer->render.uniform_buffer_count++ + 1 };
+
+        for(i32 i = 0; i < layout.value_count; i++)
+        {
+            ValueType type = layout.values[i];
+            Uniform uniform = {};
+            uniform.mapping_type = UniformMappingType::NONE;
+            uniform.type = type;
+            UniformValue value = {};
+            value.uniform = uniform;
+
+            renderer->render.ubo_uniforms[handle.handle - 1][i] = value;
+        }
+
+        for(i32 i = 0; i < layout.array_value_count; i++)
+        {
+            ValueType type = layout.array_values[i].type;
+
+            Uniform uniform = {};
+            uniform.mapping_type = UniformMappingType::NONE;
+            uniform.type = type;
+            UniformValue value = {};
+            value.uniform = uniform;
+            
+            UniformArray array = {};
+            array.entry_count = layout.array_values[i].max_entries;
+            array.max_size = (i32)(array.entry_count * get_ubo_base_offset(type));
+            array.entries = push_array(&renderer->buffer_arena, array.entry_count, UniformEntry);
+            for(i32 i = 0; i < array.entry_count; i++)
+            {
+                array.entries[i].values[0] = value;
+            }
+
+            renderer->render.ubo_array_uniforms[handle.handle - 1][i] = array;
+        }
+
+        UniformBuffer *ubo = renderer->render.uniform_buffers[handle.handle - 1];
+        
+        renderer->api_functions.create_uniform_buffer(ubo, rendering::BufferUsage::DYNAMIC, rendering::get_ubo_size(layout), renderer);
+
+        return handle;
+    }
 
     static RegisterBufferInfo create_register_buffer_info()
     {

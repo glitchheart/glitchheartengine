@@ -97,6 +97,27 @@ static char* read_file_into_buffer(MemoryArena* arena, FILE* file, size_t *out_s
 	return source;
 }
 
+static char* read_file_into_buffer(MemoryArena* arena, PlatformFile file, size_t *out_size = nullptr)
+{
+    platform.seek_file(file, 0, SeekOptions::SO_END);
+    i32 size = platform.tell_file(file);
+    platform.seek_file(file, 0, SeekOptions::SO_SET);
+
+	if(out_size)
+	{
+		*out_size = (size_t)size;
+	}
+	    
+	char* source = push_string(arena, (size_t)size + 1);
+	platform.read_file(source, sizeof(char), (size_t)size, file);
+    source[size] = '\0';
+
+	return source;
+}
+
+
+
+
 // @Incomplete: This doesn't even work without a memory arena
 inline char* concat(const char *s1, const char *s2, MemoryArena* arena = nullptr)
 {
@@ -194,7 +215,8 @@ static void tokenize(char *str, Tokens& tokens, char delimiter, b32 eat_subseque
     char cur_tok[64];
     i32 cur_tok_index = 0;
 
-    while(str[last_token_pos] != '\n')
+    while(str[last_token_pos] != '\n' && str[last_token_pos] != '\r'
+          && str[last_token_pos] != EOF)
     {
         if(str[last_token_pos] == delimiter)
         {
