@@ -165,7 +165,7 @@ static b32 reload_libraries(GameCode *game, char *game_library_path, char *temp_
     return false;
 }
 
-void save_config(const char *file_path, Renderer* renderer, SoundDevice *sound_device)
+void save_config(const char *file_path, Renderer* renderer, sound::SoundSystem *sound_system)
 {
     FILE *file = fopen(file_path, "w");
 
@@ -194,12 +194,12 @@ void save_config(const char *file_path, Renderer* renderer, SoundDevice *sound_d
         r32 music_vol = 1.0f;
         r32 master_vol = 1.0f;
 
-        if (sound_device)
+        if (sound_system)
         {
-            muted = sound_device->muted;
-            sfx_vol = sound_device->sfx_volume;
-            music_vol = sound_device->music_volume;
-            master_vol = sound_device->master_volume;
+            muted = sound_system->muted;
+            sfx_vol = sound_system->sfx_volume;
+            music_vol = sound_system->music_volume;
+            master_vol = sound_system->master_volume;
         }
 
         fprintf(file, "muted %d\n", muted);
@@ -350,6 +350,49 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
 {
     renderer->pixels_per_unit = global_pixels_per_unit;
     renderer->frame_lock = 0;
+
+    renderer->render.uniform_buffers = push_array(&renderer->ubo_arena, global_max_uniform_buffers, UniformBuffer*);
+
+    for(i32 i = 0; i < global_max_uniform_buffers; i++)
+    {
+        renderer->render.uniform_buffers[i] = push_struct(&renderer->ubo_arena, UniformBuffer);
+    }
+
+    rendering::UniformBufferLayout vp_ubo_layout = {};
+    rendering::add_value_to_ubo_layout(vp_ubo_layout, rendering::ValueType::MAT4, "projection");
+    rendering::add_value_to_ubo_layout(vp_ubo_layout, rendering::ValueType::MAT4, "view");
+    rendering::register_ubo_layout(vp_ubo_layout, rendering::UniformBufferMappingType::VP, renderer);
+
+    renderer->render.mapped_ubos[(i32)rendering::UniformBufferMappingType::VP] = rendering::create_uniform_buffer(rendering::BufferUsage::DYNAMIC, vp_ubo_layout, renderer);
+
+    rendering::UniformBufferLayout point_layout = {};
+    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT3, global_max_point_lights, "position");
+    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT, global_max_point_lights, "constant");
+    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT, global_max_point_lights, "linear");
+    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT, global_max_point_lights, "quadratic");
+    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT3, global_max_point_lights, "ambient");
+    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT3, global_max_point_lights, "diffuse");
+    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT3, global_max_point_lights, "specular");
+    rendering::register_ubo_layout(point_layout, rendering::UniformBufferMappingType::POINT, renderer);
+
+    renderer->render.mapped_ubos[(i32)rendering::UniformBufferMappingType::POINT] = rendering::create_uniform_buffer(rendering::BufferUsage::DYNAMIC, point_layout, renderer);
+
+    rendering::UniformBufferLayout directional_layout = {};
+    rendering::add_array_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3, global_max_directional_lights, "direction");
+    rendering::add_array_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3, global_max_directional_lights, "ambient");
+    rendering::add_array_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3, global_max_directional_lights, "diffuse");
+    rendering::add_array_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3, global_max_directional_lights, "specular");
+    rendering::register_ubo_layout(directional_layout, rendering::UniformBufferMappingType::DIRECTIONAL, renderer);
+
+    renderer->render.mapped_ubos[(i32)rendering::UniformBufferMappingType::DIRECTIONAL] = rendering::create_uniform_buffer(rendering::BufferUsage::DYNAMIC, directional_layout, renderer);
+
+    rendering::UniformBufferLayout count_layout = {};
+    rendering::add_value_to_ubo_layout(count_layout, rendering::ValueType::INTEGER, "dirlight_count");
+    rendering::add_value_to_ubo_layout(count_layout, rendering::ValueType::INTEGER, "pointlight_count");
+    rendering::register_ubo_layout(count_layout, rendering::UniformBufferMappingType::LIGHT_COUNTS, renderer);
+
+    renderer->render.mapped_ubos[(i32)rendering::UniformBufferMappingType::LIGHT_COUNTS] = rendering::create_uniform_buffer(rendering::BufferUsage::DYNAMIC, count_layout, renderer);
+
     
     renderer->particles = {};
 
@@ -746,33 +789,6 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     }
 
     renderer->particles.textured_quad_buffer = rendering::register_buffer(renderer, particle_buffer);
-
-    renderer->render.uniform_buffers = push_array(&renderer->buffer_arena, global_max_uniform_buffers, UniformBuffer*);
-
-    for(i32 i = 0; i < global_max_uniform_buffers; i++)
-    {
-        renderer->render.uniform_buffers[i] = push_struct(&renderer->buffer_arena, UniformBuffer);
-    }
-
-    rendering::UniformBufferLayout vp_ubo_layout = {};
-    rendering::add_value_to_ubo_layout(vp_ubo_layout, rendering::ValueType::MAT4);
-    rendering::add_value_to_ubo_layout(vp_ubo_layout, rendering::ValueType::MAT4);
-    rendering::register_ubo_layout(renderer, vp_ubo_layout, rendering::UniformBufferMappingType::VP);
-
-    renderer->render.mapped_ubos[(i32)rendering::UniformBufferMappingType::VP] = rendering::create_uniform_buffer(rendering::BufferUsage::DYNAMIC, vp_ubo_layout, renderer);
-
-    rendering::UniformBufferLayout point_layout = {};
-    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT3, global_max_point_lights);
-    rendering::register_ubo_layout(renderer, point_layout, rendering::UniformBufferMappingType::POINT);
-
-    renderer->render.mapped_ubos[(i32)rendering::UniformBufferMappingType::POINT] = rendering::create_uniform_buffer(rendering::BufferUsage::DYNAMIC, point_layout, renderer);
-
-    rendering::UniformBufferLayout directional_layout = {};
-    rendering::add_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3);
-    rendering::register_ubo_layout(renderer, directional_layout, rendering::UniformBufferMappingType::DIRECTIONAL);
-
-    renderer->render.mapped_ubos[(i32)rendering::UniformBufferMappingType::DIRECTIONAL] = rendering::create_uniform_buffer(rendering::BufferUsage::DYNAMIC, directional_layout, renderer);
-
     
     end_temporary_memory(temp_mem);
 }
@@ -1050,7 +1066,7 @@ int main(int argc, char **args)
         
         if (do_save_config)
         {
-            save_config("../.config", renderer, &sound_device);
+            save_config("../.config", renderer, &sound_system);
         }
         do_save_config = false;
 

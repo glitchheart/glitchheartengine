@@ -266,6 +266,9 @@ typedef PLATFORM_MAKE_QUEUE(PlatformMakeQueue);
 #define PLATFORM_COMPLETE_ALL_WORK(name) void name(WorkQueue *queue)
 typedef PLATFORM_COMPLETE_ALL_WORK(PlatformCompleteAllWork);
 
+#define PLATFORM_IS_EOL(name) b32 name(char c)
+typedef PLATFORM_IS_EOL(PlatformIsEOL);
+
 struct PlatformApi
 {
     PlatformGetAllFilesWithExtension *get_all_files_with_extension;
@@ -296,11 +299,52 @@ struct PlatformApi
     PlatformAddEntry *add_entry;
     PlatformCompleteAllWork *complete_all_work;
     PlatformMakeQueue *make_queue;
+    PlatformIsEOL *is_eol;
 
     WorkQueue *asset_queue;
 };
-
+   
 extern PlatformApi platform;
+
+namespace os
+{
+    static b32 is_eol(char c)
+    {
+        return platform.is_eol(c);
+    }
+    
+    static PlatformFile open_file(const char* path, u32 open_flags)
+    {
+        return platform.open_file(path, open_flags);
+    }
+
+    static void close_file(PlatformFile file)
+    {
+        platform.close_file(file);
+    }
+
+    static void read_file(void* dst, i32 size, i32 size_bytes, PlatformFile& file)
+    {
+        platform.read_file(dst, size, size_bytes, file);
+    }
+
+    static void write_file(const void* src, i32 size, i32 size_bytes, PlatformFile& file)
+    {
+        platform.write_file(src, size, size_bytes, file);
+    }
+
+    static void seek_file(PlatformFile& file, i32 offset, SeekOptions seek_options)
+    {
+        platform.seek_file(file, offset, seek_options);
+    }
+
+    static i32 tell_file(PlatformFile& file)
+    {
+        return platform.tell_file(file);
+    }
+
+}
+
 
 struct MemoryArena;
 struct InputController;

@@ -99,9 +99,9 @@ static char* read_file_into_buffer(MemoryArena* arena, FILE* file, size_t *out_s
 
 static char* read_file_into_buffer(MemoryArena* arena, PlatformFile file, size_t *out_size = nullptr)
 {
-    platform.seek_file(file, 0, SeekOptions::SO_END);
+    os::seek_file(file, 0, SeekOptions::SO_END);
     i32 size = platform.tell_file(file);
-    platform.seek_file(file, 0, SeekOptions::SO_SET);
+    os::seek_file(file, 0, SeekOptions::SO_SET);
 
 	if(out_size)
 	{
@@ -109,7 +109,7 @@ static char* read_file_into_buffer(MemoryArena* arena, PlatformFile file, size_t
 	}
 	    
 	char* source = push_string(arena, (size_t)size + 1);
-	platform.read_file(source, sizeof(char), (size_t)size, file);
+    os::read_file(source, sizeof(char), size, file);
     source[size] = '\0';
 
 	return source;
@@ -154,14 +154,14 @@ static void eat_char(char **source, char delim)
 
 static void eat_spaces_and_newlines(char **source)
 {
-    while (*source[0] == ' ' || *source[0] == '\n')
+    while (*source[0] == ' ' || os::is_eol(*source[0]))
         (*source)++;
 }
 
 static void eat_word(char **source)
 {
     eat_spaces(source);
-    while (*source[0] != ' ' && *source[0] != '\n' && *source[0] != ';' && *source[0] != ':')
+    while (*source[0] != ' ' && os::is_eol(*source[0]) && *source[0] != ';' && *source[0] != ':')
         (*source)++;
 }
 
@@ -178,7 +178,7 @@ static void parse_word(char **source, char *buffer)
 {
     i32 index = 0;
 
-    while (*source[0] != ' ' && *source[0] != '\n' && *source[0] != ';')
+    while (*source[0] != ' ' && !os::is_eol(*source[0]) && *source[0] != ';')
     {
         buffer[index++] = **source;
         (*source)++;
@@ -215,7 +215,7 @@ static void tokenize(char *str, Tokens& tokens, char delimiter, b32 eat_subseque
     char cur_tok[64];
     i32 cur_tok_index = 0;
 
-    while(str[last_token_pos] != '\n' && str[last_token_pos] != '\r'
+    while(!os::is_eol(str[last_token_pos])
           && str[last_token_pos] != EOF)
     {
         if(str[last_token_pos] == delimiter)
@@ -252,7 +252,7 @@ static char *read_line_from_buffer(char *out, size_t size, char **in)
 		char c = **in;
 		out[i] = c;
 
-		if (c == '\n')
+		if (os::is_eol(c))
 		{
 			out[i] = '\0';
 			++(*in);
@@ -275,8 +275,12 @@ static char* read_line(char* out, size_t size, char** in)
 		if(**in == '\0')
 			break;
 
-		if(**in == '\n' || **in == '\r')
+		if(os::is_eol(**in))
 		{
+            // @Note: Force SANE line endings
+            if(out[i] == '\r')
+                out[i] = '\n';
+            
 			out[i + 1] = '\0';
 			++(*in);
 			break;

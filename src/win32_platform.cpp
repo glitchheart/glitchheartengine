@@ -479,6 +479,11 @@ static PLATFORM_PRINT_FILE(win32_print_file)
     return result;
 }
 
+static PLATFORM_IS_EOL(win32_is_eol)
+{
+    return c == '\n' || c == '\r';
+}
+
 static void init_platform(PlatformApi& platform_api)
 {
     platform_api.get_all_files_with_extension = win32_find_files_with_extensions;
@@ -499,6 +504,7 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.print_file = win32_print_file;
     platform_api.get_all_directories = win32_get_all_directories;
     platform_api.create_directory =  win32_create_directory;
+    platform_api.is_eol = win32_is_eol;
 
     // Threading
     platform_api.request_queue = request_queue;

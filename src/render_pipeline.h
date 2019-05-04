@@ -117,7 +117,9 @@ namespace rendering
         NONE,
         VP,
         POINT,
-        DIRECTIONAL
+        DIRECTIONAL,
+        LIGHT_COUNTS,
+        MAX
     };
 
     enum UniformMappingType
@@ -287,14 +289,19 @@ namespace rendering
     struct UniformBufferLayout
     {
         ValueType values[16];
+        char names[16][32];
         i32 value_count;
 
         struct
         {
             ValueType type;
+            char name[32];
             i32 max_entries;
         } array_values[16];
         i32 array_value_count;
+
+        i32 total_value_count;
+        b32 is_array[16];
     };
 
     struct UniformBufferUpdate
@@ -302,6 +309,7 @@ namespace rendering
         struct
         {
             i32 index;
+            i32 total_index;
             UniformValue value;
         } update_pairs[16];
 
@@ -310,6 +318,7 @@ namespace rendering
         struct
         {
             i32 index;
+            i32 total_index;
             UniformArray value;
         } array_update_pairs[16];
 

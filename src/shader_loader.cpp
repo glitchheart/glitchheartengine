@@ -381,10 +381,6 @@ namespace rendering
         }
         else
         {
-			if (strlen(rest) == 0)
-			{
-				int x = 0;
-			}
             i32 c = 0;
             i32 m_c = 0;
             i32 custom_m_c = -1;
@@ -432,20 +428,17 @@ namespace rendering
         return (uniform);
     }
 
-    static b32 validate_ubo_uniform(Renderer *renderer, ValueType type, i32 index, UniformBufferMappingType mapping_type, i32 array_size)
+    static b32 validate_ubo_uniform(Renderer *renderer, ValueType type, i32 index, UniformBufferMappingType mapping_type, i32 array_size, i32 total_index)
     {
-        if(array_size != -1)
-        {
-            UniformBufferLayout layout = renderer->render.ubo_layouts[(i32)mapping_type];
-            return layout.array_values[index].type == type &&
-                layout.array_values[index].max_entries == array_size;
-        }
-        else
-        {
-            UniformBufferLayout layout = renderer->render.ubo_layouts[(i32)mapping_type];
-            return layout.values[index] == type;
-        }
-        
+        UniformBufferLayout layout = renderer->render.ubo_layouts[(i32)mapping_type];
+        return layout.array_values[index].type == type &&
+            layout.array_values[index].max_entries == array_size && layout.is_array[total_index];
+    }
+
+    static b32 validate_ubo_uniform(Renderer *renderer, ValueType type, i32 index, UniformBufferMappingType mapping_type, i32 total_index)
+    {
+        UniformBufferLayout layout = renderer->render.ubo_layouts[(i32)mapping_type];
+        return layout.values[index] == type && !layout.is_array[total_index];
     }
 
     static void parse_ubo(Renderer *renderer, char **source, char *total_buffer, UniformBufferInfo &ubo, Shader& shader, const char* file_path)
@@ -483,8 +476,14 @@ namespace rendering
                         found_mapping = true;
                         ubo.mapping_type = UniformBufferMappingType::DIRECTIONAL;
                     }
+					else if (equals(tokens.tokens[5], "LIGHT_COUNTS"))
+					{
+						found_mapping = true;
+						ubo.mapping_type = UniformBufferMappingType::LIGHT_COUNTS;
+					}
                     else
-                    {
+                    {
+
                         error("Unmapped UBO's currently unsupported.", file_path);
                     }
 
@@ -512,13 +511,15 @@ namespace rendering
                 b32 should_break = false;
 
                 i32 uniform_count = 0;
+                i32 array_uniform_count = 0;
+                i32 total_uniform_count = 0;
 
                 while(read_line(buffer, 256, source))
                 {
                     char *rest = &buffer[0];
                     eat_spaces(&rest);
 
-                    if(starts_with(rest, "//") || starts_with(rest, "\n"))
+                    if(starts_with(rest, "//") || os::is_eol(rest[0]))
                     {
                         continue;
                     }
@@ -536,7 +537,7 @@ namespace rendering
 
                         i32 arr_size = -1;
 
-                        for(i32 i = 0; i < strlen(rest); i++)
+                        for(size_t i = 0; i < strlen(rest); i++)
                         {
                             if(rest[i] == '[')
                             {
@@ -560,14 +561,27 @@ namespace rendering
                         {
                             if(ubo.mapping_type != UniformBufferMappingType::NONE)
                             {
-                                if(!validate_ubo_uniform(renderer, type, uniform_count, ubo.mapping_type, arr_size))
+                                if(arr_size != -1)
                                 {
-                                    char error_buf[256];
-                                    sprintf(error_buf, "Invalid UBO uniform type %d for mapping type %d", type, (i32)ubo.mapping_type);
-                                    error(error_buf, file_path);
+                                    if(!validate_ubo_uniform(renderer, type, array_uniform_count, ubo.mapping_type, arr_size, total_uniform_count++))
+                                    {
+                                        char error_buf[256];
+                                        sprintf(error_buf, "Invalid UBO uniform type %d for mapping type %d", type, (i32)ubo.mapping_type);
+                                        error(error_buf, file_path);
+                                    }
+                                    array_uniform_count++;
                                 }
-
-                                uniform_count++;
+                                else
+                                {
+                                    if(!validate_ubo_uniform(renderer, type, uniform_count, ubo.mapping_type, total_uniform_count++))
+                                    {
+                                        char error_buf[256];
+                                        sprintf(error_buf, "Invalid UBO uniform type %d for mapping type %d", type, (i32)ubo.mapping_type);
+                                        error(error_buf, file_path);
+                                    }
+                                    
+                                    uniform_count++;
+                                }
                             }
                         }
                     }
@@ -684,9 +698,10 @@ namespace rendering
 
 				char *included_path = concat("../assets/shaders/", include_name, &temp_arena);
 
-				FILE *included_shd = fopen(included_path, "rb");
+				// FILE *included_shd = fopen(included_path, "rb");
+                PlatformFile included_shd = os::open_file(included_path, POF_READ | POF_OPEN_EXISTING);
 
-				if (included_shd)
+				if (included_shd.handle)
 				{
 					char *included_source = read_file_into_buffer(&temp_arena, included_shd);
 					char *path = concat(concat(file_path, "<-", &temp_arena), included_path, &temp_arena);
@@ -705,7 +720,7 @@ namespace rendering
 						*file_size += strlen(buffer);
 					}
 
-					fclose(included_shd);
+                    os::close_file(included_shd);
 
 					continue;
 				}

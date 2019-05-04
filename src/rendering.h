@@ -626,6 +626,7 @@ struct Renderer
 	MemoryArena font_arena;
 	MemoryArena particle_arena;
 	MemoryArena buffer_arena;
+    MemoryArena ubo_arena;
 	MemoryArena shader_arena;
     
 	MemoryArena temp_arena;
@@ -811,12 +812,12 @@ struct Renderer
         rendering::RenderPassHandle shadow_pass;
         rendering::MaterialHandle shadow_map_material;
 
-        rendering::UniformBufferLayout ubo_layouts[(i32)rendering::UniformBufferMappingType::DIRECTIONAL + 1];
+        rendering::UniformBufferLayout ubo_layouts[(i32)rendering::UniformBufferMappingType::MAX];
 
         UniformBuffer ** uniform_buffers;
         i32 uniform_buffer_count;
 
-        rendering::UniformBufferHandle mapped_ubos[(i32)rendering::UniformBufferMappingType::DIRECTIONAL + 1];
+        rendering::UniformBufferHandle mapped_ubos[(i32)rendering::UniformBufferMappingType::MAX];
 
         rendering::UniformValue ubo_uniforms[global_max_uniform_buffers][16];
         rendering::UniformArray ubo_array_uniforms[global_max_uniform_buffers][16];
