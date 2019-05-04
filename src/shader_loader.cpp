@@ -381,6 +381,10 @@ namespace rendering
         }
         else
         {
+			if (strlen(rest) == 0)
+			{
+				int x = 0;
+			}
             i32 c = 0;
             i32 m_c = 0;
             i32 custom_m_c = -1;
@@ -428,13 +432,23 @@ namespace rendering
         return (uniform);
     }
 
-    static b32 validate_ubo_uniform(Renderer *renderer, ValueType type, i32 index, UniformBufferMappingType mapping_type)
+    static b32 validate_ubo_uniform(Renderer *renderer, ValueType type, i32 index, UniformBufferMappingType mapping_type, i32 array_size)
     {
-        UniformBufferLayout layout = renderer->render.ubo_layouts[(i32)mapping_type];
-        return layout.values[index] == type;
+        if(array_size != -1)
+        {
+            UniformBufferLayout layout = renderer->render.ubo_layouts[(i32)mapping_type];
+            return layout.array_values[index].type == type &&
+                layout.array_values[index].max_entries == array_size;
+        }
+        else
+        {
+            UniformBufferLayout layout = renderer->render.ubo_layouts[(i32)mapping_type];
+            return layout.values[index] == type;
+        }
+        
     }
 
-    static void parse_ubo(Renderer *renderer, char **source, char *total_buffer, UniformBuffer &ubo, Shader& shader, const char* file_path)
+    static void parse_ubo(Renderer *renderer, char **source, char *total_buffer, UniformBufferInfo &ubo, Shader& shader, const char* file_path)
     {
         char buffer[256];
         size_t i = 0;
@@ -470,7 +484,7 @@ namespace rendering
                         ubo.mapping_type = UniformBufferMappingType::DIRECTIONAL;
                     }
                     else
-                    {
+                    {
                         error("Unmapped UBO's currently unsupported.", file_path);
                     }
 
@@ -503,8 +517,12 @@ namespace rendering
                 {
                     char *rest = &buffer[0];
                     eat_spaces(&rest);
-                        
-                    if(starts_with(rest, "{"))
+
+                    if(starts_with(rest, "//") || starts_with(rest, "\n"))
+                    {
+                        continue;
+                    }
+                    else if(starts_with(rest, "{"))
                     {
                             
                     }
@@ -515,13 +533,34 @@ namespace rendering
                     else
                     {
                         eat_spaces(&rest);
+
+                        i32 arr_size = -1;
+
+                        for(i32 i = 0; i < strlen(rest); i++)
+                        {
+                            if(rest[i] == '[')
+                            {
+                                char array_size[32];
+                                sscanf(&rest[i], "[%[^]]]", array_size);
+
+                                if (DefinedValue *defined_value = get_defined_value(array_size, shader))
+                                {
+                                    arr_size = defined_value->integer_val;
+                                }
+                                else
+                                {
+                                    arr_size = (i32)strtol(array_size, nullptr, 10);
+                                }
+                                break;
+                            }
+                        }
+
                         ValueType type = get_value_type(&rest, file_path);
                         if(type != ValueType::INVALID)
                         {
-                            
                             if(ubo.mapping_type != UniformBufferMappingType::NONE)
                             {
-                                if(!validate_ubo_uniform(renderer, type, uniform_count, ubo.mapping_type))
+                                if(!validate_ubo_uniform(renderer, type, uniform_count, ubo.mapping_type, arr_size))
                                 {
                                     char error_buf[256];
                                     sprintf(error_buf, "Invalid UBO uniform type %d for mapping type %d", type, (i32)ubo.mapping_type);
@@ -540,6 +579,7 @@ namespace rendering
                         break;
                 }
 
+                total_buffer[i++] = '\0';
             }
             else
             {
@@ -644,7 +684,7 @@ namespace rendering
 
 				char *included_path = concat("../assets/shaders/", include_name, &temp_arena);
 
-				FILE *included_shd = fopen(included_path, "r");
+				FILE *included_shd = fopen(included_path, "rb");
 
 				if (included_shd)
 				{
@@ -683,7 +723,7 @@ namespace rendering
 				sscanf(buffer, "#include <%[^>]", include_name);
 				char *included_path = concat("../engine_assets/standard_shaders/", include_name, &temp_arena);
 
-				FILE *included_shd = fopen(included_path, "r");
+				FILE *included_shd = fopen(included_path, "rb");
 
 				if (included_shd)
 				{
@@ -783,15 +823,10 @@ namespace rendering
 			}
 			else if (starts_with(buffer, "layout"))
 			{
-                b32 is_ubo = false;
-                for(size_t i = 0; i < strlen(buffer); i ++)
-                {
-                    if(starts_with(&buffer[i], "std140"))
-                    {
-                        is_ubo = true;                        
-                        break;
-                    }
-                }
+				Tokens tokens = {};
+				tokenize(buffer, tokens, ' ', true);
+
+				b32 is_ubo = starts_with(tokens.tokens[1], "(std140)") || starts_with(tokens.tokens[1], "layout(std140)");
 
                 if(is_ubo)
                 {
@@ -1023,10 +1058,10 @@ namespace rendering
 
 			sprintf(out_path, "../out/%s.shd", out_name);
 
-			// FILE *shd = fopen(out_path, "w");
-			// fwrite(shader.vert_shader, strlen(shader.vert_shader), 1, shd);
-			// fwrite(shader.frag_shader, strlen(shader.frag_shader), 1, shd);
-			// fclose(shd);
+			FILE *shd = fopen(out_path, "w");
+			fwrite(shader.vert_shader, strlen(shader.vert_shader), 1, shd);
+			fwrite(shader.frag_shader, strlen(shader.frag_shader), 1, shd);
+			fclose(shd);
 #endif
 
 			fclose(file);

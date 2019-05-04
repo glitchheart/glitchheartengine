@@ -29,3 +29,4 @@ static constexpr i32 global_max_directional_lights = 4;
 static constexpr i32 global_max_point_lights = 32;
 static constexpr i32 global_max_scenes = 16;
 static constexpr i32 global_max_ubo_layouts = 4;
+static constexpr i32 global_max_uniform_buffers = 16;
