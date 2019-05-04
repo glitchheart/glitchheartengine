@@ -472,7 +472,7 @@ static void create_uniform_buffer(UniformBuffer *buffer, rendering::BufferUsage 
     }
 
     buffer->size = math::multiple_of_number((i32)size, 4);
-    buffer->memory = push_size(&renderer->buffer_arena, buffer->size, u8);
+    buffer->memory = push_size(&renderer->ubo_arena, buffer->size, u8);
     buffer->usage = get_usage(buffer_usage);
 
     glBindBuffer(GL_UNIFORM_BUFFER, buffer->ubo);
@@ -484,7 +484,7 @@ static void update_uniform_buffer(UniformBuffer *buffer, rendering::UniformBuffe
 {
     rendering::UniformBufferLayout layout = renderer->render.ubo_layouts[(i32)update.mapping_type];
         
-    size_t size = rendering::generate_ubo_update_data(layout, update, buffer->memory);
+    size_t size = rendering::generate_ubo_update_data(layout, update, buffer->memory, buffer->size);
         
     glBindBufferRange(GL_UNIFORM_BUFFER, (i32)update.mapping_type, buffer->ubo, 0, buffer->size);
     
@@ -1370,7 +1370,7 @@ static void set_window_mode(RenderState* render_state, Renderer* renderer, Resol
 
     if(save)
     {
-        save_config("../.config", renderer);
+        save_config("../.config", renderer, core.sound_system);
     }
 }
 
@@ -2390,7 +2390,7 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
 
         rendering::UniformBufferHandle matrix_ubo = renderer->render.mapped_ubos[(i32)rendering::UniformBufferMappingType::VP];
 
-        rendering::UniformBufferUpdate matrix_update = rendering::generate_ubo_update(matrix_ubo, rendering::UniformBufferMappingType::VP);
+        rendering::UniformBufferUpdate matrix_update = rendering::generate_ubo_update(matrix_ubo, rendering::UniformBufferMappingType::VP, renderer);
 
         rendering::add_ubo_update_value(matrix_update, matrix_ubo
                                         , 0, math::transpose(pass.camera.projection_matrix)

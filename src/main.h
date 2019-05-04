@@ -32,7 +32,7 @@ struct MemoryState
 struct SoundDevice;
 struct Renderer;
 
-void save_config(const char *file_path, Renderer* renderer = nullptr, SoundDevice *sound_device = nullptr);
+void save_config(const char *file_path, Renderer* renderer = nullptr, sound::SoundSystem *sound_system = nullptr);
 
 #endif
 
