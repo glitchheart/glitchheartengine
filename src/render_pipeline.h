@@ -249,7 +249,27 @@ namespace rendering
 		UniformValue () {}
 	};
 
-    struct UniformBuffer
+    struct UniformEntry
+    {
+        UniformValue values[32];
+        i32 value_count;
+    };
+    
+    struct UniformArray
+    {
+        char name[32];
+        UniformEntry *entries;
+
+        i32 entry_count;
+        i32 max_size;
+    };
+
+    struct UniformBufferHandle
+    {
+        i32 handle;
+    };
+
+    struct UniformBufferInfo
     {
         char name[32];
         UniformBufferMappingType mapping_type;
@@ -268,6 +288,13 @@ namespace rendering
     {
         ValueType values[16];
         i32 value_count;
+
+        struct
+        {
+            ValueType type;
+            i32 max_entries;
+        } array_values[16];
+        i32 array_value_count;
     };
 
     struct UniformBufferUpdate
@@ -277,30 +304,26 @@ namespace rendering
             i32 index;
             UniformValue value;
         } update_pairs[16];
-        
-        i32 value_count;
-    };
 
-    struct UniformEntry
-    {
-        UniformValue values[32];
         i32 value_count;
-    };
-    
-    struct UniformArray
-    {
-        char name[32];
-        UniformEntry *entries;
 
-        i32 entry_count;
-        i32 max_size;
+        struct
+        {
+            i32 index;
+            UniformArray value;
+        } array_update_pairs[16];
+
+        i32 array_value_count;
+
+        UniformBufferMappingType mapping_type;
+        UniformBufferHandle handle;
     };
     
     enum class DefinedValueType
     {
         INTEGER,
-        FLOAT
-    };
+            FLOAT
+            };
     
     struct DefinedValue
     {
@@ -326,7 +349,7 @@ namespace rendering
 		Uniform *uniforms;
 		i32 uniform_count;
 
-        UniformBuffer uniform_buffers[4];
+        UniformBufferInfo uniform_buffers[4];
         i32 ubo_count;
 
         Structure structures[32];

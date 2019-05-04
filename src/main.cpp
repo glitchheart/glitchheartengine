@@ -747,30 +747,32 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
 
     renderer->particles.textured_quad_buffer = rendering::register_buffer(renderer, particle_buffer);
 
+    renderer->render.uniform_buffers = push_array(&renderer->buffer_arena, global_max_uniform_buffers, UniformBuffer*);
+
+    for(i32 i = 0; i < global_max_uniform_buffers; i++)
+    {
+        renderer->render.uniform_buffers[i] = push_struct(&renderer->buffer_arena, UniformBuffer);
+    }
+
     rendering::UniformBufferLayout vp_ubo_layout = {};
-    vp_ubo_layout.value_count = 2;
-    vp_ubo_layout.values[0] = rendering::ValueType::MAT4; // projection
-    vp_ubo_layout.values[1] = rendering::ValueType::MAT4; // view
+    rendering::add_value_to_ubo_layout(vp_ubo_layout, rendering::ValueType::MAT4);
+    rendering::add_value_to_ubo_layout(vp_ubo_layout, rendering::ValueType::MAT4);
     rendering::register_ubo_layout(renderer, vp_ubo_layout, rendering::UniformBufferMappingType::VP);
 
-    // Create the uniforms that we update during runtime
-    rendering::Uniform projection_uniform = {};
-    projection_uniform.mapping_type = rendering::UniformMappingType::NONE;
-    projection_uniform.type = rendering::ValueType::MAT4;
-    rendering::UniformValue p_value = {};
-    p_value.uniform = projection_uniform;
+    renderer->render.mapped_ubos[(i32)rendering::UniformBufferMappingType::VP] = rendering::create_uniform_buffer(rendering::BufferUsage::DYNAMIC, vp_ubo_layout, renderer);
 
-    rendering::Uniform view_uniform = {};
-    view_uniform.mapping_type = rendering::UniformMappingType::NONE;
-    view_uniform.type = rendering::ValueType::MAT4;
-    rendering::UniformValue v_value = {};
-    v_value.uniform = view_uniform;
+    rendering::UniformBufferLayout point_layout = {};
+    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT3, global_max_point_lights);
+    rendering::register_ubo_layout(renderer, point_layout, rendering::UniformBufferMappingType::POINT);
 
-    renderer->render.matrix_ubo = (UniformBuffer*)malloc(sizeof(UniformBuffer));
-    create_uniform_buffer(renderer->render.matrix_ubo, rendering::BufferUsage::DYNAMIC, rendering::get_ubo_size(vp_ubo_layout), renderer);
+    renderer->render.mapped_ubos[(i32)rendering::UniformBufferMappingType::POINT] = rendering::create_uniform_buffer(rendering::BufferUsage::DYNAMIC, point_layout, renderer);
 
-    renderer->render.matrix_ubo_values[0] = p_value;
-    renderer->render.matrix_ubo_values[1] = v_value;
+    rendering::UniformBufferLayout directional_layout = {};
+    rendering::add_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3);
+    rendering::register_ubo_layout(renderer, directional_layout, rendering::UniformBufferMappingType::DIRECTIONAL);
+
+    renderer->render.mapped_ubos[(i32)rendering::UniformBufferMappingType::DIRECTIONAL] = rendering::create_uniform_buffer(rendering::BufferUsage::DYNAMIC, directional_layout, renderer);
+
     
     end_temporary_memory(temp_mem);
 }

@@ -299,7 +299,7 @@ static void set_all_uniform_locations(rendering::Shader &shader, ShaderGL &gl_sh
 
     for(i32 i = 0; i < shader.ubo_count; i++)
     {
-        rendering::UniformBuffer ubo = shader.uniform_buffers[i];
+        rendering::UniformBufferInfo ubo = shader.uniform_buffers[i];
         u32 block_index = glGetUniformBlockIndex(gl_shader.program, ubo.name);
         glUniformBlockBinding(gl_shader.program, block_index, (i32)ubo.mapping_type);
     }
@@ -472,7 +472,7 @@ static void create_uniform_buffer(UniformBuffer *buffer, rendering::BufferUsage 
     }
 
     buffer->size = math::multiple_of_number((i32)size, 4);
-    buffer->memory = (u8*)malloc(size);
+    buffer->memory = push_size(&renderer->buffer_arena, buffer->size, u8);
     buffer->usage = get_usage(buffer_usage);
 
     glBindBuffer(GL_UNIFORM_BUFFER, buffer->ubo);
@@ -480,11 +480,18 @@ static void create_uniform_buffer(UniformBuffer *buffer, rendering::BufferUsage 
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-
-static void update_uniform_buffer(UniformBuffer *buffer, u8* ubo_data, size_t size, size_t offset = 0)
+static void update_uniform_buffer(UniformBuffer *buffer, rendering::UniformBufferUpdate update, Renderer *renderer)
 {
-    glBindBuffer(GL_UNIFORM_BUFFER, buffer->ubo);
-    glBufferSubData(GL_UNIFORM_BUFFER, offset, size, ubo_data);
+    rendering::UniformBufferLayout layout = renderer->render.ubo_layouts[(i32)update.mapping_type];
+        
+    size_t size = rendering::generate_ubo_update_data(layout, update, buffer->memory);
+        
+    glBindBufferRange(GL_UNIFORM_BUFFER, (i32)update.mapping_type, buffer->ubo, 0, buffer->size);
+    
+    // glBindBuffer(GL_UNIFORM_BUFFER, buffer->ubo);
+
+    // @Incomplete: Consider updating with offset as well
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, size, buffer->memory);
 }
 
 static void create_buffer(Buffer *buffer, rendering::RegisterBufferInfo info, RenderState *render_state, Renderer *renderer)
@@ -1375,6 +1382,8 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     renderer->api_functions.create_framebuffer = &create_framebuffer;
     renderer->api_functions.reload_framebuffer = &reload_framebuffer;
     renderer->api_functions.create_instance_buffer = &create_instance_buffer;
+    renderer->api_functions.create_uniform_buffer = &create_uniform_buffer;
+    renderer->api_functions.update_uniform_buffer = &update_uniform_buffer;
     renderer->api_functions.get_buffer_usage = &get_buffer_usage;
     renderer->api_functions.delete_instance_buffer = &delete_instance_buffer;
     renderer->api_functions.create_buffer = &create_buffer;
@@ -2379,22 +2388,19 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
             return;
         }
 
-        rendering::UniformBufferUpdate matrix_ubo = {};
-        matrix_ubo.update_pairs[0].value = renderer->render.matrix_ubo_values[0];
-        matrix_ubo.update_pairs[1].value = renderer->render.matrix_ubo_values[1];
-        matrix_ubo.update_pairs[0].index = 0;
-        matrix_ubo.update_pairs[1].index = 1;
-        matrix_ubo.update_pairs[0].value.mat4_val = math::transpose(pass.camera.projection_matrix);
-        matrix_ubo.update_pairs[1].value.mat4_val = math::transpose(pass.camera.view_matrix);
-        matrix_ubo.value_count = 2;
+        rendering::UniformBufferHandle matrix_ubo = renderer->render.mapped_ubos[(i32)rendering::UniformBufferMappingType::VP];
+
+        rendering::UniformBufferUpdate matrix_update = rendering::generate_ubo_update(matrix_ubo, rendering::UniformBufferMappingType::VP);
+
+        rendering::add_ubo_update_value(matrix_update, matrix_ubo
+                                        , 0, math::transpose(pass.camera.projection_matrix)
+                                        , renderer);
         
-        rendering::UniformBufferLayout mat_layout = renderer->render.ubo_layouts[(i32)rendering::UniformBufferMappingType::VP];
-        
-        size_t mat_sz = rendering::generate_ubo_update_data(mat_layout, matrix_ubo, renderer->render.matrix_ubo->memory);
-        
-        glBindBufferRange(GL_UNIFORM_BUFFER, (i32)rendering::UniformBufferMappingType::VP, renderer->render.matrix_ubo->ubo, 0, sizeof(math::Mat4) * 2);
-        
-        update_uniform_buffer(renderer->render.matrix_ubo, renderer->render.matrix_ubo->memory, mat_sz);
+        rendering::add_ubo_update_value(matrix_update, matrix_ubo
+                                        , 1, math::transpose(pass.camera.view_matrix)
+                                        , renderer);
+
+        rendering::update_uniform_buffer(matrix_update, renderer);
         
         Framebuffer &framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
 
@@ -2540,6 +2546,7 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
     
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 
     // Go backwards through the array to enable easy render pass adding
     for (i32 pass_index = renderer->render.pass_count - 1; pass_index >= 0; pass_index--)
