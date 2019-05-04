@@ -488,6 +488,9 @@ typedef void (*SetVSync)(RenderState *render_state, b32 value);
 typedef b32 (*GetVSync)(RenderState *render_state);
 typedef void (*LoadShader)(RenderState *render_state, Renderer *renderer, rendering::Shader &shader);
 
+typedef void (*CreateUniformBuffer)(UniformBuffer* buffer, rendering::BufferUsage, size_t size, Renderer *renderer);
+typedef void (*UpdateUniformBuffer)(UniformBuffer* buffer, rendering::UniformBufferUpdate update, Renderer *renderer);
+
 
 struct GraphicsAPI
 {
@@ -497,6 +500,8 @@ struct GraphicsAPI
     CreateFramebuffer create_framebuffer;
     ReloadFramebuffer reload_framebuffer;
 	CreateInstanceBuffer create_instance_buffer;
+    CreateUniformBuffer create_uniform_buffer;
+    UpdateUniformBuffer update_uniform_buffer;
 	GetBufferUsage get_buffer_usage;
     DeleteInstanceBuffer delete_instance_buffer;
     DeleteAllInstanceBuffers delete_all_instance_buffers;
@@ -806,10 +811,18 @@ struct Renderer
         rendering::RenderPassHandle shadow_pass;
         rendering::MaterialHandle shadow_map_material;
 
-        rendering::UniformBufferLayout ubo_layouts[rendering::UniformBufferMappingType::DIRECTIONAL];
+        rendering::UniformBufferLayout ubo_layouts[(i32)rendering::UniformBufferMappingType::DIRECTIONAL + 1];
 
-        rendering::UniformValue matrix_ubo_values[2];
-        UniformBuffer *matrix_ubo;
+        UniformBuffer ** uniform_buffers;
+        i32 uniform_buffer_count;
+
+        rendering::UniformBufferHandle mapped_ubos[(i32)rendering::UniformBufferMappingType::DIRECTIONAL + 1];
+
+        rendering::UniformValue ubo_uniforms[global_max_uniform_buffers][16];
+        rendering::UniformArray ubo_array_uniforms[global_max_uniform_buffers][16];
+
+        /* rendering::Structure structures[32]; */
+        /* i32 structure_count; */
         
 	} render;
 };
