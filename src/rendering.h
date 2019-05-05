@@ -813,6 +813,11 @@ struct Renderer
         rendering::MaterialHandle shadow_map_material;
 
         rendering::UniformBufferLayout ubo_layouts[(i32)rendering::UniformBufferMappingType::MAX];
+        rendering::Structure ubo_struct_definitions[32];
+        rendering::UniformValue ubo_struct_uniforms[32][16];
+        i32 ubo_struct_count;
+
+        rendering::UniformBufferMappingType ubo_struct_constructing;
 
         UniformBuffer ** uniform_buffers;
         i32 uniform_buffer_count;

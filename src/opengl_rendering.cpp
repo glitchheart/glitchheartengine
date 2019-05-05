@@ -484,7 +484,7 @@ static void update_uniform_buffer(UniformBuffer *buffer, rendering::UniformBuffe
 {
     rendering::UniformBufferLayout layout = renderer->render.ubo_layouts[(i32)update.mapping_type];
         
-    size_t size = rendering::generate_ubo_update_data(layout, update, buffer->memory, buffer->size);
+    size_t size = rendering::generate_ubo_update_data(layout, update, buffer->memory, buffer->size, renderer);
         
     glBindBufferRange(GL_UNIFORM_BUFFER, (i32)update.mapping_type, buffer->ubo, 0, buffer->size);
     

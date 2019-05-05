@@ -359,36 +359,54 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     }
 
     rendering::UniformBufferLayout vp_ubo_layout = {};
-    rendering::add_value_to_ubo_layout(vp_ubo_layout, rendering::ValueType::MAT4, "projection");
-    rendering::add_value_to_ubo_layout(vp_ubo_layout, rendering::ValueType::MAT4, "view");
+    rendering::initialize_ubo_layout(vp_ubo_layout);
+    rendering::add_value_to_ubo_layout(vp_ubo_layout, rendering::ValueType::MAT4, "projection", renderer);
+    rendering::add_value_to_ubo_layout(vp_ubo_layout, rendering::ValueType::MAT4, "view", renderer);
     rendering::register_ubo_layout(vp_ubo_layout, rendering::UniformBufferMappingType::VP, renderer);
 
     renderer->render.mapped_ubos[(i32)rendering::UniformBufferMappingType::VP] = rendering::create_uniform_buffer(rendering::BufferUsage::DYNAMIC, vp_ubo_layout, renderer);
 
     rendering::UniformBufferLayout point_layout = {};
-    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT3, global_max_point_lights, "position");
-    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT, global_max_point_lights, "constant");
-    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT, global_max_point_lights, "linear");
-    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT, global_max_point_lights, "quadratic");
-    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT3, global_max_point_lights, "ambient");
-    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT3, global_max_point_lights, "diffuse");
-    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT3, global_max_point_lights, "specular");
+    rendering::initialize_ubo_layout(point_layout);
+    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT3, global_max_point_lights, "position", renderer);
+    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT, global_max_point_lights, "constant", renderer);
+    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT, global_max_point_lights, "linear", renderer);
+    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT, global_max_point_lights, "quadratic", renderer);
+    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT3, global_max_point_lights, "ambient", renderer);
+    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT3, global_max_point_lights, "diffuse", renderer);
+    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT3, global_max_point_lights, "specular", renderer);
     rendering::register_ubo_layout(point_layout, rendering::UniformBufferMappingType::POINT, renderer);
 
     renderer->render.mapped_ubos[(i32)rendering::UniformBufferMappingType::POINT] = rendering::create_uniform_buffer(rendering::BufferUsage::DYNAMIC, point_layout, renderer);
 
     rendering::UniformBufferLayout directional_layout = {};
-    rendering::add_array_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3, global_max_directional_lights, "direction");
-    rendering::add_array_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3, global_max_directional_lights, "ambient");
-    rendering::add_array_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3, global_max_directional_lights, "diffuse");
-    rendering::add_array_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3, global_max_directional_lights, "specular");
+    rendering::initialize_ubo_layout(directional_layout);
+
+    // rendering::add_array_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3, global_max_directional_lights, "direction", renderer);
+    // rendering::add_array_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3, global_max_directional_lights, "ambient", renderer);
+    // rendering::add_array_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3, global_max_directional_lights, "diffuse", renderer);
+    // rendering::add_array_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3, global_max_directional_lights, "specular", renderer);
+
+    rendering::begin_struct_ubo_value(directional_layout, rendering::UniformBufferMappingType::DIRECTIONAL, "DirectionalLight", renderer);
+
+    rendering::add_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3, "direction", renderer);
+    rendering::add_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3, "ambient", renderer);
+    rendering::add_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3, "diffuse", renderer);
+    rendering::add_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3, "specular", renderer);
+
+    rendering::end_struct_ubo_value(renderer);
+
+    // rendering::begin_struct_ubo_array_value(directional_layout, rendering::UniformBufferMappingType::DIRECTIONAL, 2, "DirectionalLight", renderer);
+    // rendering::end_struct_ubo_value(renderer);
+
     rendering::register_ubo_layout(directional_layout, rendering::UniformBufferMappingType::DIRECTIONAL, renderer);
 
     renderer->render.mapped_ubos[(i32)rendering::UniformBufferMappingType::DIRECTIONAL] = rendering::create_uniform_buffer(rendering::BufferUsage::DYNAMIC, directional_layout, renderer);
 
     rendering::UniformBufferLayout count_layout = {};
-    rendering::add_value_to_ubo_layout(count_layout, rendering::ValueType::INTEGER, "dirlight_count");
-    rendering::add_value_to_ubo_layout(count_layout, rendering::ValueType::INTEGER, "pointlight_count");
+    rendering::initialize_ubo_layout(count_layout);
+    rendering::add_value_to_ubo_layout(count_layout, rendering::ValueType::INTEGER, "dirlight_count", renderer);
+    rendering::add_value_to_ubo_layout(count_layout, rendering::ValueType::INTEGER, "pointlight_count", renderer);
     rendering::register_ubo_layout(count_layout, rendering::UniformBufferMappingType::LIGHT_COUNTS, renderer);
 
     renderer->render.mapped_ubos[(i32)rendering::UniformBufferMappingType::LIGHT_COUNTS] = rendering::create_uniform_buffer(rendering::BufferUsage::DYNAMIC, count_layout, renderer);

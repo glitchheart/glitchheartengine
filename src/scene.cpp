@@ -4208,7 +4208,7 @@ static Camera get_standard_camera(SceneManager& manager)
                 QueuedRenderCommand &queued_command = pass.queued_commands[i];
                 CombinedCommand &first_command = queued_command.commands[0];
 
-                rendering::Material &material = get_material_instance(first_command.material_handle, renderer);
+                // rendering::Material &material = get_material_instance(first_command.material_handle, renderer);
 
                 // if(material.lighting.receives_light)
                 //     update_lighting_for_material(first_command, renderer);
