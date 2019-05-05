@@ -435,10 +435,63 @@ namespace rendering
             layout.array_values[index].max_entries == array_size && layout.is_array[total_index];
     }
 
+    static b32 validate_ubo_uniform(Renderer *renderer, Shader shader, i32 defined_struct_index, i32 index, UniformBufferMappingType mapping_type, i32 array_size, i32 total_index)
+    {
+        UniformBufferLayout layout = renderer->render.ubo_layouts[(i32)mapping_type];
+        if(layout.array_values[index].max_entries != array_size)
+        {
+            return false;
+        }
+        
+        Structure& structure = renderer->render.ubo_struct_definitions[layout.struct_indices[total_index]];
+        Structure defined_struct = shader.structures[defined_struct_index];
+
+        if(structure.uniform_count != defined_struct.uniform_count)
+        {
+            return false;
+        }
+
+        for(i32 i = 0; i < structure.uniform_count; i++)
+        {
+            Uniform u = structure.uniforms[i];
+            Uniform d_u = defined_struct.uniforms[i];
+            if(u.type != d_u.type)
+            {
+                return false;
+            }
+        }
+        
+        return layout.is_array[total_index];
+    }
+
     static b32 validate_ubo_uniform(Renderer *renderer, ValueType type, i32 index, UniformBufferMappingType mapping_type, i32 total_index)
     {
         UniformBufferLayout layout = renderer->render.ubo_layouts[(i32)mapping_type];
         return layout.values[index] == type && !layout.is_array[total_index];
+    }
+
+    static b32 validate_ubo_uniform(Renderer *renderer, Shader shader, i32 defined_struct_index, i32 index, UniformBufferMappingType mapping_type, i32 total_index)
+    {
+        UniformBufferLayout layout = renderer->render.ubo_layouts[(i32)mapping_type];
+        Structure& structure = renderer->render.ubo_struct_definitions[layout.struct_indices[total_index]];
+        Structure defined_struct = shader.structures[defined_struct_index];
+
+        if(structure.uniform_count != defined_struct.uniform_count)
+        {
+            return false;
+        }
+
+        for(i32 i = 0; i < structure.uniform_count; i++)
+        {
+            Uniform u = structure.uniforms[i];
+            Uniform d_u = defined_struct.uniforms[i];
+            if(u.type != d_u.type)
+            {
+                return false;
+            }
+        }
+ 
+        return !layout.is_array[total_index];
     }
 
     static void parse_ubo(Renderer *renderer, char **source, char *total_buffer, UniformBufferInfo &ubo, Shader& shader, const char* file_path)
@@ -483,7 +536,6 @@ namespace rendering
 					}
                     else
                     {
-
                         error("Unmapped UBO's currently unsupported.", file_path);
                     }
 
@@ -512,6 +564,7 @@ namespace rendering
 
                 i32 uniform_count = 0;
                 i32 array_uniform_count = 0;
+                i32 struct_uniform_count = 0;
                 i32 total_uniform_count = 0;
 
                 while(read_line(buffer, 256, source))
@@ -556,7 +609,9 @@ namespace rendering
                             }
                         }
 
-                        ValueType type = get_value_type(&rest, file_path);
+                        char *prev = rest;
+                        
+                        ValueType type = get_value_type(&rest, file_path, true);
                         if(type != ValueType::INVALID)
                         {
                             if(ubo.mapping_type != UniformBufferMappingType::NONE)
@@ -566,7 +621,7 @@ namespace rendering
                                     if(!validate_ubo_uniform(renderer, type, array_uniform_count, ubo.mapping_type, arr_size, total_uniform_count++))
                                     {
                                         char error_buf[256];
-                                        sprintf(error_buf, "Invalid UBO uniform type %d for mapping type %d", type, (i32)ubo.mapping_type);
+                                        sprintf(error_buf, "Invalid UBO uniform array type %d for mapping type %d", type, (i32)ubo.mapping_type);
                                         error(error_buf, file_path);
                                     }
                                     array_uniform_count++;
@@ -579,8 +634,55 @@ namespace rendering
                                         sprintf(error_buf, "Invalid UBO uniform type %d for mapping type %d", type, (i32)ubo.mapping_type);
                                         error(error_buf, file_path);
                                     }
-                                    
+
                                     uniform_count++;
+                                }
+                            }
+                            else
+                            {
+                                error("Unmapped UBO's currently unsupported.", file_path);           
+                            }
+                        }
+                        else // We might have a struct
+                        {
+                            char name[32];
+                            sscanf(prev, "%[^ ]", name);
+
+                            // We validate the struct name here
+                            i32 structure_index = get_structure_index(name, shader);
+                            
+                            if (structure_index < 0)
+                            {
+                                char buf[32];
+                                sprintf(buf, "Structure '%s' not found\n", prev);
+                                error(buf, file_path);
+                            }
+                            else
+                            {
+                                if(ubo.mapping_type != UniformBufferMappingType::NONE)
+                                {
+                                    if(arr_size != -1)
+                                    {
+                                        if(!validate_ubo_uniform(renderer, shader, structure_index, uniform_count, ubo.mapping_type, arr_size, total_uniform_count++))
+                                        {
+                                            char error_buf[256];
+                                            sprintf(error_buf, "Invalid UBO uniform array struct %d for mapping type %d", type, (i32)ubo.mapping_type);
+                                            error(error_buf, file_path);                                            
+                                        }
+                                        array_uniform_count++;
+                                        struct_uniform_count++;
+                                    }
+                                    else
+                                    {
+                                        if(!validate_ubo_uniform(renderer, shader, structure_index, uniform_count, ubo.mapping_type, total_uniform_count++))
+                                        {
+                                            char error_buf[256];
+                                            sprintf(error_buf, "Invalid UBO uniform struct %d for mapping type %d", type, (i32)ubo.mapping_type);
+                                            error(error_buf, file_path);                                                                                        
+                                        }
+                                        uniform_count++;
+                                        struct_uniform_count++;
+                                    }
                                 }
                             }
                         }
@@ -1015,6 +1117,7 @@ namespace rendering
 		FILE *file = fopen(shader.path, "r");
 
 		shader.loaded = false;
+        shader.ubo_count = 0;
 
 		if (file)
 		{

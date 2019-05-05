@@ -289,6 +289,7 @@ namespace rendering
     struct UniformBufferLayout
     {
         ValueType values[16];
+        i32 struct_indices[16]; // Index into Renderer ubo structs
         char names[16][32];
         i32 value_count;
 
@@ -311,7 +312,7 @@ namespace rendering
             i32 index;
             i32 total_index;
             UniformValue value;
-        } update_pairs[16];
+        } update_pairs[32];
 
         i32 value_count;
 
