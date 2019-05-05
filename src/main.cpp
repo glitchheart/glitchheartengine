@@ -368,26 +368,27 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
 
     rendering::UniformBufferLayout point_layout = {};
     rendering::initialize_ubo_layout(point_layout);
-    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT3, global_max_point_lights, "position", renderer);
-    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT, global_max_point_lights, "constant", renderer);
-    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT, global_max_point_lights, "linear", renderer);
-    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT, global_max_point_lights, "quadratic", renderer);
-    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT3, global_max_point_lights, "ambient", renderer);
-    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT3, global_max_point_lights, "diffuse", renderer);
-    rendering::add_array_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT3, global_max_point_lights, "specular", renderer);
+
+    rendering::begin_struct_ubo_array_value(point_layout, rendering::UniformBufferMappingType::POINT, global_max_point_lights, "PointLight", renderer); 
+    
+    rendering::add_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT3, "position", renderer);    
+    rendering::add_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT3, "ambient", renderer);
+    rendering::add_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT3, "diffuse", renderer);
+    rendering::add_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT3, "specular", renderer);
+    rendering::add_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT, "constant", renderer);
+    rendering::add_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT, "linear", renderer);
+    rendering::add_value_to_ubo_layout(point_layout, rendering::ValueType::FLOAT, "quadratic", renderer);
+
+    rendering::end_struct_ubo_value(renderer);
+    
     rendering::register_ubo_layout(point_layout, rendering::UniformBufferMappingType::POINT, renderer);
 
     renderer->render.mapped_ubos[(i32)rendering::UniformBufferMappingType::POINT] = rendering::create_uniform_buffer(rendering::BufferUsage::DYNAMIC, point_layout, renderer);
 
     rendering::UniformBufferLayout directional_layout = {};
     rendering::initialize_ubo_layout(directional_layout);
-
-    // rendering::add_array_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3, global_max_directional_lights, "direction", renderer);
-    // rendering::add_array_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3, global_max_directional_lights, "ambient", renderer);
-    // rendering::add_array_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3, global_max_directional_lights, "diffuse", renderer);
-    // rendering::add_array_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3, global_max_directional_lights, "specular", renderer);
-
-    rendering::begin_struct_ubo_value(directional_layout, rendering::UniformBufferMappingType::DIRECTIONAL, "DirectionalLight", renderer);
+    
+    rendering::begin_struct_ubo_array_value(directional_layout, rendering::UniformBufferMappingType::DIRECTIONAL, global_max_directional_lights, "DirectionalLight", renderer);
 
     rendering::add_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3, "direction", renderer);
     rendering::add_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3, "ambient", renderer);
@@ -395,9 +396,6 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     rendering::add_value_to_ubo_layout(directional_layout, rendering::ValueType::FLOAT3, "specular", renderer);
 
     rendering::end_struct_ubo_value(renderer);
-
-    // rendering::begin_struct_ubo_array_value(directional_layout, rendering::UniformBufferMappingType::DIRECTIONAL, 2, "DirectionalLight", renderer);
-    // rendering::end_struct_ubo_value(renderer);
 
     rendering::register_ubo_layout(directional_layout, rendering::UniformBufferMappingType::DIRECTIONAL, renderer);
 

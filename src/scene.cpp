@@ -468,7 +468,7 @@ namespace scene
                         break;
                         case LightType::POINT:
                         {
-                            fprintf(file, "light::direction: %f %f %f\n", light.point_light.position.x, light.point_light.position.y, light.point_light.position.z);
+                            fprintf(file, "light::position: %f %f %f\n", light.point_light.position.x, light.point_light.position.y, light.point_light.position.z);
                             fprintf(file, "light::constant: %f\n", light.point_light.constant);
                             fprintf(file, "light::linear: %f\n", light.point_light.linear);
                             fprintf(file, "light::quadratic: %f\n", light.point_light.quadratic);
