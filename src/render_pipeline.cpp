@@ -63,7 +63,7 @@ namespace rendering
 
         for(i32 i = 0; i < shader.ubo_count; i++)
         {
-            if(shader.uniform_buffers[i].mapping_type == UniformBufferMappingType::POINT ||
+            if(shader.uniform_buffers[i].mapping_type == UniformBufferMappingType::DIRECTIONAL ||
                shader.uniform_buffers[i].mapping_type == UniformBufferMappingType::POINT)
             {
                 material.lighting.receives_light = true;
@@ -1789,9 +1789,7 @@ namespace rendering
         break;
         case ValueType::STRUCTURE:
         {
-            // @Incomplete: Need to handle
-            // Handled by finding structure index
-            // and looking through each type recursively
+            // @Note: Should never use this function for structs
             assert(false);
             return 0;
         }
@@ -1816,7 +1814,12 @@ namespace rendering
         size_t offset = 0;
         for(i32 i = 0; i < structure.uniform_count; i++)
         {
-            offset += get_ubo_base_offset(structure.uniforms[i].type);
+            size_t current_offset = get_ubo_base_offset(structure.uniforms[i].type);
+            offset += current_offset;
+            if(current_offset > 4)
+            {
+                offset = (size_t)math::multiple_of_number((i32)offset, 16);
+            }
         }
         return offset;
     }
@@ -1862,7 +1865,7 @@ namespace rendering
      *
      * @param layout A reference to the UBO layout definition to add the value to
      * @param type The type of the value we add to the layout definition
-     * @param max_count The array size of the value we add
+     * @param max_count The array size of the value we add, i.e. the max entry count
      */
     static void add_array_value_to_ubo_layout(UniformBufferLayout& layout, ValueType type, i32 max_count, const char* name, Renderer *renderer)
     {        
@@ -2033,6 +2036,10 @@ namespace rendering
      */
     static void end_struct_ubo_value(Renderer* renderer)
     {
+        // @Note: We have this check for two reasons:
+        //        Obvious: We don't want to end a struct if we have not started one
+        //        In case we called a begin with an existing struct, we don't want the
+        //        API to expose that, but rather just guard against it and not fail.
         if(renderer->render.ubo_struct_constructing != UniformBufferMappingType::NONE)
         {
             renderer->render.ubo_struct_constructing = UniformBufferMappingType::NONE;
@@ -2098,13 +2105,13 @@ namespace rendering
         {
             i32 count = update.array_value_count++;
 			//@Incomplete: Not a perfect solution.
-			array.entry_count = MAX(array.entry_count, array_index + 1);
             update.array_update_pairs[count].index = actual_index;
             update.array_update_pairs[count].total_index = index;
         }
+        array.entry_count = MAX(array.entry_count, array_index + 1);
 		update.array_update_pairs[actual_index].value = array;
 
-        return update.array_update_pairs[actual_index].value;;
+        return update.array_update_pairs[actual_index].value;
     }
 
     /**
@@ -2120,15 +2127,24 @@ namespace rendering
     static void add_ubo_array_update_value(UniformBufferUpdate& update, UniformBufferHandle handle, i32 index, i32 array_index, math::Mat4 value, Renderer *renderer)
     {
         UniformArray& array = _add_ubo_array_update_value(update, handle, index, array_index, renderer);
-        if(array.entries[0].values[0].uniform.type == ValueType::STRUCTURE)
-        {
-            
-        }
-        else
-        {
-			array.entries[array_index].values[0].mat4_val = value;
-			//@Incomplete: Not a perfect solution.
-        }
+        array.entries[array_index].values[0].mat4_val = value;
+    }
+
+    /**
+     * Add a Mat4 value in a struct array value to some UBO update data
+     * 
+     * @param update A reference to an UBO update data struct to add the value to
+     * @param handle An opaque handle to the UBO 
+     * @param value_index The index of the value in the UBO layout
+     * @param array_index The index of the entry in the array for this value
+     * @param member_index The index of the member in the struct
+     * @param value The Mat4 value to add to the array
+     * @param renderer The renderer
+     */    
+    static void add_ubo_array_update_value(UniformBufferUpdate& update, UniformBufferHandle handle, i32 value_index, i32 array_index, i32 member_index, math::Mat4 value, Renderer *renderer)
+    {
+        UniformArray& array = _add_ubo_array_update_value(update, handle, value_index, array_index, renderer);
+        array.entries[array_index].values[member_index].mat4_val = value;
     }
 
     /**
@@ -2144,14 +2160,24 @@ namespace rendering
     static void add_ubo_array_update_value(UniformBufferUpdate& update, UniformBufferHandle handle, i32 index, i32 array_index, math::Vec3 value, Renderer *renderer)
     {
         UniformArray& array = _add_ubo_array_update_value(update, handle, index, array_index, renderer);
-        if(array.entries[0].values[0].uniform.type == ValueType::STRUCTURE)
-        {
-            
-        }
-        else
-        {
-            array.entries[array_index].values[0].float3_val = value;
-        }
+        array.entries[array_index].values[0].float3_val = value;
+    }
+
+    /**
+     * Add a Vec3 value in a struct array value to some UBO update data
+     * 
+     * @param update A reference to an UBO update data struct to add the value to
+     * @param handle An opaque handle to the UBO 
+     * @param value_index The index of the value in the UBO layout
+     * @param array_index The index of the entry in the array for this value
+     * @param member_index The index of the member in the struct
+     * @param value The Vec3 value to add to the array
+     * @param renderer The renderer
+     */    
+    static void add_ubo_array_update_value(UniformBufferUpdate& update, UniformBufferHandle handle, i32 value_index, i32 array_index, i32 member_index, math::Vec3 value, Renderer *renderer)
+    {
+        UniformArray& array = _add_ubo_array_update_value(update, handle, value_index, array_index, renderer);
+        array.entries[array_index].values[member_index].float3_val = value;
     }
 
     /**
@@ -2167,14 +2193,24 @@ namespace rendering
     static void add_ubo_array_update_value(UniformBufferUpdate& update, UniformBufferHandle handle, i32 index, i32 array_index, math::Vec2 value, Renderer *renderer)
     {
         UniformArray& array = _add_ubo_array_update_value(update, handle, index, array_index, renderer);
-        if(array.entries[0].values[0].uniform.type == ValueType::STRUCTURE)
-        {
-            
-        }
-        else
-        {
-            array.entries[array_index].values[0].float2_val = value;
-        }
+        array.entries[array_index].values[0].float2_val = value;
+    }
+
+    /**
+     * Add a Vec2 value in a struct array value to some UBO update data
+     * 
+     * @param update A reference to an UBO update data struct to add the value to
+     * @param handle An opaque handle to the UBO 
+     * @param value_index The index of the value in the UBO layout
+     * @param array_index The index of the entry in the array for this value
+     * @param member_index The index of the member in the struct
+     * @param value The Vec2 value to add to the array
+     * @param renderer The renderer
+     */    
+    static void add_ubo_array_update_value(UniformBufferUpdate& update, UniformBufferHandle handle, i32 value_index, i32 array_index, i32 member_index, math::Vec2 value, Renderer *renderer)
+    {
+        UniformArray& array = _add_ubo_array_update_value(update, handle, value_index, array_index, renderer);
+        array.entries[array_index].values[member_index].float2_val = value;
     }
 
     /**
@@ -2190,14 +2226,24 @@ namespace rendering
     static void add_ubo_array_update_value(UniformBufferUpdate& update, UniformBufferHandle handle, i32 index, i32 array_index, r32 value, Renderer *renderer)
     {
         UniformArray& array = _add_ubo_array_update_value(update, handle, index, array_index, renderer);
-        if(array.entries[0].values[0].uniform.type == ValueType::STRUCTURE)
-        {
-            
-        }
-        else
-        {
-            array.entries[array_index].values[0].float_val = value;
-        }
+        array.entries[array_index].values[0].float_val = value;
+    }
+
+    /**
+     * Add a float value in a struct array value to some UBO update data
+     * 
+     * @param update A reference to an UBO update data struct to add the value to
+     * @param handle An opaque handle to the UBO 
+     * @param value_index The index of the value in the UBO layout
+     * @param array_index The index of the entry in the array for this value
+     * @param member_index The index of the member in the struct
+     * @param value The float value to add to the array
+     * @param renderer The renderer
+     */    
+    static void add_ubo_array_update_value(UniformBufferUpdate& update, UniformBufferHandle handle, i32 value_index, i32 array_index, i32 member_index, r32 value, Renderer *renderer)
+    {
+        UniformArray& array = _add_ubo_array_update_value(update, handle, value_index, array_index, renderer);
+        array.entries[array_index].values[member_index].float_val = value;
     }
 
     /**
@@ -2213,14 +2259,7 @@ namespace rendering
     static void add_ubo_array_update_value(UniformBufferUpdate& update, UniformBufferHandle handle, i32 index, i32 array_index, i32 value, Renderer *renderer)
     {
         UniformArray& array = _add_ubo_array_update_value(update, handle, index, array_index, renderer);
-        if(array.entries[0].values[0].uniform.type == ValueType::STRUCTURE)
-        {
-            
-        }
-        else
-        {
-            array.entries[array_index].values[0].integer_val = value;
-        }
+        array.entries[array_index].values[0].integer_val = value;
     }
 
     static i32 _add_ubo_update_value(UniformBufferUpdate& update, UniformBufferHandle handle, i32 index, Renderer * renderer)
@@ -2497,6 +2536,7 @@ namespace rendering
                 }
             }
         }
+
         return offset;
     }
 
@@ -2535,6 +2575,13 @@ namespace rendering
 
                     get_size_and_value_for_ubo_data(&u_v, &u_sz, v);
 
+                    size_t base_offset = get_ubo_base_offset(v.uniform.type);
+
+                    if(offset % base_offset > 0)
+                    {
+                        offset = (size_t)math::multiple_of_number((i32)offset, base_offset);
+                    }
+
                     assert(offset + u_sz <= max_size && total_size + u_sz <= max_size);
                     memcpy(memory + offset, u_v, u_sz);
                     total_size += get_ubo_base_offset(v.uniform.type);
@@ -2563,7 +2610,6 @@ namespace rendering
         for(i32 i = 0; i < update_data.array_value_count; i++)
         {
             auto[index, total_index, value] = update_data.array_update_pairs[i];
-            assert(layout.array_values[index].type == value.entries[0].values[0].uniform.type);
 
             size_t offset = _get_offset_of_previous_values(total_index, layout, renderer);
 
@@ -2572,20 +2618,23 @@ namespace rendering
             u8* u_v = nullptr;
             size_t u_sz = 0;
 
-            for(i32 i = 0; i < value.entry_count; i++)
+            for(i32 j = 0; j < value.entry_count; j++)
             {
-                // @Incomplete: Structures not yet supported
-                UniformValue uniform_value = value.entries[i].values[0];
+                for(i32 k = 0; k < value.entries[j].value_count; k++)
+                {
+                    UniformValue uniform_value = value.entries[j].values[k];
                 
-                get_size_and_value_for_ubo_data(&u_v + previous_offset, &u_sz, uniform_value);
+                    get_size_and_value_for_ubo_data(&u_v + previous_offset, &u_sz, uniform_value);
+
+                    memcpy(memory + offset + previous_offset, u_v, u_sz);
                 
-                previous_offset += u_sz;
+                    previous_offset += get_ubo_base_offset(uniform_value.uniform.type);
+                }
             }
 
             total_size += value.max_size;
             
-            memcpy(memory + offset, u_v, u_sz);
-
+            // memcpy(memory + offset, u_v, previous_offset + u_sz);
         }
 
         return total_size;
@@ -2687,35 +2736,55 @@ namespace rendering
             i32 structure_index = layout.struct_indices[i];
             if(layout.is_array[i])
             {
-				i32 count = array_uniform_count++;
+                i32 count = array_uniform_count++;
 
                 ValueType type = layout.array_values[count].type;
-                
-                Uniform uniform = {};
-                uniform.mapping_type = UniformMappingType::NONE;
-                uniform.type = type;
-                UniformValue value = {};
-                value.uniform = uniform;
-            
+                           
                 UniformArray array = {};
                 strncpy(&array.name[0], &layout.array_values[count].name[0], strlen(&layout.array_values[count].name[0]) + 1);
 
-				size_t base_offset = 0;
+                size_t base_offset = 0;
 
-				if (structure_index != -1)
-				{
-					base_offset = get_ubo_base_offset(structure_index, renderer);
-				}
-				else
-				{
-					base_offset = get_ubo_base_offset(type);
-				}
+                if (structure_index != -1)
+                {
+                    base_offset = get_ubo_base_offset(structure_index, renderer);
+                }
+                else
+                {
+                    base_offset = get_ubo_base_offset(type);
+                }
 
                 array.max_size = (i32)(layout.array_values[count].max_entries * base_offset);
                 array.entries = push_array(&renderer->ubo_arena, layout.array_values[count].max_entries, UniformEntry);
-                for(i32 j = 0; j < layout.array_values[count].max_entries; j++)
+                if(structure_index != -1)
                 {
-                    array.entries[j].values[0] = value;
+                    Structure structure = renderer->render.ubo_struct_definitions[layout.struct_indices[i]];
+                    for(i32 j = 0; j < layout.array_values[count].max_entries; j++)
+                    {
+                        for(i32 k = 0; k < structure.uniform_count; k++)
+                        {
+                            Uniform uniform = structure.uniforms[k];
+                            UniformValue value = {};
+                            value.uniform = uniform;
+            
+                            array.entries[j].values[k] = value;
+                            array.entries[j].value_count++;
+                        }
+                    
+                    }
+                }
+                else
+                {
+                    Uniform uniform = {};
+                    uniform.mapping_type = UniformMappingType::NONE;
+                    uniform.type = type;
+                    UniformValue value = {};
+                    value.uniform = uniform;
+            
+                    for(i32 j = 0; j < layout.array_values[count].max_entries; j++)
+                    {
+                        array.entries[j].values[0] = value;
+                    }
                 }
 
                 renderer->render.ubo_array_uniforms[handle.handle - 1][count] = array;
@@ -2792,54 +2861,25 @@ namespace rendering
         {
             DirectionalLight &light = renderer->render.directional_lights[light_index];
 
-            // add_ubo_array_update_value(dirlight_update, dirlight_ubo
-            //                            , 0, 0, light_index, light.direction
-            //                            , renderer);
-            // add_ubo_array_update_value(dirlight_update, dirlight_ubo
-            //                            , 0, 1, light_index, light.ambient
-            //                            , renderer);
-            // add_ubo_array_update_value(dirlight_update, dirlight_ubo
-            //                            , 0, 2, light_index, light.diffuse
-            //                            , renderer);
-            // add_ubo_array_update_value(dirlight_update, dirlight_ubo
-            //                            , 0, 3, light_index, light.specular
-            //                            , renderer);
-
-            add_ubo_update_value(dirlight_update, dirlight_ubo
-                                       , 0, 0, light.direction
+            add_ubo_array_update_value(dirlight_update, dirlight_ubo
+                                       , 0, light_index, 0, light.direction
                                        , renderer);
-            add_ubo_update_value(dirlight_update, dirlight_ubo
-                                       , 0, 1, light.ambient
+            add_ubo_array_update_value(dirlight_update, dirlight_ubo
+                                       , 0, light_index, 1, light.ambient
                                        , renderer);
-            add_ubo_update_value(dirlight_update, dirlight_ubo
-                                       , 0, 2, light.diffuse
+            add_ubo_array_update_value(dirlight_update, dirlight_ubo
+                                       , 0, light_index, 2, light.diffuse
                                        , renderer);
-            add_ubo_update_value(dirlight_update, dirlight_ubo
-                                       , 0, 3, light.specular
+            add_ubo_array_update_value(dirlight_update, dirlight_ubo
+                                       , 0, light_index, 3, light.specular
                                        , renderer);
-
-            // add_ubo_array_update_value(dirlight_update, dirlight_ubo
-            //                            , 0, light_index, light.direction
-            //                            , renderer);
-
-            // add_ubo_array_update_value(dirlight_update, dirlight_ubo
-            //                            , 1, light_index, light.ambient
-            //                            , renderer);
-
-            // add_ubo_array_update_value(dirlight_update, dirlight_ubo
-            //                            , 2, light_index, light.diffuse
-            //                            , renderer);
-
-            // add_ubo_array_update_value(dirlight_update, dirlight_ubo
-            //                            , 3, light_index, light.specular
-            //                            , renderer);     
         }
         
         update_uniform_buffer(dirlight_update, renderer);
 
         UniformBufferHandle pointlight_ubo = renderer->render.mapped_ubos[(i32)UniformBufferMappingType::POINT];
 
-        UniformBufferUpdate pointlight_update = generate_ubo_update(dirlight_ubo, UniformBufferMappingType::POINT, renderer);
+        UniformBufferUpdate pointlight_update = generate_ubo_update(pointlight_ubo, UniformBufferMappingType::POINT, renderer);
 
         // Update the lighting UBO's
 
@@ -2848,32 +2888,32 @@ namespace rendering
             PointLight &light = renderer->render.point_lights[light_index];
 
             add_ubo_array_update_value(pointlight_update, pointlight_ubo
-                                                  , 0, light_index, light.position
-                                                  , renderer);
+                                       , 0, light_index, 0, light.position
+                                       , renderer);
 
             add_ubo_array_update_value(pointlight_update, pointlight_ubo
-                                                  , 1, light_index, light.constant
-                                                  , renderer);
+                                       , 0, light_index, 1, light.ambient
+                                       , renderer);
 
             add_ubo_array_update_value(pointlight_update, pointlight_ubo
-                                                  , 2, light_index, light.linear
-                                                  , renderer);
+                                       , 0, light_index, 2, light.diffuse
+                                       , renderer);
 
             add_ubo_array_update_value(pointlight_update, pointlight_ubo
-                                                  , 3, light_index, light.quadratic
-                                                  , renderer);
+                                       , 0, light_index, 3, light.specular
+                                       , renderer);
 
             add_ubo_array_update_value(pointlight_update, pointlight_ubo
-                                                  , 4, light_index, light.ambient
-                                                  , renderer);
+                                       , 0, light_index, 4, light.constant
+                                       , renderer);
 
             add_ubo_array_update_value(pointlight_update, pointlight_ubo
-                                                  , 5, light_index, light.diffuse
-                                                  , renderer);
+                                       , 0, light_index, 5,light.linear
+                                       , renderer);
 
             add_ubo_array_update_value(pointlight_update, pointlight_ubo
-                                                  , 6, light_index, light.specular
-                                                  , renderer);     
+                                       , 0, light_index, 6, light.quadratic
+                                       , renderer);
         }
         
         update_uniform_buffer(pointlight_update, renderer);
