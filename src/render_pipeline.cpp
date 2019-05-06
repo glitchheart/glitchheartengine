@@ -2579,7 +2579,7 @@ namespace rendering
 
                     if(offset % base_offset > 0)
                     {
-                        offset = (size_t)math::multiple_of_number((i32)offset, base_offset);
+                        offset = math::multiple_of_number(offset, base_offset);
                     }
 
                     assert(offset + u_sz <= max_size && total_size + u_sz <= max_size);
@@ -2614,27 +2614,39 @@ namespace rendering
             size_t offset = _get_offset_of_previous_values(total_index, layout, renderer);
 
             size_t previous_offset = 0;
+            size_t total_offset = 0;
 
             u8* u_v = nullptr;
             size_t u_sz = 0;
 
             for(i32 j = 0; j < value.entry_count; j++)
             {
+                size_t largest_base_alignment = 0;
                 for(i32 k = 0; k < value.entries[j].value_count; k++)
                 {
                     UniformValue uniform_value = value.entries[j].values[k];
-                
-                    get_size_and_value_for_ubo_data(&u_v + previous_offset, &u_sz, uniform_value);
 
-                    memcpy(memory + offset + previous_offset, u_v, u_sz);
-                
-                    previous_offset += get_ubo_base_offset(uniform_value.uniform.type);
+                    size_t current_offset = get_ubo_base_offset(uniform_value.uniform.type);
+
+                    if(previous_offset > 0 && previous_offset < current_offset)
+                    {
+                        total_offset += current_offset - previous_offset;
+                    }
+
+                    get_size_and_value_for_ubo_data(&u_v , &u_sz, uniform_value);
+
+                    memcpy(memory + offset + total_offset, u_v, u_sz);
+
+                    largest_base_alignment = MAX(largest_base_alignment, current_offset);
+                    previous_offset = u_sz;
+                    total_offset += u_sz;
                 }
+                total_offset = math::multiple_of_number(total_offset, largest_base_alignment);
+                previous_offset = 0;
             }
+            offset += total_offset;
 
             total_size += value.max_size;
-            
-            // memcpy(memory + offset, u_v, previous_offset + u_sz);
         }
 
         return total_size;

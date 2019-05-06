@@ -2002,6 +2002,11 @@ namespace math
         return mul * (ceil(((r32)n / (r32)mul)));
     }
 
+    inline size_t multiple_of_number(size_t n, size_t mul)
+    {
+        return (size_t)(mul * (ceil(((r32)n / (r32)mul))));
+    }
+
     inline i32 next_power_of_two(i32 n)
     {
         i32 result = 0;
