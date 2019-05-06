@@ -368,6 +368,11 @@ PLATFORM_GET_ALL_DIRECTORIES(linux_get_all_directories)
     return dir_buf;
 }
 
+static PLATFORM_IS_EOL(linux_is_eol)
+{
+    return c == '\n';
+}
+
 static void init_platform(PlatformApi& platform_api)
 {
     platform_api.get_all_files_with_extension = linux_get_all_files_with_extension;
@@ -386,6 +391,7 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.print_file = linux_print_file;
     platform_api.get_all_directories = linux_get_all_directories;
     platform_api.create_directory = linux_create_directory;
+    platform_api.is_eol = linux_is_eol;
 
     // Threading
     platform_api.add_entry = add_entry;

@@ -339,6 +339,11 @@ PLATFORM_GET_ALL_DIRECTORIES(osx_get_all_directories)
     return dir_buf;
 }
 
+static PLATFORM_IS_EOL(osx_is_eol)
+{
+    return c == '\n';
+}
+
 static void init_platform(PlatformApi& platform_api)
 {
     platform_api.get_all_files_with_extension = osx_get_all_files_with_extension;
@@ -356,6 +361,7 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.seek_file = osx_seek_file;
     platform_api.tell_file = osx_tell_file;
     platform_api.create_directory = osx_create_directory;
+    platform_api.is_eol = osx_is_eol;
 
     // Threading
     platform_api.add_entry = add_entry;
