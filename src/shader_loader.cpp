@@ -1176,10 +1176,10 @@ namespace rendering
 
 			sprintf(out_path, "../out/%s.shd", out_name);
 
-			FILE *shd = fopen(out_path, "w");
-			fwrite(shader.vert_shader, strlen(shader.vert_shader), 1, shd);
-			fwrite(shader.frag_shader, strlen(shader.frag_shader), 1, shd);
-			fclose(shd);
+			// FILE *shd = fopen(out_path, "w");
+			// fwrite(shader.vert_shader, strlen(shader.vert_shader), 1, shd);
+			// fwrite(shader.frag_shader, strlen(shader.frag_shader), 1, shd);
+			// fclose(shd);
 #endif
 
 			fclose(file);

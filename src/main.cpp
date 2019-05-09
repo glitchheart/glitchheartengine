@@ -541,9 +541,9 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     standard_info.width = renderer->framebuffer_width;
     standard_info.height = renderer->framebuffer_height;
     
-    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 2);
-    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 2);
-    rendering::add_depth_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, standard_info, 2);
+    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 4);
+    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 4);
+    rendering::add_depth_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, standard_info, 4);
 
     rendering::FramebufferHandle standard_framebuffer = rendering::create_framebuffer(standard_info, renderer);
     rendering::RenderPassHandle standard = rendering::create_render_pass(STANDARD_PASS, standard_framebuffer, renderer);
@@ -666,7 +666,7 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     
     renderer->render.bloom.active = true;
     renderer->render.bloom.exposure = 1.8f;
-    renderer->render.bloom.amount = 5;
+    renderer->render.bloom.amount = 1;
     
     for(i32 i = 0; i < renderer->render.bloom.amount; i++)
     {
