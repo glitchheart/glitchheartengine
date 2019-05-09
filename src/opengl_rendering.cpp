@@ -1,8 +1,8 @@
- static void bind_vertex_array(GLuint vao, RenderState &render_state)
+ static void bind_vertex_array(GLuint vao, RenderState *render_state)
 {
-    if (vao != render_state.current_state.vao)
+    if (vao != render_state->current_state.vao)
     {
-        render_state.current_state.vao = vao;
+        render_state->current_state.vao = vao;
         glBindVertexArray(vao);
     }
 }
@@ -508,7 +508,7 @@ static void create_buffer(Buffer *buffer, rendering::RegisterBufferInfo info, Re
     buffer->vertex_count = info.data.vertex_count;
 
     glGenVertexArrays(1, &buffer->vao);
-    bind_vertex_array(buffer->vao, *render_state);
+    bind_vertex_array(buffer->vao, render_state);
 
     glGenBuffers(1, &buffer->vbo);
     glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
@@ -600,7 +600,7 @@ static void create_buffer(Buffer *buffer, rendering::RegisterBufferInfo info, Re
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, info.data.index_buffer_size, info.data.index_buffer, buffer->usage);
     }
 
-    bind_vertex_array(0, *render_state);
+    bind_vertex_array(0, render_state);
 }
 
 static void create_framebuffer_color_attachment(RenderState &render_state, Renderer *renderer, rendering::FramebufferInfo &info, Framebuffer &framebuffer, i32 width, i32 height)
@@ -646,7 +646,7 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
                 }
                 else
                 {
-                    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB, width, height);
+                    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA, width, height);
                 }
 
                 glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_RENDERBUFFER,
@@ -999,7 +999,7 @@ static void setup_quad(RenderState &render_state, MemoryArena *arena)
 
     // Framebuffer quad
     glGenVertexArrays(1, &render_state.framebuffer_quad_vao);
-    bind_vertex_array(render_state.framebuffer_quad_vao, render_state);
+    bind_vertex_array(render_state.framebuffer_quad_vao, &render_state);
     glGenBuffers(1, &render_state.framebuffer_quad_vbo);
     glBindBuffer(GL_ARRAY_BUFFER, render_state.framebuffer_quad_vbo);
     glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)render_state.framebuffer_quad_vertices_size, render_state.framebuffer_quad_vertices, GL_DYNAMIC_DRAW);
@@ -1009,7 +1009,7 @@ static void setup_quad(RenderState &render_state, MemoryArena *arena)
     vertex_attrib_pointer(0, 2, GL_FLOAT, 4 * sizeof(float), nullptr);
     vertex_attrib_pointer(1, 2, GL_FLOAT, 4 * sizeof(float), (void *)(2 * sizeof(float)));
 
-    bind_vertex_array(0, render_state);
+    bind_vertex_array(0, &render_state);
 }
 
 // @Cleanup: Move glfw stuff to separate header!
@@ -1085,7 +1085,7 @@ static const GLFWvidmode *create_open_gl_window(RenderState &render_state, Windo
     glfwWindowHint(GLFW_RED_BITS, mode->redBits);
     glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
     glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
-    glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+    //glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
 
     debug_log("refresh rate %d", mode->refreshRate);
 
@@ -1245,24 +1245,24 @@ static Buffer &get_internal_buffer(Renderer *renderer, RenderState &render_state
 
 static void update_vertex_buffer(Buffer *buffer, r32 *data, size_t count, size_t size, rendering::BufferUsage buffer_usage, RenderState *render_state, Renderer *renderer)
 {
-    bind_vertex_array(buffer->vao, *render_state);
+    bind_vertex_array(buffer->vao, render_state);
     glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
     buffer->vertex_count = (i32)count;
     buffer->vertex_buffer_size = (i32)size;
 
     glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW);
 
-    bind_vertex_array(0, *render_state);
+    bind_vertex_array(0, render_state);
 
     GLenum usage = get_usage(buffer_usage);
 
-    bind_vertex_array(buffer->vao, *render_state);
+    bind_vertex_array(buffer->vao, render_state);
     buffer->vertex_count = (i32)count;
     buffer->vertex_buffer_size = (i32)size;
 
     glBufferData(GL_ARRAY_BUFFER, size, data, usage);
 
-    bind_vertex_array(0, *render_state);
+    bind_vertex_array(0, render_state);
 }
 
 static void update_index_buffer(Buffer *buffer, u16* data, size_t count, size_t size, rendering::BufferUsage buffer_usage, RenderState *render_state, Renderer* renderer)
@@ -1273,7 +1273,7 @@ static void update_index_buffer(Buffer *buffer, u16* data, size_t count, size_t 
     }
     
     GLenum usage = get_usage(buffer_usage);
-    bind_vertex_array(buffer->vao, *render_state);
+    bind_vertex_array(buffer->vao, render_state);
         
     buffer->index_buffer_count = (i32)count;
     buffer->index_buffer_size = (i32)size;
@@ -1410,7 +1410,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
 
     render_state.paused = false;
 
-    glfwSetErrorCallback(error_callback);
+    //glfwSetErrorCallback(error_callback);
 
     //@Incomplete: Figure something out here. Ask for compatible version etc
 #ifdef _WIN32
@@ -1427,8 +1427,6 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
 #endif
 
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_SAMPLES, 4);
-
 
     render_state.contrast = contrast;
     render_state.brightness = brightness;
@@ -1481,7 +1479,6 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
 
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
-    glfwSwapInterval(1);
     render_state.vsync_active = vsync_active;
 
     glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
@@ -2153,7 +2150,7 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
 {
     Buffer& buffer = get_internal_buffer(renderer, render_state, buffer_handle);
     
-    bind_vertex_array(buffer.vao, render_state);
+    bind_vertex_array(buffer.vao, &render_state);
 
     ShaderGL gl_shader;
     rendering::Shader &shader_info = renderer->render.shaders[material.shader.handle];
@@ -2242,8 +2239,6 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
         setup_instanced_vertex_attribute_buffers(material.instanced_vertex_attributes, material.instanced_vertex_attribute_count, shader_info, render_state, renderer);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
-        // debug_vao();
-                            
         glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void *)nullptr, count);
     }
     else
@@ -2295,7 +2290,7 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
 
         if(command_count > 0)
         {
-            bind_vertex_array(font_buffer.vao, render_state);
+            bind_vertex_array(font_buffer.vao, &render_state);
             glBindBuffer(GL_ARRAY_BUFFER, font_buffer.vbo);
         
             for(i32 j = 0; j < command_count; j++)
@@ -2424,19 +2419,19 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
         // @Incomplete: Not all framebuffers should have depth testing or clear both bits
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
-            
+
         if(pass.has_clear_color)
             glClearColor(pass.clear_color.r, pass.clear_color.g, pass.clear_color.b, pass.clear_color.a);
         else
             glClearColor(renderer->clear_color.r, renderer->clear_color.g, renderer->clear_color.b, renderer->clear_color.a);
             
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        if(framebuffer.tex_color_buffer_count > 0 && framebuffer.depth_buffer_count > 0)
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        else if(framebuffer.tex_color_buffer_count > 0)
+            glClear(GL_COLOR_BUFFER_BIT);
+        else
+            glClear(GL_DEPTH_BUFFER_BIT);
 
-        if(framebuffer.tex_color_buffer_count > 1)
-        {
-            static const float transparent[] = { 0, 0, 0, 0 };
-            glClearBufferfv(GL_COLOR, 1, transparent);
-        }
             
         for (i32 i = 0; i < pass.commands.render_command_count; i++)
         {
@@ -2534,7 +2529,7 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
 
 static void render_all_passes(RenderState &render_state, Renderer *renderer)
 {
-    bind_vertex_array(0, render_state);
+    bind_vertex_array(0, &render_state);
 
     // @Incomplete: Create a better way for enabling/disabling the clipping planes
     // Check if we have clipping planes
@@ -2602,7 +2597,7 @@ static void render_post_processing_passes(RenderState &render_state, Renderer *r
 {
     glDisable(GL_DEPTH_TEST);
 
-    bind_vertex_array(render_state.framebuffer_quad_vao, render_state);
+    bind_vertex_array(render_state.framebuffer_quad_vao, &render_state);
 
     for (i32 pass_index = 0; pass_index < renderer->render.post_processing_pass_count; pass_index++)
     {
@@ -2634,7 +2629,7 @@ static void render_post_processing_passes(RenderState &render_state, Renderer *r
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void *)nullptr);
     }
 
-    bind_vertex_array(0, render_state);
+    bind_vertex_array(0, &render_state);
 
     // glBindFramebuffer(GL_FRAMEBUFFER, final_buffer.buffer_handle);
 
