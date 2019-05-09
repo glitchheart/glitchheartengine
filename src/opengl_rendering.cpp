@@ -1490,11 +1490,8 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     glDebugMessageCallback((GLDEBUGPROC)message_callback, 0);
 #endif
     glDisable(GL_DITHER);
-
     glDisable(GL_CULL_FACE);
-    
     glEnable(GL_DEPTH_TEST);
-
     glDepthFunc(GL_LESS);
 
     log("%s", glGetString(GL_VERSION));
@@ -1503,6 +1500,8 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
 
     rendering_state.render_state = &render_state;
     rendering_state.renderer = renderer;
+
+    glfwSwapInterval(1);
 
     glfwSetWindowUserPointer(render_state.window, &rendering_state);
     glfwSetKeyCallback(render_state.window, key_callback);
@@ -1568,7 +1567,8 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
         }
 
         // @Incomplete: Replace with own sort? Don't like using qsort here :(
-        qsort(renderer->available_resolutions, (size_t)renderer->available_resolutions_count, sizeof(Resolution), [](const void *a, const void *b) {
+        qsort(renderer->available_resolutions, (size_t)renderer->available_resolutions_count, sizeof(Resolution), [](const void *a, const void *b) 
+        {
             auto r_1 = (const Resolution *)a;
             auto r_2 = (const Resolution *)b;
 
@@ -2387,9 +2387,10 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
 
         rendering::UniformBufferUpdate matrix_update = rendering::generate_ubo_update(matrix_ubo, rendering::UniformBufferMappingType::VP, renderer);
 
-        rendering::add_ubo_update_value(matrix_update, matrix_ubo
-                                        , 0, math::transpose(pass.camera.projection_matrix)
-                                        , renderer);
+        rendering::add_ubo_update_value(matrix_update, matrix_ubo,
+                                        0,
+                                        math::transpose(pass.camera.projection_matrix),
+                                        renderer);
         
         rendering::add_ubo_update_value(matrix_update, matrix_ubo
                                         , 1, math::transpose(pass.camera.view_matrix)
@@ -2533,7 +2534,7 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
 
     // @Incomplete: Create a better way for enabling/disabling the clipping planes
     // Check if we have clipping planes
-    // glEnable(GL_CLIP_PLANE0);
+    glEnable(GL_CLIP_PLANE0);
 
     glDisable(GL_BLEND);
     rendering::RenderPass &shadow_pass = renderer->render.passes[renderer->render.shadow_pass.handle - 1];
