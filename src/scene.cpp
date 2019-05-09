@@ -4208,10 +4208,7 @@ static Camera get_standard_camera(SceneManager& manager)
                 QueuedRenderCommand &queued_command = pass.queued_commands[i];
                 CombinedCommand &first_command = queued_command.commands[0];
 
-                // rendering::Material &material = get_material_instance(first_command.material_handle, renderer);
-
-                // if(material.lighting.receives_light)
-                //     update_lighting_for_material(first_command, renderer);
+                b32 has_rendered = false;
 
                 for(i32 batch_index = 0; batch_index < queued_command.count; batch_index++)
                 {
@@ -4222,10 +4219,14 @@ static Camera get_standard_camera(SceneManager& manager)
                     if (mat_instance.instanced_vertex_attribute_count == 0)
                     {
                         rendering::push_buffer_to_render_pass(renderer, queued_command.buffer_handle, render_command.material_handle, render_command.transform, pass.pass_handle, queued_command.ignore_depth ? rendering::CommandType::NO_DEPTH : rendering::CommandType::WITH_DEPTH);
+                        has_rendered = true;
                         continue;
                     }
                 }
 
+                if(has_rendered)
+                    continue;
+                
                 rendering::push_instanced_buffer_to_render_pass(renderer, queued_command.count, queued_command.buffer_handle, first_command.material_handle,
                                                                 pass.pass_handle, queued_command.ignore_depth ? rendering::CommandType::NO_DEPTH : rendering::CommandType::WITH_DEPTH);
             }
