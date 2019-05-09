@@ -684,10 +684,6 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     rendering::set_uniform_value(renderer, final_blur_pass, "scene", rendering::get_texture_from_framebuffer(0, standard_resolve_framebuffer, renderer));
     rendering::set_uniform_value(renderer, final_blur_pass, "depth", rendering::get_depth_texture_from_framebuffer(0, standard_resolve_framebuffer, renderer));
     rendering::set_uniform_value(renderer, final_blur_pass, "blur", src_tex);
-
-//     rendering::set_uniform_value(renderer, bloom, "bloom", renderer->render.bloom.active);
-//     rendering::set_uniform_value(renderer, bloom, "exposure", renderer->render.bloom.exposure);
-
     //END BLOOM
 
     // Add tonemapping pass?
