@@ -31,13 +31,18 @@ namespace scene
     {
         i32 handle;
     };
-    
+
     struct ParticleSystemComponentHandle
     {
         i32 handle;
     };
 
     struct LightComponentHandle
+    {
+        i32 handle;
+    };
+
+    struct AnimatorHandle
     {
         i32 handle;
     };
@@ -55,6 +60,7 @@ namespace scene
         COMP_RENDER = 1 << 1,
         COMP_PARTICLES = 1 << 2,
         COMP_LIGHT = 1 << 3,
+        COMP_ANIMATOR = 1 << 4
     };
 
     struct EntityData
@@ -124,6 +130,7 @@ namespace scene
         u64 comp_flags;
         TransformComponentHandle transform_handle;
         RenderComponentHandle render_handle;
+        AnimatorHandle animator_handle;
         ParticleSystemComponentHandle particle_system_handle;
         LightComponentHandle light_handle;
 
@@ -160,6 +167,94 @@ namespace scene
         b32 is_pushed[8];
         
         i32 render_pass_count;
+    };
+
+    enum class AnimationType
+    {
+        FLOAT,
+        VEC3
+    };
+
+    enum class AnimationMode
+    {
+        CONSTANT,
+        LERP
+    };
+
+    #define MAX_ANIMATIONS 4
+    #define MAX_KEY_FRAMES 8
+
+    struct FloatAnimation
+    {
+        b32 running;
+        i32 current_key_frame;
+        r64 current_time;
+
+        char value_name[32];
+
+        AnimationMode mode;
+        r64 key_frame_times[MAX_KEY_FRAMES];
+        r32 key_frame_values[MAX_KEY_FRAMES];
+        
+        i32 count;
+    };
+
+    enum class Vec3Type
+    {
+        UNIFORM,
+        TRANSFORM_POSITION,
+        TRANSFORM_ROTATION,
+        TRANSFORM_SCALE
+    };
+
+    struct Vec3Animation
+    {
+        b32 running;
+        i32 current_key_frame;
+        r64 current_time;
+
+        char value_name[32];
+
+        Vec3Type type;
+
+        AnimationMode mode;
+        r64 key_frame_times[MAX_KEY_FRAMES];
+        math::Vec3 key_frame_values[MAX_KEY_FRAMES];
+        
+        i32 count;
+    };
+
+    struct RootAnimationHandle
+    {
+        i32 handle;
+    };
+
+    struct Animation
+    {
+        b32 loop;
+
+        FloatAnimation float_animations[MAX_ANIMATIONS];
+        i32 float_anim_count;
+
+        Vec3Animation vec3_animations[MAX_ANIMATIONS];
+        i32 vec3_anim_count;
+    };
+
+    struct AnimationHandle
+    {
+        i32 handle;
+        AnimationType type;
+    };
+
+    struct AnimatorComponent
+    {
+        EntityHandle entity;
+
+        b32 running;
+        RootAnimationHandle current_handle;
+
+        Animation animations[8];
+        i32 anim_count;
     };
     
     struct ParticleSystemComponent
@@ -354,6 +449,9 @@ namespace scene
         
         RenderComponent *render_components;
         i32 render_component_count;
+
+        AnimatorComponent *animator_components;
+        i32 animator_component_count;
         
         ParticleSystemComponent *particle_system_components;
         i32 particle_system_component_count;
