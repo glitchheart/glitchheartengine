@@ -356,7 +356,7 @@ namespace rendering
             }
             else
             {
-                uniform.array_size = (i32)strtol(*rest, rest, 10);
+                uniform.array_size = (i32)strtol(array_size, NULL, 10);
             }
         }
     }
@@ -379,7 +379,7 @@ namespace rendering
         {
             uniform.name[strlen(uniform.name) - 1] = '\0';
         }
-        else
+        else if(!uniform.is_array)
         {
             i32 c = 0;
             i32 m_c = 0;
@@ -1176,10 +1176,10 @@ namespace rendering
 
 			sprintf(out_path, "../out/%s.shd", out_name);
 
-			// FILE *shd = fopen(out_path, "w");
-			// fwrite(shader.vert_shader, strlen(shader.vert_shader), 1, shd);
-			// fwrite(shader.frag_shader, strlen(shader.frag_shader), 1, shd);
-			// fclose(shd);
+			FILE *shd = fopen(out_path, "w");
+			fwrite(shader.vert_shader, strlen(shader.vert_shader), 1, shd);
+			fwrite(shader.frag_shader, strlen(shader.frag_shader), 1, shd);
+			fclose(shd);
 #endif
 
 			fclose(file);
