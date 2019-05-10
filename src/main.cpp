@@ -666,7 +666,7 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     
     renderer->render.bloom.active = true;
     renderer->render.bloom.exposure = 1.8f;
-    renderer->render.bloom.amount = 2;
+    renderer->render.bloom.amount = 4;
     
     for(i32 i = 0; i < renderer->render.bloom.amount; i++)
     {
@@ -1060,7 +1060,10 @@ int main(int argc, char **args)
             if(scene_manager->scene_loaded) // Check again, since there could be a call to unload_current_scene() in game.update()
             {
                 update_scene_editor(scene_manager->loaded_scene, &input_controller, delta_time);
-                push_scene_for_rendering(scene::get_scene(scene_manager->loaded_scene), renderer);
+
+                scene::Scene &scene = scene::get_scene(scene_manager->loaded_scene);
+                scene::update_animators(scene, renderer, delta_time);
+                scene::push_scene_for_rendering(scene, renderer);
             }
         }
         else

@@ -13,6 +13,7 @@ namespace scene
     // Scene handle
     static RenderComponent& add_render_component(SceneHandle scene, EntityHandle entity_handle, b32 cast_shadows);
     static TransformComponent& add_transform_component(SceneHandle scene, EntityHandle entity_handle);
+    static AnimatorComponent& add_animator_component(SceneHandle scene, EntityHandle entity_handle);
     static ParticleSystemComponent& add_particle_system_component(SceneHandle handle, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles, rendering::MaterialHandle material);
     static LightComponent & add_light_component(SceneHandle &handle, EntityHandle entity_handle);
     static EntityHandle register_entity(u64 comp_flags, SceneHandle scene, b32 savable);
@@ -25,6 +26,7 @@ namespace scene
     static TransformComponent& get_transform_comp(EntityHandle handle, SceneHandle scene);
     static TransformComponent& get_transform_comp(TransformComponentHandle handle, SceneHandle scene);
     static RenderComponent& get_render_comp(EntityHandle handle, SceneHandle scene);
+    static AnimatorComponent& get_animator_comp(EntityHandle handle, SceneHandle scene);
     static ParticleSystemComponent& get_particle_system_comp(EntityHandle handle, SceneHandle scene);
     static LightComponent &get_light_comp(EntityHandle handle, SceneHandle scene);
     static Camera & get_scene_camera(SceneHandle handle);
@@ -338,6 +340,7 @@ namespace scene
         scene.current_internal_handle = 0;
         scene.transform_component_count = 0;
         scene.render_component_count = 0;
+        scene.animator_component_count = 0;
 		
         auto &memory_arena = scene.memory_arena;
         scene.entities = push_array(&memory_arena, initial_entity_array_size, Entity);
@@ -347,6 +350,7 @@ namespace scene
         scene.render_components = push_array(&memory_arena, initial_entity_array_size, RenderComponent);
         scene.light_components = push_array(&memory_arena, initial_entity_array_size, LightComponent);
         scene.particle_system_components = push_array(&memory_arena, initial_entity_array_size, ParticleSystemComponent);
+        scene.animator_components = push_array(&memory_arena, initial_entity_array_size, AnimatorComponent);
 
         if(scene_manager->debug_cube.handle == 0)
         {
@@ -2429,6 +2433,20 @@ static Camera get_standard_camera(SceneManager& manager)
         return _add_transform_component(scene, entity_handle);
     }
 
+    static AnimatorComponent& add_animator_component(SceneHandle handle, EntityHandle entity_handle)
+    {
+        Scene &scene = get_scene(handle);
+        Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
+        entity.comp_flags |= COMP_ANIMATOR;
+        entity.animator_handle = { scene.animator_component_count++ };
+
+        scene::AnimatorComponent &comp = scene.animator_components[entity.animator_handle.handle];
+        
+        comp.running = false;
+        comp.anim_count = 0;
+        comp.entity = entity_handle;
+        return(comp);
+    }
     
     static ParticleSystemComponent & _add_particle_system_component(Scene &scene, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles, rendering::MaterialHandle material)
     {
@@ -2753,7 +2771,7 @@ static Camera get_standard_camera(SceneManager& manager)
 
 							if (obj_info.object_count > 0)
 							{
-								templ->render.bounding_box_buffer = rendering::create_bounding_box_buffer(scene.renderer);
+								//templ->render.bounding_box_buffer = rendering::create_bounding_box_buffer(scene.renderer);
 							}
 
                             if(obj_info.object_count == 1)
@@ -3750,6 +3768,21 @@ static Camera get_standard_camera(SceneManager& manager)
         Scene &scene = get_scene(handle);
         return get_transform_comp(entity, scene);
     }
+
+    static AnimatorComponent& get_animator_comp(EntityHandle entity_handle, SceneHandle handle)
+    {
+        Scene &scene = get_scene(handle);
+
+        i32 internal_handle = scene._internal_handles[entity_handle.handle - 1];
+        assert(internal_handle > -1);
+        
+        Entity entity = scene.entities[internal_handle];
+        
+        assert(entity.comp_flags & COMP_ANIMATOR);
+        
+        AnimatorComponent& comp = scene.animator_components[entity.animator_handle.handle];
+        return(comp);
+    }
      
     // @Note(Daniel): Should we really return a pointer here? A reference might suffice, since we don't ever use the null-value for anything....
     // Returns a direct pointer to the RenderComponent of the specified entity
@@ -3868,6 +3901,18 @@ static Camera get_standard_camera(SceneManager& manager)
         }
     }
 
+    static i32 get_child_count(EntityHandle handle, SceneHandle scene)
+    {
+        Entity& entity = get_entity(handle, scene);
+        return entity.child_count;
+    }
+
+    static EntityHandle get_child_handle(EntityHandle handle, i32 index, SceneHandle scene)
+    {
+        Entity& entity = get_entity(handle, scene);
+        return entity.children[index];
+    }
+
     static void add_child(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
     {
         assert(parent_handle.handle != child_handle.handle);
@@ -3936,7 +3981,295 @@ static Camera get_standard_camera(SceneManager& manager)
             remove_child(child.parent, child_handle, scene);
         }
     }
+
+    // @Incomplete: Maybe we should dynamically allocate animations and key frames when we want to use less memory
+    static void allocate_animations(AnimationType type, i32 count, EntityHandle entity_handle, SceneHandle scene)
+    {}
+
+    static void _set_animation_playing(b32 playing, RootAnimationHandle animation_handle, EntityHandle entity_handle, SceneHandle scene_handle)
+    {
+        AnimatorComponent &animator = get_animator_comp(entity_handle, scene_handle);
+        animator.running = playing;
+        animator.current_handle = animation_handle;
+
+        Animation &root = animator.animations[animation_handle.handle - 1];
+
+        for(i32 i = 0; i < root.float_anim_count; i++)
+        {
+            root.float_animations[i].running = playing;
+            root.vec3_animations[i].current_key_frame = 0;
+            root.vec3_animations[i].current_time = 0.0;
+        }
+
+        for(i32 i = 0; i < root.vec3_anim_count; i++)
+        {
+            root.vec3_animations[i].running = playing;
+            root.vec3_animations[i].current_key_frame = 0;
+            root.vec3_animations[i].current_time = 0.0;
+        }
+    }
+
+    static void play_animation(RootAnimationHandle animation_handle, EntityHandle entity_handle, SceneHandle scene_handle)
+    {
+        _set_animation_playing(true, animation_handle, entity_handle, scene_handle);
+    }
+
+    static void stop_animation(RootAnimationHandle animation_handle, EntityHandle entity_handle, SceneHandle scene_handle)
+    {
+        _set_animation_playing(false, animation_handle, entity_handle, scene_handle);
+    }
+
+    static AnimationHandle add_uniform_value_animation(AnimatorComponent &animator, RootAnimationHandle root_handle, AnimationType type, AnimationMode mode, const char *value_name, b32 loop = false)
+    {
+        Animation &root = animator.animations[root_handle.handle - 1];
+
+        AnimationHandle handle = {0};
+        handle.type = type;
+
+        if(type == AnimationType::FLOAT)
+        {
+            assert(root.float_anim_count < MAX_ANIMATIONS);
+
+            auto& anim = root.float_animations[root.float_anim_count++];
+            anim.mode = mode;
+
+            root.loop = true;
+
+            strcpy(anim.value_name, value_name);
+
+            handle.handle = root.float_anim_count;
+        }
+        else if(type == AnimationType::VEC3)
+        {
+            assert(root.vec3_anim_count < MAX_ANIMATIONS);
+
+            auto& anim = root.vec3_animations[root.vec3_anim_count++];
+            anim.mode = mode;
+
+            root.loop = true;
+
+            strcpy(anim.value_name, value_name);
+
+            handle.handle = root.vec3_anim_count;
+        }
+
+        return handle;
+    }
+
+    static AnimationHandle add_uniform_value_animation(RootAnimationHandle root_handle, EntityHandle entity, AnimationType type, AnimationMode mode, const char *value_name, SceneHandle scene, b32 loop = false)
+    {
+        AnimatorComponent &comp = get_animator_comp(entity, scene);
+        return add_uniform_value_animation(comp, root_handle, type, mode, value_name, loop);
+    }
+
+    static AnimationHandle add_transform_animation(AnimatorComponent &animator, RootAnimationHandle root_handle, AnimationMode mode, Vec3Type vec3_type)
+    {
+        Animation &animation = animator.animations[root_handle.handle - 1];
+
+        AnimationHandle handle = {0};
+        handle.type = AnimationType::VEC3;
+
+        assert(animation.vec3_anim_count < MAX_ANIMATIONS);
+
+        auto& anim = animation.vec3_animations[animation.vec3_anim_count++];
+        anim.mode = mode;
+        anim.type = vec3_type;
+
+        handle.handle = animation.vec3_anim_count;
+
+        return handle;
+    }
+
+    static RootAnimationHandle add_root_animation(AnimatorComponent &animator, b32 loop = false)
+    {
+        RootAnimationHandle handle = {0};
+
+        assert(animator.anim_count < MAX_ANIMATIONS);
+
+        auto& anim = animator.animations[animator.anim_count++];
+        anim.loop = true;
+
+        handle.handle = animator.anim_count;
+
+        return handle;
+    }
+
+    static RootAnimationHandle add_root_animation(EntityHandle entity, SceneHandle scene, b32 loop = false)
+    {
+        AnimatorComponent &comp = get_animator_comp(entity, scene);
+        return add_root_animation(comp, loop);
+    } 
+
+    static AnimationHandle add_transform_animation(RootAnimationHandle root_handle, EntityHandle entity, AnimationMode mode, Vec3Type vec3_type, SceneHandle scene)
+    {
+        AnimatorComponent &comp = get_animator_comp(entity, scene);
+        return add_transform_animation(comp, root_handle, mode, vec3_type);
+    }
+
+    static void add_animation_float_key_frame(r32 value, r64 time, RootAnimationHandle root_handle, AnimationHandle handle, EntityHandle entity_handle, SceneHandle scene_handle)
+    {
+        AnimatorComponent &comp = get_animator_comp(entity_handle, scene_handle);
+        Animation &animation = comp.animations[root_handle.handle - 1];
+
+        FloatAnimation &float_anim = animation.float_animations[handle.handle - 1];
+        float_anim.key_frame_values[float_anim.count] = value;
+        float_anim.key_frame_times[float_anim.count] = time;
+        float_anim.count++;
+    }
+
+    static void add_animation_vec3_key_frame(math::Vec3 value, r64 time, RootAnimationHandle root_handle, AnimationHandle handle, EntityHandle entity_handle, SceneHandle scene_handle)
+    {
+        AnimatorComponent &comp = get_animator_comp(entity_handle, scene_handle);
+        Animation &animation = comp.animations[root_handle.handle - 1];
+
+        Vec3Animation &vec3_anim = animation.vec3_animations[handle.handle - 1];
+        vec3_anim.key_frame_values[vec3_anim.count] = value;
+        vec3_anim.key_frame_times[vec3_anim.count] = time;
+        vec3_anim.count++;
+    }
+
+    static b32 update_animation(FloatAnimation &animation, Animation &root, AnimatorComponent &animator, Scene &scene, r64 delta_time)
+    {
+        b32 should_run = true;
+
+        r64 frame_time = animation.key_frame_times[animation.current_key_frame];
+        r32 key_frame_value = animation.key_frame_times[animation.current_key_frame];
+
+        r32 t = 0.0;
+
+        if(animation.mode == AnimationMode::LERP)
+        {
+            r32 next_value = animation.key_frame_values[animation.current_key_frame + 1];
+            r32 next_time = animation.key_frame_times[animation.current_key_frame + 1];
+            
+            r32 time_distance = next_time - frame_time;
+
+            t = (r32)(animation.current_time / time_distance);
+            r32 value = key_frame_value + (next_value - key_frame_value) * math::clamp(t, 0.0f, 1.0f);
+
+            set_uniform_value(animator.entity, animation.value_name, value, scene.handle);
+        }
+        else
+        {
+            assert(false);
+        }
+
+        if(t >= 1.0f) // The frame is done
+        {
+            animation.current_key_frame++;
+            animation.current_time = 0.0;
+
+            if((animation.current_key_frame == animation.count - 1 && animation.mode == AnimationMode::LERP) || (animation.current_key_frame == animation.count && animation.mode == AnimationMode::CONSTANT))
+            {
+                animation.current_key_frame = 0;
+                should_run = root.loop;
+                animation.running = root.loop;
+            }
+        }
+
+        if(animation.running)
+            animation.current_time += delta_time;
+
+        return should_run;
+    }
+
+    static b32 update_animation(Vec3Animation &animation, Animation &root, AnimatorComponent &animator, Scene &scene, r64 delta_time)
+    {
+        b32 should_run = true;
+
+        r64 frame_time = animation.key_frame_times[animation.current_key_frame];
+        math::Vec3 key_frame_value = animation.key_frame_times[animation.current_key_frame];
+
+        r32 t = 0.0;
+
+        if(animation.mode == AnimationMode::LERP)
+        {
+            math::Vec3 next_value = animation.key_frame_values[animation.current_key_frame + 1];
+            r32 next_time = animation.key_frame_times[animation.current_key_frame + 1];
+            
+            r32 time_distance = next_time - frame_time;
+
+            t = (r32)(animation.current_time / time_distance);
+            math::Vec3 value = key_frame_value + (next_value - key_frame_value) * math::clamp(t, 0.0f, 1.0f);
+
+            switch(animation.type)
+            {
+                case Vec3Type::UNIFORM:
+                {}
+                break;
+                case Vec3Type::TRANSFORM_POSITION:
+                {
+                    TransformComponent &comp = get_transform_comp(animator.entity, scene);
+                    scene::set_position(comp, value);
+                }
+                break;
+                case Vec3Type::TRANSFORM_ROTATION:
+                {
+                    TransformComponent &comp = get_transform_comp(animator.entity, scene);
+                    scene::set_rotation(comp, value);
+                }
+                break;
+                case Vec3Type::TRANSFORM_SCALE:
+                {
+                    TransformComponent &comp = get_transform_comp(animator.entity, scene);
+                    scene::set_scale(comp, value);
+                }
+                break;
+            }
+        }
+        else
+        {
+            assert(false);
+        }
+
+        if(t >= 1.0f) // The frame is done
+        {
+            animation.current_key_frame++;
+            animation.current_time = 0.0;
+
+            if((animation.current_key_frame == animation.count - 1 && animation.mode == AnimationMode::LERP) || (animation.current_key_frame == animation.count && animation.mode == AnimationMode::CONSTANT))
+            {
+                animation.current_key_frame = 0;
+                should_run = root.loop;
+                animation.running = root.loop;
+            }
+        }
+
+        if(animation.running)
+            animation.current_time += delta_time;
+
+        return should_run;
+    }
     
+    static void update_animators(scene::Scene &scene, Renderer *renderer, r64 delta_time)
+    {
+        for(i32 i = 0; i < scene.animator_component_count; i++)
+        {
+            AnimatorComponent &animator = scene.animator_components[i];
+
+            if(animator.running)
+            {
+                i32 running_count = 0;
+
+                Animation &animation = animator.animations[animator.current_handle.handle - 1];
+
+                for(i32 j = 0; j < animation.float_anim_count; j++)
+                {
+                    if(animation.float_animations[j].running)
+                        running_count += update_animation(animation.float_animations[j], animation, animator, scene, delta_time);
+                }
+
+                for(i32 j = 0; j < animation.vec3_anim_count; j++)
+                {
+                    if(animation.vec3_animations[j].running)
+                        running_count += update_animation(animation.vec3_animations[j], animation, animator, scene, delta_time);
+                }
+
+                animator.running = running_count > 0;
+            }
+        }
+    }
+
     static void push_scene_for_rendering(scene::Scene &scene, Renderer *renderer)
     {
         for(i32 i = 0; i < renderer->render.pass_count; i++)
