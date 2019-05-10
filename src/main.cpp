@@ -666,7 +666,7 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     
     renderer->render.bloom.active = true;
     renderer->render.bloom.exposure = 1.8f;
-    renderer->render.bloom.amount = 2;
+    renderer->render.bloom.amount = 4;
     
     for(i32 i = 0; i < renderer->render.bloom.amount; i++)
     {

@@ -2753,7 +2753,7 @@ static Camera get_standard_camera(SceneManager& manager)
 
 							if (obj_info.object_count > 0)
 							{
-								templ->render.bounding_box_buffer = rendering::create_bounding_box_buffer(scene.renderer);
+								//templ->render.bounding_box_buffer = rendering::create_bounding_box_buffer(scene.renderer);
 							}
 
                             if(obj_info.object_count == 1)
@@ -3866,6 +3866,18 @@ static Camera get_standard_camera(SceneManager& manager)
             TransformComponent& child = get_transform_comp(entity.children[i], scene);
             recompute_transforms(child, scene);
         }
+    }
+
+    static i32 get_child_count(EntityHandle handle, SceneHandle scene)
+    {
+        Entity& entity = get_entity(handle, scene);
+        return entity.child_count;
+    }
+
+    static EntityHandle get_child_handle(EntityHandle handle, i32 index, SceneHandle scene)
+    {
+        Entity& entity = get_entity(handle, scene);
+        return entity.children[index];
     }
 
     static void add_child(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
