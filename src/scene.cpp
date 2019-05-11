@@ -4133,16 +4133,16 @@ static Camera get_standard_camera(SceneManager& manager)
         b32 should_run = true;
 
         r64 frame_time = animation.key_frame_times[animation.current_key_frame];
-        r32 key_frame_value = animation.key_frame_times[animation.current_key_frame];
+        r32 key_frame_value = animation.key_frame_values[animation.current_key_frame];
 
         r32 t = 0.0;
 
         if(animation.mode == AnimationMode::LERP)
         {
             r32 next_value = animation.key_frame_values[animation.current_key_frame + 1];
-            r32 next_time = animation.key_frame_times[animation.current_key_frame + 1];
+            r64 next_time = animation.key_frame_times[animation.current_key_frame + 1];
             
-            r32 time_distance = next_time - frame_time;
+            r64 time_distance = next_time - frame_time;
 
             t = (r32)(animation.current_time / time_distance);
             r32 value = key_frame_value + (next_value - key_frame_value) * math::clamp(t, 0.0f, 1.0f);
@@ -4178,16 +4178,16 @@ static Camera get_standard_camera(SceneManager& manager)
         b32 should_run = true;
 
         r64 frame_time = animation.key_frame_times[animation.current_key_frame];
-        math::Vec3 key_frame_value = animation.key_frame_times[animation.current_key_frame];
+        math::Vec3 key_frame_value = animation.key_frame_values[animation.current_key_frame];
 
         r32 t = 0.0;
 
         if(animation.mode == AnimationMode::LERP)
         {
             math::Vec3 next_value = animation.key_frame_values[animation.current_key_frame + 1];
-            r32 next_time = animation.key_frame_times[animation.current_key_frame + 1];
+            r64 next_time = animation.key_frame_times[animation.current_key_frame + 1];
             
-            r32 time_distance = next_time - frame_time;
+            r64 time_distance = next_time - frame_time;
 
             t = (r32)(animation.current_time / time_distance);
             math::Vec3 value = key_frame_value + (next_value - key_frame_value) * math::clamp(t, 0.0f, 1.0f);
