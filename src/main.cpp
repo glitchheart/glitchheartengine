@@ -805,12 +805,11 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     end_temporary_memory(temp_mem);
 }
 
-//#if defined(_WIN32) && !defined(DEBUG)
-//int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
-//int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-//#else
+#if defined(_WIN32) && !defined(DEBUG)
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+#else
 int main(int argc, char **args)
-//#endif
+#endif
 {
     GameMemory game_memory = {};
 

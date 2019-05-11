@@ -19,7 +19,7 @@ set CommonCompilerFlags=/MD -std:c++latest -fp:fast -fp:except- -nologo %OPT% -O
 set CommonLinkerFlags= Comdlg32.lib Ole32.lib kernel32.lib user32.lib gdi32.lib winmm.lib opengl32.lib shell32.lib ..\libs\glfw\lib-vc2015\glfw3.lib ..\libs\glad\glad.obj ..\libs\fmod\lib\fmod64_vc.lib
 set ExtraLinkerFlags=/NODEFAULTLIB:"LIBCMT" -incremental:no -opt:ref /ignore:4099
 
-IF %DEBUG% NEQ 1 set Console=
+IF %DEBUG% NEQ 1 set Console=/SUBSYSTEM:windows /ENTRY:mainCRTStartup
 
 IF NOT EXIST build mkdir build
 pushd build
@@ -28,7 +28,7 @@ REM 64-bit build
 del *.pdb > NUL 2> NUL
 
 echo Compilation started on: %time%
-cl %CommonCompilerFlags% ..\src\main.cpp /Fealtered /DCURL_STATICLIB /link %ExtraLinkerFlags% %CommonLinkerFlags%
+cl %CommonCompilerFlags% ..\src\main.cpp /Fealtered /DCURL_STATICLIB /link %ExtraLinkerFlags% %CommonLinkerFlags% %Console%
 echo Compilation finished on: %time%
 popd
 
