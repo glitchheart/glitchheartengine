@@ -4039,11 +4039,6 @@ static Camera get_standard_camera(SceneManager& manager)
             root.vec3_animations[i].current_key_frame = 0;
             root.vec3_animations[i].current_time = 0.0;
         }
-
-        for(i32 i = 0; i < root.child_animation_count; i++)
-        {
-            _set_animation_playing(playing, root.child_animations[i], scene_handle);
-        }
     }
 
     static void play_animation(RootAnimationHandle animation_handle,  SceneHandle scene_handle)
@@ -4051,29 +4046,15 @@ static Camera get_standard_camera(SceneManager& manager)
         _set_animation_playing(true, animation_handle, scene_handle);
     }
 
-    static void add_child_animation(RootAnimationHandle root_handle, RootAnimationHandle child_handle, SceneHandle scene_handle)
-    {
-        AnimatorComponent &animator = get_animator_comp(root_handle.entity, scene_handle);
-        AnimatorComponent &child_animator = get_animator_comp(child_handle.entity, scene_handle);
-        
-        Animation &root = animator.animations[root_handle.handle - 1];
-        Animation &child = child_animator.animations[child_handle.handle -1];
-
-        child.parented_animation = true;
-        child.loop = root.loop;
-
-        root.child_animations[root.child_animation_count++] = child_handle;
-    }
-
     static void stop_animation(RootAnimationHandle animation_handle, EntityHandle entity_handle, SceneHandle scene_handle)
     {
         _set_animation_playing(false, animation_handle, scene_handle);
     }
 
-    static AnimationHandle add_uniform_value_animation(AnimatorComponent &animator, RootAnimationHandle root_handle, AnimationType type, AnimationMode mode, const char *value_name, b32 loop = false)
+    static AnimationHandle add_uniform_value_animation(AnimatorComponent &animator, RootAnimationHandle root_handle, EntityHandle entity, AnimationType type, AnimationMode mode, const char *value_name, b32 loop = false)
     {
         Animation &root = animator.animations[root_handle.handle - 1];
-
+        
         AnimationHandle handle = {0};
         handle.type = type;
 
@@ -4082,6 +4063,7 @@ static Camera get_standard_camera(SceneManager& manager)
             assert(root.float_anim_count < MAX_ANIMATIONS);
 
             auto& anim = root.float_animations[root.float_anim_count++];
+            anim.entity = entity;
             anim.mode = mode;
 
             root.loop = true;
@@ -4095,6 +4077,7 @@ static Camera get_standard_camera(SceneManager& manager)
             assert(root.vec3_anim_count < MAX_ANIMATIONS);
 
             auto& anim = root.vec3_animations[root.vec3_anim_count++];
+            anim.entity = entity;
             anim.mode = mode;
 
             root.loop = true;
@@ -4109,26 +4092,33 @@ static Camera get_standard_camera(SceneManager& manager)
 
     static AnimationHandle add_uniform_value_animation(RootAnimationHandle root_handle, EntityHandle entity, AnimationType type, AnimationMode mode, const char *value_name, SceneHandle scene, b32 loop = false)
     {
-        AnimatorComponent &comp = get_animator_comp(entity, scene);
-        return add_uniform_value_animation(comp, root_handle, type, mode, value_name, loop);
+        AnimatorComponent &comp = get_animator_comp(root_handle.entity, scene);
+        return add_uniform_value_animation(comp, root_handle, entity, type, mode, value_name, loop);
     }
 
-    static AnimationHandle add_transform_animation(AnimatorComponent &animator, RootAnimationHandle root_handle, AnimationMode mode, Vec3Type vec3_type)
+    static AnimationHandle add_transform_animation(AnimatorComponent &animator, RootAnimationHandle root_handle, EntityHandle entity, AnimationMode mode, Vec3Type vec3_type)
     {
         Animation &animation = animator.animations[root_handle.handle - 1];
 
         AnimationHandle handle = {0};
         handle.type = AnimationType::VEC3;
-
+        
         assert(animation.vec3_anim_count < MAX_ANIMATIONS);
 
         auto& anim = animation.vec3_animations[animation.vec3_anim_count++];
+        anim.entity = entity;
         anim.mode = mode;
         anim.type = vec3_type;
 
         handle.handle = animation.vec3_anim_count;
 
         return handle;
+    }
+
+    static AnimationHandle add_transform_animation(RootAnimationHandle root_handle, EntityHandle entity, AnimationMode mode, Vec3Type vec3_type, SceneHandle scene)
+    {
+        AnimatorComponent &comp = get_animator_comp(root_handle.entity, scene);
+        return add_transform_animation(comp, root_handle, entity, mode, vec3_type);
     }
 
     static RootAnimationHandle add_root_animation(EntityHandle entity_handle, AnimatorComponent &animator, b32 loop = false)
@@ -4151,12 +4141,6 @@ static Camera get_standard_camera(SceneManager& manager)
         AnimatorComponent &comp = get_animator_comp(entity, scene);
         return add_root_animation(entity, comp, loop);
     } 
-
-    static AnimationHandle add_transform_animation(RootAnimationHandle root_handle, AnimationMode mode, Vec3Type vec3_type, SceneHandle scene)
-    {
-        AnimatorComponent &comp = get_animator_comp(root_handle.entity, scene);
-        return add_transform_animation(comp, root_handle, mode, vec3_type);
-    }
 
     static void add_animation_float_key_frame(r32 value, r64 time, RootAnimationHandle root_handle, AnimationHandle handle, SceneHandle scene_handle)
     {
@@ -4199,7 +4183,7 @@ static Camera get_standard_camera(SceneManager& manager)
             t = (r32)(animation.current_time / time_distance);
             r32 value = key_frame_value + (next_value - key_frame_value) * math::clamp(t, 0.0f, 1.0f);
 
-            set_uniform_value(animator.entity, animation.value_name, value, scene.handle);
+            set_uniform_value(animation.entity, animation.value_name, value, scene.handle);
         }
         else
         {
@@ -4251,19 +4235,19 @@ static Camera get_standard_camera(SceneManager& manager)
                 break;
                 case Vec3Type::TRANSFORM_POSITION:
                 {
-                    TransformComponent &comp = get_transform_comp(animator.entity, scene);
+                    TransformComponent &comp = get_transform_comp(animation.entity, scene);
                     scene::set_position(comp, value);
                 }
                 break;
                 case Vec3Type::TRANSFORM_ROTATION:
                 {
-                    TransformComponent &comp = get_transform_comp(animator.entity, scene);
+                    TransformComponent &comp = get_transform_comp(animation.entity, scene);
                     scene::set_rotation(comp, value);
                 }
                 break;
                 case Vec3Type::TRANSFORM_SCALE:
                 {
-                    TransformComponent &comp = get_transform_comp(animator.entity, scene);
+                    TransformComponent &comp = get_transform_comp(animation.entity, scene);
                     scene::set_scale(comp, value);
                 }
                 break;
@@ -4306,14 +4290,6 @@ static Camera get_standard_camera(SceneManager& manager)
             if(animation.vec3_animations[j].running)
                 *running_count += update_animation(animation.vec3_animations[j], animation, animator, scene, delta_time);
         }
-
-        for(i32 i = 0; i < animation.child_animation_count; i++)
-        {
-            AnimatorComponent &child_animator = get_animator_comp(animation.child_animations[i].entity, scene.handle);
-            Animation &child_animation = child_animator.animations[animation.child_animations[i].handle - 1];
-
-            update_root_animation(child_animator, child_animation, running_count, scene, delta_time);
-        }
     }
     
     static void update_animators(scene::Scene &scene, Renderer *renderer, r64 delta_time)
@@ -4328,9 +4304,6 @@ static Camera get_standard_camera(SceneManager& manager)
 
                 Animation &animation = animator.animations[animator.current_handle.handle - 1];
 
-                if(animation.parented_animation)
-                    continue;
-                
                 update_root_animation(animator, animation, &running_count, scene, delta_time);
                 
                 animator.running = running_count > 0;

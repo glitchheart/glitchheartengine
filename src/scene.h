@@ -211,13 +211,15 @@ namespace scene
         LERP
     };
 
-    #define MAX_ANIMATIONS 4
+    #define MAX_ANIMATIONS 16
     #define MAX_KEY_FRAMES 8
     #define MAX_ANIMATION_TRANSITIONS 4
     #define NAX_TRANSITION_CONDITIONS 4
 
     struct FloatAnimation
     {
+        scene::EntityHandle entity;
+        
         b32 running;
         i32 current_key_frame;
         r64 current_time;
@@ -241,6 +243,8 @@ namespace scene
 
     struct Vec3Animation
     {
+        scene::EntityHandle entity;
+        
         b32 running;
         i32 current_key_frame;
         r64 current_time;
@@ -279,8 +283,6 @@ namespace scene
     
     struct Animation
     {
-        b32 parented_animation;
-        
         b32 loop;
 
         FloatAnimation float_animations[MAX_ANIMATIONS];
@@ -291,9 +293,6 @@ namespace scene
 
         AnimationTransition transitions[MAX_ANIMATION_TRANSITIONS];
         i32 transition_count;
-
-        RootAnimationHandle child_animations[8];
-        i32 child_animation_count;
     };
 
     enum class AnimatorParameterType
