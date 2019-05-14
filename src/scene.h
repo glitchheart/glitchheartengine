@@ -174,6 +174,36 @@ namespace scene
         FLOAT,
         VEC3
     };
+    
+    // HANDLES
+    struct AnimationTransitionHandle
+    {
+        i32 handle;
+    };
+
+    struct AnimationTransitionConditionHandle
+    {
+        i32 handle;
+    };
+
+    struct AnimatorParameterHandle
+    {
+        i32 handle;
+    };
+    
+    struct RootAnimationHandle
+    {
+        i32 handle;
+        EntityHandle entity;
+    };
+
+    struct AnimationHandle
+    {
+        i32 handle;
+        AnimationType type;
+    };
+    
+    // END HANDLES
 
     enum class AnimationMode
     {
@@ -183,6 +213,8 @@ namespace scene
 
     #define MAX_ANIMATIONS 4
     #define MAX_KEY_FRAMES 8
+    #define MAX_ANIMATION_TRANSITIONS 4
+    #define NAX_TRANSITION_CONDITIONS 4
 
     struct FloatAnimation
     {
@@ -224,13 +256,31 @@ namespace scene
         i32 count;
     };
 
-    struct RootAnimationHandle
+    struct AnimationTransitionCondition
     {
-        i32 handle;
+        AnimatorParameterHandle handle;
+        
+        union
+        {
+            i32 expected_int_val;
+            r32 expected_float_val;
+            b32 expected_bool_val;
+        };
     };
+    
+    struct AnimationTransition
+    {
+        RootAnimationHandle from_handle;
+        RootAnimationHandle to_handle;
 
+        AnimationTransitionCondition conditions[NAX_TRANSITION_CONDITIONS];
+        i32 condition_count;
+    };
+    
     struct Animation
     {
+        b32 parented_animation;
+        
         b32 loop;
 
         FloatAnimation float_animations[MAX_ANIMATIONS];
@@ -238,14 +288,35 @@ namespace scene
 
         Vec3Animation vec3_animations[MAX_ANIMATIONS];
         i32 vec3_anim_count;
+
+        AnimationTransition transitions[MAX_ANIMATION_TRANSITIONS];
+        i32 transition_count;
+
+        RootAnimationHandle child_animations[8];
+        i32 child_animation_count;
     };
 
-    struct AnimationHandle
+    enum class AnimatorParameterType
     {
-        i32 handle;
-        AnimationType type;
+        INT,
+        FLOAT,
+        BOOL       
     };
+    
+    struct AnimatorParameter
+    {
+        char name[32];
 
+        AnimatorParameterType type;
+        
+        union
+        {
+            i32 int_val;
+            r32 float_val;
+            b32 bool_val;
+        };
+    };
+    
     struct AnimatorComponent
     {
         EntityHandle entity;
@@ -255,6 +326,12 @@ namespace scene
 
         Animation animations[8];
         i32 anim_count;
+
+        AnimationParameter params[16];
+        i32 param_count;
+
+        AnimationTransition transitions[4];
+        i32 transition_count;
     };
     
     struct ParticleSystemComponent
