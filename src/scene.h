@@ -212,7 +212,7 @@ namespace scene
     };
 
     #define MAX_ANIMATIONS 16
-    #define MAX_KEY_FRAMES 8
+    #define MAX_KEY_FRAMES 16
     #define MAX_ANIMATION_TRANSITIONS 4
     #define NAX_TRANSITION_CONDITIONS 4
 
@@ -326,7 +326,7 @@ namespace scene
         Animation animations[8];
         i32 anim_count;
 
-        AnimationParameter params[16];
+        AnimatorParameter params[16];
         i32 param_count;
 
         AnimationTransition transitions[4];
