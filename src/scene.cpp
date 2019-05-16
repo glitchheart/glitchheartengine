@@ -4147,7 +4147,7 @@ static Camera get_standard_camera(SceneManager& manager)
         return add_root_animation(entity, comp, loop);
     }
 
-    static void add_animation_float_key_frame(r32 value, r64 time, RootAnimationHandle root_handle, AnimationHandle handle, SceneHandle scene_handle, AnimationEasingMode mode = AnimationEasingMode::LERP)
+    static void add_animation_float_key_frame(r32 value, r32 time, RootAnimationHandle root_handle, AnimationHandle handle, SceneHandle scene_handle, AnimationEasingMode mode = AnimationEasingMode::LERP)
     {
         AnimatorComponent &comp = get_animator_comp(root_handle.entity, scene_handle);
         Animation &animation = comp.animations[root_handle.handle - 1];
@@ -4159,7 +4159,7 @@ static Camera get_standard_camera(SceneManager& manager)
         float_anim.count++;
     }
 
-    static void add_animation_vec3_key_frame(math::Vec3 value, r64 time, RootAnimationHandle root_handle, AnimationHandle handle, SceneHandle scene_handle, AnimationEasingMode mode = AnimationEasingMode::LERP)
+    static void add_animation_vec3_key_frame(math::Vec3 value, r32 time, RootAnimationHandle root_handle, AnimationHandle handle, SceneHandle scene_handle, AnimationEasingMode mode = AnimationEasingMode::LERP)
     {
         AnimatorComponent &comp = get_animator_comp(root_handle.entity, scene_handle);
         Animation &animation = comp.animations[root_handle.handle - 1];
@@ -4332,7 +4332,7 @@ static Camera get_standard_camera(SceneManager& manager)
             return true;
         }
 
-        b32 transition_true = true;
+        //b32 transition_true = true;
 
         for(i32 i = 0; i < transition.condition_count; i++)
         {
