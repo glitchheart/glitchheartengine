@@ -4145,25 +4145,27 @@ static Camera get_standard_camera(SceneManager& manager)
     {
         AnimatorComponent &comp = get_animator_comp(entity, scene);
         return add_root_animation(entity, comp, loop);
-    } 
+    }
 
-    static void add_animation_float_key_frame(r32 value, r64 time, RootAnimationHandle root_handle, AnimationHandle handle, SceneHandle scene_handle)
+    static void add_animation_float_key_frame(r32 value, r64 time, RootAnimationHandle root_handle, AnimationHandle handle, SceneHandle scene_handle, AnimationEasingMode mode = AnimationEasingMode::LERP)
     {
         AnimatorComponent &comp = get_animator_comp(root_handle.entity, scene_handle);
         Animation &animation = comp.animations[root_handle.handle - 1];
 
         FloatAnimation &float_anim = animation.float_animations[handle.handle - 1];
+        float_anim.easing_mode = mode;
         float_anim.key_frame_values[float_anim.count] = value;
         float_anim.key_frame_times[float_anim.count] = time;
         float_anim.count++;
     }
 
-    static void add_animation_vec3_key_frame(math::Vec3 value, r64 time, RootAnimationHandle root_handle, AnimationHandle handle, SceneHandle scene_handle)
+    static void add_animation_vec3_key_frame(math::Vec3 value, r64 time, RootAnimationHandle root_handle, AnimationHandle handle, SceneHandle scene_handle, AnimationEasingMode mode = AnimationEasingMode::LERP)
     {
         AnimatorComponent &comp = get_animator_comp(root_handle.entity, scene_handle);
         Animation &animation = comp.animations[root_handle.handle - 1];
 
         Vec3Animation &vec3_anim = animation.vec3_animations[handle.handle - 1];
+        vec3_anim.easing_mode = mode;
         vec3_anim.key_frame_values[vec3_anim.count] = value;
         vec3_anim.key_frame_times[vec3_anim.count] = time;
         vec3_anim.count++;
@@ -4185,8 +4187,21 @@ static Camera get_standard_camera(SceneManager& manager)
             
             r64 time_distance = next_time - frame_time;
 
-            t = (r32)(animation.current_time / time_distance);
-            r32 value = key_frame_value + (next_value - key_frame_value) * math::clamp(t, 0.0f, 1.0f);
+            t = math::clamp((r32)(animation.current_time / time_distance), 0.0f, 1.0f);
+            r32 value = 0.0f;
+
+            switch(animation.easing_mode)
+            {
+                case AnimationEasingMode::LERP:
+                value = math::linear_tween(key_frame_value, t, next_value);
+                break;
+                case AnimationEasingMode::EASE_IN:
+                value = math::ease_in_quad(key_frame_value, t, next_value);
+                break;
+                case AnimationEasingMode::EASE_OUT:
+                value = math::ease_out_quad(key_frame_value, t, next_value);
+                break;
+            }
 
             set_uniform_value(animation.entity, animation.value_name, value, scene.handle);
         }
@@ -4230,8 +4245,21 @@ static Camera get_standard_camera(SceneManager& manager)
             
             r64 time_distance = next_time - frame_time;
 
-            t = (r32)(animation.current_time / time_distance);
-            math::Vec3 value = key_frame_value + (next_value - key_frame_value) * math::clamp(t, 0.0f, 1.0f);
+            t = math::clamp((r32)(animation.current_time / time_distance), 0.0f, 1.0f);
+            math::Vec3 value = math::Vec3(0, 0, 0);
+
+            switch(animation.easing_mode)
+            {
+                case AnimationEasingMode::LERP:
+                value = math::linear_tween(key_frame_value, t, next_value);
+                break;
+                case AnimationEasingMode::EASE_IN:
+                value = math::ease_in_quad(key_frame_value, t, next_value);
+                break;
+                case AnimationEasingMode::EASE_OUT:
+                value = math::ease_out_quad(key_frame_value, t, next_value);
+                break;
+            }
 
             switch(animation.type)
             {

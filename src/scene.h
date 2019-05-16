@@ -217,8 +217,17 @@ namespace scene
     #define NAX_TRANSITION_CONDITIONS 4
     #define MAX_PARAMETERS 4
 
+    enum class AnimationEasingMode
+    {
+        LERP,
+        EASE_IN,
+        EASE_OUT
+    };
+
     struct FloatAnimation
     {
+        AnimationEasingMode easing_mode;
+
         scene::EntityHandle entity;
         
         b32 running;
@@ -244,6 +253,8 @@ namespace scene
 
     struct Vec3Animation
     {
+        AnimationEasingMode easing_mode;
+
         scene::EntityHandle entity;
         
         b32 running;
