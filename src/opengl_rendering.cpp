@@ -1427,6 +1427,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
 #endif
 
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_SAMPLES, 4);
 
     render_state.contrast = contrast;
     render_state.brightness = brightness;
