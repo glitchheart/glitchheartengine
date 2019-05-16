@@ -219,6 +219,18 @@ static PLATFORM_OPEN_FILE(osx_open_file)
     return(result);
 }
 
+static PLATFORM_REMOVE_FILE(osx_remove_file)
+{
+    i32 err = remove(path);
+
+    if(err)
+    {
+        log_error("ERROR in remove file: %s", strerror(errno));
+        return false;
+    }
+    return true;
+}
+
 static PLATFORM_CLOSE_FILE(osx_close_file)
 {
     close(file.handle);
@@ -259,6 +271,35 @@ static PLATFORM_SEEK_FILE(osx_seek_file)
 static PLATFORM_TELL_FILE(osx_tell_file)
 {
     return (i32)lseek(file.handle, 0, SEEK_CUR);
+}
+
+static PLATFORM_REMOVE_DIRECTORY(osx_remove_directory)
+{
+    struct dirent *de;
+
+    DIR *dr = opendir(path);
+
+    if(dr == nullptr)
+    {
+        log_error("Could not open current directory");
+        return;
+    }
+
+    de = readdir(dr);
+    assert(strcmp(de->d_name, "."));
+    de = readdir(dr);
+    assert(strcmp(de->d_name, ".."));
+    de = readdir(dr);
+    if(de == nullptr)
+    {
+        rmdir(path);
+        return;
+    }
+    else
+    {
+        log_error("Directory not empty");
+        return;
+    }
 }
 
 // This should be made 
@@ -355,6 +396,8 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.load_symbol = osx_load_symbol;
     platform_api.file_exists = osx_file_exists;
     platform_api.open_file = osx_open_file;
+    paltform_api.remove_file = osx_remove_file;
+    platform_api.remove_directory = osx_remove_directory;
     platform_api.read_file = osx_read_file;
     platform_api.write_file = osx_write_file;
     platform_api.close_file = osx_close_file;

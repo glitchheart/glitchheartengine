@@ -4598,7 +4598,7 @@ namespace rendering
 			char *source_copy = source;
 
 			MeshDataCounts data_counts = get_data_counts(source_copy);
-			_VertexPtrs ptrs;
+			_VertexPtrs ptrs = {};
 
 			ptrs.vertex_count = 0;
 			ptrs.final_vertex_count = 0;

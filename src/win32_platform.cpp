@@ -2,6 +2,8 @@
 #include "Commdlg.h"
 #include <windows.h>
 #include <timeapi.h>
+#include <shellapi.h>
+#include <shlwapi.h>
 
 #include "win32_threading.cpp"
 
@@ -391,6 +393,61 @@ static PLATFORM_OPEN_FILE(win32_open_file)
     return(result);
 }
 
+static PLATFORM_REMOVE_FILE(win32_remove_file)
+{
+    WIN32_FIND_DATA find_file;
+    HANDLE h_find = NULL;
+
+    h_find = FindFirstFile(path, &find_file);
+
+    if(h_find != INVALID_HANDLE_VALUE)
+    {
+        if(find_file.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+        {
+            log_error("Could not remove directory\n");
+            return false;
+        }
+    }
+
+    i32 result = DeleteFile(path);
+    if(!result)
+    {
+        DWORD err = GetLastError();
+        log_error("Coult not remove file %s: %d\n", path, err);
+        return false;
+    }
+    return true;
+}
+
+static PLATFORM_REMOVE_DIRECTORY(win32_remove_directory)
+{
+    WIN32_FIND_DATA find_dir;
+    HANDLE h_find = NULL;
+
+    h_find = FindFirstFile(path, &find_dir);
+
+    if(h_find != INVALID_HANDLE_VALUE)
+    {
+        if(find_dir.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+        {
+            char file_buf[256];
+            sprintf(file_buf, "%s\\*", path);
+
+            if(PathIsDirectoryEmpty(path))
+            {
+                RemoveDirectory(path);
+            }
+            else
+            {
+                log_error("Directory not empty: %s\n", path);
+                return false;
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
 static PLATFORM_CLOSE_FILE(win32_close_file)
 {
     auto result = CloseHandle(FileDescriptorToWin32(file.handle));
@@ -494,6 +551,8 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.load_dynamic_library = win32_load_library;
     platform_api.load_symbol = win32_load_symbol;
     platform_api.open_file = win32_open_file;
+    platform_api.remove_file = win32_remove_file;
+    platform_api.remove_directory = win32_remove_directory;
     platform_api.read_file = win32_read_file;
     platform_api.write_file = win32_write_file;
     platform_api.close_file = win32_close_file;

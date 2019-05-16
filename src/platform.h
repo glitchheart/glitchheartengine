@@ -222,6 +222,12 @@ typedef PLATFORM_LOAD_SYMBOL(PlatformLoadSymbol);
 #define PLATFORM_OPEN_FILE(name) PlatformFile name(const char* path, u32 open_flags)
 typedef PLATFORM_OPEN_FILE(PlatformOpenFile);
 
+#define PLATFORM_REMOVE_FILE(name) b32 name(const char* path)
+typedef PLATFORM_REMOVE_FILE(PlatformRemoveFile);
+
+#define PLATFORM_REMOVE_DIRECTORY(name) b32 name(const char* path)
+typedef PLATFORM_REMOVE_DIRECTORY(PlatformRemoveDirectory);
+
 #define PLATFORM_CLOSE_FILE(name) void name(PlatformFile& file)
 typedef PLATFORM_CLOSE_FILE(PlatformCloseFile);
 
@@ -285,6 +291,8 @@ struct PlatformApi
     PlatformFreeLibrary *free_dynamic_library;
     PlatformLoadSymbol *load_symbol;
     PlatformOpenFile *open_file;
+    PlatformRemoveFile *remove_file;
+    PlatformRemoveDirectory *remove_directory;
     PlatformCloseFile *close_file;
     PlatformWriteFile *write_file;
     PlatformReadFile *read_file;
@@ -308,6 +316,7 @@ extern PlatformApi platform;
 
 namespace os
 {
+    using File = PlatformFile;
     static b32 is_eol(char c)
     {
         return platform.is_eol(c);
@@ -328,6 +337,21 @@ namespace os
         platform.read_file(dst, size, size_bytes, file);
     }
 
+    static void remove_file(const char* path)
+    {
+        platform.remove_file(path);
+    }
+
+    static void remove_directory(const char* path)
+    {
+        platform.remove_directory(path);
+    }    
+
+    static void create_directory(const char* path)
+    {
+        platform.create_directory(path);
+    }    
+
     static void write_file(const void* src, i32 size, i32 size_bytes, PlatformFile& file)
     {
         platform.write_file(src, size, size_bytes, file);
@@ -338,11 +362,20 @@ namespace os
         platform.seek_file(file, offset, seek_options);
     }
 
+    static b32 file_exists(const char *file_path)
+    {
+        return platform.file_exists(file_path);
+    }
+
     static i32 tell_file(PlatformFile& file)
     {
         return platform.tell_file(file);
     }
 
+    static void get_all_files_with_extension(const char* path, const char* extension, DirectoryData* data, b32 recursive)
+    {
+        platform.get_all_files_with_extension(path, extension, data, recursive);
+    }
 }
 
 

@@ -229,14 +229,36 @@ static PLATFORM_OPEN_FILE(linux_open_file)
     return(result);
 }
 
+static PLATFORM_REMOVE_FILE(linux_remove_file)
+{
+    i32 err = remove(path);
+
+    if(err)
+    {
+        log_error("ERROR in open file: %s", strerror(errno));
+        return false;
+    }
+    return true;
+}
+
 static PLATFORM_CLOSE_FILE(linux_close_file)
 {
-    close(file.handle);
+    i32 err = close(file.handle);
+
+    if(err)
+    {
+        log_error("ERROR in open file: %s", strerror(errno));
+    }
 }
 
 static PLATFORM_WRITE_FILE(linux_write_file)
 {
-    write(file.handle, src, size_bytes * size);
+    i32 err = write(file.handle, src, size_bytes * size);
+
+    if(err)
+    {
+        log_error("ERROR in open file: %s", strerror(errno));
+    }
 }
 
 static PLATFORM_READ_FILE(linux_read_file)
@@ -288,6 +310,35 @@ static PLATFORM_PRINT_FILE(linux_print_file)
 	va_end(args);
     }
     return 0;
+}
+
+static PLATFORM_REMOVE_DIRECTORY(linux_remove_directory)
+{
+    struct dirent *de;
+
+    DIR *dr = opendir(path);
+
+    if(dr == nullptr)
+    {
+        log_error("Could not open current directory");
+        return;
+    }
+
+    de = readdir(dr);
+    assert(strcmp(de->d_name, "."));
+    de = readdir(dr);
+    assert(strcmp(de->d_name, ".."));
+    de = readdir(dr);
+    if(de == nullptr)
+    {
+        rmdir(path);
+        return;
+    }
+    else
+    {
+        log_error("Directory not empty");
+        return;
+    }
 }
 
 PLATFORM_GET_ALL_FILES_WITH_EXTENSION(linux_get_all_files_with_extension)
@@ -383,6 +434,8 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.free_dynamic_library = linux_free_library;
     platform_api.load_symbol = linux_load_symbol;
     platform_api.open_file = linux_open_file;
+    platform_api.remove_file = linux_remove_file;
+    platform_api.remove_directory = linux_remove_directory;
     platform_api.read_file = linux_read_file;
     platform_api.write_file = linux_write_file;
     platform_api.close_file = linux_close_file;
