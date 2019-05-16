@@ -226,6 +226,8 @@ namespace scene
 
     struct FloatAnimation
     {
+        AnimationEasingMode easing_mode;
+
         scene::EntityHandle entity;
         
         b32 running;
@@ -251,6 +253,8 @@ namespace scene
 
     struct Vec3Animation
     {
+        AnimationEasingMode easing_mode;
+
         scene::EntityHandle entity;
         
         b32 running;
@@ -291,8 +295,6 @@ namespace scene
     
     struct Animation
     {
-        AnimationEasingMode mode;
-
         b32 loop;
 
         FloatAnimation float_animations[MAX_ANIMATIONS];
