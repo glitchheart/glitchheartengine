@@ -215,6 +215,7 @@ namespace scene
     #define MAX_KEY_FRAMES 16
     #define MAX_ANIMATION_TRANSITIONS 4
     #define NAX_TRANSITION_CONDITIONS 4
+    #define MAX_PARAMETERS 4
 
     struct FloatAnimation
     {
@@ -224,10 +225,10 @@ namespace scene
         i32 current_key_frame;
         r64 current_time;
 
-        char value_name[32];
+        char value_name[16];
 
         AnimationMode mode;
-        r64 key_frame_times[MAX_KEY_FRAMES];
+        r32 key_frame_times[MAX_KEY_FRAMES];
         r32 key_frame_values[MAX_KEY_FRAMES];
         
         i32 count;
@@ -249,12 +250,12 @@ namespace scene
         i32 current_key_frame;
         r64 current_time;
 
-        char value_name[32];
+        char value_name[16];
 
         Vec3Type type;
 
         AnimationMode mode;
-        r64 key_frame_times[MAX_KEY_FRAMES];
+        r32 key_frame_times[MAX_KEY_FRAMES];
         math::Vec3 key_frame_values[MAX_KEY_FRAMES];
         
         i32 count;
@@ -304,7 +305,7 @@ namespace scene
     
     struct AnimatorParameter
     {
-        char name[32];
+        char name[16];
 
         AnimatorParameterType type;
         
@@ -323,13 +324,13 @@ namespace scene
         b32 running;
         RootAnimationHandle current_handle;
 
-        Animation animations[8];
+        Animation animations[4];
         i32 anim_count;
 
-        AnimatorParameter params[16];
+        AnimatorParameter params[MAX_PARAMETERS];
         i32 param_count;
 
-        AnimationTransition transitions[4];
+        AnimationTransition transitions[MAX_ANIMATION_TRANSITIONS];
         i32 transition_count;
     };
     
@@ -526,7 +527,7 @@ namespace scene
         RenderComponent *render_components;
         i32 render_component_count;
 
-        AnimatorComponent *animator_components;
+        AnimatorComponent **animator_components;
         i32 animator_component_count;
         
         ParticleSystemComponent *particle_system_components;
