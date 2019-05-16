@@ -4304,6 +4304,13 @@ static Camera get_standard_camera(SceneManager& manager)
             return true;
         }
 
+        b32 transition_true = true;
+
+        for(i32 i = 0; i < transition.condition_count; i++)
+        {
+
+        }
+
         return false;
     }
     
