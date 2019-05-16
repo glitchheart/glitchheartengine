@@ -4145,7 +4145,14 @@ static Camera get_standard_camera(SceneManager& manager)
     {
         AnimatorComponent &comp = get_animator_comp(entity, scene);
         return add_root_animation(entity, comp, loop);
-    } 
+    }
+
+    static void set_current_animation_lerp_mode(RootAnimationHandle root_handle, AnimationEasingMode mode, SceneHandle scene)
+    {
+        AnimatorComponent &comp = get_animator_comp(root_handle.entity, scene);
+        comp.animations[root_handle.handle - 1].mode = mode;
+
+    }
 
     static void add_animation_float_key_frame(r32 value, r64 time, RootAnimationHandle root_handle, AnimationHandle handle, SceneHandle scene_handle)
     {
