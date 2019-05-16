@@ -350,7 +350,7 @@ namespace scene
         scene.render_components = push_array(&memory_arena, initial_entity_array_size, RenderComponent);
         scene.light_components = push_array(&memory_arena, initial_entity_array_size, LightComponent);
         scene.particle_system_components = push_array(&memory_arena, initial_entity_array_size, ParticleSystemComponent);
-        scene.animator_components = push_array(&memory_arena, initial_entity_array_size, AnimatorComponent);
+        scene.animator_components = push_array(&memory_arena, initial_entity_array_size, AnimatorComponent*);
 
         if(scene_manager->debug_cube.handle == 0)
         {
@@ -2440,7 +2440,9 @@ static Camera get_standard_camera(SceneManager& manager)
         entity.comp_flags |= COMP_ANIMATOR;
         entity.animator_handle = { scene.animator_component_count++ };
 
-        scene::AnimatorComponent &comp = scene.animator_components[entity.animator_handle.handle];
+        scene.animator_components[entity.animator_handle.handle] = push_struct(&scene.memory_arena, AnimatorComponent);
+        
+        scene::AnimatorComponent &comp = *scene.animator_components[entity.animator_handle.handle];
         
         comp.running = false;
         comp.anim_count = 0;
@@ -3780,7 +3782,7 @@ static Camera get_standard_camera(SceneManager& manager)
         
         assert(entity.comp_flags & COMP_ANIMATOR);
         
-        AnimatorComponent& comp = scene->animator_components[entity.animator_handle.handle];
+        AnimatorComponent& comp = *scene->animator_components[entity.animator_handle.handle];
         return(comp);
     }
      
@@ -4309,7 +4311,7 @@ static Camera get_standard_camera(SceneManager& manager)
     {
         for(i32 i = 0; i < scene.animator_component_count; i++)
         {
-            AnimatorComponent &animator = scene.animator_components[i];
+            AnimatorComponent &animator = *scene.animator_components[i];
             
             if(animator.running)
             {
