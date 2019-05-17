@@ -1884,7 +1884,7 @@ static Camera get_standard_camera(SceneManager& manager)
         update_scene_camera(handle);
     }
     
-    static void update_scene_editor(SceneHandle handle, InputController *input_controller, r64 delta_time)
+    static void update_scene_editor(SceneHandle handle, InputController *input_controller, RenderState &render_state, r64 delta_time)
     {
         Scene &scene = get_scene(handle);
         
@@ -1897,6 +1897,7 @@ static Camera get_standard_camera(SceneManager& manager)
         {
             if(manager->mode == SceneMode::RUNNING)
             {
+                manager->renderer->api_functions.show_mouse_cursor(true, &render_state);
                 manager->mode = SceneMode::EDITING;
                 
                 find_all_template_files(manager);
@@ -1906,6 +1907,7 @@ static Camera get_standard_camera(SceneManager& manager)
             }
             else
             {
+                manager->renderer->api_functions.show_mouse_cursor(false, &render_state);
                 // Disable wireframes
                 if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
                     scene::set_wireframe_enabled(false, manager->selected_entity, handle);

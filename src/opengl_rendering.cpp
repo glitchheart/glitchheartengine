@@ -12,16 +12,16 @@ static void error_callback(int error, const char *description)
     fprintf(stderr, "Error: %d - %s\n", error, description);
 }
 
-static void show_mouse_cursor(RenderState &render_state, b32 show)
+static void show_mouse_cursor(b32 show, RenderState *render_state)
 {
-    // if (show)
-    // {
-    //     glfwSetInputMode(render_state.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    // }
-    // else
-    // {
-    //     glfwSetInputMode(render_state.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-    // }
+    if (show)
+    {
+        glfwSetInputMode(render_state->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+    else
+    {
+        glfwSetInputMode(render_state->window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    }
 }
 
 static void debug_vao()
@@ -1389,6 +1389,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     renderer->api_functions.update_buffer = &update_buffer;
     renderer->api_functions.set_mouse_lock = &set_mouse_lock;
     renderer->api_functions.get_mouse_lock = &get_mouse_lock;
+    renderer->api_functions.show_mouse_cursor = &show_mouse_cursor;
     renderer->api_functions.set_window_cursor = &set_window_cursor;
     renderer->api_functions.set_window_mode = &set_window_mode;
     renderer->api_functions.set_v_sync = &set_v_sync;
@@ -1521,7 +1522,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
 
     renderer->should_close = false;
 
-    render_state.current_state.vao = -1;
+    render_state.current_state.vao = 0;
 
     render_setup(&render_state, perm_arena);
     

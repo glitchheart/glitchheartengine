@@ -1026,6 +1026,7 @@ int main(int argc, char **args)
     core.delta_time = delta_time;
     core.current_time = get_time();
     game_memory.core = core;
+    show_mouse_cursor(false, &render_state);
 
     while (!should_close_window(render_state) && !renderer->should_close)
     {
@@ -1059,7 +1060,7 @@ int main(int argc, char **args)
 
             if(scene_manager->scene_loaded) // Check again, since there could be a call to unload_current_scene() in game.update()
             {
-                update_scene_editor(scene_manager->loaded_scene, &input_controller, delta_time);
+                update_scene_editor(scene_manager->loaded_scene, &input_controller, render_state, delta_time);
 
                 scene::Scene &scene = scene::get_scene(scene_manager->loaded_scene);
                 scene::update_animators(scene, renderer, delta_time);
