@@ -97,7 +97,7 @@ static char* read_file_into_buffer(MemoryArena* arena, FILE* file, size_t *out_s
 	return source;
 }
 
-static char* read_file_into_buffer(MemoryArena* arena, PlatformFile file, size_t *out_size = nullptr)
+static char* read_file_into_buffer(MemoryArena* arena, os::File file, size_t *out_size = nullptr)
 {
     os::seek_file(file, 0, SeekOptions::SO_END);
     i32 size = platform.tell_file(file);
