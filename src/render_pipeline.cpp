@@ -4575,6 +4575,7 @@ namespace rendering
 			free(ptrs.normals);
 			free(ptrs.uvs);
 			free(ptrs.faces);
+            fclose(file);
         }
         else
         {

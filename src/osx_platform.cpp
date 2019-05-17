@@ -282,7 +282,7 @@ static PLATFORM_REMOVE_DIRECTORY(osx_remove_directory)
     if(dr == nullptr)
     {
         log_error("Could not open current directory");
-        return;
+        return false;
     }
 
     de = readdir(dr);
@@ -293,12 +293,12 @@ static PLATFORM_REMOVE_DIRECTORY(osx_remove_directory)
     if(de == nullptr)
     {
         rmdir(path);
-        return;
+        return true;
     }
     else
     {
         log_error("Directory not empty");
-        return;
+        return false;
     }
 }
 
@@ -396,7 +396,7 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.load_symbol = osx_load_symbol;
     platform_api.file_exists = osx_file_exists;
     platform_api.open_file = osx_open_file;
-    paltform_api.remove_file = osx_remove_file;
+    platform_api.remove_file = osx_remove_file;
     platform_api.remove_directory = osx_remove_directory;
     platform_api.read_file = osx_read_file;
     platform_api.write_file = osx_write_file;
