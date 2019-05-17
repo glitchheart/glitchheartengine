@@ -900,8 +900,6 @@ static void create_new_framebuffer(rendering::FramebufferInfo &info, Framebuffer
         {
             log_error("INCOMPLETE LAYER TARGETS");
         }
-        
-        error_gl();
     }
 }
 
@@ -1427,7 +1425,8 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
 #endif
 
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_SAMPLES, 4);
+
+    //glfwWindowHint(GLFW_SAMPLES, 4);
 
     render_state.contrast = contrast;
     render_state.brightness = brightness;
@@ -1460,6 +1459,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
                 
+        
         create_open_gl_window(render_state, window_mode, title, screen_width, screen_height);
         renderer->window_mode = window_mode;
 
@@ -1521,8 +1521,10 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
 
     renderer->should_close = false;
 
-    render_setup(&render_state, perm_arena);
+    render_state.current_state.vao = -1;
 
+    render_setup(&render_state, perm_arena);
+    
     render_state.paused = false;
 
     create_standard_cursors(render_state);
@@ -2257,7 +2259,6 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
                 glDrawElements(GL_LINE_LOOP, 4, GL_UNSIGNED_SHORT, (GLvoid*)(4 * sizeof(GLushort)));
                 glDrawElements(GL_LINES, 8, GL_UNSIGNED_SHORT, (GLvoid*)(8 * sizeof(GLushort)));
             }
-            
         }
         else
         {
@@ -2519,7 +2520,6 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
             glDrawBuffer(GL_COLOR_ATTACHMENT0 + i);
             
             glBlitFramebuffer(0, 0, draw_framebuffer.width, draw_framebuffer.height, 0, 0, draw_framebuffer.width, draw_framebuffer.height, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-            error_gl();
         }
             
         glReadBuffer(GL_COLOR_ATTACHMENT0);
@@ -2544,7 +2544,6 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-
     // Go backwards through the array to enable easy render pass adding
     for (i32 pass_index = renderer->render.pass_count - 1; pass_index >= 0; pass_index--)
     {
@@ -2553,7 +2552,6 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
         
         rendering::RenderPass &pass = renderer->render.passes[pass_index];
         render_pass(render_state, renderer, pass);
-        error_gl();
     }
 
     //glBindFramebuffer(GL_FRAMEBUFFER, 0);
