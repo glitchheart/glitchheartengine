@@ -382,7 +382,7 @@ static PLATFORM_OPEN_FILE(win32_open_file)
     
     auto file = CreateFile(path, (DWORD)flags, 0, 0, (DWORD)open, FILE_ATTRIBUTE_NORMAL, 0);
     
-    if(file == INVALID_HANDLE_VALUE && open_flags & POF_IGNORE_ERROR)
+    if(file == INVALID_HANDLE_VALUE && (open_flags & POF_IGNORE_ERROR) == 0)
     {
         auto err = GetLastError();
         log_error("Could not open file: %d\n", err);

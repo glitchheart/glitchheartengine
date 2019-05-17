@@ -4591,11 +4591,14 @@ namespace rendering
 		MeshObjectInfo obj_info = {};
         obj_info.object_count = 0;
         
-        FILE *file = fopen(file_path, "rb");
+        // FILE *file = fopen(file_path, "rb");
+        os::File file = os::open_file(file_path, POF_READ | POF_OPEN_EXISTING);
 
-        if(file)
+        if(file.handle)
         {
-            char *source = read_file_into_buffer(file);
+            auto temp_block = begin_temporary_memory(&renderer->temp_arena);
+            
+            char *source = read_file_into_buffer(&renderer->temp_arena, file);
 			char *source_copy = source;
 
 			MeshDataCounts data_counts = get_data_counts(source_copy);
@@ -4635,8 +4638,6 @@ namespace rendering
                         }
                     }
 
-                    auto temp_block = begin_temporary_memory(&renderer->temp_arena);
-
                     char *dir = push_string(temp_block.arena, index);
                     strncpy(dir, file_path, index);
 
@@ -4646,7 +4647,6 @@ namespace rendering
                     obj_info.has_mtl = true;
                     strcpy(obj_info.mtl_file_path, material_file_path);
                     
-					end_temporary_memory(temp_block);
                 }
                 else if (starts_with(buffer, "g")) // we're starting with new geometry
                 {
@@ -4656,12 +4656,17 @@ namespace rendering
                 }
             }
 
-            free(source_copy);
+            //free(source_copy);
             free(ptrs.vertices);
 			free(ptrs.final_vertices);
 			free(ptrs.normals);
 			free(ptrs.uvs);
 			free(ptrs.faces);
+
+			// fclose(file);
+            os::close_file(file);
+
+            end_temporary_memory(temp_block);
         }
         else
         {
