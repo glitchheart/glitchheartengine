@@ -321,7 +321,7 @@ static PLATFORM_REMOVE_DIRECTORY(linux_remove_directory)
     if(dr == nullptr)
     {
         log_error("Could not open current directory");
-        return;
+        return false;
     }
 
     de = readdir(dr);
@@ -332,12 +332,12 @@ static PLATFORM_REMOVE_DIRECTORY(linux_remove_directory)
     if(de == nullptr)
     {
         rmdir(path);
-        return;
+        return true;
     }
     else
     {
         log_error("Directory not empty");
-        return;
+        return false;
     }
 }
 
