@@ -385,7 +385,7 @@ static PLATFORM_OPEN_FILE(win32_open_file)
     if(file == INVALID_HANDLE_VALUE && (open_flags & POF_IGNORE_ERROR) == 0)
     {
         auto err = GetLastError();
-        log_error("Could not open file: %d\n", err);
+        log_error("Could not open file: %s failed with error: %d\n", path, err);
     }
     
     result.handle = Win32ToFileDescriptor(file, open_flags);
