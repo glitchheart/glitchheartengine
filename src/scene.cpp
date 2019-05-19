@@ -2141,6 +2141,8 @@ static Camera get_standard_camera(SceneManager& manager)
 
         scene_manager->loaded_scene = handle;
 
+        b32 first_load = scene->loaded;
+        
         if(!scene->loaded)
         {
             if(scene_manager->callbacks.on_scene_will_load)
@@ -2148,10 +2150,10 @@ static Camera get_standard_camera(SceneManager& manager)
             
             allocate_instance_buffers(*scene);
             scene->loaded = true;
-            
-            if(scene_manager->callbacks.on_scene_loaded)
-                scene_manager->callbacks.on_scene_loaded(handle);
         }
+
+        if(scene_manager->callbacks.on_scene_loaded)
+            scene_manager->callbacks.on_scene_loaded(handle, first_load);        
         
         activate_particle_systems(handle);
 
@@ -4062,7 +4064,7 @@ static Camera get_standard_camera(SceneManager& manager)
         _set_animation_playing(false, animation_handle, scene_handle);
     }
 
-    static AnimationHandle add_uniform_value_animation(AnimatorComponent &animator, RootAnimationHandle root_handle, EntityHandle entity, AnimationType type, AnimationMode mode, const char *value_name)
+    static AnimationHandle add_uniform_value_animation(AnimatorComponent &animator, RootAnimationHandle root_handle, EntityHandle entity, AnimationType type, const char *value_name)
     {
         Animation &root = animator.animations[root_handle.handle - 1];
         
@@ -4075,7 +4077,6 @@ static Camera get_standard_camera(SceneManager& manager)
 
             auto& anim = root.float_animations[root.float_anim_count++];
             anim.entity = entity;
-            anim.mode = mode;
 
             strcpy(anim.value_name, value_name);
 
@@ -4087,7 +4088,6 @@ static Camera get_standard_camera(SceneManager& manager)
 
             auto& anim = root.vec3_animations[root.vec3_anim_count++];
             anim.entity = entity;
-            anim.mode = mode;
 
             strcpy(anim.value_name, value_name);
 
@@ -4097,13 +4097,13 @@ static Camera get_standard_camera(SceneManager& manager)
         return handle;
     }
 
-    static AnimationHandle add_uniform_value_animation(RootAnimationHandle root_handle, EntityHandle entity, AnimationType type, AnimationMode mode, const char *value_name, SceneHandle scene)
+    static AnimationHandle add_uniform_value_animation(RootAnimationHandle root_handle, EntityHandle entity, AnimationType type, const char *value_name, SceneHandle scene)
     {
         AnimatorComponent &comp = get_animator_comp(root_handle.entity, scene);
-        return add_uniform_value_animation(comp, root_handle, entity, type, mode, value_name);
+        return add_uniform_value_animation(comp, root_handle, entity, type, value_name);
     }
 
-    static AnimationHandle add_transform_animation(AnimatorComponent &animator, RootAnimationHandle root_handle, EntityHandle entity, AnimationMode mode, Vec3Type vec3_type)
+    static AnimationHandle add_transform_animation(AnimatorComponent &animator, RootAnimationHandle root_handle, EntityHandle entity, Vec3Type vec3_type)
     {
         Animation &animation = animator.animations[root_handle.handle - 1];
 
@@ -4114,7 +4114,6 @@ static Camera get_standard_camera(SceneManager& manager)
 
         auto& anim = animation.vec3_animations[animation.vec3_anim_count++];
         anim.entity = entity;
-        anim.mode = mode;
         anim.type = vec3_type;
 
         handle.handle = animation.vec3_anim_count;
@@ -4122,10 +4121,10 @@ static Camera get_standard_camera(SceneManager& manager)
         return handle;
     }
 
-    static AnimationHandle add_transform_animation(RootAnimationHandle root_handle, EntityHandle entity, AnimationMode mode, Vec3Type vec3_type, SceneHandle scene)
+    static AnimationHandle add_transform_animation(RootAnimationHandle root_handle, EntityHandle entity, Vec3Type vec3_type, SceneHandle scene)
     {
         AnimatorComponent &comp = get_animator_comp(root_handle.entity, scene);
-        return add_transform_animation(comp, root_handle, entity, mode, vec3_type);
+        return add_transform_animation(comp, root_handle, entity, vec3_type);
     }
 
     static RootAnimationHandle add_root_animation(EntityHandle entity_handle, AnimatorComponent &animator, b32 loop = false)
@@ -4182,42 +4181,38 @@ static Camera get_standard_camera(SceneManager& manager)
 
         r32 t = 0.0;
 
-        if(animation.mode == AnimationMode::LERP)
-        {
-            r32 next_value = animation.key_frame_values[animation.current_key_frame + 1];
-            r64 next_time = animation.key_frame_times[animation.current_key_frame + 1];
+        r32 next_value = animation.key_frame_values[animation.current_key_frame + 1];
+        r64 next_time = animation.key_frame_times[animation.current_key_frame + 1];
             
-            r64 time_distance = next_time - frame_time;
+        r64 time_distance = next_time - frame_time;
 
-            t = math::clamp((r32)(animation.current_time / time_distance), 0.0f, 1.0f);
-            r32 value = 0.0f;
+        t = math::clamp((r32)(animation.current_time / time_distance), 0.0f, 1.0f);
+        r32 value = 0.0f;
 
-            switch(animation.easing_mode)
-            {
-                case AnimationEasingMode::LERP:
-                value = math::linear_tween(key_frame_value, t, next_value);
-                break;
-                case AnimationEasingMode::EASE_IN:
-                value = math::ease_in_quad(key_frame_value, t, next_value);
-                break;
-                case AnimationEasingMode::EASE_OUT:
-                value = math::ease_out_quad(key_frame_value, t, next_value);
-                break;
-            }
-
-            set_uniform_value(animation.entity, animation.value_name, value, scene.handle);
-        }
-        else
+        switch(animation.easing_mode)
         {
-            assert(false);
+        case AnimationEasingMode::LERP:
+        value = math::linear_tween(key_frame_value, t, next_value);
+        break;
+        case AnimationEasingMode::EASE_IN:
+        value = math::ease_in_quad(key_frame_value, t, next_value);
+        break;
+        case AnimationEasingMode::EASE_OUT:
+        value = math::ease_out_quad(key_frame_value, t, next_value);
+        break;
+        default:
+        assert(false);
+        break;
         }
+
+        set_uniform_value(animation.entity, animation.value_name, value, scene.handle);
 
         if(t >= 1.0f) // The frame is done
         {
             animation.current_key_frame++;
             animation.current_time = 0.0;
 
-            if((animation.current_key_frame == animation.count - 1 && animation.mode == AnimationMode::LERP) || (animation.current_key_frame == animation.count && animation.mode == AnimationMode::CONSTANT))
+            if((animation.current_key_frame == animation.count - 1))
             {
                 animation.current_key_frame = 0;
                 should_run = root.loop;
@@ -4240,57 +4235,53 @@ static Camera get_standard_camera(SceneManager& manager)
 
         r32 t = 0.0;
 
-        if(animation.mode == AnimationMode::LERP)
-        {
-            math::Vec3 next_value = animation.key_frame_values[animation.current_key_frame + 1];
-            r64 next_time = animation.key_frame_times[animation.current_key_frame + 1];
+        math::Vec3 next_value = animation.key_frame_values[animation.current_key_frame + 1];
+        r64 next_time = animation.key_frame_times[animation.current_key_frame + 1];
             
-            r64 time_distance = next_time - frame_time;
+        r64 time_distance = next_time - frame_time;
 
-            t = math::clamp((r32)(animation.current_time / time_distance), 0.0f, 1.0f);
-            math::Vec3 value = math::Vec3(0, 0, 0);
+        t = math::clamp((r32)(animation.current_time / time_distance), 0.0f, 1.0f);
+        math::Vec3 value = math::Vec3(0, 0, 0);
 
-            switch(animation.easing_mode)
-            {
-                case AnimationEasingMode::LERP:
-                value = math::linear_tween(key_frame_value, t, next_value);
-                break;
-                case AnimationEasingMode::EASE_IN:
-                value = math::ease_in_quad(key_frame_value, t, next_value);
-                break;
-                case AnimationEasingMode::EASE_OUT:
-                value = math::ease_out_quad(key_frame_value, t, next_value);
-                break;
-            }
-
-            switch(animation.type)
-            {
-                case Vec3Type::UNIFORM:
-                {}
-                break;
-                case Vec3Type::TRANSFORM_POSITION:
-                {
-                    TransformComponent &comp = get_transform_comp(animation.entity, scene);
-                    scene::set_position(comp, value);
-                }
-                break;
-                case Vec3Type::TRANSFORM_ROTATION:
-                {
-                    TransformComponent &comp = get_transform_comp(animation.entity, scene);
-                    scene::set_rotation(comp, value);
-                }
-                break;
-                case Vec3Type::TRANSFORM_SCALE:
-                {
-                    TransformComponent &comp = get_transform_comp(animation.entity, scene);
-                    scene::set_scale(comp, value);
-                }
-                break;
-            }
-        }
-        else
+        switch(animation.easing_mode)
         {
-            assert(false);
+        case AnimationEasingMode::LERP:
+        value = math::linear_tween(key_frame_value, t, next_value);
+        break;
+        case AnimationEasingMode::EASE_IN:
+        value = math::ease_in_quad(key_frame_value, t, next_value);
+        break;
+        case AnimationEasingMode::EASE_OUT:
+        value = math::ease_out_quad(key_frame_value, t, next_value);
+        break;
+        default:
+        assert(false);
+        break;
+        }
+
+        switch(animation.type)
+        {
+        case Vec3Type::UNIFORM:
+        {}
+        break;
+        case Vec3Type::TRANSFORM_POSITION:
+        {
+            TransformComponent &comp = get_transform_comp(animation.entity, scene);
+            scene::set_position(comp, value);
+        }
+        break;
+        case Vec3Type::TRANSFORM_ROTATION:
+        {
+            TransformComponent &comp = get_transform_comp(animation.entity, scene);
+            scene::set_rotation(comp, value);
+        }
+        break;
+        case Vec3Type::TRANSFORM_SCALE:
+        {
+            TransformComponent &comp = get_transform_comp(animation.entity, scene);
+            scene::set_scale(comp, value);
+        }
+        break;
         }
 
         if(t >= 1.0f) // The frame is done
@@ -4298,7 +4289,7 @@ static Camera get_standard_camera(SceneManager& manager)
             animation.current_key_frame++;
             animation.current_time = 0.0;
 
-            if((animation.current_key_frame == animation.count - 1 && animation.mode == AnimationMode::LERP) || (animation.current_key_frame == animation.count && animation.mode == AnimationMode::CONSTANT))
+            if(animation.current_key_frame == animation.count - 1)
             {
                 animation.current_key_frame = 0;
                 should_run = root.loop;
