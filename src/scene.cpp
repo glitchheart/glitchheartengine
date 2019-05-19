@@ -2141,7 +2141,7 @@ static Camera get_standard_camera(SceneManager& manager)
 
         scene_manager->loaded_scene = handle;
 
-        b32 first_load = scene->loaded;
+        b32 first_load = !scene->loaded;
         
         if(!scene->loaded)
         {
