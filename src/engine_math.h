@@ -2449,6 +2449,11 @@ namespace math
         return math::Vec3(ease_out_quad(b.x, t, _c.x), ease_out_quad(b.y, t, _c.y), ease_out_quad(b.z, t, _c.z));
     }
 
+    inline math::Vec3 ease_in_out_quad(math::Vec3 b, r32 t, math::Vec3 _c)
+    {
+        return math::Vec3(ease_in_out_quad(b.x, t, _c.x), ease_in_out_quad(b.y, t, _c.y), ease_in_out_quad(b.z, t, _c.z));
+    }
+
     inline r32 ease_in_cubic(r32 b, r32 t, r32 _c)
     {
         r32 c = _c - b;
