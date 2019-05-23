@@ -2508,6 +2508,7 @@ static Camera get_standard_camera(SceneManager& manager)
         scene._internal_handles[new_handle - 1] = scene.entity_count++;
         
         Entity &entity = scene.entities[scene._internal_handles[new_handle - 1]];
+        entity = {};
         entity.savable = savable;
         entity.selection_enabled = true;
         entity.handle = handle;
@@ -2524,11 +2525,6 @@ static Camera get_standard_camera(SceneManager& manager)
         {
             _add_render_component(scene, handle, true);
         }
-        
-        // if(comp_flags & COMP_PARTICLES)
-        // {
-        //     _add_particle_system_component(scene, handle, get_default_particle_system_attributes(), 0, {}, {});
-        // }
 
         if(comp_flags & COMP_LIGHT)
         {

@@ -1092,8 +1092,6 @@ int main(int argc, char **args)
         
         update_log();
         
-        swap_buffers(render_state);
-
         frames++;
 
         r64 time = get_time();
@@ -1112,6 +1110,8 @@ int main(int argc, char **args)
         game_memory.core.delta_time = delta_time;
         game_memory.core.current_time = time;
         last_frame = end_counter;
+        
+        swap_buffers(render_state);
     }
 
     close_log();
