@@ -230,7 +230,7 @@ namespace scene
         i32 current_key_frame;
         r64 current_time;
 
-        char value_name[16];
+        char value_name[32];
 
         r32 key_frame_times[MAX_KEY_FRAMES];
         r32 key_frame_values[MAX_KEY_FRAMES];
