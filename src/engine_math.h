@@ -2009,10 +2009,16 @@ namespace math
 
     inline i32 next_power_of_two(i32 n)
     {
-        i32 result = 0;
-
-        result = (i32)pow(2, ceil((r32)log(n)/(r32)log(2)));
-        return result;
+        i32 v = n;
+        v--;
+        v |= v >> 1;
+        v |= v >> 2;
+        v |= v >> 4;
+        v |= v >> 8;
+        v |= v >> 16;
+        v++;
+        assert(v == (i32)pow(2, ceil((r32)log2(n))));
+        return v;
     }
     
     inline r32 length(Vec2 v)
