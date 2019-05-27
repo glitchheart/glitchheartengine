@@ -1330,9 +1330,11 @@ namespace math
     r32 length(Vec2 v);
     r32 length(Vec3 v);
     r32 length(Vec4 v);
+    i32 length(Vec2i v);
     Vec2 normalize(Vec2 v);
     Vec3 normalize(Vec3 v);
     Vec4 normalize(Vec4 v);
+    Vec2i normalize(Vec2i v);
     Quat normalize(Quat q);
     r32 norm(Vec3 v);
     Mat4 scale(Mat4 in, Vec3 scale);
@@ -2029,7 +2031,12 @@ namespace math
     {
         return sqrt(pow(v.x,2) + pow(v.y,2) + pow(v.z,2) + pow(v.w,2));
     }
-    
+
+    inline i32 length(Vec2i v)
+    {
+        return (i32) (sqrt(pow((r32)v.x,2) + pow((r32)v.y,2)));
+    }
+
     inline r32 length(Quat q)
     {
         return sqrt(pow(q.x, 2) + pow(q.y, 2) + pow(q.z, 2) + pow(q.w, 2));
@@ -2038,6 +2045,18 @@ namespace math
     inline Vec2 normalize(Vec2 v)
     {
         Vec2 result(v);
+        auto l = length(v);
+        if(l == 0.0f)
+        {
+            return result;
+        }
+        result /= l;
+        return result;
+    }
+
+    inline Vec2i normalize(Vec2i v)
+    {
+        Vec2i result(v);
         auto l = length(v);
         if(l == 0.0f)
         {
