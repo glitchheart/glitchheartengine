@@ -149,7 +149,6 @@ namespace scene
     struct RenderComponent
     {
         rendering::BufferHandle buffer_handle;
-        rendering::BufferHandle bounding_box_buffer;
         
         math::Vec3 mesh_scale;
         math::BoundingBox bounding_box;

@@ -69,6 +69,11 @@ namespace rendering
         i32 handle;
     };
 
+    struct LoadedMeshHandle
+    {
+        i16 handle;
+    };
+
     struct VertexAttribute
     {
 		ValueType type;
@@ -436,7 +441,12 @@ namespace rendering
         i32 pass_count;
     };
 
-	HANDLE(Buffer);
+    struct BufferHandle
+    {
+        i32 handle;
+        LoadedMeshHandle loaded_mesh_handle;
+    };
+    
     HANDLE(InternalBuffer);
 
     enum class BufferType
@@ -470,6 +480,7 @@ namespace rendering
 		size_t stride;
 
 		BufferUsage usage;
+        LoadedMeshHandle mesh_handle;
 		
 		BufferData data;
 
@@ -480,6 +491,7 @@ namespace rendering
             stride = other.stride;
             usage = other.usage;
             data = other.data;
+            mesh_handle = other.mesh_handle;
         }
 
 		RegisterBufferInfo() {}

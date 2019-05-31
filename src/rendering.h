@@ -624,6 +624,8 @@ struct Renderer
 	i32 framebuffer_height;
     
 	MemoryArena mesh_arena;
+    MemoryArena material_arena;
+    MemoryArena light_arena;
 	MemoryArena texture_arena;
 	MemoryArena animation_arena;
 	MemoryArena font_arena;
@@ -644,6 +646,7 @@ struct Renderer
         rendering::MaterialInstanceHandle wireframe_material;
         rendering::ShaderHandle bounding_box_shader;
         rendering::MaterialInstanceHandle bounding_box_material;
+        rendering::BufferHandle bounding_box_buffer;
         rendering::ShaderHandle shadow_map_shader;
         rendering::ShaderHandle bloom_shader;
         rendering::ShaderHandle blur_shader;
@@ -679,6 +682,9 @@ struct Renderer
     
 		i32 *removed_buffer_handles;
 		i32 removed_buffer_handle_count;
+
+        Mesh* loaded_meshes;
+        i32 loaded_mesh_count;
 
         struct
         {

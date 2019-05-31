@@ -2661,6 +2661,50 @@ namespace math
         t = tmin;
         *intersection_point = r.origin + r.direction * t;
         return true;
+    }    
+
+    inline b32 triangle_ray_intersection(Ray r, Vec3 v0, Vec3 v1, Vec3 v2, Vec3 n, Vec3* intersection_point)
+    {
+        Vec3 v0v1 = v1 - v0;
+        Vec3 v0v2 = v2 - v0;
+        Vec3 normal = normalize(cross(v0v1, v0v2));
+        
+        const r32 EPSILON = 0.00000001f;
+        r32 n_dot_ray_dir = dot(normal, r.direction);
+        if(ABS(n_dot_ray_dir) < EPSILON)
+        {
+            return false;
+        }
+
+        r32 d = dot(normal, v0);
+
+        r32 t = -(dot(normal, r.origin) + d) / n_dot_ray_dir;
+
+        if(t < 0) return false;
+
+        Vec3 p = r.origin + t * r.direction;
+
+        // edge 0
+        Vec3 edge0 = v1 - v0;
+        Vec3 vp0 = p - v0;
+        Vec3 c = cross(edge0, vp0);
+        if(dot(normal, c) < 0) return false;
+
+        // edge 1
+        Vec3 edge1 = v2 - v1;
+        Vec3 vp1 = p - v1;
+        c = cross(edge1, vp1);
+        if(dot(normal, c) < 0) return false;
+
+        // edge 2
+        Vec3 edge2 = v0 - v2;
+        Vec3 vp2 = p - v2;
+        c = cross(edge2, vp2);
+        if(dot(normal, c) < 0) return false;
+
+        *intersection_point = p;
+        
+        return true;
     }
     
     inline b32 new_aabb_ray_intersection(Ray ray, BoundingBox b, math::Vec3* intersection_point)
