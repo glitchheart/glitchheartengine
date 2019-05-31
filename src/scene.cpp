@@ -1066,7 +1066,6 @@ static Camera get_standard_camera(SceneManager& manager)
     static void free_scene(SceneHandle handle, b32 invalidate_handle)
     {
         SceneManager *scene_manager = handle.manager;
-
         
         if(!scene_manager)
             return;
@@ -4038,8 +4037,8 @@ static Camera get_standard_camera(SceneManager& manager)
         for(i32 i = 0; i < animation.float_anim_count; i++)
         {
             animation.float_animations[i].running = playing;
-            animation.vec3_animations[i].current_key_frame = 0;
-            animation.vec3_animations[i].current_time = 0.0;
+            animation.float_animations[i].current_key_frame = 0;
+            animation.float_animations[i].current_time = 0.0;
         }
 
         for(i32 i = 0; i < animation.vec3_anim_count; i++)
