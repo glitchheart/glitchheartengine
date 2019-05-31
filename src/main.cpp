@@ -466,14 +466,16 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     
     //@Incomplete: Make these dynamically allocated?
 
-    renderer->render.directional_lights = push_array(&renderer->mesh_arena, global_max_directional_lights, DirectionalLight);
-    renderer->render.point_lights = push_array(&renderer->mesh_arena, global_max_point_lights, PointLight);
+    renderer->render.directional_lights = push_array(&renderer->light_arena, global_max_directional_lights, DirectionalLight);
+    renderer->render.point_lights = push_array(&renderer->light_arena, global_max_point_lights, PointLight);
     
-    renderer->render.materials = push_array(&renderer->mesh_arena, global_max_materials, rendering::Material);
-    renderer->render.material_instances = push_array(&renderer->mesh_arena, global_max_material_instances, rendering::Material);
-    renderer->render._internal_material_instance_handles = push_array(&renderer->mesh_arena, global_max_material_instances, i32);
+    renderer->render.materials = push_array(&renderer->material_arena, global_max_materials, rendering::Material);
+    renderer->render.material_instances = push_array(&renderer->material_arena, global_max_material_instances, rendering::Material);
+    renderer->render._internal_material_instance_handles = push_array(&renderer->material_arena, global_max_material_instances, i32);
     renderer->render.current_material_instance_index = 0;
     renderer->render.material_instance_count = 0;
+
+    renderer->render.loaded_meshes = push_array(&renderer->mesh_arena, global_max_meshes, Mesh);
     
     // Set all material instance values to their defaults
     for(i32 i = 0; i < global_max_material_instances; i++)
@@ -517,6 +519,8 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     rendering::set_shadow_map_shader(renderer, "../engine_assets/standard_shaders/shadow_map.shd");
     // // rendering::set_light_space_matrices(renderer, math::ortho(-15, 15, -15, 15, 1, 20.0f), math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0.0f, 0.0f, 0.0f));
     // rendering::calculate_light_space_matrices(renderer, );
+
+    renderer->render.bounding_box_buffer = rendering::create_bounding_box_buffer(renderer);
 
     rendering::set_bloom_shader(renderer, "../engine_assets/standard_shaders/bloom.shd");
     rendering::set_blur_shader(renderer, "../engine_assets/standard_shaders/blur.shd");

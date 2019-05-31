@@ -1,6 +1,6 @@
 static constexpr GraphicsApi global_graphics_api = GRAPHICS_OPEN_GL;
 static constexpr i32 global_pixels_per_unit = 8;
-static constexpr i32 global_max_meshes = 32;
+static constexpr i32 global_max_meshes = 256;
 static constexpr i32 global_max_fonts = 64;
 static constexpr i32 global_max_particle_systems = 256;
 static constexpr i32 global_max_lights = 32;
