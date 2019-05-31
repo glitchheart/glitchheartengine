@@ -1376,7 +1376,8 @@ static Camera get_standard_camera(SceneManager& manager)
                     {
                         r32 new_dist = math::distance(scene.scene_manager->editor_camera.position, intersection_point);
                         triangle_ray_intersection(ray, v1.position, v2.position, v3.position, normal, &intersection_point);
-                    
+
+                        printf("Entity: %s\n", entity.name);
                         if(new_dist < dist)
                         {
                             entity_handle = entity_list.handles[i];
