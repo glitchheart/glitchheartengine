@@ -234,7 +234,7 @@ i32 _find_unused_work_queue(Renderer *renderer)
     return handle;
 }
 
-static ParticleSystemHandle create_particle_system(Renderer *renderer, i32 max_particles, rendering::MaterialHandle material, rendering::BufferHandle buffer = {0})
+static ParticleSystemHandle create_particle_system(Renderer *renderer, i32 max_particles, rendering::MaterialHandle material, rendering::BufferHandle buffer = {0, {-1}})
 {
     assert(material.handle != 0);
     
