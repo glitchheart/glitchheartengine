@@ -1330,9 +1330,11 @@ namespace math
     r32 length(Vec2 v);
     r32 length(Vec3 v);
     r32 length(Vec4 v);
+    i32 length(Vec2i v);
     Vec2 normalize(Vec2 v);
     Vec3 normalize(Vec3 v);
     Vec4 normalize(Vec4 v);
+    Vec2i normalize(Vec2i v);
     Quat normalize(Quat q);
     r32 norm(Vec3 v);
     Mat4 scale(Mat4 in, Vec3 scale);
@@ -2009,10 +2011,16 @@ namespace math
 
     inline i32 next_power_of_two(i32 n)
     {
-        i32 result = 0;
-
-        result = (i32)pow(2, ceil((r32)log(n)/(r32)log(2)));
-        return result;
+        i32 v = n;
+        v--;
+        v |= v >> 1;
+        v |= v >> 2;
+        v |= v >> 4;
+        v |= v >> 8;
+        v |= v >> 16;
+        v++;
+        assert(v == (i32)pow(2, ceil((r32)log2(n))));
+        return v;
     }
     
     inline r32 length(Vec2 v)
@@ -2029,7 +2037,12 @@ namespace math
     {
         return sqrt(pow(v.x,2) + pow(v.y,2) + pow(v.z,2) + pow(v.w,2));
     }
-    
+
+    inline i32 length(Vec2i v)
+    {
+        return (i32) (sqrt(pow((r32)v.x,2) + pow((r32)v.y,2)));
+    }
+
     inline r32 length(Quat q)
     {
         return sqrt(pow(q.x, 2) + pow(q.y, 2) + pow(q.z, 2) + pow(q.w, 2));
@@ -2038,6 +2051,18 @@ namespace math
     inline Vec2 normalize(Vec2 v)
     {
         Vec2 result(v);
+        auto l = length(v);
+        if(l == 0.0f)
+        {
+            return result;
+        }
+        result /= l;
+        return result;
+    }
+
+    inline Vec2i normalize(Vec2i v)
+    {
+        Vec2i result(v);
         auto l = length(v);
         if(l == 0.0f)
         {
@@ -2449,6 +2474,11 @@ namespace math
         return math::Vec3(ease_out_quad(b.x, t, _c.x), ease_out_quad(b.y, t, _c.y), ease_out_quad(b.z, t, _c.z));
     }
 
+    inline math::Vec3 ease_in_out_quad(math::Vec3 b, r32 t, math::Vec3 _c)
+    {
+        return math::Vec3(ease_in_out_quad(b.x, t, _c.x), ease_in_out_quad(b.y, t, _c.y), ease_in_out_quad(b.z, t, _c.z));
+    }
+
     inline r32 ease_in_cubic(r32 b, r32 t, r32 _c)
     {
         r32 c = _c - b;
@@ -2630,6 +2660,50 @@ namespace math
         
         t = tmin;
         *intersection_point = r.origin + r.direction * t;
+        return true;
+    }    
+
+    inline b32 triangle_ray_intersection(Ray r, Vec3 v0, Vec3 v1, Vec3 v2, Vec3 n, Vec3* intersection_point)
+    {
+        Vec3 v0v1 = v1 - v0;
+        Vec3 v0v2 = v2 - v0;
+        Vec3 normal = normalize(cross(v0v1, v0v2));
+        
+        const r32 EPSILON = 0.00000001f;
+        r32 n_dot_ray_dir = dot(normal, r.direction);
+        if(ABS(n_dot_ray_dir) < EPSILON)
+        {
+            return false;
+        }
+
+        r32 d = dot(normal, v0);
+
+        r32 t = -(dot(normal, r.origin) + d) / n_dot_ray_dir;
+
+        if(t < 0) return false;
+
+        Vec3 p = r.origin + t * r.direction;
+
+        // edge 0
+        Vec3 edge0 = v1 - v0;
+        Vec3 vp0 = p - v0;
+        Vec3 c = cross(edge0, vp0);
+        if(dot(normal, c) < 0) return false;
+
+        // edge 1
+        Vec3 edge1 = v2 - v1;
+        Vec3 vp1 = p - v1;
+        c = cross(edge1, vp1);
+        if(dot(normal, c) < 0) return false;
+
+        // edge 2
+        Vec3 edge2 = v0 - v2;
+        Vec3 vp2 = p - v2;
+        c = cross(edge2, vp2);
+        if(dot(normal, c) < 0) return false;
+
+        *intersection_point = p;
+        
         return true;
     }
     

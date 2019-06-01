@@ -1151,15 +1151,15 @@ namespace rendering
                 max_z = points[i].z;
             }
         }
-        r32 increment = 15.0f;
+        r32 increment = 5.0f;
 
         min_x -= increment;
         min_y -= increment;
-        min_z -= increment;
+        min_z -= increment / 3.0f;
 
         max_x += increment;
         max_y += increment;
-        max_z += increment;
+        max_z += increment / 3.0f;
 
         math::Mat4 projection = math::Mat4(1.0f);
 
@@ -3182,7 +3182,7 @@ namespace rendering
         
         renderer->api_functions.create_buffer(buffer, info, renderer->api_functions.render_state, renderer);
 
-        return {unused_handle};
+        return { unused_handle, info.mesh_handle };
     }
 
     static BufferHandle create_line_buffer(Renderer *renderer)
@@ -3210,7 +3210,7 @@ namespace rendering
         info.data.index_buffer_size = 0;
         info.data.index_buffer_count = 0;
 
-        return {register_buffer(renderer, info).handle}; 
+        return register_buffer(renderer, info); 
     }
 
     static BufferHandle create_bounding_box_buffer(Renderer *renderer)
@@ -3393,7 +3393,7 @@ namespace rendering
         info.data.index_buffer_size = 0;
         info.data.index_buffer_count = 0;
 
-        return {register_buffer(renderer, info).handle};
+        return register_buffer(renderer, info);
     }
 
     static BufferHandle create_quad_buffer(Renderer *renderer, u64 anchor = 0, b32 uvs = false)
@@ -3497,30 +3497,6 @@ namespace rendering
         return handle;
     }
 
-	
-	// struct RegisterBufferInfo
-	// {
-	// 	VertexAttribute vertex_attributes[16];
-	// 	i32 vertex_attribute_count;
-
-	// 	size_t stride;
-
-	// 	BufferUsage usage;
-		
-	// 	BufferData data;
-
-	// 	RegisterBufferInfo(const RegisterBufferInfo& other)
-    //     {
-    //         memcpy(vertex_attributes, other.vertex_attributes, sizeof(VertexAttribute) * other.vertex_attribute_count);
-    //         vertex_attribute_count = other.vertex_attribute_count;
-    //         stride = other.stride;
-    //         usage = other.usage;
-    //         data = other.data;
-    //     }
-
-	// 	RegisterBufferInfo() {}
-	// };
-
     static BufferHandle create_buffers_from_mesh(Renderer *renderer, Mesh &mesh, u64 vertex_data_flags, b32 has_normals, b32 has_uvs)
     {
         assert(renderer->render.buffer_count + 1 < global_max_custom_buffers);
@@ -3558,7 +3534,43 @@ namespace rendering
         info.data.index_buffer = push_size(&renderer->mesh_arena, info.data.index_buffer_size, u16);
         generate_index_buffer(info.data.index_buffer, mesh.faces, mesh.face_count);
 
-        return {register_buffer(renderer, info).handle};
+        return register_buffer(renderer, info);
+    }
+
+    static BufferHandle create_buffers_from_mesh(Renderer *renderer, LoadedMeshHandle mesh_handle, u64 vertex_data_flags, b32 has_normals, b32 has_uvs)
+    {
+        Mesh& mesh = renderer->render.loaded_meshes[mesh_handle.handle];
+		BufferHandle buffer = create_buffers_from_mesh(renderer, mesh, vertex_data_flags, has_normals, has_uvs);
+		buffer.loaded_mesh_handle = mesh_handle;
+        return buffer;
+    }
+
+    static Mesh& create_new_mesh(Renderer* renderer, LoadedMeshHandle& handle)
+    {
+        assert(renderer->render.loaded_mesh_count < global_max_meshes);
+        handle.handle = (i16)renderer->render.loaded_mesh_count++;
+        renderer->render.loaded_meshes[handle.handle] = {};
+        return renderer->render.loaded_meshes[handle.handle];
+    }
+
+    static Mesh* get_mesh(Renderer* renderer, LoadedMeshHandle handle)
+    {
+        if(handle.handle >= renderer->render.loaded_mesh_count)
+            return nullptr;
+        
+        return &renderer->render.loaded_meshes[handle.handle];
+    }
+
+    static void transform_vertices(Renderer* renderer, Transform transform, Mesh mesh, Vertex* vertices)
+    {
+        for(i32 i = 0; i < mesh.face_count; i++)
+        {
+            Face face = mesh.faces[i];
+            for(i32 j = 0; j < 3; j++)
+            {
+                vertices[face.indices[j]].position = (transform.model * mesh.vertices[face.indices[j]].position);
+            }
+        }
     }
     
     static BufferHandle create_plane(Renderer *renderer, math::Vec3 *scale = nullptr, math::BoundingBox *box = nullptr)
@@ -3570,8 +3582,8 @@ namespace rendering
         r32 max_y = -10000;
         r32 max_z = -10000;
 
-        Mesh mesh;
-        mesh = {};
+        LoadedMeshHandle handle = {};
+        Mesh &mesh = create_new_mesh(renderer, handle);
         mesh.vertices = push_array(&renderer->mesh_arena, sizeof(plane_vertices) / sizeof(r32) / 3, Vertex);
         mesh.faces = push_array(&renderer->mesh_arena, sizeof(plane_indices) / sizeof(u16) / 3, Face);
         mesh.vertex_count = sizeof(plane_vertices) / sizeof(r32) / 3;
@@ -3615,7 +3627,7 @@ namespace rendering
             *box = new_box;
         }
         
-        return create_buffers_from_mesh(renderer, mesh, 0, true, true);
+        return {create_buffers_from_mesh(renderer, handle, 0, true, true)};
     }
 
     static BufferHandle create_cube(Renderer *renderer, math::Vec3 *scale, math::BoundingBox *box = nullptr)
@@ -3627,8 +3639,8 @@ namespace rendering
         r32 max_y = -10000;
         r32 max_z = -10000;
 
-        Mesh mesh;
-        mesh = {};
+        LoadedMeshHandle handle = {};
+        Mesh &mesh = create_new_mesh(renderer, handle);
         mesh.vertices = push_array(&renderer->mesh_arena, sizeof(cube_vertices) / sizeof(r32) / 3, Vertex);
         mesh.faces = push_array(&renderer->mesh_arena, sizeof(cube_indices) / sizeof(u16) / 3, Face);
 
@@ -3673,12 +3685,31 @@ namespace rendering
             *box = new_box;
         }
         
-        return create_buffers_from_mesh(renderer, mesh, 0, true, true);
+        return {create_buffers_from_mesh(renderer, handle, 0, true, true)};
     }
 
     static b32 vertex_equals(Vertex &v1, Vertex &v2, b32 with_normals, b32 with_uvs)
     {
         return v1.position.x == v2.position.x && v1.position.y == v2.position.y && v1.position.z == v2.position.z && ((v1.uv.x == v2.uv.x && v1.uv.y == v2.uv.y) || !with_uvs) && ((v1.normal.x == v2.normal.x && v1.normal.y == v2.normal.y && v1.normal.z == v2.normal.z) || !with_normals);
+    }
+
+    static math::Vec3 compute_face_normal(Face f, Vertex* vertices)
+    {
+        // Newell's Method
+        // https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
+        math::Vec3 normal = math::Vec3(0.0);
+    
+        for(size_t i = 0; i < 3; i++)
+        {
+            math::Vec3& current = vertices[f.indices[i]].position;
+            math::Vec3& next = vertices[f.indices[(i + 1) % 3]].position;
+        
+            normal.x = normal.x + (current.y - next.y) * (current.z + next.z);
+            normal.y = normal.y + (current.z - next.z) * (current.x + next.x);
+            normal.z = normal.z + (current.x - next.x) * (current.y + next.y);
+        }
+    
+        return math::normalize(normal);
     }
 
     static i32 check_for_identical_vertex(Vertex &vertex, math::Vec2 uv, math::Vec3 normal, b32 with_normals, b32 with_uvs, Vertex *final_vertices, i32 current_size, b32 *should_add)
@@ -4239,7 +4270,9 @@ namespace rendering
             last_ptr = *source;
         }
 
-        Mesh mesh;
+        LoadedMeshHandle handle = {};
+        Mesh &mesh = create_new_mesh(renderer, handle);
+
         mesh.vertices = push_array(&renderer->mesh_arena, vertex_ptrs->final_vertex_count, Vertex);
         mesh.faces = push_array(&renderer->mesh_arena, vertex_ptrs->face_count, Face);
         mesh.vertex_count = vertex_ptrs->final_vertex_count;
@@ -4256,7 +4289,7 @@ namespace rendering
         box.min = math::Vec3(min_x, min_y, min_z);
         box.max = math::Vec3(max_x, max_y, max_z);
         obj_data->bounding_box = box;
-        obj_data->buffer = create_buffers_from_mesh(renderer, mesh, 0, with_normals, with_uvs);
+        obj_data->buffer = create_buffers_from_mesh(renderer, handle, 0, with_normals, with_uvs);
     }
 
     static void parse_obj_object(const char *geometry_name, _VertexPtrs *vertex_ptrs, char **source, MeshObjectData *obj_data, Renderer *renderer)
@@ -4419,7 +4452,9 @@ namespace rendering
             last_ptr = *source;
         }
 
-        Mesh mesh;
+        LoadedMeshHandle handle = {};
+        Mesh &mesh = create_new_mesh(renderer, handle);
+        
         mesh.vertices = push_array(&renderer->mesh_arena, vertex_ptrs->final_vertex_count, Vertex);
         mesh.faces = push_array(&renderer->mesh_arena, vertex_ptrs->face_count, Face);
         mesh.vertex_count = vertex_ptrs->final_vertex_count;
@@ -4436,7 +4471,7 @@ namespace rendering
         box.min = math::Vec3(min_x, min_y, min_z);
         box.max = math::Vec3(max_x, max_y, max_z);
         obj_data->bounding_box = box;
-        obj_data->buffer = create_buffers_from_mesh(renderer, mesh, 0, with_normals, with_uvs);
+        obj_data->buffer = create_buffers_from_mesh(renderer, handle, 0, with_normals, with_uvs);
     }
     
 	struct MeshDataCounts

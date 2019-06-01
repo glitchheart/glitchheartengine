@@ -31,7 +31,7 @@ namespace scene
     static LightComponent &get_light_comp(EntityHandle handle, SceneHandle scene);
     static Camera & get_scene_camera(SceneHandle handle);
     static Camera& get_editor_camera(SceneHandle handle);
-    static EntityHandle pick_entity(i32 mouse_x, i32 mouse_y);
+    static EntityHandle pick_entity(SceneHandle handle, i32 mouse_x, i32 mouse_y);
     static Entity& get_entity(EntityHandle handle, Scene &scene);
     static Entity& get_entity(EntityHandle handle, SceneHandle& scene_handle);
     static RegisteredEntityType * get_registered_type(u32 type_id, SceneManager *manager);
@@ -1066,7 +1066,6 @@ static Camera get_standard_camera(SceneManager& manager)
     static void free_scene(SceneHandle handle, b32 invalidate_handle)
     {
         SceneManager *scene_manager = handle.manager;
-
         
         if(!scene_manager)
             return;
@@ -1253,17 +1252,18 @@ static Camera get_standard_camera(SceneManager& manager)
                 return handle;
         }
     }
+
+    static void add_to_list(EntityList& list, EntityHandle entity)
+    {
+        list.handles[list.entity_count++] = entity;
+    }
     
     static EntityHandle pick_entity(SceneHandle handle, i32 mouse_x, i32 mouse_y)
     {
         Scene &scene = get_scene(handle);
 
-        math::Ray ray = cast_ray(scene, mouse_x, mouse_y);
+        math::Ray ray = cast_ray(scene, mouse_x, mouse_y);       
         
-        r32 dist = 100000; // Just set a crazy max distance
-        
-        EntityHandle entity_handle = { -1 };
-
         if(IS_ENTITY_HANDLE_VALID(handle.manager->selected_entity))
         {
             TransformComponent &selected_transform = get_transform_comp(handle.manager->selected_entity, handle);
@@ -1279,6 +1279,8 @@ static Camera get_standard_camera(SceneManager& manager)
                 return handle.manager->gizmos.scale_cubes[3];
             }
         }
+
+        EntityList entity_list = {};
         
         for(i32 i = 0; i < scene.entity_count; i++)
         {
@@ -1294,44 +1296,105 @@ static Camera get_standard_camera(SceneManager& manager)
                     // Ignore the entity if it is not selectable and it has no parent
                     if(!ent.selection_enabled && !IS_ENTITY_HANDLE_VALID(ent.parent))
                         continue;
-                        
-                    math::BoundingBox box;
-                    math::Vec3 real_scale = transform.transform.scale * render_comp.mesh_scale;
-                    box.min = math::Vec3(transform.transform.position.x - real_scale.x * 0.5f, transform.transform.position.y - real_scale.y * 0.5f, transform.transform.position.z - real_scale.z * 0.5f);
-                    box.max = math::Vec3(transform.transform.position.x + real_scale.x * 0.5f, transform.transform.position.y + real_scale.y * 0.5f, transform.transform.position.z + real_scale.z * 0.5f);
+
+                    math::BoundingBox box = render_comp.bounding_box;
+
+                    math::Vec3 size = math::Vec3(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z);
+                    math::Vec3 box_position = math::Vec3((box.min.x + box.max.x) / 2.0f, (box.min.y + box.max.y) / 2.0f, (box.min.z + box.max.z) / 2.0f);
+                            
+                    rendering::Transform box_transform = rendering::create_transform(box_position, size, math::Quat());
+                    box_transform.model = transform.transform.model * box_transform.model;
+                    box.min += math::translation(transform.transform.model);
+                    box.max += math::translation(transform.transform.model);
 
                     math::Vec3 intersection_point;
+                    // if(!ent.selection_enabled)
+                    // {
+                    //     EntityHandle parent = get_root_entity(ent.handle, scene);
+                            
+                    //     // If a selectable parent was found
+                    //     if(IS_ENTITY_HANDLE_VALID(parent))
+                    //     {
+                    //         add_to_list(entity_list, parent);
+                    //     }
+                                
+                    //     else
+                    //         continue;
+                    // }
+                    // else
+                    //     add_to_list(entity_list, ent.handle);
+
+                    
                     if(aabb_ray_intersection(ray, box, &intersection_point))
                     {
-
-                        r32 new_dist = math::distance(scene.scene_manager->editor_camera.position, intersection_point);
-                    
-                        if(new_dist < dist)
+                        // Look for selectable parents
+                        if(!ent.selection_enabled)
                         {
-                            // Look for selectable parents
-                            if(!ent.selection_enabled)
-                            {
-                                EntityHandle parent = get_root_entity(entity_handle, scene);
-
-                                // If a selectable parent was found
-                                if(IS_ENTITY_HANDLE_VALID(parent))
-                                    entity_handle = parent;
-                                else
-                                    continue;
-                            }
-                            else
-                                entity_handle = ent.handle;
+                            EntityHandle parent = get_root_entity(ent.handle, scene);
                             
-                            dist = new_dist;
+                            // If a selectable parent was found
+                            if(IS_ENTITY_HANDLE_VALID(parent))
+                            {
+                                add_to_list(entity_list, parent);
+                            }
+                                
+                            else
+                                continue;
                         }
+                        else
+                            add_to_list(entity_list, ent.handle);
                     }
                 }
             }
         }
 
-        if(IS_ENTITY_HANDLE_VALID(entity_handle))
-            handle.manager->gizmos.selected_gizmo = Gizmos::NONE;
-        
+        r32 dist = 100000; // Just set a crazy max distance
+        EntityHandle entity_handle = { -1 };
+        MemoryArena temp_arena = {};
+        TemporaryMemory temp_mem = begin_temporary_memory(&temp_arena);
+
+        for(i32 i = 0; i < entity_list.entity_count; i++)
+        {
+            Entity entity = get_entity(entity_list.handles[i], scene);
+            rendering::Transform transform = get_transform_comp(entity_list.handles[i], scene).transform;
+            RenderComponent render = get_render_comp(entity_list.handles[i], scene.handle);
+            if(Mesh* mesh = rendering::get_mesh(scene.renderer, render.buffer_handle.loaded_mesh_handle))
+            {
+                Vertex* vertices = push_array(&temp_arena, mesh->vertex_count, Vertex);
+                math::Vec3 intersection_point;
+                rendering::transform_vertices(scene.renderer, transform, *mesh, vertices);
+
+                for(i32 j = 0; j < mesh->face_count; j++)
+                {
+                    Vertex v1 = vertices[mesh->faces[j].indices[0]];
+                    Vertex v2 = vertices[mesh->faces[j].indices[1]];
+                    Vertex v3 = vertices[mesh->faces[j].indices[2]];
+                    Vertex triangle[3] = { v1, v2, v3 };
+                    math::Vec3 normal = math::normalize(rendering::compute_face_normal(mesh->faces[j], vertices) * transform.model);
+
+                    if(triangle_ray_intersection(ray, v1.position, v2.position, v3.position, normal, &intersection_point))
+                    {
+                        r32 new_dist = math::distance(scene.scene_manager->editor_camera.position, intersection_point);
+                        triangle_ray_intersection(ray, v1.position, v2.position, v3.position, normal, &intersection_point);
+
+                        printf("Entity: %s\n", entity.name);
+                        if(new_dist < dist)
+                        {
+                            entity_handle = entity_list.handles[i];
+                            dist = new_dist;
+                        }
+
+                    }
+                }
+                
+            }
+        }
+		
+        end_temporary_memory(temp_mem);
+
+    if(IS_ENTITY_HANDLE_VALID(entity_handle))
+        handle.manager->gizmos.selected_gizmo = Gizmos::NONE;
+    
         return entity_handle;
     }
 
@@ -1989,6 +2052,10 @@ static Camera get_standard_camera(SceneManager& manager)
                 }
             }
 
+            // if(MOUSE_DOWN(Mouse_Left))
+            // {
+
+            
             if(MOUSE_DOWN(Mouse_Left))
             {
                 manager->dragging = true;
@@ -2015,8 +2082,8 @@ static Camera get_standard_camera(SceneManager& manager)
                         }
                         break;
                         case TransformationType::ROTATION:
-                            assert(false);
-                            break;
+                        assert(false);
+                        break;
                         }
                         
                         manager->gizmos.initial_scale = t.transform.scale;
@@ -2037,41 +2104,46 @@ static Camera get_standard_camera(SceneManager& manager)
                         l2.start = pos;
                         l2.end = pos + math::Vec3(gizmo_size, 0, 0);
                 
-                        line_vs_line(l1, l2, points);
-                        r32 x_dist = math::distance(points[0], points[1]);
-                        if(x_dist < max_distance)
+                        if(line_vs_line(l1, l2, points))
                         {
-                            current_distance = x_dist;
-                            constraint = TranslationConstraint::X;
-                            manager->gizmos.current_line = l2;
-                            manager->gizmos.initial_offset = points[1] - start;
+                            r32 x_dist = math::distance(points[0], points[1]);
+                            if(x_dist < max_distance)
+                            {
+                                current_distance = x_dist;
+                                constraint = TranslationConstraint::X;
+                                manager->gizmos.current_line = l2;
+                                manager->gizmos.initial_offset = points[1] - start;
+                            }
                         }
 
                         // Check Y axis
                         l2.end = pos + math::Vec3(0, gizmo_size, 0);
                 
-                        line_vs_line(l1, l2, points);
-                
-                        r32 y_dist = math::distance(points[0], points[1]);
-                        if(y_dist < current_distance && y_dist < max_distance)
+                        if(line_vs_line(l1, l2, points))
                         {
-                            current_distance = y_dist;
-                            constraint = TranslationConstraint::Y;
-                            manager->gizmos.current_line = l2;
-                            manager->gizmos.initial_offset = points[1] - start;
+                            r32 y_dist = math::distance(points[0], points[1]);
+                            if(y_dist < current_distance && y_dist < max_distance)
+                            {
+                                current_distance = y_dist;
+                                constraint = TranslationConstraint::Y;
+                                manager->gizmos.current_line = l2;
+                                manager->gizmos.initial_offset = points[1] - start;
+                            }
                         }
 
                         // Check Z axis
                         l2.end = pos + math::Vec3(0, 0, gizmo_size);
 
-                        line_vs_line(l1, l2, points);
-                        r32 z_dist = math::distance(points[0], points[1]);
-                        if(z_dist < current_distance && z_dist < max_distance)
+                        if(line_vs_line(l1, l2, points))
                         {
-                            current_distance = z_dist;
-                            constraint = TranslationConstraint::Z;
-                            manager->gizmos.current_line = l2;
-                            manager->gizmos.initial_offset = points[1] - start;
+                            r32 z_dist = math::distance(points[0], points[1]);
+                            if(z_dist < current_distance && z_dist < max_distance)
+                            {
+                                current_distance = z_dist;
+                                constraint = TranslationConstraint::Z;
+                                manager->gizmos.current_line = l2;
+                                manager->gizmos.initial_offset = points[1] - start;
+                            }
                         }
 
                         manager->gizmos.constraint = constraint;
@@ -2141,6 +2213,8 @@ static Camera get_standard_camera(SceneManager& manager)
 
         scene_manager->loaded_scene = handle;
 
+        b32 first_load = !scene->loaded;
+        
         if(!scene->loaded)
         {
             if(scene_manager->callbacks.on_scene_will_load)
@@ -2148,10 +2222,10 @@ static Camera get_standard_camera(SceneManager& manager)
             
             allocate_instance_buffers(*scene);
             scene->loaded = true;
-            
-            if(scene_manager->callbacks.on_scene_loaded)
-                scene_manager->callbacks.on_scene_loaded(handle);
         }
+
+        if(scene_manager->callbacks.on_scene_loaded)
+            scene_manager->callbacks.on_scene_loaded(handle, first_load);        
         
         activate_particle_systems(handle);
 
@@ -2506,6 +2580,7 @@ static Camera get_standard_camera(SceneManager& manager)
         scene._internal_handles[new_handle - 1] = scene.entity_count++;
         
         Entity &entity = scene.entities[scene._internal_handles[new_handle - 1]];
+        entity = {};
         entity.savable = savable;
         entity.selection_enabled = true;
         entity.handle = handle;
@@ -2522,11 +2597,6 @@ static Camera get_standard_camera(SceneManager& manager)
         {
             _add_render_component(scene, handle, true);
         }
-        
-        // if(comp_flags & COMP_PARTICLES)
-        // {
-        //     _add_particle_system_component(scene, handle, get_default_particle_system_attributes(), 0, {}, {});
-        // }
 
         if(comp_flags & COMP_LIGHT)
         {
@@ -2773,14 +2843,10 @@ static Camera get_standard_camera(SceneManager& manager)
 
 							obj_info = rendering::load_obj(scene.renderer, obj_file);
 
-							if (obj_info.object_count > 0)
-							{
-								//templ->render.bounding_box_buffer = rendering::create_bounding_box_buffer(scene.renderer);
-							}
-
                             if(obj_info.object_count == 1)
                             {
                                 templ->render.mesh_scale = obj_info.data[0].mesh_scale;
+                                templ->render.bounding_box = obj_info.data[0].bounding_box;
                             }
 						}
 						else if (starts_with(buffer, "prim"))
@@ -3269,7 +3335,6 @@ static Camera get_standard_camera(SceneManager& manager)
             RenderComponent &render = _get_render_comp(handle, scene);
             render.ignore_depth = templ.render.ignore_depth;
             render.buffer_handle = templ.render.buffer_handle;
-            render.bounding_box_buffer = templ.render.bounding_box_buffer;
             render.bounding_box_enabled = false;
             
             render.casts_shadows = templ.render.casts_shadows;
@@ -4040,8 +4105,8 @@ static Camera get_standard_camera(SceneManager& manager)
         for(i32 i = 0; i < animation.float_anim_count; i++)
         {
             animation.float_animations[i].running = playing;
-            animation.vec3_animations[i].current_key_frame = 0;
-            animation.vec3_animations[i].current_time = 0.0;
+            animation.float_animations[i].current_key_frame = 0;
+            animation.float_animations[i].current_time = 0.0;
         }
 
         for(i32 i = 0; i < animation.vec3_anim_count; i++)
@@ -4062,7 +4127,7 @@ static Camera get_standard_camera(SceneManager& manager)
         _set_animation_playing(false, animation_handle, scene_handle);
     }
 
-    static AnimationHandle add_uniform_value_animation(AnimatorComponent &animator, RootAnimationHandle root_handle, EntityHandle entity, AnimationType type, AnimationMode mode, const char *value_name)
+    static AnimationHandle add_uniform_value_animation(AnimatorComponent &animator, RootAnimationHandle root_handle, EntityHandle entity, AnimationType type, const char *value_name)
     {
         Animation &root = animator.animations[root_handle.handle - 1];
         
@@ -4075,7 +4140,6 @@ static Camera get_standard_camera(SceneManager& manager)
 
             auto& anim = root.float_animations[root.float_anim_count++];
             anim.entity = entity;
-            anim.mode = mode;
 
             strcpy(anim.value_name, value_name);
 
@@ -4087,7 +4151,6 @@ static Camera get_standard_camera(SceneManager& manager)
 
             auto& anim = root.vec3_animations[root.vec3_anim_count++];
             anim.entity = entity;
-            anim.mode = mode;
 
             strcpy(anim.value_name, value_name);
 
@@ -4097,13 +4160,13 @@ static Camera get_standard_camera(SceneManager& manager)
         return handle;
     }
 
-    static AnimationHandle add_uniform_value_animation(RootAnimationHandle root_handle, EntityHandle entity, AnimationType type, AnimationMode mode, const char *value_name, SceneHandle scene)
+    static AnimationHandle add_uniform_value_animation(RootAnimationHandle root_handle, EntityHandle entity, AnimationType type, const char *value_name, SceneHandle scene)
     {
         AnimatorComponent &comp = get_animator_comp(root_handle.entity, scene);
-        return add_uniform_value_animation(comp, root_handle, entity, type, mode, value_name);
+        return add_uniform_value_animation(comp, root_handle, entity, type, value_name);
     }
 
-    static AnimationHandle add_transform_animation(AnimatorComponent &animator, RootAnimationHandle root_handle, EntityHandle entity, AnimationMode mode, Vec3Type vec3_type)
+    static AnimationHandle add_transform_animation(AnimatorComponent &animator, RootAnimationHandle root_handle, EntityHandle entity, Vec3Type vec3_type)
     {
         Animation &animation = animator.animations[root_handle.handle - 1];
 
@@ -4114,7 +4177,6 @@ static Camera get_standard_camera(SceneManager& manager)
 
         auto& anim = animation.vec3_animations[animation.vec3_anim_count++];
         anim.entity = entity;
-        anim.mode = mode;
         anim.type = vec3_type;
 
         handle.handle = animation.vec3_anim_count;
@@ -4122,10 +4184,10 @@ static Camera get_standard_camera(SceneManager& manager)
         return handle;
     }
 
-    static AnimationHandle add_transform_animation(RootAnimationHandle root_handle, EntityHandle entity, AnimationMode mode, Vec3Type vec3_type, SceneHandle scene)
+    static AnimationHandle add_transform_animation(RootAnimationHandle root_handle, EntityHandle entity, Vec3Type vec3_type, SceneHandle scene)
     {
         AnimatorComponent &comp = get_animator_comp(root_handle.entity, scene);
-        return add_transform_animation(comp, root_handle, entity, mode, vec3_type);
+        return add_transform_animation(comp, root_handle, entity, vec3_type);
     }
 
     static RootAnimationHandle add_root_animation(EntityHandle entity_handle, AnimatorComponent &animator, b32 loop = false)
@@ -4182,42 +4244,38 @@ static Camera get_standard_camera(SceneManager& manager)
 
         r32 t = 0.0;
 
-        if(animation.mode == AnimationMode::LERP)
-        {
-            r32 next_value = animation.key_frame_values[animation.current_key_frame + 1];
-            r64 next_time = animation.key_frame_times[animation.current_key_frame + 1];
+        r32 next_value = animation.key_frame_values[animation.current_key_frame + 1];
+        r64 next_time = animation.key_frame_times[animation.current_key_frame + 1];
             
-            r64 time_distance = next_time - frame_time;
+        r64 time_distance = next_time - frame_time;
 
-            t = math::clamp((r32)(animation.current_time / time_distance), 0.0f, 1.0f);
-            r32 value = 0.0f;
+        t = math::clamp((r32)(animation.current_time / time_distance), 0.0f, 1.0f);
+        r32 value = 0.0f;
 
-            switch(animation.easing_mode)
-            {
-                case AnimationEasingMode::LERP:
-                value = math::linear_tween(key_frame_value, t, next_value);
-                break;
-                case AnimationEasingMode::EASE_IN:
-                value = math::ease_in_quad(key_frame_value, t, next_value);
-                break;
-                case AnimationEasingMode::EASE_OUT:
-                value = math::ease_out_quad(key_frame_value, t, next_value);
-                break;
-            }
-
-            set_uniform_value(animation.entity, animation.value_name, value, scene.handle);
-        }
-        else
+        switch(animation.easing_mode)
         {
-            assert(false);
+        case AnimationEasingMode::LERP:
+        value = math::linear_tween(key_frame_value, t, next_value);
+        break;
+        case AnimationEasingMode::EASE_IN:
+        value = math::ease_in_quad(key_frame_value, t, next_value);
+        break;
+        case AnimationEasingMode::EASE_OUT:
+        value = math::ease_out_quad(key_frame_value, t, next_value);
+        break;
+        default:
+        assert(false);
+        break;
         }
+
+        set_uniform_value(animation.entity, animation.value_name, value, scene.handle);
 
         if(t >= 1.0f) // The frame is done
         {
             animation.current_key_frame++;
             animation.current_time = 0.0;
 
-            if((animation.current_key_frame == animation.count - 1 && animation.mode == AnimationMode::LERP) || (animation.current_key_frame == animation.count && animation.mode == AnimationMode::CONSTANT))
+            if((animation.current_key_frame == animation.count - 1))
             {
                 animation.current_key_frame = 0;
                 should_run = root.loop;
@@ -4240,57 +4298,53 @@ static Camera get_standard_camera(SceneManager& manager)
 
         r32 t = 0.0;
 
-        if(animation.mode == AnimationMode::LERP)
-        {
-            math::Vec3 next_value = animation.key_frame_values[animation.current_key_frame + 1];
-            r64 next_time = animation.key_frame_times[animation.current_key_frame + 1];
+        math::Vec3 next_value = animation.key_frame_values[animation.current_key_frame + 1];
+        r64 next_time = animation.key_frame_times[animation.current_key_frame + 1];
             
-            r64 time_distance = next_time - frame_time;
+        r64 time_distance = next_time - frame_time;
 
-            t = math::clamp((r32)(animation.current_time / time_distance), 0.0f, 1.0f);
-            math::Vec3 value = math::Vec3(0, 0, 0);
+        t = math::clamp((r32)(animation.current_time / time_distance), 0.0f, 1.0f);
+        math::Vec3 value = math::Vec3(0, 0, 0);
 
-            switch(animation.easing_mode)
-            {
-                case AnimationEasingMode::LERP:
-                value = math::linear_tween(key_frame_value, t, next_value);
-                break;
-                case AnimationEasingMode::EASE_IN:
-                value = math::ease_in_quad(key_frame_value, t, next_value);
-                break;
-                case AnimationEasingMode::EASE_OUT:
-                value = math::ease_out_quad(key_frame_value, t, next_value);
-                break;
-            }
-
-            switch(animation.type)
-            {
-                case Vec3Type::UNIFORM:
-                {}
-                break;
-                case Vec3Type::TRANSFORM_POSITION:
-                {
-                    TransformComponent &comp = get_transform_comp(animation.entity, scene);
-                    scene::set_position(comp, value);
-                }
-                break;
-                case Vec3Type::TRANSFORM_ROTATION:
-                {
-                    TransformComponent &comp = get_transform_comp(animation.entity, scene);
-                    scene::set_rotation(comp, value);
-                }
-                break;
-                case Vec3Type::TRANSFORM_SCALE:
-                {
-                    TransformComponent &comp = get_transform_comp(animation.entity, scene);
-                    scene::set_scale(comp, value);
-                }
-                break;
-            }
-        }
-        else
+        switch(animation.easing_mode)
         {
-            assert(false);
+        case AnimationEasingMode::LERP:
+        value = math::linear_tween(key_frame_value, t, next_value);
+        break;
+        case AnimationEasingMode::EASE_IN:
+        value = math::ease_in_quad(key_frame_value, t, next_value);
+        break;
+        case AnimationEasingMode::EASE_OUT:
+        value = math::ease_out_quad(key_frame_value, t, next_value);
+        break;
+        default:
+        assert(false);
+        break;
+        }
+
+        switch(animation.type)
+        {
+        case Vec3Type::UNIFORM:
+        {}
+        break;
+        case Vec3Type::TRANSFORM_POSITION:
+        {
+            TransformComponent &comp = get_transform_comp(animation.entity, scene);
+            scene::set_position(comp, value);
+        }
+        break;
+        case Vec3Type::TRANSFORM_ROTATION:
+        {
+            TransformComponent &comp = get_transform_comp(animation.entity, scene);
+            scene::set_rotation(comp, value);
+        }
+        break;
+        case Vec3Type::TRANSFORM_SCALE:
+        {
+            TransformComponent &comp = get_transform_comp(animation.entity, scene);
+            scene::set_scale(comp, value);
+        }
+        break;
         }
 
         if(t >= 1.0f) // The frame is done
@@ -4298,7 +4352,7 @@ static Camera get_standard_camera(SceneManager& manager)
             animation.current_key_frame++;
             animation.current_time = 0.0;
 
-            if((animation.current_key_frame == animation.count - 1 && animation.mode == AnimationMode::LERP) || (animation.current_key_frame == animation.count && animation.mode == AnimationMode::CONSTANT))
+            if(animation.current_key_frame == animation.count - 1)
             {
                 animation.current_key_frame = 0;
                 should_run = root.loop;
@@ -4583,8 +4637,9 @@ static Camera get_standard_camera(SceneManager& manager)
                             rendering::push_buffer_to_render_pass(renderer, render.buffer_handle, renderer->render.wireframe_material, transform.transform, renderer->render.standard_pass, rendering::CommandType::NO_DEPTH);
                         }
 
-                        if(render.bounding_box_enabled && render.bounding_box_buffer.handle != 0)
+                        if(render.bounding_box_enabled)
                         {
+                            debug("box\n");
                             math::BoundingBox box = render.bounding_box;
                             math::Vec3 size = math::Vec3(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z);
                             math::Vec3 box_position = math::Vec3((box.min.x + box.max.x) / 2.0f, (box.min.y + box.max.y) / 2.0f, (box.min.z + box.max.z) / 2.0f);
@@ -4592,7 +4647,7 @@ static Camera get_standard_camera(SceneManager& manager)
                             rendering::Transform box_transform = rendering::create_transform(box_position, size, math::Quat());
                             box_transform.model = transform.transform.model * box_transform.model;
 
-                            rendering::push_buffer_to_render_pass(renderer, render.bounding_box_buffer, renderer->render.bounding_box_material, box_transform, renderer->render.standard_pass, rendering::CommandType::WITH_DEPTH, rendering::PrimitiveType::LINE_LOOP);
+                            rendering::push_buffer_to_render_pass(renderer, renderer->render.bounding_box_buffer, renderer->render.bounding_box_material, box_transform, renderer->render.standard_pass, rendering::CommandType::WITH_DEPTH, rendering::PrimitiveType::LINE_LOOP);
                         }
                         
                         CombinedCommand &batch_command = command->commands[command->count];
