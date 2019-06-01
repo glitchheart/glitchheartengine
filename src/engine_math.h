@@ -2701,7 +2701,9 @@ namespace math
         w *= ood;
         r32 u = 1.0f - v - w;
 
-        *intersection_point = Vec3(u, v, w);
+        intersection_point->x = u * a.x + v * b.x + w * c.x;
+        intersection_point->y = u * a.y + v * b.y + w * c.y;
+        intersection_point->z = u * a.z + v * b.z + w * c.z;
         return true;
     }
 
