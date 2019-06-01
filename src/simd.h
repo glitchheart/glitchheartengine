@@ -1,90 +1,96 @@
 #ifndef SIMD_H
 #define SIMD_H
 
+#include "check_intrinsics.h"
+
 #if defined(__APPLE__ ) || defined(__linux)
-#include "smmintrin.h"
+/* #include "smmintrin.h" */
 #include "immintrin.h"
 #include "emmintrin.h"
 #endif
 
-union i32_4x
-{
-    __m128i p;
-    i32 e[4];
+/* union i32_4x */
+/* { */
+/*     __m128i p; */
+/*     i32 e[4]; */
     
-    i32_4x(i32 _p) 
-    {
-        p = _mm_set1_epi32(_p);
-    }
+/*     i32_4x(i32 _p)  */
+/*     { */
+/*         p = _mm_set1_epi32(_p); */
+/*     } */
     
-    i32_4x(i32 _a, i32 _b, i32 _c, i32 _d)
-    {
-        p = _mm_setr_epi32(_a, _b, _c, _d);
-    }
+/*     i32_4x(i32 _a, i32 _b, i32 _c, i32 _d) */
+/*     { */
+/*         p = _mm_setr_epi32(_a, _b, _c, _d); */
+/*     } */
     
-    i32_4x& operator=(const i32 v)
-    {
-        p = _mm_set1_epi32(v);
+/*     i32_4x& operator=(const i32 v) */
+/*     { */
+/*         p = _mm_set1_epi32(v); */
         
-        return *this;
-    }
+/*         return *this; */
+/*     } */
     
-    i32_4x& operator+= (i32_4x b)
-    {
-        this->p = _mm_add_epi32(p, b.p);
-        return *this;
-    }
-};
+/*     i32_4x& operator+= (i32_4x b) */
+/*     { */
+/*         this->p = _mm_add_epi32(p, b.p); */
+/*         return *this; */
+/*     } */
+/* }; */
 
-inline i32_4x operator+ (i32_4x a, i32_4x b)
-{
-    i32_4x res(0);
+/* inline i32_4x operator+ (i32_4x a, i32_4x b) */
+/* { */
+/*     i32_4x res(0); */
     
-    res.p = _mm_add_epi32(a.p, b.p);
+/*     res.p = _mm_add_epi32(a.p, b.p); */
     
-    return res;
-}
+/*     return res; */
+/* } */
 
 
-inline i32_4x operator- (i32_4x a, i32_4x b)
-{
-    i32_4x res(0);
+/* inline i32_4x operator- (i32_4x a, i32_4x b) */
+/* { */
+/*     i32_4x res(0); */
     
-    res.p = _mm_sub_epi32(a.p, b.p);
+/*     res.p = _mm_sub_epi32(a.p, b.p); */
     
-    return res;
-}
+/*     return res; */
+/* } */
 
-inline i32_4x operator-= (i32_4x a, i32_4x b)
-{
-    return a - b;
-}
+/* inline i32_4x operator-= (i32_4x a, i32_4x b) */
+/* { */
+/*     return a - b; */
+/* } */
 
-inline i32_4x operator* (i32_4x a, i32_4x b)
-{
-    i32_4x res(0);
+/* inline i32_4x operator* (i32_4x a, i32_4x b) */
+/* { */
+/*     i32_4x res(0); */
+
+/* #if defined(__SSE4_1__) */
+/*     res.p = _mm_mul_epi32(a.p, b.p); */
+/* #else */
+/*     res.p = _mm_mul_epu32(a.p, b.p); */
+/* #endif */
     
-    res.p = _mm_mul_epi32(a.p, b.p);
-    
-    return res;
-}
+/*     return res; */
+/* } */
 
-inline i32_4x operator*= (i32_4x a, i32_4x b)
-{
-    return a * b;
-}
+/* inline i32_4x operator*= (i32_4x a, i32_4x b) */
+/* { */
+/*     return a * b; */
+/* } */
 
-inline i32_4x operator/ (i32_4x a, i32_4x b)
-{
-    assert(false);
-    return i32_4x(0);
-}
+/* inline i32_4x operator/ (i32_4x a, i32_4x b) */
+/* { */
+/*     assert(false); */
+/*     return i32_4x(0); */
+/* } */
 
-inline i32_4x operator/= (i32_4x a, i32_4x b)
-{
-    assert(false);
-    return i32_4x(0);
-}
+/* inline i32_4x operator/= (i32_4x a, i32_4x b) */
+/* { */
+/*     assert(false); */
+/*     return i32_4x(0); */
+/* } */
 
 union r32_4x
 {
@@ -640,13 +646,13 @@ inline b32 equal_epsilon(r64_4x v, r64 cmp, r64 epsilon)
     return cmp_me_up != 0 && cmp_pe_up != 0 && cmp_me_lo != 0 && cmp_pe_lo != 0;
 }
 
-inline b32 any_lt(i32_4x v, i32 val)
-{
-    __m128i vcmp = _mm_cmplt_epi32(v.p, _mm_set1_epi32(val));
-    i32 cmp = _mm_movemask_epi8(vcmp);
+/* inline b32 any_lt(i32_4x v, i32 val) */
+/* { */
+/*     __m128i vcmp = _mm_cmplt_epi32(v.p, _mm_set1_epi32(val)); */
+/*     i32 cmp = _mm_movemask_epi8(vcmp); */
     
-    return cmp != 0;
-}
+/*     return cmp != 0; */
+/* } */
 
 inline b32 any_lt(r64_4x v, r64_4x val)
 {

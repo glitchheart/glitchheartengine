@@ -94,17 +94,17 @@ inline r64_4x random_between_4x(RandomSeries& series, r64 min, r64 max)
     return(result);
 }
 
-// @Note:(Niels): No simd remainder/mod function :(
-inline i32_4x random_between_4x(RandomSeries& series, i32 min, i32 max)
-{
-    r32_4x s = random_next_u32_4x(series);
-    i32 result_1 = min + i32(s.u[0] % ((max + 1) - min));
-    i32 result_2 = min + i32(s.u[1] % ((max + 1) - min));
-    i32 result_3 = min + i32(s.u[2] % ((max + 1) - min));
-    i32 result_4 = min + i32(s.u[3] % ((max + 1) - min));
-    i32_4x result = i32_4x(result_1, result_2, result_3, result_4);
-    return(result);
-}
+/* // @Note:(Niels): No simd remainder/mod function :( */
+/* inline i32_4x random_between_4x(RandomSeries& series, i32 min, i32 max) */
+/* { */
+/*     r32_4x s = random_next_u32_4x(series); */
+/*     i32 result_1 = min + i32(s.u[0] % ((max + 1) - min)); */
+/*     i32 result_2 = min + i32(s.u[1] % ((max + 1) - min)); */
+/*     i32 result_3 = min + i32(s.u[2] % ((max + 1) - min)); */
+/*     i32 result_4 = min + i32(s.u[3] % ((max + 1) - min)); */
+/*     i32_4x result = i32_4x(result_1, result_2, result_3, result_4); */
+/*     return(result); */
+/* } */
 
 inline Vec2_4x random_from_disc(RandomSeries& series, r32 _radius)
 {

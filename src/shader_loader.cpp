@@ -590,12 +590,12 @@ namespace rendering
 
                         i32 arr_size = -1;
 
-                        for(size_t i = 0; i < strlen(rest); i++)
+                        for(size_t j = 0; j < strlen(rest); j++)
                         {
-                            if(rest[i] == '[')
+                            if(rest[j] == '[')
                             {
                                 char array_size[32];
-                                sscanf(&rest[i], "[%[^]]]", array_size);
+                                sscanf(&rest[j], "[%[^]]]", array_size);
 
                                 if (DefinedValue *defined_value = get_defined_value(array_size, shader))
                                 {

@@ -4363,11 +4363,11 @@ static Camera get_standard_camera(SceneManager& manager)
                 // @Incomplete: Change this to "current animation running" instead
                 if(!animator.running)
                 {
-                    for(i32 i = 0; i < animation.transition_count; i++)
+                    for(i32 j = 0; j < animation.transition_count; j++)
                     {
-                        if(transition_conditions_true(animator, animation.transitions[i]))
+                        if(transition_conditions_true(animator, animation.transitions[j]))
                         {
-                            _set_animation_playing(true, animation.transitions[i].to_handle, scene.handle);
+                            _set_animation_playing(true, animation.transitions[j].to_handle, scene.handle);
                             break;
                         }
                     }

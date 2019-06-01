@@ -1750,50 +1750,41 @@ namespace rendering
         {
             return 4;
         }
-        break;
         case ValueType::FLOAT2:
         {
             return 8;
         }
-        break;
         case ValueType::FLOAT3:
         {
             return 16;
         }
-        break;
         case ValueType::FLOAT4:
         {
             return 4;
         }
-        break;
         case ValueType::INTEGER:
         {
             return 4;
         }
-        break;
         case ValueType::BOOL:
         {
             return 4;
         }
-        break;
         case ValueType::MAT4:
         {
             return 16 * 4;        
         }
-        break;
         case ValueType::INVALID:
         {
             assert(false);
             return 0;
         }
-        break;
         case ValueType::STRUCTURE:
         {
             // @Note: Should never use this function for structs
             assert(false);
             return 0;
         }
-        break;
         default:
         break;
         }
@@ -1848,7 +1839,6 @@ namespace rendering
      * This means there is a certain padding for certain types
      * Source: https://www.khronos.org/registry/OpenGL/specs/gl/glspec45.core.pdf#page=159
      *
-     * @param value_type The type of the value
      * @param struct_index The index of the struct
      * @param array_length The length of the array
      * @param renderer The renderer
@@ -1927,7 +1917,7 @@ namespace rendering
      * This struct value will be used to add uniforms later and for finding the proper
      * base offsets just like for normal values.
      *
-     * @precondition No other struct can currently be constructed
+     * Precondition: No other struct can currently be constructed
      *
      * @param layout The UBO layout definition we are adding this new struct to
      * @param mapping The UBO mapping we want to add a struct type to
@@ -2069,9 +2059,9 @@ namespace rendering
         {
             i32 actual_index = i;
 
-            for(i32 i = 0; i < i; i++)
+            for(i32 j = 0; j < i; j++)
             {
-                if(!layout.is_array[i])
+                if(!layout.is_array[j])
                 {
                     actual_index--;
                 }
@@ -2557,7 +2547,9 @@ namespace rendering
         size_t total_size = 0;
         for(i32 i = 0; i < update_data.value_count; i++)
         {
-            auto[index, total_index, value] = update_data.update_pairs[i];
+            i32 index = update_data.update_pairs[i].index;
+            i32 total_index = update_data.update_pairs[i].total_index;
+            UniformValue value  = update_data.update_pairs[i].value;
 
             if(value.uniform.structure_index != -1)
             {
@@ -2568,8 +2560,8 @@ namespace rendering
                 {
                     assert(structure.uniforms[j].type == value.uniform.type);
 
-                    auto[_i, _t, v] = update_data.update_pairs[i + j];
-
+                    UniformValue v  = update_data.update_pairs[i + j].value;
+                    
                     u8* u_v = nullptr;
                     size_t u_sz = 0;
 
@@ -2609,7 +2601,8 @@ namespace rendering
 
         for(i32 i = 0; i < update_data.array_value_count; i++)
         {
-            auto[index, total_index, value] = update_data.array_update_pairs[i];
+            i32 total_index = update_data.array_update_pairs[i].total_index;
+            UniformArray value  = update_data.array_update_pairs[i].value;
 
             size_t offset = _get_offset_of_previous_values(total_index, layout, renderer);
 
@@ -2722,7 +2715,6 @@ namespace rendering
      */
     static void update_uniform_buffer(UniformBufferUpdate update, Renderer *renderer)
     {
-        rendering::UniformBufferLayout layout = renderer->render.ubo_layouts[(i32)update.mapping_type];
         UniformBuffer* ubo = get_uniform_buffer(update.handle, renderer);
         renderer->api_functions.update_uniform_buffer(ubo, update, renderer);
     }
@@ -3623,7 +3615,7 @@ namespace rendering
             *box = new_box;
         }
         
-        return {create_buffers_from_mesh(renderer, mesh, 0, true, true)};
+        return create_buffers_from_mesh(renderer, mesh, 0, true, true);
     }
 
     static BufferHandle create_cube(Renderer *renderer, math::Vec3 *scale, math::BoundingBox *box = nullptr)
@@ -3681,7 +3673,7 @@ namespace rendering
             *box = new_box;
         }
         
-        return {create_buffers_from_mesh(renderer, mesh, 0, true, true)};
+        return create_buffers_from_mesh(renderer, mesh, 0, true, true);
     }
 
     static b32 vertex_equals(Vertex &v1, Vertex &v2, b32 with_normals, b32 with_uvs)
@@ -5477,6 +5469,7 @@ namespace rendering
         render_command.line.p1 = p1;
         render_command.line.thickness = thickness;
         render_command.line.color = color;
+        render_command.blend_mode = BlendMode::ONE_MINUS_SOURCE;
 
         if(type == CommandType::WITH_DEPTH)
             pass.commands.render_commands[pass.commands.render_command_count++] = render_command;
