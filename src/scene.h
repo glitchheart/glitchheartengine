@@ -149,7 +149,6 @@ namespace scene
     struct RenderComponent
     {
         rendering::BufferHandle buffer_handle;
-        rendering::BufferHandle bounding_box_buffer;
         
         math::Vec3 mesh_scale;
         math::BoundingBox bounding_box;
@@ -205,12 +204,6 @@ namespace scene
     
     // END HANDLES
 
-    enum class AnimationMode
-    {
-        CONSTANT,
-        LERP
-    };
-
     #define MAX_ANIMATIONS 16
     #define MAX_KEY_FRAMES 16
     #define MAX_ANIMATION_TRANSITIONS 4
@@ -221,7 +214,9 @@ namespace scene
     {
         LERP,
         EASE_IN,
-        EASE_OUT
+        EASE_OUT,
+        EASE_IN_OUT,
+        CONSTANT
     };
 
     struct FloatAnimation
@@ -234,9 +229,8 @@ namespace scene
         i32 current_key_frame;
         r64 current_time;
 
-        char value_name[16];
+        char value_name[32];
 
-        AnimationMode mode;
         r32 key_frame_times[MAX_KEY_FRAMES];
         r32 key_frame_values[MAX_KEY_FRAMES];
         
@@ -265,7 +259,6 @@ namespace scene
 
         Vec3Type type;
 
-        AnimationMode mode;
         r32 key_frame_times[MAX_KEY_FRAMES];
         math::Vec3 key_frame_values[MAX_KEY_FRAMES];
         
@@ -562,7 +555,7 @@ namespace scene
     typedef void (*OnSave)(SceneHandle scene);
     typedef void (*OnSceneWillBeFreed)(SceneHandle scene);
     typedef void (*OnSceneWillLoad)(SceneHandle scene);
-    typedef void (*OnSceneLoaded)(SceneHandle scene);
+    typedef void (*OnSceneLoaded)(SceneHandle scene, b32 is_first_load);
     typedef void (*OnEntityUpdated)(EntityHandle entity, SceneHandle scene);
     typedef void (*OnEntitySelected)(EntityHandle entity, SceneHandle scene);
     typedef void (*OnEntityWillBeDeleted)(EntityHandle entity, SceneHandle scene);
