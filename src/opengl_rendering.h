@@ -1,7 +1,7 @@
 #ifndef OPENGL_H
 #define OPENGL_H
 
-#if __APPLE__
+#if defined(__APPLE__)
 #define GLFW_INCLUDE_GLCOREARB
 #endif
 

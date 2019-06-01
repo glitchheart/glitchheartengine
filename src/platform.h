@@ -71,6 +71,15 @@
 #define r32max FLT_MAX
 #define r32min -FLT_MAX
 
+#include <limits.h>
+#ifndef SIZE_MAX
+ #ifdef __SIZE_MAX__
+  #define SIZE_MAX __SIZE_MAX__
+ #else
+  #define SIZE_MAX std::numeric_limits<size_t>::max()
+ #endif
+#endif
+
 using u8 = uint8_t;
 using u16 = uint16_t;
 using u32 = uint32_t;

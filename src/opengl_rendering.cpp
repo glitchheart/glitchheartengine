@@ -1183,7 +1183,7 @@ static void load_texture(Texture* texture, TextureFiltering filtering, TextureWr
 
     i32 mip = 4;
 
-#if __APPLE__
+#if defined(__APPLE__)
      glTexImage2D(GL_TEXTURE_2D, 0, gl_format, width, height, 0, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
      glGenerateMipmap(GL_TEXTURE_2D);
     

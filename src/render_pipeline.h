@@ -571,6 +571,8 @@ namespace rendering
                 math::Rgba color;
             } line;
         };
+
+        RenderCommand() {}
     };
 
     enum UIScalingFlag
