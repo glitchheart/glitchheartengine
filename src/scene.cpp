@@ -1299,13 +1299,22 @@ static Camera get_standard_camera(SceneManager& manager)
 
                     math::BoundingBox box = render_comp.bounding_box;
 
+                    // math::Vec3 size = math::Vec3(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z);
+                    // math::Vec3 box_position = math::Vec3((box.min.x + box.max.x) / 2.0f, (box.min.y + box.max.y) / 2.0f, (box.min.z + box.max.z) / 2.0f);
+                            
+                    // rendering::Transform box_transform = rendering::create_transform(box_position, size, math::Quat());
+                    // box_transform.model = transform.transform.model * box_transform.model;
+                    // box.min += math::translation(transform.transform.model) - math::scale(transform.transform.model) / 2.0f;
+                    // box.max += math::translation(transform.transform.model) - math::scale(transform.transform.model) / 2.0f;
+
                     math::Vec3 size = math::Vec3(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z);
                     math::Vec3 box_position = math::Vec3((box.min.x + box.max.x) / 2.0f, (box.min.y + box.max.y) / 2.0f, (box.min.z + box.max.z) / 2.0f);
                             
-                    rendering::Transform box_transform = rendering::create_transform(box_position, size, math::Quat());
+                    rendering::Transform box_transform = rendering::create_transform(box_position, math::Vec3(1.0f), math::Quat());
                     box_transform.model = transform.transform.model * box_transform.model;
-                    box.min += math::translation(transform.transform.model);
-                    box.max += math::translation(transform.transform.model);
+
+                    box.min = box_transform.model * box.min;
+                    box.max = box_transform.model * box.max;
 
                     math::Vec3 intersection_point;
                     // if(!ent.selection_enabled)
@@ -1327,6 +1336,7 @@ static Camera get_standard_camera(SceneManager& manager)
                     
                     if(aabb_ray_intersection(ray, box, &intersection_point))
                     {
+                        // printf("Hit: %s\n", ent.name);
                         // Look for selectable parents
                         if(!ent.selection_enabled)
                         {
@@ -1369,7 +1379,6 @@ static Camera get_standard_camera(SceneManager& manager)
                     Vertex v1 = vertices[mesh->faces[j].indices[0]];
                     Vertex v2 = vertices[mesh->faces[j].indices[1]];
                     Vertex v3 = vertices[mesh->faces[j].indices[2]];
-                    Vertex triangle[3] = { v1, v2, v3 };
                     math::Vec3 normal = math::normalize(rendering::compute_face_normal(mesh->faces[j], vertices) * transform.model);
 
                     if(triangle_ray_intersection(ray, v1.position, v2.position, v3.position, normal, &intersection_point))
@@ -1377,7 +1386,6 @@ static Camera get_standard_camera(SceneManager& manager)
                         r32 new_dist = math::distance(scene.scene_manager->editor_camera.position, intersection_point);
                         triangle_ray_intersection(ray, v1.position, v2.position, v3.position, normal, &intersection_point);
 
-                        printf("Entity: %s\n", entity.name);
                         if(new_dist < dist)
                         {
                             entity_handle = entity_list.handles[i];
@@ -4639,7 +4647,6 @@ static Camera get_standard_camera(SceneManager& manager)
 
                         if(render.bounding_box_enabled)
                         {
-                            debug("box\n");
                             math::BoundingBox box = render.bounding_box;
                             math::Vec3 size = math::Vec3(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z);
                             math::Vec3 box_position = math::Vec3((box.min.x + box.max.x) / 2.0f, (box.min.y + box.max.y) / 2.0f, (box.min.z + box.max.z) / 2.0f);
