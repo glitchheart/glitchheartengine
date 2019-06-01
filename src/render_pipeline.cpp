@@ -3563,12 +3563,17 @@ namespace rendering
 
     static void transform_vertices(Renderer* renderer, Transform transform, Mesh mesh, Vertex* vertices)
     {
+        math::Vec3 translation = math::translation(transform.model);
+        math::Vec3 scale = math::scale(transform.model);
         for(i32 i = 0; i < mesh.face_count; i++)
         {
             Face face = mesh.faces[i];
             for(i32 j = 0; j < 3; j++)
             {
-                vertices[face.indices[j]].position = (transform.model * mesh.vertices[face.indices[j]].position);
+                // vertices[face.indices[j]].position = (transform.model * mesh.vertices[face.indices[j]].position);
+                vertices[face.indices[j]].position = mesh.vertices[face.indices[j]].position * scale;
+                vertices[face.indices[j]].position += translation;
+
             }
         }
     }

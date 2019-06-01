@@ -1299,22 +1299,8 @@ static Camera get_standard_camera(SceneManager& manager)
 
                     math::BoundingBox box = render_comp.bounding_box;
 
-                    // math::Vec3 size = math::Vec3(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z);
-                    // math::Vec3 box_position = math::Vec3((box.min.x + box.max.x) / 2.0f, (box.min.y + box.max.y) / 2.0f, (box.min.z + box.max.z) / 2.0f);
-                            
-                    // rendering::Transform box_transform = rendering::create_transform(box_position, size, math::Quat());
-                    // box_transform.model = transform.transform.model * box_transform.model;
-                    // box.min += math::translation(transform.transform.model) - math::scale(transform.transform.model) / 2.0f;
-                    // box.max += math::translation(transform.transform.model) - math::scale(transform.transform.model) / 2.0f;
-
-                    math::Vec3 size = math::Vec3(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z);
-                    math::Vec3 box_position = math::Vec3((box.min.x + box.max.x) / 2.0f, (box.min.y + box.max.y) / 2.0f, (box.min.z + box.max.z) / 2.0f);
-                            
-                    rendering::Transform box_transform = rendering::create_transform(box_position, math::Vec3(1.0f), math::Quat());
-                    box_transform.model = transform.transform.model * box_transform.model;
-
-                    box.min = box_transform.model * box.min;
-                    box.max = box_transform.model * box.max;
+                    box.min = transform.transform.model * box.min;
+                    box.max = transform.transform.model * box.max;
 
                     math::Vec3 intersection_point;
                     // if(!ent.selection_enabled)
@@ -1336,7 +1322,7 @@ static Camera get_standard_camera(SceneManager& manager)
                     
                     if(aabb_ray_intersection(ray, box, &intersection_point))
                     {
-                        // printf("Hit: %s\n", ent.name);
+                        printf("Hit: %s\n", ent.name);
                         // Look for selectable parents
                         if(!ent.selection_enabled)
                         {
@@ -1381,10 +1367,11 @@ static Camera get_standard_camera(SceneManager& manager)
                     Vertex v3 = vertices[mesh->faces[j].indices[2]];
                     math::Vec3 normal = math::normalize(rendering::compute_face_normal(mesh->faces[j], vertices) * transform.model);
 
-                    if(triangle_ray_intersection(ray, v1.position, v2.position, v3.position, normal, &intersection_point))
+                    if(triangle_ray_intersection(ray, v1.position, v2.position, v3.position, &intersection_point))
                     {
+                        intersection_point = transform.model * intersection_point;
                         r32 new_dist = math::distance(scene.scene_manager->editor_camera.position, intersection_point);
-                        triangle_ray_intersection(ray, v1.position, v2.position, v3.position, normal, &intersection_point);
+                        triangle_ray_intersection(ray, v1.position, v2.position, v3.position, &intersection_point);
 
                         if(new_dist < dist)
                         {
@@ -3343,7 +3330,7 @@ static Camera get_standard_camera(SceneManager& manager)
             RenderComponent &render = _get_render_comp(handle, scene);
             render.ignore_depth = templ.render.ignore_depth;
             render.buffer_handle = templ.render.buffer_handle;
-            render.bounding_box_enabled = false;
+            render.bounding_box_enabled = true;
             
             render.casts_shadows = templ.render.casts_shadows;
             render.mesh_scale = templ.render.mesh_scale;

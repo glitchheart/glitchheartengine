@@ -1579,11 +1579,22 @@ namespace math
     inline Vec4 transform(Mat4& m, const Vec4& v)
     {
         Vec4 r(0.0f);
-        
+
+        Vec4 r2(0.0f);
+        r2.x = dot(m.v1, v);
+        r2.y = dot(m.v2, v);
+        r2.z = dot(m.v3, v);
+        r2.w = dot(m.v4, v);
+
         r.x = v.x * m[0][0] + v.y * m[0][1] + v.z * m[0][2] + v.w * m[0][3];
         r.y = v.x * m[1][0] + v.y * m[1][1] + v.z * m[1][2] + v.w * m[1][3];
         r.z = v.x * m[2][0] + v.y * m[2][1] + v.z * m[2][2] + v.w * m[2][3];
         r.w = v.x * m[3][0] + v.y * m[3][1] + v.z * m[3][2] + v.w * m[3][3];
+
+        assert(r2.x > r.x - 0.01f && r2.x < r.x + 0.01f);
+        assert(r2.y > r.y - 0.01f && r2.y < r.y + 0.01f);
+        assert(r2.z > r.z - 0.01f && r2.z < r.z + 0.01f);
+        assert(r2.w > r.w - 0.01f && r2.w < r.w + 0.01f);
         
         return r;
     }
@@ -2268,23 +2279,23 @@ namespace math
     
     inline Vec3 right(Mat4 m)
     {
-        return normalize(math::Vec3(m[0][0],
-                                    m[1][0],
-                                    m[2][0]));
+        return math::Vec3(m[0][0],
+                          m[1][0],
+                          m[2][0]);
     }
     
     inline Vec3 up(Mat4 m)
     {
-        return normalize(math::Vec3(m[0][1],
-                                    m[1][1],
-                                    m[2][1]));
+        return math::Vec3(m[0][1],
+                          m[1][1],
+                          m[2][1]);
     }
     
     inline Vec3 forward(Mat4 m)
     {
-        return normalize(math::Vec3(m[0][2],
-                                    m[1][2],
-                                    m[2][2]));
+        return math::Vec3(m[0][2],
+                          m[1][2],
+                          m[2][2]);
     }
     
     inline Vec3 translation(Mat4 m)
@@ -2661,13 +2672,44 @@ namespace math
         t = tmin;
         *intersection_point = r.origin + r.direction * t;
         return true;
-    }    
+    }
 
-    inline b32 triangle_ray_intersection(Ray r, Vec3 v0, Vec3 v1, Vec3 v2, Vec3 n, Vec3* intersection_point)
+    inline b32 triangle_ray_intersection(Ray r, Vec3 a, Vec3 b, Vec3 c, Vec3* intersection_point)
+    {
+        Vec3 ab = b - a;
+        Vec3 ac = c - a;
+        Vec3 qp = r.direction;
+
+        Vec3 n = cross(ab, ac);
+
+        r32 d = -dot(qp, n);
+        if (d <= 0.0f) return false;
+
+        Vec3 ap = r.origin - a;
+        r32 t = dot(ap, n);
+        if( t < 0.0f) return false;
+
+        Vec3 e = cross(qp, ap);
+        r32 v = dot(ac, e);
+        if(v < 0.0f || v > d) return false;
+        r32 w = dot(ab ,e);
+        if (w < 0.0f || v + w > d) return false;
+
+        r32 ood = 1.0f / d;
+        t *= ood;
+        v *= ood;
+        w *= ood;
+        r32 u = 1.0f - v - w;
+
+        *intersection_point = Vec3(u, v, w);
+        return true;
+    }
+
+    inline b32 _triangle_ray_intersection(Ray r, Vec3 v0, Vec3 v1, Vec3 v2, Vec3 n, Vec3* intersection_point)
     {
         Vec3 v0v1 = v1 - v0;
         Vec3 v0v2 = v2 - v0;
-        Vec3 normal = normalize(cross(v0v1, v0v2));
+        Vec3 normal = cross(v0v1, v0v2);
         
         const r32 EPSILON = 0.00000001f;
         r32 n_dot_ray_dir = dot(normal, r.direction);
