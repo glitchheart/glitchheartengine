@@ -1369,7 +1369,6 @@ static Camera get_standard_camera(SceneManager& manager)
 
                     if(triangle_ray_intersection(ray, v1.position, v2.position, v3.position, &intersection_point))
                     {
-                        intersection_point = transform.model * intersection_point;
                         r32 new_dist = math::distance(scene.scene_manager->editor_camera.position, intersection_point);
                         triangle_ray_intersection(ray, v1.position, v2.position, v3.position, &intersection_point);
 
