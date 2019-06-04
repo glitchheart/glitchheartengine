@@ -2674,81 +2674,38 @@ namespace math
         return true;
     }
 
-    inline b32 triangle_ray_intersection(Ray r, Vec3 a, Vec3 b, Vec3 c, Vec3* intersection_point)
+    // https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
+    // Our savior intersection algorithm
+    inline b32 triangle_ray_intersection(Ray r, Vec3 v0, Vec3 v1, Vec3 v2, Vec3* intersection_point)
     {
-        Vec3 ab = b - a;
-        Vec3 ac = c - a;
-        Vec3 qp = r.direction;
+        const r32 EPSILON = 0.0000001f;
+        Vec3 e1 = v1 - v0;
+        Vec3 e2 = v2 - v0;
 
-        Vec3 n = cross(ab, ac);
+        Vec3 h = cross(r.direction, e2);
+        r32 a = dot(e1, h);
 
-        r32 d = -dot(qp, n);
-        if (d <= 0.0f) return false;
-
-        Vec3 ap = r.origin - a;
-        r32 t = dot(ap, n);
-        if( t < 0.0f) return false;
-
-        Vec3 e = cross(qp, ap);
-        r32 v = dot(ac, e);
-        if(v < 0.0f || v > d) return false;
-        r32 w = dot(ab ,e);
-        if (w < 0.0f || v + w > d) return false;
-
-        r32 ood = 1.0f / d;
-        t *= ood;
-        v *= ood;
-        w *= ood;
-        r32 u = 1.0f - v - w;
-
-        intersection_point->x = u * a.x + v * b.x + w * c.x;
-        intersection_point->y = u * a.y + v * b.y + w * c.y;
-        intersection_point->z = u * a.z + v * b.z + w * c.z;
-        return true;
-    }
-
-    inline b32 _triangle_ray_intersection(Ray r, Vec3 v0, Vec3 v1, Vec3 v2, Vec3 n, Vec3* intersection_point)
-    {
-        Vec3 v0v1 = v1 - v0;
-        Vec3 v0v2 = v2 - v0;
-        Vec3 normal = cross(v0v1, v0v2);
-        
-        const r32 EPSILON = 0.00000001f;
-        r32 n_dot_ray_dir = dot(normal, r.direction);
-        if(ABS(n_dot_ray_dir) < EPSILON)
-        {
+        if( a > -EPSILON && a < EPSILON)
             return false;
+
+        r32 f = 1.0f / a;
+        Vec3 s = r.origin - v0;
+        r32 u = f * dot(s, h);
+        if(u < 0.0f || u > 1.0f)
+            return false;
+
+        Vec3 q = cross(s, e1);
+        r32 v = f * dot(r.direction, q);
+        if(v < 0.0f || u + v > 1.0f)
+            return false;
+
+        r32 t = f * dot(e2, q);
+        if(t > EPSILON)
+        {
+            *intersection_point = r.origin + r.direction * t;
+            return true;
         }
-
-        r32 d = dot(normal, v0);
-
-        r32 t = -(dot(normal, r.origin) + d) / n_dot_ray_dir;
-
-        if(t < 0) return false;
-
-        Vec3 p = r.origin + t * r.direction;
-
-        // edge 0
-        Vec3 edge0 = v1 - v0;
-        Vec3 vp0 = p - v0;
-        Vec3 c = cross(edge0, vp0);
-        if(dot(normal, c) < 0) return false;
-
-        // edge 1
-        Vec3 edge1 = v2 - v1;
-        Vec3 vp1 = p - v1;
-        c = cross(edge1, vp1);
-        if(dot(normal, c) < 0) return false;
-
-        // edge 2
-        Vec3 edge2 = v0 - v2;
-        Vec3 vp2 = p - v2;
-        c = cross(edge2, vp2);
-        if(dot(normal, c) < 0) return false;
-
-        *intersection_point = p;
-        
-        return true;
+        return false;
     }
     
     inline b32 new_aabb_ray_intersection(Ray ray, BoundingBox b, math::Vec3* intersection_point)
