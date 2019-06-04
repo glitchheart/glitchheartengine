@@ -1356,31 +1356,33 @@ static Camera get_standard_camera(SceneManager& manager)
             RenderComponent render = get_render_comp(entity_list.handles[i], scene.handle);
             if(Mesh* mesh = rendering::get_mesh(scene.renderer, render.buffer_handle.loaded_mesh_handle))
             {
-                Vertex* vertices = push_array(&temp_arena, mesh->vertex_count, Vertex);
+                math::Mat4 inv_world = math::inverse(transform.model);
                 math::Vec3 intersection_point;
-                rendering::transform_vertices(scene.renderer, transform, *mesh, vertices);
 
                 for(i32 j = 0; j < mesh->face_count; j++)
                 {
-                    Vertex v1 = vertices[mesh->faces[j].indices[0]];
-                    Vertex v2 = vertices[mesh->faces[j].indices[1]];
-                    Vertex v3 = vertices[mesh->faces[j].indices[2]];
-                    math::Vec3 normal = math::normalize(rendering::compute_face_normal(mesh->faces[j], vertices) * transform.model);
+                    Face face = mesh->faces[j];
+                    Vertex v1 = mesh->vertices[face.indices[0]];
+                    Vertex v2 = mesh->vertices[face.indices[1]];
+                    Vertex v3 = mesh->vertices[face.indices[2]];
 
-                    if(triangle_ray_intersection(ray, v1.position, v2.position, v3.position, &intersection_point))
+                    math::Ray local_ray = ray;
+                    
+                    local_ray.origin = (inv_world * math::Vec4(ray.origin, 1.0f)).xyz;
+                    local_ray.direction = (inv_world * math::Vec4(ray.direction, 0.0f)).xyz;
+
+                    if(triangle_ray_intersection(local_ray, v1.position, v2.position, v3.position, &intersection_point))
                     {
+                        intersection_point = transform.model * intersection_point;
                         r32 new_dist = math::distance(scene.scene_manager->editor_camera.position, intersection_point);
-                        triangle_ray_intersection(ray, v1.position, v2.position, v3.position, &intersection_point);
 
                         if(new_dist < dist)
                         {
                             entity_handle = entity_list.handles[i];
                             dist = new_dist;
                         }
-
                     }
                 }
-                
             }
         }
 		
@@ -2100,8 +2102,9 @@ static Camera get_standard_camera(SceneManager& manager)
                 
                         if(line_vs_line(l1, l2, points))
                         {
+                            r32 transform_dist = math::distance(points[1], pos);
                             r32 x_dist = math::distance(points[0], points[1]);
-                            if(x_dist < max_distance)
+                            if(x_dist < max_distance && points[1].x > pos.x && points[0].x > pos.x && transform_dist < gizmo_size)
                             {
                                 current_distance = x_dist;
                                 constraint = TranslationConstraint::X;
@@ -2115,8 +2118,9 @@ static Camera get_standard_camera(SceneManager& manager)
                 
                         if(line_vs_line(l1, l2, points))
                         {
+                            r32 transform_dist = math::distance(points[1], pos);
                             r32 y_dist = math::distance(points[0], points[1]);
-                            if(y_dist < current_distance && y_dist < max_distance)
+                            if(y_dist < max_distance && points[1].y > pos.y && points[0].y > pos.y && transform_dist < gizmo_size)
                             {
                                 current_distance = y_dist;
                                 constraint = TranslationConstraint::Y;
@@ -2130,8 +2134,9 @@ static Camera get_standard_camera(SceneManager& manager)
 
                         if(line_vs_line(l1, l2, points))
                         {
+                            r32 transform_dist = math::distance(points[1], pos);
                             r32 z_dist = math::distance(points[0], points[1]);
-                            if(z_dist < current_distance && z_dist < max_distance)
+                            if(z_dist < max_distance && points[1].z > pos.z && points[0].z > pos.z && transform_dist < gizmo_size)
                             {
                                 current_distance = z_dist;
                                 constraint = TranslationConstraint::Z;
@@ -3329,7 +3334,7 @@ static Camera get_standard_camera(SceneManager& manager)
             RenderComponent &render = _get_render_comp(handle, scene);
             render.ignore_depth = templ.render.ignore_depth;
             render.buffer_handle = templ.render.buffer_handle;
-            render.bounding_box_enabled = true;
+            render.bounding_box_enabled = false;
             
             render.casts_shadows = templ.render.casts_shadows;
             render.mesh_scale = templ.render.mesh_scale;
