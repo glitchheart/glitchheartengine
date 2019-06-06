@@ -2497,7 +2497,7 @@ static Camera get_standard_camera(SceneManager& manager)
 
         scene::TransformComponent &comp = scene.transform_components[entity.transform_handle.handle];
         
-        comp.transform = rendering::create_transform(math::Vec3(0.0f), math::Vec3(0.0f), math::Vec3(0.0f));
+        comp.transform = rendering::create_transform(math::Vec3(0.0f), math::Vec3(1.0f), math::Vec3(0.0f));
         comp.entity = entity_handle;
         return(comp);
     }
