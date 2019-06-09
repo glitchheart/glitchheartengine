@@ -639,6 +639,7 @@ namespace rendering
         assert(renderer->render.pass_count < global_max_render_commands);
         RenderPass &pass = renderer->render.passes[renderer->render.pass_count];
         pass.has_clear_color = false;
+        pass.clear_color = math::Rgba(0.0f, 0.0f, 0.0f, 1.0f);
         pass.type = RenderPassType::NORMAL;
         pass.framebuffer = framebuffer;
         pass.use_scene_camera = true;

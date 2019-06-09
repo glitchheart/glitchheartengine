@@ -413,6 +413,9 @@ struct Core
     TimerController* timer_controller;
     sound::SoundSystem* sound_system;
     scene::SceneManager *scene_manager;
+    
+    ImGuiContext* imgui_context;
+
     r64 delta_time;
     r64 current_time;
 

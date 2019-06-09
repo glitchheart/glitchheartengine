@@ -7,6 +7,15 @@
 
 #include <GLFW/glfw3.h>
 
+// IMGUI
+
+struct InternalImGuiState
+{
+
+};
+
+// ENDIMGUI
+
 struct ShaderGL
 {
 	GLuint program;
@@ -81,6 +90,8 @@ struct Framebuffer
 
 struct RenderState
 {
+    InternalImGuiState imgui_state;
+    
     struct
     {
         GLuint shader_program;
