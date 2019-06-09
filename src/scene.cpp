@@ -1988,11 +1988,6 @@ static Camera get_standard_camera(SceneManager& manager)
 #endif
         if(manager->mode == SceneMode::EDITING)
         {
-            //manager->dragging = MOUSE(Mouse_Left);
-
-            // if(!manager->dragging)
-            //_deselect_gizmos(handle);
-
             Camera &camera = manager->editor_camera;
             
             if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
@@ -2029,8 +2024,8 @@ static Camera get_standard_camera(SceneManager& manager)
                 if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
                 {
                     Entity e = get_entity(manager->selected_entity, manager->loaded_scene);
-                    if(e.savable)
-                    {
+                    //if(e.savable)
+                    //{
                         EntityHandle new_entity = register_entity_from_template_file(e.template_path, manager->loaded_scene, true);
                         for(i32 i = 0; i < e.tags.tag_count; i++)
                         {
@@ -2044,13 +2039,9 @@ static Camera get_standard_camera(SceneManager& manager)
                         set_rotation(new_transform, transform.transform.euler_angles);
 
                         select_entity(new_entity, manager);
-                    }
+                        //}
                 }
             }
-
-            // if(MOUSE_DOWN(Mouse_Left))
-            // {
-
             
             if(MOUSE_DOWN(Mouse_Left))
             {
