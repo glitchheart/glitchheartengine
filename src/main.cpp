@@ -66,6 +66,11 @@ static MemoryState memory_state;
 static InputController input_controller;
 
 #include "keys_glfw.h"
+// #include "imgui/imgui.cpp"
+// #include "imgui/imgui_internal.h"
+// #include "imgui/imgui_draw.cpp"
+// #include "imgui/imgui_widgets.cpp"
+// #include "imgui/imgui_impl_glfw.cpp"
 #include "opengl_rendering.cpp"
 
 #if defined(__linux) || defined(_WIN32)
