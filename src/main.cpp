@@ -675,7 +675,7 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     
     renderer->render.bloom.active = true;
     renderer->render.bloom.exposure = 1.8f;
-    renderer->render.bloom.amount = 10;
+    renderer->render.bloom.amount = 1;
     
     for(i32 i = 0; i < renderer->render.bloom.amount; i++)
     {
@@ -683,7 +683,6 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
         rendering::PostProcessingRenderPassHandle blur = rendering::create_post_processing_render_pass("Bloom_Blur", blur_fbo[horizontal], renderer, blur_shader);
 
         rendering::set_uniform_value(renderer, blur, "image", src_tex);
-        rendering::set_uniform_value(renderer, blur, "horizontal", horizontal);
 
         src_tex = rendering::get_texture_from_framebuffer(0, blur_fbo[horizontal], renderer);
         horizontal = !horizontal;
