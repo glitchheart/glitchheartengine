@@ -1580,21 +1580,10 @@ namespace math
     {
         Vec4 r(0.0f);
 
-        Vec4 r2(0.0f);
-        r2.x = dot(m.v1, v);
-        r2.y = dot(m.v2, v);
-        r2.z = dot(m.v3, v);
-        r2.w = dot(m.v4, v);
-
         r.x = v.x * m[0][0] + v.y * m[0][1] + v.z * m[0][2] + v.w * m[0][3];
         r.y = v.x * m[1][0] + v.y * m[1][1] + v.z * m[1][2] + v.w * m[1][3];
         r.z = v.x * m[2][0] + v.y * m[2][1] + v.z * m[2][2] + v.w * m[2][3];
         r.w = v.x * m[3][0] + v.y * m[3][1] + v.z * m[3][2] + v.w * m[3][3];
-
-        assert(r2.x > r.x - 0.01f && r2.x < r.x + 0.01f);
-        assert(r2.y > r.y - 0.01f && r2.y < r.y + 0.01f);
-        assert(r2.z > r.z - 0.01f && r2.z < r.z + 0.01f);
-        assert(r2.w > r.w - 0.01f && r2.w < r.w + 0.01f);
         
         return r;
     }

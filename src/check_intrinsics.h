@@ -64,7 +64,9 @@ namespace os
         int nIds = info[0];
 
         cpuid(info, 0x80000000);
-        unsigned nExIds = info[0];
+
+        unsigned nExIds = (unsigned)info[0];
+
         //  Detect Features
         if (nIds >= 0x00000001)
         {
