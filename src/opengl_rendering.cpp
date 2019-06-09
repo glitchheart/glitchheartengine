@@ -1096,6 +1096,9 @@ static const GLFWvidmode *create_open_gl_window(RenderState &render_state, Windo
 
     render_state.window = glfwCreateWindow(screen_width, screen_height, render_state.window_title, monitor,
                                            nullptr);
+
+    //ImGui_ImplGlfw_InitForOpenGL(render_state.window, true);
+
     if (old_window)
     {
         glfwDestroyWindow(old_window);
@@ -1427,7 +1430,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
 
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    //glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_SAMPLES, 4);
 
     render_state.contrast = contrast;
     render_state.brightness = brightness;
