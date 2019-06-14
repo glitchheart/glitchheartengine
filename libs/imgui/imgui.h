@@ -27,7 +27,9 @@ Index of this file:
 */
 
 #pragma once
-
+#ifdef _WIN32
+#pragma warning(push,0)
+#endif
 // Configuration file with compile-time options (edit imconfig.h or define IMGUI_USER_CONFIG to your own filename)
 #ifdef IMGUI_USER_CONFIG
 #include IMGUI_USER_CONFIG
