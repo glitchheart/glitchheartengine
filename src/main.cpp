@@ -1054,7 +1054,7 @@ int main(int argc, char **args)
             controller_keys(GLFW_JOYSTICK_1);
         }
 
-        ui_rendering::start_imgui_frame();
+        ui_rendering::start_imgui_frame(&render_state.imgui_state);
         
         if(scene_manager->scene_loaded)
         {

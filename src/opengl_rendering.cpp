@@ -1061,17 +1061,8 @@ static void load_shader(RenderState *render_state, Renderer *renderer, rendering
 
 namespace ui_rendering
 {
-
-    // OpenGL Data
-    static char         g_GlslVersionString[32] = "";
-    static GLuint       g_FontTexture = 0;
-    static GLuint       g_ShaderHandle = 0, g_VertHandle = 0, g_FragHandle = 0;
-    static int          g_AttribLocationTex = 0, g_AttribLocationProjMtx = 0;                                // Uniforms location
-    static int          g_AttribLocationVtxPos = 0, g_AttribLocationVtxUV = 0, g_AttribLocationVtxColor = 0; // Vertex attributes location
-    static unsigned int g_VboHandle = 0, g_ElementsHandle = 0;
-
     // DEAR IMGUI
-    bool ImGui_ImplOpenGL3_CreateFontsTexture()
+    bool imgui_impl_opengl3_create_fonts_texture(InternalImGuiState *state)
     {
         // Build texture atlas
         ImGuiIO& io = ImGui::GetIO();
@@ -1082,8 +1073,8 @@ namespace ui_rendering
         // Upload texture to graphics system
         GLint last_texture;
         glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
-        glGenTextures(1, &g_FontTexture);
-        glBindTexture(GL_TEXTURE_2D, g_FontTexture);
+        glGenTextures(1, &state->font_texture);
+        glBindTexture(GL_TEXTURE_2D, state->font_texture);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     #ifdef GL_UNPACK_ROW_LENGTH
@@ -1092,7 +1083,7 @@ namespace ui_rendering
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
         // Store our identifier
-        io.Fonts->TexID = (ImTextureID)(intptr_t)g_FontTexture;
+        io.Fonts->TexID = (ImTextureID)(intptr_t)state->font_texture;
 
         // Restore state
         glBindTexture(GL_TEXTURE_2D, last_texture);
@@ -1100,7 +1091,7 @@ namespace ui_rendering
         return true;
     }
 
-    static bool CheckShader(GLuint handle, const char* desc)
+    static bool check_shader(GLuint handle, const char* desc)
     {
         GLint status = 0, log_length = 0;
         glGetShaderiv(handle, GL_COMPILE_STATUS, &status);
@@ -1117,13 +1108,13 @@ namespace ui_rendering
         return (GLboolean)status == GL_TRUE;
     }
 
-    static bool CheckProgram(GLuint handle, const char* desc)
+    static bool check_program(InternalImGuiState *state, GLuint handle, const char* desc)
     {
         GLint status = 0, log_length = 0;
         glGetProgramiv(handle, GL_LINK_STATUS, &status);
         glGetProgramiv(handle, GL_INFO_LOG_LENGTH, &log_length);
         if ((GLboolean)status == GL_FALSE)
-            fprintf(stderr, "ERROR: ImGui_ImplOpenGL3_CreateDeviceObjects: failed to link %s! (with GLSL '%s')\n", desc, g_GlslVersionString);
+            fprintf(stderr, "ERROR: ImGui_ImplOpenGL3_CreateDeviceObjects: failed to link %s! (with GLSL '%s')\n", desc, state->glsl_version_string);
         if (log_length > 1)
         {
             ImVector<char> buf;
@@ -1134,7 +1125,7 @@ namespace ui_rendering
         return (GLboolean)status == GL_TRUE;
     }
 
-    bool    ImGui_ImplOpenGL3_CreateDeviceObjects()
+    bool imgui_impl_opengl3_create_device_objects(InternalImGuiState *state)
     {
         // Backup GL state
         GLint last_texture, last_array_buffer;
@@ -1147,7 +1138,7 @@ namespace ui_rendering
 
         // Parse GLSL version string
         int glsl_version = 130;
-        sscanf(g_GlslVersionString, "#version %d", &glsl_version);
+        sscanf(state->glsl_version_string, "#version %d", &glsl_version);
 
         const GLchar* vertex_shader =
             "#version 330 core\n"
@@ -1177,35 +1168,35 @@ namespace ui_rendering
             "}\n";
 
         // Create shaders
-        const GLchar* vertex_shader_with_version[2] = { g_GlslVersionString, vertex_shader };
-        g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(g_VertHandle, 2, vertex_shader_with_version, NULL);
-        glCompileShader(g_VertHandle);
-        CheckShader(g_VertHandle, "vertex shader");
+        const GLchar* vertex_shader_with_version[2] = { state->glsl_version_string, vertex_shader };
+        state->vert_handle = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(state->vert_handle, 2, vertex_shader_with_version, NULL);
+        glCompileShader(state->vert_handle);
+        check_shader(state->vert_handle, "vertex shader");
 
-        const GLchar* fragment_shader_with_version[2] = { g_GlslVersionString, fragment_shader };
-        g_FragHandle = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(g_FragHandle, 2, fragment_shader_with_version, NULL);
-        glCompileShader(g_FragHandle);
-        CheckShader(g_FragHandle, "fragment shader");
+        const GLchar* fragment_shader_with_version[2] = { state->glsl_version_string, fragment_shader };
+        state->frag_handle = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(state->frag_handle, 2, fragment_shader_with_version, NULL);
+        glCompileShader(state->frag_handle);
+        check_shader(state->frag_handle, "fragment shader");
 
-        g_ShaderHandle = glCreateProgram();
-        glAttachShader(g_ShaderHandle, g_VertHandle);
-        glAttachShader(g_ShaderHandle, g_FragHandle);
-        glLinkProgram(g_ShaderHandle);
-        CheckProgram(g_ShaderHandle, "shader program");
+        state->shader_handle = glCreateProgram();
+        glAttachShader(state->shader_handle, state->vert_handle);
+        glAttachShader(state->shader_handle, state->frag_handle);
+        glLinkProgram(state->shader_handle);
+        check_program(state, state->shader_handle, "shader program");
 
-        g_AttribLocationTex = glGetUniformLocation(g_ShaderHandle, "Texture");
-        g_AttribLocationProjMtx = glGetUniformLocation(g_ShaderHandle, "ProjMtx");
-        g_AttribLocationVtxPos = glGetAttribLocation(g_ShaderHandle, "Position");
-        g_AttribLocationVtxUV = glGetAttribLocation(g_ShaderHandle, "UV");
-        g_AttribLocationVtxColor = glGetAttribLocation(g_ShaderHandle, "Color");
+        state->attrib_location_tex = glGetUniformLocation(state->shader_handle, "Texture");
+        state->attrib_location_proj_mtx = glGetUniformLocation(state->shader_handle, "ProjMtx");
+        state->attrib_location_vtx_pos = glGetAttribLocation(state->shader_handle, "Position");
+        state->attrib_location_vtx_uv = glGetAttribLocation(state->shader_handle, "UV");
+        state->attrib_location_vtx_color = glGetAttribLocation(state->shader_handle, "Color");
 
         // Create buffers
-        glGenBuffers(1, &g_VboHandle);
-        glGenBuffers(1, &g_ElementsHandle);
+        glGenBuffers(1, &state->vbo_handle);
+        glGenBuffers(1, &state->elements_handle);
 
-        ImGui_ImplOpenGL3_CreateFontsTexture();
+        imgui_impl_opengl3_create_fonts_texture(state);
 
         // Restore modified GL state
         glBindTexture(GL_TEXTURE_2D, last_texture);
@@ -1221,20 +1212,22 @@ namespace ui_rendering
     {
         ImGui::CreateContext();
         ImGui::StyleColorsDark();
-        ImGui_ImplGlfw_InitForOpenGL(render_state.window, true);
-        ImGui_ImplOpenGL3_CreateDeviceObjects();
+
+        imgui_impl_glfw_init_for_opengl(render_state.window, true);
+        imgui_impl_opengl3_create_device_objects(&render_state.imgui_state);
     }
 
-    static void start_imgui_frame()
+    static void start_imgui_frame(InternalImGuiState *state)
     {
-        ImGui_ImplGlfw_NewFrame();
+        imgui_impl_glfw_new_frame();
+
         ImGui::NewFrame();
 
-        if (!g_FontTexture)
-            ImGui_ImplOpenGL3_CreateDeviceObjects();
+        if (!state->font_texture)
+            imgui_impl_opengl3_create_device_objects(state);
     }
 
-    static void ImGui_ImplOpenGL3_SetupRenderState(InternalImGuiState *imgui_state, ImDrawData* draw_data, int fb_width, int fb_height, GLuint vertex_array_object)
+    static void imgui_impl_opengl3_setup_render_state(InternalImGuiState *imgui_state, ImDrawData* draw_data, int fb_width, int fb_height, GLuint vertex_array_object)
     {
         // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled, polygon fill
         glEnable(GL_BLEND);
@@ -1262,9 +1255,9 @@ namespace ui_rendering
             { (R+L)/(L-R),  (T+B)/(B-T),  0.0f,   1.0f },
         };
 
-        glUseProgram(g_ShaderHandle);
-        glUniform1i(g_AttribLocationTex, 0);
-        glUniformMatrix4fv(g_AttribLocationProjMtx, 1, GL_FALSE, &ortho_projection[0][0]);
+        glUseProgram(imgui_state->shader_handle);
+        glUniform1i(imgui_state->attrib_location_tex, 0);
+        glUniformMatrix4fv(imgui_state->attrib_location_proj_mtx, 1, GL_FALSE, &ortho_projection[0][0]);
     #ifdef GL_SAMPLER_BINDING
         glBindSampler(0, 0); // We use combined texture/sampler state. Applications using GL 3.3 may set that otherwise.
     #endif
@@ -1275,14 +1268,14 @@ namespace ui_rendering
     #endif
 
         // Bind vertex/index buffers and setup attributes for ImDrawVert
-        glBindBuffer(GL_ARRAY_BUFFER, g_VboHandle);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_ElementsHandle);
-        glEnableVertexAttribArray(g_AttribLocationVtxPos);
-        glEnableVertexAttribArray(g_AttribLocationVtxUV);
-        glEnableVertexAttribArray(g_AttribLocationVtxColor);
-        glVertexAttribPointer(g_AttribLocationVtxPos,   2, GL_FLOAT,         GL_FALSE, sizeof(ImDrawVert), (GLvoid*)IM_OFFSETOF(ImDrawVert, pos));
-        glVertexAttribPointer(g_AttribLocationVtxUV,    2, GL_FLOAT,         GL_FALSE, sizeof(ImDrawVert), (GLvoid*)IM_OFFSETOF(ImDrawVert, uv));
-        glVertexAttribPointer(g_AttribLocationVtxColor, 4, GL_UNSIGNED_BYTE, GL_TRUE,  sizeof(ImDrawVert), (GLvoid*)IM_OFFSETOF(ImDrawVert, col));
+        glBindBuffer(GL_ARRAY_BUFFER, imgui_state->vbo_handle);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, imgui_state->elements_handle);
+        glEnableVertexAttribArray(imgui_state->attrib_location_vtx_pos);
+        glEnableVertexAttribArray(imgui_state->attrib_location_vtx_uv);
+        glEnableVertexAttribArray(imgui_state->attrib_location_vtx_color);
+        glVertexAttribPointer(imgui_state->attrib_location_vtx_pos,   2, GL_FLOAT,         GL_FALSE, sizeof(ImDrawVert), (GLvoid*)IM_OFFSETOF(ImDrawVert, pos));
+        glVertexAttribPointer(imgui_state->attrib_location_vtx_uv,    2, GL_FLOAT,         GL_FALSE, sizeof(ImDrawVert), (GLvoid*)IM_OFFSETOF(ImDrawVert, uv));
+        glVertexAttribPointer(imgui_state->attrib_location_vtx_color, 4, GL_UNSIGNED_BYTE, GL_TRUE,  sizeof(ImDrawVert), (GLvoid*)IM_OFFSETOF(ImDrawVert, col));
     }
 
     static void draw_imgui_frame(RenderState &render_state, InternalImGuiState *imgui_state)
@@ -1370,7 +1363,7 @@ namespace ui_rendering
         GLuint vertex_array_object = 0;
 
         glGenVertexArrays(1, &vertex_array_object);
-        ImGui_ImplOpenGL3_SetupRenderState(&render_state.imgui_state, draw_data, fb_width, fb_height, vertex_array_object);
+        imgui_impl_opengl3_setup_render_state(&render_state.imgui_state, draw_data, fb_width, fb_height, vertex_array_object);
 
         // Will project scissor/clipping rectangles into framebuffer space
         ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
@@ -1881,7 +1874,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     glfwSetWindowIconifyCallback(render_state.window, window_iconify_callback);
 
     glfwMakeContextCurrent(render_state.window);
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
 
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
