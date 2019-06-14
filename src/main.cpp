@@ -1029,7 +1029,7 @@ int main(int argc, char **args)
     core.scene_manager = scene_manager;
     core.delta_time = delta_time;
     core.current_time = get_time();
-
+	
 	ImGuiContext* context = ImGui::GetCurrentContext();
 	core.imgui_context = context;
 
@@ -1058,9 +1058,10 @@ int main(int argc, char **args)
         }
 
 		ui_rendering::start_imgui_frame(&render_state.imgui_state);
-        
+
         ImGuiIO& io = ImGui::GetIO();
         input_controller.ignore_all_keys = io.WantCaptureMouse;
+
 
         if(scene_manager->scene_loaded)
         {
