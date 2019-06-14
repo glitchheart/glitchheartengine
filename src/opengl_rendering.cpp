@@ -1219,8 +1219,7 @@ namespace ui_rendering
 
     static void start_imgui_frame(InternalImGuiState *state)
     {
-        imgui_impl_glfw_new_frame();
-
+		imgui_impl_glfw_new_frame();
         ImGui::NewFrame();
 
         if (!state->font_texture)

@@ -11,7 +11,8 @@
 #define IS_COMP_HANDLE_VALID(comp_handle) (comp_handle.handle > -1)
 #define IS_TEMPLATE_HANDLE_VALID(comp_handle) comp_handle.handle != -1
 #define IS_SCENE_HANDLE_VALID(scene_handle) (scene_handle.handle > 0)
-#define SCENES_EQUAL(s1, s2) (s1.handle == s2.handle)
+#define HANDLES_EQUAL(h1, h2) (h1.handle == h2.handle)
+#define SCENES_EQUAL(s1, s2) HANDLES_EQUAL(s1, s2)
 
 namespace scene
 {
