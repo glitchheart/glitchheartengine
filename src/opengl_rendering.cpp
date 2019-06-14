@@ -707,8 +707,8 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
 
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, texture->handle, NULL);
 
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
                 
                 if(attachment.flags & rendering::ColorAttachmentFlags::CLAMP_TO_EDGE)   
                 {
@@ -861,6 +861,9 @@ static void create_new_framebuffer(rendering::FramebufferInfo &info, Framebuffer
     }
 
     glDrawBuffers(color_buffer_count, attachments);
+
+    glClear(GL_COLOR_BUFFER_BIT);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
     free(attachments);
 
@@ -1056,6 +1059,394 @@ static void load_shader(RenderState *render_state, Renderer *renderer, rendering
 	render_state->gl_shader_count = renderer->render.shader_count;
 }
 
+namespace ui_rendering
+{
+    // DEAR IMGUI
+    bool imgui_impl_opengl3_create_fonts_texture(InternalImGuiState *state)
+    {
+        // Build texture atlas
+        ImGuiIO& io = ImGui::GetIO();
+        unsigned char* pixels;
+        int width, height;
+        io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);   // Load as RGBA 32-bits (75% of the memory is wasted, but default font is so small) because it is more likely to be compatible with user's existing shaders. If your ImTextureId represent a higher-level concept than just a GL texture id, consider calling GetTexDataAsAlpha8() instead to save on GPU memory.
+
+        // Upload texture to graphics system
+        GLint last_texture;
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
+        glGenTextures(1, &state->font_texture);
+        glBindTexture(GL_TEXTURE_2D, state->font_texture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    #ifdef GL_UNPACK_ROW_LENGTH
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+    #endif
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+
+        // Store our identifier
+        io.Fonts->TexID = (ImTextureID)(intptr_t)state->font_texture;
+
+        // Restore state
+        glBindTexture(GL_TEXTURE_2D, last_texture);
+
+        return true;
+    }
+
+    static bool check_shader(GLuint handle, const char* desc)
+    {
+        GLint status = 0, log_length = 0;
+        glGetShaderiv(handle, GL_COMPILE_STATUS, &status);
+        glGetShaderiv(handle, GL_INFO_LOG_LENGTH, &log_length);
+        if ((GLboolean)status == GL_FALSE)
+            fprintf(stderr, "ERROR: ImGui_ImplOpenGL3_CreateDeviceObjects: failed to compile %s!\n", desc);
+        if (log_length > 1)
+        {
+            ImVector<char> buf;
+            buf.resize((int)(log_length + 1));
+            glGetShaderInfoLog(handle, log_length, NULL, (GLchar*)buf.begin());
+            fprintf(stderr, "%s\n", buf.begin());
+        }
+        return (GLboolean)status == GL_TRUE;
+    }
+
+    static bool check_program(InternalImGuiState *state, GLuint handle, const char* desc)
+    {
+        GLint status = 0, log_length = 0;
+        glGetProgramiv(handle, GL_LINK_STATUS, &status);
+        glGetProgramiv(handle, GL_INFO_LOG_LENGTH, &log_length);
+        if ((GLboolean)status == GL_FALSE)
+            fprintf(stderr, "ERROR: ImGui_ImplOpenGL3_CreateDeviceObjects: failed to link %s! (with GLSL '%s')\n", desc, state->glsl_version_string);
+        if (log_length > 1)
+        {
+            ImVector<char> buf;
+            buf.resize((int)(log_length + 1));
+            glGetProgramInfoLog(handle, log_length, NULL, (GLchar*)buf.begin());
+            fprintf(stderr, "%s\n", buf.begin());
+        }
+        return (GLboolean)status == GL_TRUE;
+    }
+
+    bool imgui_impl_opengl3_create_device_objects(InternalImGuiState *state)
+    {
+        // Backup GL state
+        GLint last_texture, last_array_buffer;
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
+        glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);
+    #ifndef IMGUI_IMPL_OPENGL_ES2
+        GLint last_vertex_array;
+        glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array);
+    #endif
+
+        // Parse GLSL version string
+        int glsl_version = 130;
+        sscanf(state->glsl_version_string, "#version %d", &glsl_version);
+
+        const GLchar* vertex_shader =
+            "#version 330 core\n"
+            "layout (location = 0) in vec2 Position;\n"
+            "layout (location = 1) in vec2 UV;\n"
+            "layout (location = 2) in vec4 Color;\n"
+            "uniform mat4 ProjMtx;\n"
+            "out vec2 Frag_UV;\n"
+            "out vec4 Frag_Color;\n"
+            "void main()\n"
+            "{\n"
+            "    Frag_UV = UV;\n"
+            "    Frag_Color = Color;\n"
+            "    gl_Position = ProjMtx * vec4(Position.xy,0,1);\n"
+            "}\n";
+
+
+        const GLchar* fragment_shader =
+            "#version 330 core\n"
+            "in vec2 Frag_UV;\n"
+            "in vec4 Frag_Color;\n"
+            "uniform sampler2D Texture;\n"
+            "layout (location = 0) out vec4 Out_Color;\n"
+            "void main()\n"
+            "{\n"
+            "    Out_Color = Frag_Color * texture(Texture, Frag_UV.st);\n"
+            "}\n";
+
+        // Create shaders
+        const GLchar* vertex_shader_with_version[2] = { state->glsl_version_string, vertex_shader };
+        state->vert_handle = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(state->vert_handle, 2, vertex_shader_with_version, NULL);
+        glCompileShader(state->vert_handle);
+        check_shader(state->vert_handle, "vertex shader");
+
+        const GLchar* fragment_shader_with_version[2] = { state->glsl_version_string, fragment_shader };
+        state->frag_handle = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(state->frag_handle, 2, fragment_shader_with_version, NULL);
+        glCompileShader(state->frag_handle);
+        check_shader(state->frag_handle, "fragment shader");
+
+        state->shader_handle = glCreateProgram();
+        glAttachShader(state->shader_handle, state->vert_handle);
+        glAttachShader(state->shader_handle, state->frag_handle);
+        glLinkProgram(state->shader_handle);
+        check_program(state, state->shader_handle, "shader program");
+
+        state->attrib_location_tex = glGetUniformLocation(state->shader_handle, "Texture");
+        state->attrib_location_proj_mtx = glGetUniformLocation(state->shader_handle, "ProjMtx");
+        state->attrib_location_vtx_pos = glGetAttribLocation(state->shader_handle, "Position");
+        state->attrib_location_vtx_uv = glGetAttribLocation(state->shader_handle, "UV");
+        state->attrib_location_vtx_color = glGetAttribLocation(state->shader_handle, "Color");
+
+        // Create buffers
+        glGenBuffers(1, &state->vbo_handle);
+        glGenBuffers(1, &state->elements_handle);
+
+        imgui_impl_opengl3_create_fonts_texture(state);
+
+        // Restore modified GL state
+        glBindTexture(GL_TEXTURE_2D, last_texture);
+        glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
+    #ifndef IMGUI_IMPL_OPENGL_ES2
+        glBindVertexArray(last_vertex_array);
+    #endif
+
+        return true;
+    }
+
+    static void initialize_imgui(RenderState &render_state)
+    {
+        ImGui::CreateContext();
+        ImGui::StyleColorsDark();
+
+        imgui_impl_glfw_init_for_opengl(render_state.window, true);
+        imgui_impl_opengl3_create_device_objects(&render_state.imgui_state);
+    }
+
+    static void start_imgui_frame(InternalImGuiState *state)
+    {
+        imgui_impl_glfw_new_frame();
+
+        ImGui::NewFrame();
+
+        if (!state->font_texture)
+            imgui_impl_opengl3_create_device_objects(state);
+    }
+
+    static void imgui_impl_opengl3_setup_render_state(InternalImGuiState *imgui_state, ImDrawData* draw_data, int fb_width, int fb_height, GLuint vertex_array_object)
+    {
+        // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled, polygon fill
+        glEnable(GL_BLEND);
+        glBlendEquation(GL_FUNC_ADD);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDisable(GL_CULL_FACE);
+        glDisable(GL_DEPTH_TEST);
+        glEnable(GL_SCISSOR_TEST);
+    #ifdef GL_POLYGON_MODE
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    #endif
+
+        // Setup viewport, orthographic projection matrix
+        // Our visible imgui space lies from draw_data->DisplayPos (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
+        glViewport(0, 0, (GLsizei)fb_width, (GLsizei)fb_height);
+        float L = draw_data->DisplayPos.x;
+        float R = draw_data->DisplayPos.x + draw_data->DisplaySize.x;
+        float T = draw_data->DisplayPos.y;
+        float B = draw_data->DisplayPos.y + draw_data->DisplaySize.y;
+        const float ortho_projection[4][4] =
+        {
+            { 2.0f/(R-L),   0.0f,         0.0f,   0.0f },
+            { 0.0f,         2.0f/(T-B),   0.0f,   0.0f },
+            { 0.0f,         0.0f,        -1.0f,   0.0f },
+            { (R+L)/(L-R),  (T+B)/(B-T),  0.0f,   1.0f },
+        };
+
+        glUseProgram(imgui_state->shader_handle);
+        glUniform1i(imgui_state->attrib_location_tex, 0);
+        glUniformMatrix4fv(imgui_state->attrib_location_proj_mtx, 1, GL_FALSE, &ortho_projection[0][0]);
+    #ifdef GL_SAMPLER_BINDING
+        glBindSampler(0, 0); // We use combined texture/sampler state. Applications using GL 3.3 may set that otherwise.
+    #endif
+
+        (void)vertex_array_object;
+    #ifndef IMGUI_IMPL_OPENGL_ES2
+        glBindVertexArray(vertex_array_object);
+    #endif
+
+        // Bind vertex/index buffers and setup attributes for ImDrawVert
+        glBindBuffer(GL_ARRAY_BUFFER, imgui_state->vbo_handle);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, imgui_state->elements_handle);
+        glEnableVertexAttribArray(imgui_state->attrib_location_vtx_pos);
+        glEnableVertexAttribArray(imgui_state->attrib_location_vtx_uv);
+        glEnableVertexAttribArray(imgui_state->attrib_location_vtx_color);
+        glVertexAttribPointer(imgui_state->attrib_location_vtx_pos,   2, GL_FLOAT,         GL_FALSE, sizeof(ImDrawVert), (GLvoid*)IM_OFFSETOF(ImDrawVert, pos));
+        glVertexAttribPointer(imgui_state->attrib_location_vtx_uv,    2, GL_FLOAT,         GL_FALSE, sizeof(ImDrawVert), (GLvoid*)IM_OFFSETOF(ImDrawVert, uv));
+        glVertexAttribPointer(imgui_state->attrib_location_vtx_color, 4, GL_UNSIGNED_BYTE, GL_TRUE,  sizeof(ImDrawVert), (GLvoid*)IM_OFFSETOF(ImDrawVert, col));
+    }
+
+    static void draw_imgui_frame(RenderState &render_state, InternalImGuiState *imgui_state)
+    {
+        // static bool show_demo_window;
+        // static bool show_another_window;
+
+        // {
+        //     static math::Vec3 clear_color(0.0f, 0.0f, 0.0f);
+        //     static float f = 0.0f;
+        //     static int counter = 0;
+
+        //     ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+
+        //     ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+        //     ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+        //     ImGui::Checkbox("Another Window", &show_another_window);
+
+        //     ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+        //     ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+
+        //     if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+        //         counter++;
+
+        //     ImGui::SameLine();
+        //     ImGui::Text("counter = %d", counter);
+
+        //     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        //     ImGui::End();
+        // }
+
+        static math::Rgba clear_color(0.0f, 0.0f, 0.0f, 1.0f);
+
+        ImGui::Render();
+        int display_w, display_h;
+        glfwGetFramebufferSize(render_state.window, &display_w, &display_h);
+        glViewport(0, 0, display_w, display_h);
+        //glClearColor(clear_color.r, clear_color.g, clear_color.b, clear_color.a);
+        //glClear(GL_COLOR_BUFFER_BIT);
+        ImDrawData *draw_data = ImGui::GetDrawData();
+
+        int fb_width = (int)(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
+        int fb_height = (int)(draw_data->DisplaySize.y * draw_data->FramebufferScale.y);
+        if (fb_width <= 0 || fb_height <= 0)
+            return;
+
+        // Backup GL state
+        GLenum last_active_texture; glGetIntegerv(GL_ACTIVE_TEXTURE, (GLint*)&last_active_texture);
+        glActiveTexture(GL_TEXTURE0);
+        GLint last_program; glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
+        GLint last_texture; glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
+    #ifdef GL_SAMPLER_BINDING
+        GLint last_sampler; glGetIntegerv(GL_SAMPLER_BINDING, &last_sampler);
+    #endif
+        GLint last_array_buffer; glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);
+    #ifndef IMGUI_IMPL_OPENGL_ES2
+        GLint last_vertex_array_object; glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array_object);
+    #endif
+    #ifdef GL_POLYGON_MODE
+        GLint last_polygon_mode[2]; glGetIntegerv(GL_POLYGON_MODE, last_polygon_mode);
+    #endif
+        GLint last_viewport[4]; glGetIntegerv(GL_VIEWPORT, last_viewport);
+        GLint last_scissor_box[4]; glGetIntegerv(GL_SCISSOR_BOX, last_scissor_box);
+        GLenum last_blend_src_rgb; glGetIntegerv(GL_BLEND_SRC_RGB, (GLint*)&last_blend_src_rgb);
+        GLenum last_blend_dst_rgb; glGetIntegerv(GL_BLEND_DST_RGB, (GLint*)&last_blend_dst_rgb);
+        GLenum last_blend_src_alpha; glGetIntegerv(GL_BLEND_SRC_ALPHA, (GLint*)&last_blend_src_alpha);
+        GLenum last_blend_dst_alpha; glGetIntegerv(GL_BLEND_DST_ALPHA, (GLint*)&last_blend_dst_alpha);
+        GLenum last_blend_equation_rgb; glGetIntegerv(GL_BLEND_EQUATION_RGB, (GLint*)&last_blend_equation_rgb);
+        GLenum last_blend_equation_alpha; glGetIntegerv(GL_BLEND_EQUATION_ALPHA, (GLint*)&last_blend_equation_alpha);
+        GLboolean last_enable_blend = glIsEnabled(GL_BLEND);
+        GLboolean last_enable_cull_face = glIsEnabled(GL_CULL_FACE);
+        GLboolean last_enable_depth_test = glIsEnabled(GL_DEPTH_TEST);
+        GLboolean last_enable_scissor_test = glIsEnabled(GL_SCISSOR_TEST);
+        bool clip_origin_lower_left = true;
+        
+        #if defined(GL_CLIP_ORIGIN) && !defined(__APPLE__)
+        GLenum last_clip_origin = 0; glGetIntegerv(GL_CLIP_ORIGIN, (GLint*)&last_clip_origin); // Support for GL 4.5's glClipControl(GL_UPPER_LEFT)
+        if (last_clip_origin == GL_UPPER_LEFT)
+            clip_origin_lower_left = false;
+        #endif
+
+        // Setup desired GL state
+        // Recreate the VAO every time (this is to easily allow multiple GL contexts to be rendered to. VAO are not shared among GL contexts)
+        // The renderer would actually work without any VAO bound, but then our VertexAttrib calls would overwrite the default one currently bound.
+        GLuint vertex_array_object = 0;
+
+        glGenVertexArrays(1, &vertex_array_object);
+        imgui_impl_opengl3_setup_render_state(&render_state.imgui_state, draw_data, fb_width, fb_height, vertex_array_object);
+
+        // Will project scissor/clipping rectangles into framebuffer space
+        ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
+        ImVec2 clip_scale = draw_data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
+
+        // Render command lists
+        for (int n = 0; n < draw_data->CmdListsCount; n++)
+        {
+            const ImDrawList* cmd_list = draw_data->CmdLists[n];
+
+            // Upload vertex/index buffers
+            glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)cmd_list->VtxBuffer.Size * sizeof(ImDrawVert), (const GLvoid*)cmd_list->VtxBuffer.Data, GL_STREAM_DRAW);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx), (const GLvoid*)cmd_list->IdxBuffer.Data, GL_STREAM_DRAW);
+
+            for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
+            {
+                const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
+                if (pcmd->UserCallback != NULL)
+                {
+                    // User callback, registered via ImDrawList::AddCallback()
+                    // (ImDrawCallback_ResetRenderState is a special callback value used by the user to request the renderer to reset render state.)
+                    // if (pcmd->UserCallback == ImDrawCallback_ResetRenderState)
+                    //     ImGui_ImplOpenGL3_SetupRenderState(draw_data, fb_width, fb_height, vertex_array_object);
+                    // else
+                        pcmd->UserCallback(cmd_list, pcmd);
+                }
+                else
+                {
+                    // Project scissor/clipping rectangles into framebuffer space
+                    ImVec4 clip_rect;
+                    clip_rect.x = (pcmd->ClipRect.x - clip_off.x) * clip_scale.x;
+                    clip_rect.y = (pcmd->ClipRect.y - clip_off.y) * clip_scale.y;
+                    clip_rect.z = (pcmd->ClipRect.z - clip_off.x) * clip_scale.x;
+                    clip_rect.w = (pcmd->ClipRect.w - clip_off.y) * clip_scale.y;
+
+                    if (clip_rect.x < fb_width && clip_rect.y < fb_height && clip_rect.z >= 0.0f && clip_rect.w >= 0.0f)
+                    {
+                        // Apply scissor/clipping rectangle
+                        if (clip_origin_lower_left)
+                            glScissor((int)clip_rect.x, (int)(fb_height - clip_rect.w), (int)(clip_rect.z - clip_rect.x), (int)(clip_rect.w - clip_rect.y));
+                        else
+                            glScissor((int)clip_rect.x, (int)clip_rect.y, (int)clip_rect.z, (int)clip_rect.w); // Support for GL 4.5 rarely used glClipControl(GL_UPPER_LEFT)
+
+                        // Bind texture, Draw
+                        glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)pcmd->TextureId);
+    #if IMGUI_IMPL_OPENGL_HAS_DRAW_WITH_BASE_VERTEX
+                        glDrawElementsBaseVertex(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, (void*)(intptr_t)(pcmd->IdxOffset * sizeof(ImDrawIdx)), (GLint)pcmd->VtxOffset);
+    #else
+                        glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, (void*)(intptr_t)(pcmd->IdxOffset * sizeof(ImDrawIdx)));
+    #endif
+                    }
+                }
+            }
+        }
+
+        // Destroy the temporary VAO
+    glDeleteVertexArrays(1, &vertex_array_object);
+
+    // Restore modified GL state
+    glUseProgram(last_program);
+    glBindTexture(GL_TEXTURE_2D, last_texture);
+#ifdef GL_SAMPLER_BINDING
+    glBindSampler(0, last_sampler);
+#endif
+    glActiveTexture(last_active_texture);
+    glBindVertexArray(last_vertex_array_object);
+
+    glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
+    glBlendEquationSeparate(last_blend_equation_rgb, last_blend_equation_alpha);
+    glBlendFuncSeparate(last_blend_src_rgb, last_blend_dst_rgb, last_blend_src_alpha, last_blend_dst_alpha);
+    if (last_enable_blend) glEnable(GL_BLEND); else glDisable(GL_BLEND);
+    if (last_enable_cull_face) glEnable(GL_CULL_FACE); else glDisable(GL_CULL_FACE);
+    if (last_enable_depth_test) glEnable(GL_DEPTH_TEST); else glDisable(GL_DEPTH_TEST);
+    if (last_enable_scissor_test) glEnable(GL_SCISSOR_TEST); else glDisable(GL_SCISSOR_TEST);
+#ifdef GL_POLYGON_MODE
+    glPolygonMode(GL_FRONT_AND_BACK, (GLenum)last_polygon_mode[0]);
+#endif
+    glViewport(last_viewport[0], last_viewport[1], (GLsizei)last_viewport[2], (GLsizei)last_viewport[3]);
+    glScissor(last_scissor_box[0], last_scissor_box[1], (GLsizei)last_scissor_box[2], (GLsizei)last_scissor_box[3]);
+    }
+}
+
+
 static const GLFWvidmode *create_open_gl_window(RenderState &render_state, WindowMode window_mode, const char *title, i32 width, i32 height)
 {
     GLFWmonitor *monitor = glfwGetPrimaryMonitor();
@@ -1083,7 +1474,7 @@ static const GLFWvidmode *create_open_gl_window(RenderState &render_state, Windo
     glfwWindowHint(GLFW_RED_BITS, mode->redBits);
     glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
     glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
-    //glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+    glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
 
     debug_log("refresh rate %d", mode->refreshRate);
 
@@ -1097,7 +1488,8 @@ static const GLFWvidmode *create_open_gl_window(RenderState &render_state, Windo
     render_state.window = glfwCreateWindow(screen_width, screen_height, render_state.window_title, monitor,
                                            nullptr);
 
-    //ImGui_ImplGlfw_InitForOpenGL(render_state.window, true);
+    // glfwSetWindowAttrib(render_state.window, GLFW_RESIZABLE, GLFW_FALSE);
+    // glfwSetWindowAttrib(render_state.window, GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_FALSE);
 
     if (old_window)
     {
@@ -1413,7 +1805,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     render_state.paused = false;
 
     //glfwSetErrorCallback(error_callback);
-
+    
     //@Incomplete: Figure something out here. Ask for compatible version etc
 #ifdef _WIN32
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -1424,13 +1816,15 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
 #elif __APPLE__
     // @Note: Apple only __really__ supports OpenGL Core 3.3
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    //glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+    glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GL_FALSE);
 #endif
 
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    glfwWindowHint(GLFW_SAMPLES, 4);
+    //glfwWindowHint(GLFW_SAMPLES, 4);
 
     render_state.contrast = contrast;
     render_state.brightness = brightness;
@@ -1463,7 +1857,6 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
                 
-        
         create_open_gl_window(render_state, window_mode, title, screen_width, screen_height);
         renderer->window_mode = window_mode;
 
@@ -1481,10 +1874,13 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     glfwSetWindowIconifyCallback(render_state.window, window_iconify_callback);
 
     glfwMakeContextCurrent(render_state.window);
+    glfwSwapInterval(0);
 
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
     render_state.vsync_active = vsync_active;
+
+    ui_rendering::initialize_imgui(render_state);
 
     glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
     glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
@@ -1505,8 +1901,6 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
 
     rendering_state.render_state = &render_state;
     rendering_state.renderer = renderer;
-
-    glfwSwapInterval(1);
 
     glfwSetWindowUserPointer(render_state.window, &rendering_state);
     glfwSetKeyCallback(render_state.window, key_callback);
@@ -2281,9 +2675,11 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
     rendering::RenderPass &pass = renderer->render.ui.pass;
 
     Framebuffer &framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
-
+    
     glViewport(0, 0, framebuffer.width, framebuffer.height);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
+    // glClear(GL_COLOR_BUFFER_BIT);
+    // glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
     Buffer &font_buffer = get_internal_buffer(renderer, render_state, renderer->render.ui.font_buffer);
 
@@ -2353,6 +2749,9 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
         pass.ui.ui_z_layer_counts[i] = 0;
         pass.ui.text_z_layer_counts[i] = 0;
     }
+
+    // Draw everything imgui
+    ui_rendering::draw_imgui_frame(render_state, &render_state.imgui_state);
 
     glClear(GL_DEPTH_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
@@ -2446,11 +2845,11 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
 
             if(command.blend_mode == rendering::BlendMode::ONE_MINUS_SOURCE)
             {
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             }
             else if(command.blend_mode == rendering::BlendMode::ONE)
             {
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+                //glBlendFunc(GL_SRC_ALPHA, GL_ONE);
             }
                 
             rendering::Material material = get_material_instance(command.material, renderer);
@@ -2518,12 +2917,12 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
         glBindFramebuffer(GL_READ_FRAMEBUFFER, read_framebuffer.buffer_handle);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, draw_framebuffer.buffer_handle);
 
-        for(i32 i = 0; i < read_framebuffer.tex_color_buffer_count; i++)
+        for(i32 i = 0; i < 1; i++)
         {
             glReadBuffer(GL_COLOR_ATTACHMENT0 + i);
             glDrawBuffer(GL_COLOR_ATTACHMENT0 + i);
             
-            glBlitFramebuffer(0, 0, draw_framebuffer.width, draw_framebuffer.height, 0, 0, draw_framebuffer.width, draw_framebuffer.height, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+            glBlitFramebuffer(0, 0, draw_framebuffer.width, draw_framebuffer.height, 0, 0, draw_framebuffer.width, draw_framebuffer.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
         }
             
         glReadBuffer(GL_COLOR_ATTACHMENT0);
@@ -2535,6 +2934,8 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
 
 static void render_all_passes(RenderState &render_state, Renderer *renderer)
 {
+    glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
+
     bind_vertex_array(0, &render_state);
 
     // @Incomplete: Create a better way for enabling/disabling the clipping planes
@@ -2608,15 +3009,8 @@ static void render_post_processing_passes(RenderState &render_state, Renderer *r
         rendering::RenderPass &pass = renderer->render.post_processing_passes[pass_index];
         Framebuffer pass_buffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
 
-        // if(pass_index == renderer->render.post_processing_pass_count - 1)
-        // {
-        //     glBindFramebuffer(GL_FRAMEBUFFER, final_buffer.buffer_handle);
-        // }
-        // else
-        // {
         glBindFramebuffer(GL_FRAMEBUFFER, pass_buffer.buffer_handle);
-        // }
-
+ 
         ShaderGL shader = render_state.gl_shaders[pass.post_processing.shader_handle.handle];
 
         glUseProgram(shader.program);
@@ -2634,25 +3028,6 @@ static void render_post_processing_passes(RenderState &render_state, Renderer *r
     }
 
     bind_vertex_array(0, &render_state);
-
-    // glBindFramebuffer(GL_FRAMEBUFFER, final_buffer.buffer_handle);
-
-    // bind_vertex_array(render_state.framebuffer_quad_vao, render_state);
-    // ShaderGL hdr_shader = render_state.gl_shaders[renderer->render.hdr_shader.handle];
-
-    // glUseProgram(hdr_shader.program);
-
-    // set_int_uniform(hdr_shader.program, "scene", 0);
-    // set_int_uniform(hdr_shader.program, "width", final_buffer.width);
-    // set_int_uniform(hdr_shader.program, "height", final_buffer.height);
-
-    // set_float_uniform(hdr_shader.program, "exposure", renderer->render.hdr.exposure);
-
-    // glActiveTexture(GL_TEXTURE0);
-    // glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, render_state.v2.framebuffers[0].tex_color_buffer_handles[0]);
-    // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)nullptr);
-
-    // glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
 }
 
 static void render(RenderState &render_state, Renderer *renderer, r64 delta_time)

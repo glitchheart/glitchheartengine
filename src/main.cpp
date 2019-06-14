@@ -3,6 +3,7 @@
 #define VC_EXTRA_LEAN
 #endif
 
+#include "imgui/imgui.h"
 #include "shared.h"
 
 #if DEBUG
@@ -66,11 +67,7 @@ static MemoryState memory_state;
 static InputController input_controller;
 
 #include "keys_glfw.h"
-// #include "imgui/imgui.cpp"
-// #include "imgui/imgui_internal.h"
-// #include "imgui/imgui_draw.cpp"
-// #include "imgui/imgui_widgets.cpp"
-// #include "imgui/imgui_impl_glfw.cpp"
+#include "imgui/imgui_impl_glfw.h"
 #include "opengl_rendering.cpp"
 
 #if defined(__linux) || defined(_WIN32)
@@ -78,7 +75,7 @@ static InputController input_controller;
 #endif
 
 static void load_game_code(GameCode &game_code, char *game_library_path, char *temp_game_library_path, MemoryArena *arena = nullptr)
-{
+{   
     if (!copy_file(game_library_path, temp_game_library_path, false))
         return;
 
@@ -91,7 +88,7 @@ static void load_game_code(GameCode &game_code, char *game_library_path, char *t
     {
         game_code.update = (Update *)platform.load_symbol(game_code.game_code_library, "update");
         game_code.update_editor = (UpdateEditor *)platform.load_symbol(game_code.game_code_library, "update_editor");
-        game_code.is_valid = game_code.update != nullptr && game_code.update_editor != nullptr;
+        game_code.is_valid = game_code.update != nullptr || game_code.update_editor != nullptr;
     }
     else
         debug("The game library file could not be loaded\n");
@@ -559,8 +556,7 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     
     renderer->render.standard_pass = standard;
    
-    //rendering::RenderPassHandle read_draw_pass = rendering::create_render_pass("read_draw", standard_framebuffer, renderer);
-
+    rendering::RenderPassHandle read_draw_pass = rendering::create_render_pass("read_draw", standard_framebuffer, renderer);
     rendering::set_read_draw_render_passes(standard, standard_resolve, renderer);
 
     // Create shadow pass
@@ -1033,6 +1029,8 @@ int main(int argc, char **args)
     core.scene_manager = scene_manager;
     core.delta_time = delta_time;
     core.current_time = get_time();
+    core.imgui_context = ImGui::GetCurrentContext();
+
     game_memory.core = core;
     show_mouse_cursor(false, &render_state);
 
@@ -1050,12 +1048,13 @@ int main(int argc, char **args)
         //#endif
         //auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
         
-        poll_events();
 
         if (controller_present())
         {
             controller_keys(GLFW_JOYSTICK_1);
         }
+
+        ui_rendering::start_imgui_frame(&render_state.imgui_state);
         
         if(scene_manager->scene_loaded)
         {
@@ -1120,6 +1119,7 @@ int main(int argc, char **args)
         last_frame = end_counter;
         
         swap_buffers(render_state);
+        poll_events();
     }
 
     close_log();
