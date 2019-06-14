@@ -25,29 +25,30 @@ static inline b32 get_mouse_button_up(MouseCode key, InputController* input_cont
 
 static inline b32 get_key(KeyCode key, InputController* input_controller, b32 force = false)
 {
+    if((input_controller->ignore_all_keys || input_controller->ignore_key[key]) && !force)
+    {
+        return false;
+    }
+
     if(key == Key_MouseLeft)
         return get_mouse_button(Mouse_Left, input_controller);
     if(key == Key_MouseRight)
         return get_mouse_button(Mouse_Right, input_controller);
 
-    if((input_controller->ignore_all_keys || input_controller->ignore_key[key]) && !force)
-    {
-        return false;
-    }
-    
     return input_controller->keys_down[key];
 }
 
 static inline b32 get_key_down(KeyCode key, InputController* input_controller, b32 force = false)
 {
-    if(key == Key_MouseLeft)
-        return get_mouse_button_down(Mouse_Left, input_controller);
-    if(key == Key_MouseRight)
-        return get_mouse_button_down(Mouse_Right, input_controller);
     if((input_controller->ignore_all_keys || input_controller->ignore_key[key]) && !force)
     {
         return false;
     }
+
+    if(key == Key_MouseLeft)
+        return get_mouse_button_down(Mouse_Left, input_controller);
+    if(key == Key_MouseRight)
+        return get_mouse_button_down(Mouse_Right, input_controller);
     
     return input_controller->keys_just_pressed[key] == KEY_JUST_PRESSED;
 }
