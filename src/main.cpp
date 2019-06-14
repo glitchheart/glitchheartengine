@@ -998,7 +998,7 @@ int main(int argc, char **args)
     ThreadInfo fmod_thread = {};
     make_queue(&fmod_queue, 1, &fmod_thread);
     platform.add_entry(&fmod_queue, init_audio_fmod_thread, &data);
-*/
+	*/
 	init_audio_fmod(&data);
 
     WorkQueue asset_queue = {};
@@ -1029,7 +1029,6 @@ int main(int argc, char **args)
     core.scene_manager = scene_manager;
     core.delta_time = delta_time;
     core.current_time = get_time();
-    core.imgui_context = ImGui::GetCurrentContext();
 
     game_memory.core = core;
     show_mouse_cursor(false, &render_state);
@@ -1047,15 +1046,20 @@ int main(int argc, char **args)
         reload_libraries(&game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
         //#endif
         //auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
-        
 
         if (controller_present())
         {
             controller_keys(GLFW_JOYSTICK_1);
         }
 
-        ui_rendering::start_imgui_frame(&render_state.imgui_state);
+		ui_rendering::start_imgui_frame(&render_state.imgui_state);
         
+         ImGuiIO& io = ImGui::GetIO();
+        
+         input_controller.ignore_all_keys = io.WantCaptureMouse;
+
+		game_memory.core.imgui_context = ImGui::GetCurrentContext();
+
         if(scene_manager->scene_loaded)
         {
             if(scene_manager->mode == scene::SceneMode::RUNNING)
