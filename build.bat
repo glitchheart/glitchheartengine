@@ -28,7 +28,7 @@ REM 64-bit build
 del *.pdb > NUL 2> NUL
 
 echo Compilation started  on: %time%
-cl %CommonCompilerFlags% ..\src\main.cpp /Fealtered /DCURL_STATICLIB /link %ExtraLinkerFlags% %CommonLinkerFlags% %Console%
+cl %CommonCompilerFlags% ..\src\main.cpp ..\libs\imgui\imgui*.cpp /Fealtered /DCURL_STATICLIB /link %ExtraLinkerFlags% %CommonLinkerFlags% %Console%
 echo Compilation finished on: %time%
 popd
 
