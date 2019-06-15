@@ -414,7 +414,7 @@ struct Core
     sound::SoundSystem* sound_system;
     scene::SceneManager *scene_manager;
     
-    ImGuiContext* imgui_context;
+    ImGuiContext *imgui_context;
 
     r64 delta_time;
     r64 current_time;

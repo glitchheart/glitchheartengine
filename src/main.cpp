@@ -1032,13 +1032,12 @@ int main(int argc, char **args)
 	
 	ImGuiContext* context = ImGui::GetCurrentContext();
 	core.imgui_context = context;
-
     game_memory.core = core;
     show_mouse_cursor(false, &render_state);
 
     while (!should_close_window(render_state) && !renderer->should_close)
     {
-		game_memory.core.imgui_context = context;
+		ui_rendering::start_imgui_frame(&render_state.imgui_state);
 
 		if (game_memory.exit_game)
         {
@@ -1048,7 +1047,7 @@ int main(int argc, char **args)
         
         //show_mouse_cursor(render_state, renderer->show_mouse_cursor);
 
-        reload_libraries(&game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
+        //reload_libraries(&game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
         //#endif
         //auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
 
@@ -1057,11 +1056,8 @@ int main(int argc, char **args)
             controller_keys(GLFW_JOYSTICK_1);
         }
 
-		ui_rendering::start_imgui_frame(&render_state.imgui_state);
-
         ImGuiIO& io = ImGui::GetIO();
         input_controller.ignore_all_keys = io.WantCaptureMouse;
-
 
         if(scene_manager->scene_loaded)
         {

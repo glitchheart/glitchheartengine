@@ -1219,11 +1219,11 @@ namespace ui_rendering
 
     static void start_imgui_frame(InternalImGuiState *state)
     {
-		imgui_impl_glfw_new_frame();
-        ImGui::NewFrame();
+		if (!state->font_texture)
+			imgui_impl_opengl3_create_device_objects(state);
 
-        if (!state->font_texture)
-            imgui_impl_opengl3_create_device_objects(state);
+		imgui_impl_glfw_new_frame();
+		ImGui::NewFrame();
     }
 
     static void imgui_impl_opengl3_setup_render_state(InternalImGuiState *imgui_state, ImDrawData* draw_data, int fb_width, int fb_height, GLuint vertex_array_object)
@@ -1279,36 +1279,10 @@ namespace ui_rendering
 
     static void draw_imgui_frame(RenderState &render_state, InternalImGuiState *imgui_state)
     {
-        // static bool show_demo_window;
-        // static bool show_another_window;
-
-        // {
-        //     static math::Vec3 clear_color(0.0f, 0.0f, 0.0f);
-        //     static float f = 0.0f;
-        //     static int counter = 0;
-
-        //     ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-        //     ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-        //     ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-        //     ImGui::Checkbox("Another Window", &show_another_window);
-
-        //     ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-        //     ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-        //     if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-        //         counter++;
-
-        //     ImGui::SameLine();
-        //     ImGui::Text("counter = %d", counter);
-
-        //     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-        //     ImGui::End();
-        // }
-
         static math::Rgba clear_color(0.0f, 0.0f, 0.0f, 1.0f);
 
         ImGui::Render();
+        
         int display_w, display_h;
         glfwGetFramebufferSize(render_state.window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
@@ -1878,6 +1852,13 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
     render_state.vsync_active = vsync_active;
+    
+    glfwSetWindowUserPointer(render_state.window, &rendering_state);
+    glfwSetKeyCallback(render_state.window, key_callback);
+    glfwSetCharCallback(render_state.window, character_callback);
+    glfwSetCursorPosCallback(render_state.window, cursor_position_callback);
+    glfwSetMouseButtonCallback(render_state.window, mouse_button_callback);
+    glfwSetScrollCallback(render_state.window, scroll_callback);
 
     ui_rendering::initialize_imgui(render_state);
 
@@ -1900,13 +1881,6 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
 
     rendering_state.render_state = &render_state;
     rendering_state.renderer = renderer;
-
-    glfwSetWindowUserPointer(render_state.window, &rendering_state);
-    glfwSetKeyCallback(render_state.window, key_callback);
-    glfwSetCharCallback(render_state.window, character_callback);
-    glfwSetCursorPosCallback(render_state.window, cursor_position_callback);
-    glfwSetMouseButtonCallback(render_state.window, mouse_button_callback);
-    glfwSetScrollCallback(render_state.window, scroll_callback);
 
     GLint viewport[4];
     glGetIntegerv(GL_VIEWPORT, viewport);
@@ -2680,6 +2654,9 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
     // glClear(GL_COLOR_BUFFER_BIT);
     // glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
+    // Draw everything imgui
+    ui_rendering::draw_imgui_frame(render_state, &render_state.imgui_state);
+
     Buffer &font_buffer = get_internal_buffer(renderer, render_state, renderer->render.ui.font_buffer);
 
     glDisable(GL_DEPTH_TEST);
@@ -2749,8 +2726,7 @@ static void render_ui_pass(RenderState &render_state, Renderer *renderer)
         pass.ui.text_z_layer_counts[i] = 0;
     }
 
-    // Draw everything imgui
-    ui_rendering::draw_imgui_frame(render_state, &render_state.imgui_state);
+    
 
     glClear(GL_DEPTH_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
