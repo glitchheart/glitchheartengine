@@ -7,6 +7,26 @@
 
 #include <GLFW/glfw3.h>
 
+// IMGUI
+
+struct InternalImGuiState
+{
+    char glsl_version_string[32] = "";
+    GLuint font_texture = 0;
+    GLuint shader_handle = 0;
+    GLuint vert_handle = 0;
+    GLuint frag_handle = 0;
+    i32 attrib_location_tex = 0;
+    i32 attrib_location_proj_mtx = 0;
+    i32 attrib_location_vtx_pos = 0;
+    i32 attrib_location_vtx_uv = 0;
+    i32 attrib_location_vtx_color = 0;
+    u32 vbo_handle = 0;
+    u32 elements_handle = 0;
+};
+
+// ENDIMGUI
+
 struct ShaderGL
 {
 	GLuint program;
@@ -81,6 +101,8 @@ struct Framebuffer
 
 struct RenderState
 {
+    InternalImGuiState imgui_state;
+    
     struct
     {
         GLuint shader_program;
