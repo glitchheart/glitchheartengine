@@ -1806,24 +1806,27 @@ static Camera get_standard_camera(SceneManager& manager)
             return;
 
         // Update camera
-        if(KEY(Key_Up))
+        if(MOUSE(Mouse_Right))
         {
-            translate_forward(camera, (r32)delta_time * 10.0f);
-        }
+            if(KEY(Key_W))
+            {
+                translate_forward(camera, (r32)delta_time * 10.0f);
+            }
 
-        if(KEY(Key_Down))
-        {
-            translate_forward(camera, (r32)-delta_time * 10.0f);
-        }
+            if(KEY(Key_S))
+            {
+                translate_forward(camera, (r32)-delta_time * 10.0f);
+            }
 
-        if(KEY(Key_Left))
-        {
-            translate_right(camera, (r32)-delta_time * 10.0f);
-        }
+            if(KEY(Key_A))
+            {
+                translate_right(camera, (r32)-delta_time * 10.0f);
+            }
 
-        if(KEY(Key_Right))
-        {
-            translate_right(camera, (r32)delta_time * 10.0f);
+            if(KEY(Key_D))
+            {
+                translate_right(camera, (r32)delta_time * 10.0f);
+            }
         }
 
         if(MOUSE(Mouse_Middle))
@@ -2438,13 +2441,14 @@ static Camera get_standard_camera(SceneManager& manager)
                         debug_log("Referencing invalid child");
                         continue;
                     }
-
+                    
                     Entity& child = get_entity(child_handle, handle);
-                    if(child.child_count > 0)
-                    {
-                        debug_log("Warning: nested children not supported here");
-                        continue;
-                    }
+
+                    // if(child.child_count > 0)
+                    // {
+                    //     // debug_log("Warning: nested children not supported here");
+                    //     // continue;
+                    // }
                     
                     if(has_render_component(child.handle, handle))
                     {
