@@ -2011,7 +2011,7 @@ static Camera get_standard_camera(SceneManager& manager)
                 deselect_everything(manager);
             }
 
-            if(KEY_DOWN(Key_Delete))
+            if(KEY_DOWN(Key_Delete) || KEY_DOWN(Key_Backspace))
             {
                 if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
                 {
@@ -2210,6 +2210,8 @@ static Camera get_standard_camera(SceneManager& manager)
         
         if(!scene->loaded)
         {
+            update_scene_camera(handle);
+            
             if(scene_manager->callbacks.on_scene_will_load)
                 scene_manager->callbacks.on_scene_will_load(handle);
             
@@ -2648,6 +2650,7 @@ static Camera get_standard_camera(SceneManager& manager)
         // This will be used at the end of the function to look for child entities that were described in the obj-file
 		
 		templ->render.material_handle = { -1 };
+        templ->type_id = -1;
         
         rendering::PassMaterial pass_materials[4];
         i32 pass_material_count = 0;
@@ -2687,8 +2690,9 @@ static Camera get_standard_camera(SceneManager& manager)
 
             while(fgets(buffer, 256, file))
             {
-                if(starts_with(buffer, "v2"))
+                if(starts_with(buffer, "type"))
                 {
+                    sscanf(buffer, "type_id: %d", &templ->type_id);
                 }
                 else if(starts_with(buffer, "hide_in_ui"))
                 {
@@ -3429,7 +3433,7 @@ static Camera get_standard_camera(SceneManager& manager)
             break;
             }
         }
-        
+
         return(handle);
     }
     
@@ -3478,6 +3482,27 @@ static Camera get_standard_camera(SceneManager& manager)
                 set_entity_tag(tags->tags[i], entity, scene.handle);
             }
         }
+
+		if (templ->type_id != -1)
+		{
+			Entity& e = get_entity(entity, scene);
+
+			if (auto * type_info = get_registered_type(templ->type_id, scene.handle.manager))
+			{
+				e.type_info = *type_info;
+			}
+
+			e.savable = true;
+			e.type = templ->type_id;
+
+			EntityData* entity_data = scene.handle.manager->callbacks.on_load_entity_of_type(entity, templ->type_id, scene.handle);
+
+			if (entity_data)
+			{
+				entity_data->handle.handle = entity.handle;
+				e.entity_data = entity_data;
+			}
+		}
         
         return(entity);
     }

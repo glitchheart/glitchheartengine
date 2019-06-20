@@ -370,6 +370,8 @@ namespace scene
         u64 comp_flags;
         b32 hide_in_ui;
         Tags tags;
+
+        i32 type_id;
         
         struct
         {
