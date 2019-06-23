@@ -485,13 +485,13 @@ typedef void (*SetMouseLock)(b32 locked, RenderState *render_state);
 typedef void (*ShowMouseCursor)(b32 show, RenderState *render_state);
 typedef b32 (*GetMouseLock)(RenderState *render_state);
 typedef void (*SetWindowMode)(RenderState* render_state, Renderer* renderer, Resolution resolution, WindowMode window_mode);
+typedef void (*SetWindowTitle)(const char *title, Renderer *renderer);
 typedef void (*SetVSync)(RenderState *render_state, b32 value);
 typedef b32 (*GetVSync)(RenderState *render_state);
 typedef void (*LoadShader)(RenderState *render_state, Renderer *renderer, rendering::Shader &shader);
 
 typedef void (*CreateUniformBuffer)(UniformBuffer* buffer, rendering::BufferUsage, size_t size, Renderer *renderer);
 typedef void (*UpdateUniformBuffer)(UniformBuffer* buffer, rendering::UniformBufferUpdate update, Renderer *renderer);
-
 
 struct GraphicsAPI
 {
@@ -517,6 +517,7 @@ struct GraphicsAPI
     ShowMouseCursor show_mouse_cursor;
 
     SetWindowMode set_window_mode;
+    SetWindowTitle set_window_title;
     SetVSync set_v_sync;
     GetVSync get_v_sync;
 
