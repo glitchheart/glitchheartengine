@@ -60,6 +60,9 @@ static MemoryState memory_state;
 #include "scene.h"
 #include "scene.cpp"
 
+#include "editor.h"
+#include "editor.cpp"
+
 #if defined(__linux) || defined(__APPLE__)
 #include "dlfcn.h"
 #endif
@@ -1066,7 +1069,14 @@ int main(int argc, char **args)
                 game.update(&game_memory);
             }
             else
+            {
                 game.update_editor(&game_memory);
+                
+                scene::Scene &current_scene = scene::get_scene(scene_manager->loaded_scene);
+                
+                editor::render_hierarchy(current_scene);
+                editor::render_inspector(current_scene, &input_controller);
+            }
 
             if(scene_manager->scene_loaded) // Check again, since there could be a call to unload_current_scene() in game.update()
             {
