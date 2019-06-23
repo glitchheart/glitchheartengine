@@ -6,7 +6,6 @@
 #define EMPTY_ENTITY_HANDLE {0}
 #define EMPTY_COMP_HANDLE {-1}
 #define EMPTY_TEMPLATE_HANDLE {-1}
-#define HANDLES_EQUAL(h1, h2) ( h1.handle == h2.handle )
 #define IS_ENTITY_HANDLE_VALID(ent_handle) (ent_handle.handle > 0)
 #define IS_COMP_HANDLE_VALID(comp_handle) (comp_handle.handle > -1)
 #define IS_TEMPLATE_HANDLE_VALID(comp_handle) comp_handle.handle != -1

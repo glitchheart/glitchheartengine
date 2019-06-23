@@ -1740,6 +1740,11 @@ static void set_window_mode(RenderState* render_state, Renderer* renderer, Resol
     }
 }
 
+static void set_window_title(const char *title, Renderer *renderer)
+{
+    glfwSetWindowTitle(renderer->api_functions.render_state->window, title);
+}
+
 static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char *title, MemoryArena *perm_arena, b32 *do_save_config, b32 vsync_active)
 {
     renderer->api_functions.render_state = &render_state;
@@ -1763,6 +1768,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     renderer->api_functions.set_v_sync = &set_v_sync;
     renderer->api_functions.get_v_sync = &get_v_sync;
     renderer->api_functions.load_shader = &load_shader;
+    renderer->api_functions.set_window_title = &set_window_title;
 
     auto recreate_window = render_state.window != nullptr;
 

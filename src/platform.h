@@ -189,6 +189,35 @@ enum SeekOptions
     SO_END
 };
 
+enum class FileType
+{
+    DIRECTORY,
+    FILE
+};
+
+struct File
+{
+    FileType type;
+    char name[32];
+};
+
+struct FileList
+{
+    char path[64];
+    
+    File *files;
+    i32 file_count;
+    
+    File *dirs;
+    i32 dir_count;
+
+    i32 allocated_size;
+    b32 allocated;
+};
+
+#define PLATFORM_LIST_ALL_FILES_AND_DIRECTORIES(name) void name(const char *path, FileList *list)
+typedef PLATFORM_LIST_ALL_FILES_AND_DIRECTORIES(PlatformListAllFilesAndDirectories);
+
 #define PLATFORM_GET_ALL_FILES_WITH_EXTENSION(name) void name(const char* directory_path, const char* extension, DirectoryData *directory_data, b32 with_sub_directories)
 typedef PLATFORM_GET_ALL_FILES_WITH_EXTENSION(PlatformGetAllFilesWithExtension);
 
@@ -287,6 +316,7 @@ typedef PLATFORM_IS_EOL(PlatformIsEOL);
 struct PlatformApi
 {
     PlatformGetAllFilesWithExtension *get_all_files_with_extension;
+    PlatformListAllFilesAndDirectories *list_all_files_and_directories;
     PlatformGetAllDirectories *get_all_directories;
     PlatformFileExists *file_exists;
     PlatformAllocateMemory *allocate_memory;
