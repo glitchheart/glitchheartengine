@@ -739,6 +739,11 @@ namespace scene
                 char *val = buffer + strlen(name) + 2;
                 
                 load_entity_field(name, val, entity_data, *type_info);
+
+                if(scene.manager->callbacks.on_loaded_entity_of_type)
+                {
+                    scene.manager->callbacks.on_loaded_entity_of_type(handle, type_info->type_id, scene);
+                }
             }
 
             set_hide_in_ui(handle, hide_in_ui, scene);
