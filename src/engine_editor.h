@@ -27,15 +27,21 @@ namespace editor
             b32 show_inspector;
             b32 show_resources;
             b32 show_scene_settings;
+
+            struct
+            {
+                b32 show_shadow_map;
+            } scene_settings;
+            
         } windows;
     };
 
 
     // Internal functions
-    static void _recursive_entity_item(scene::Entity& entity, scene::SceneManager *scene_manager);
-    static void _render_hierarchy();
-    static void _render_inspector();
-    static void _render_resources(project::ProjectState *project_state, scene::SceneManager *scene_manager);
+    static void _recursive_entity_item(scene::Entity& entity, scene::SceneManager *scene_manager, r64 delta_time);
+    static void _render_hierarchy(r64 delta_time);
+    static void _render_inspector(r64 delta_time);
+    static void _render_resources(project::ProjectState *project_state, scene::SceneManager *scene_manager, r64 delta_time);
 
     static void set_editor_mode(EditorMode mode, EditorState *state);
 }

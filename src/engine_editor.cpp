@@ -60,7 +60,7 @@ namespace editor
         ImGui::PopID();
     }
 
-    static void _render_hierarchy(scene::Scene &scene)
+    static void _render_hierarchy(scene::Scene &scene, r64 delta_time)
     {
 		static bool hierarchy_open = true;
 
@@ -84,7 +84,7 @@ namespace editor
         ImGui::End();
     }
 
-    static void _render_inspector(scene::Scene &scene, InputController *input_controller)
+    static void _render_inspector(scene::Scene &scene, InputController *input_controller, r64 delta_time)
     {
         scene::SceneManager *scene_manager = scene.handle.manager;
         
@@ -158,7 +158,7 @@ namespace editor
                     arr[1] = position.y;
                     arr[2] = position.z;
 
-                    ImGui::DragFloat3("Position", arr, core.delta_time);
+                    ImGui::DragFloat3("Position", arr, delta_time);
                     scene::set_position(selected_transform, math::Vec3(arr[0], arr[1], arr[2]));
 
                     math::Vec3 rotation = selected_transform.transform.euler_angles;
@@ -167,7 +167,7 @@ namespace editor
                     arr1[1] = rotation.y;
                     arr1[2] = rotation.z;
 
-                    ImGui::DragFloat3("Rotation", arr1, core.delta_time);
+                    ImGui::DragFloat3("Rotation", arr1, delta_time);
                     scene::set_rotation(selected_transform, math::Vec3(arr1[0], arr1[1], arr1[2]));
 
                     math::Vec3 scale = selected_transform.transform.scale;
@@ -176,7 +176,7 @@ namespace editor
                     arr2[1] = scale.y;
                     arr2[2] = scale.z;
 
-                    ImGui::DragFloat3("Scale", arr2, core.delta_time);
+                    ImGui::DragFloat3("Scale", arr2, delta_time);
                     scene::set_scale(selected_transform, math::Vec3(arr2[0], arr2[1], arr2[2]));
                 }
 
@@ -252,18 +252,18 @@ namespace editor
                         break;
                         case scene::FieldType::FLOAT:
                         {
-                            ImGui::DragFloat(field.name, ((r32*)ptr), core.delta_time);
+                            ImGui::DragFloat(field.name, ((r32*)ptr), delta_time);
                         }
                         break;
                         case scene::FieldType::VEC2:
                         {
                         
-                            ImGui::DragFloat2(field.name, ((math::Vec2*)ptr)->e, core.delta_time);
+                            ImGui::DragFloat2(field.name, ((math::Vec2*)ptr)->e, delta_time);
                         }
                         break;
                         case scene::FieldType::VEC3:
                         {
-                            ImGui::DragFloat2(field.name, ((math::Vec3*)ptr)->e, core.delta_time);
+                            ImGui::DragFloat2(field.name, ((math::Vec3*)ptr)->e, delta_time);
                         }
                         break;
                         default:
@@ -309,7 +309,7 @@ namespace editor
                                 core.renderer->particles.api->pause_particle_system(ps_handle, core.renderer, paused);
                             }
 
-                            ImGui::DragScalar("Duration", ImGuiDataType_Double, &attributes.duration, core.delta_time);
+                            ImGui::DragScalar("Duration", ImGuiDataType_Double, &attributes.duration, delta_time);
 
                             if(ImGui::Checkbox("Prewarm", &prewarm))
                             {
@@ -354,7 +354,7 @@ namespace editor
                                 
                             if(attributes.start_life_time_type == StartParameterType::CONSTANT)
                             {
-                                ImGui::DragScalar("Start lifetime", ImGuiDataType_Double, &attributes.life.constant.life_time, core.delta_time);
+                                ImGui::DragScalar("Start lifetime", ImGuiDataType_Double, &attributes.life.constant.life_time, delta_time);
                             }
                             else
                             {
@@ -462,7 +462,7 @@ namespace editor
                                 
                                 if(ps->color_over_lifetime.values)
                                 {
-                                    ImGui::DragScalar("Selected key", ImGuiDataType_Double, &ps->color_over_lifetime.keys[selected_color_index], core.delta_time);
+                                    ImGui::DragScalar("Selected key", ImGuiDataType_Double, &ps->color_over_lifetime.keys[selected_color_index], delta_time);
                                     ImGui::ColorEdit4("Selected color", ps->color_over_lifetime.values[selected_color_index].e);
                                 }
                                 else
@@ -471,7 +471,7 @@ namespace editor
                                     // math::clamp(0.0, ui::field_r64(global_state->ui_state, 0.0, "Selected key"), 1.0);
                                 }
 
-                                ImGui::DragScalar("New key", ImGuiDataType_Double, &new_color_key, core.delta_time);
+                                ImGui::DragScalar("New key", ImGuiDataType_Double, &new_color_key, delta_time);
                                 ImGui::ColorEdit4("New color", new_color.e);
 
                                 if(ImGui::Button("Add"))
@@ -529,7 +529,7 @@ namespace editor
 
                                 if(ps->size_over_lifetime.values)
                                 {
-                                    ImGui::DragScalar("Selected key", ImGuiDataType_Double, &ps->size_over_lifetime.keys[selected_size_index], core.delta_time);
+                                    ImGui::DragScalar("Selected key", ImGuiDataType_Double, &ps->size_over_lifetime.keys[selected_size_index], delta_time);
                                     ImGui::DragFloat2("Selected size", ps->size_over_lifetime.values[selected_size_index].e);
                                 }
                                 else
@@ -541,7 +541,7 @@ namespace editor
                                 static r64 new_size_key = 0.0;
                                 static math::Vec2 new_size;
                                 
-                                ImGui::DragScalar("New key", ImGuiDataType_Double, &new_size_key, core.delta_time);
+                                ImGui::DragScalar("New key", ImGuiDataType_Double, &new_size_key, delta_time);
                                 ImGui::DragFloat2("New size", new_size.e);
                             
                                 if(ImGui::Button("Add"))
@@ -600,7 +600,7 @@ namespace editor
 
                                 if(ps->speed_over_lifetime.values)
                                 {
-                                    ImGui::DragScalar("Selected key", ImGuiDataType_Double, &ps->speed_over_lifetime.keys[selected_speed_index], core.delta_time);
+                                    ImGui::DragScalar("Selected key", ImGuiDataType_Double, &ps->speed_over_lifetime.keys[selected_speed_index], delta_time);
                                     ImGui::DragFloat("Selected speed", &ps->speed_over_lifetime.values[selected_speed_index]);
                                 }
                                 else
@@ -612,7 +612,7 @@ namespace editor
                                 static r64 new_speed_key = 0.0;
                                 static r32 new_speed = 0.0f;
 
-                                ImGui::DragScalar("New key", ImGuiDataType_Double, &new_speed_key, core.delta_time);
+                                ImGui::DragScalar("New key", ImGuiDataType_Double, &new_speed_key, delta_time);
                                 ImGui::DragFloat("New speed", &new_speed);
 
                                 if(ImGui::Button("Add"))
@@ -658,8 +658,140 @@ namespace editor
             && file_name[len - 2] == 's'
             && file_name[len - 1] == 'c';
     }
+
+    static void _render_scene_settings(EditorState *editor_state, scene::SceneManager *scene_manager, r64 delta_time)
+    {
+        if(!editor_state->windows.show_scene_settings)
+        {
+            return;
+        }
+        
+        if(ImGui::Begin("Scene settings"))
+        {
+            scene::Settings& settings = scene::get_scene_settings(scene_manager->loaded_scene);
+
+            bool show_shadow_map = editor_state->windows.scene_settings.show_shadow_map;
+            ImGui::Checkbox("Show shadow map", &show_shadow_map);
+            editor_state->windows.scene_settings.show_shadow_map = show_shadow_map;
+        
+            ImGui::InputFloat("Near", &settings.shadows.near_plane);
+            ImGui::InputFloat("Far", &settings.shadows.far_plane);
+            ImGui::InputFloat("FOV", &settings.shadows.fov);
+            ImGui::InputInt("Map width", &settings.shadows.map_width);
+            ImGui::InputInt("Map height", &settings.shadows.map_height);
+            ImGui::DragFloat3("Camera position", settings.camera.position.e);
+            ImGui::DragFloat3("Camera target", settings.camera.target.e);
+
+            r32 degrees = settings.camera.fov / DEGREE_IN_RADIANS;
+            ImGui::InputFloat("Camera FOV degrees", &degrees);
+
+            settings.camera.fov = degrees * DEGREE_IN_RADIANS;
+
+            ImGui::InputFloat("Camera near", &settings.camera.z_near);
+            ImGui::InputFloat("Camera far", &settings.camera.z_far);
+
+            if(editor_state->windows.scene_settings.show_shadow_map)
+            {
+                // @Incomplete: Move this function into engine with ImGui code..
+                // The function resides in game.cpp right now.
+                //render_shadow_map(scene_manager->renderer);
+            }
+                
+            ImGui::End();
+        }
+        else
+        {
+            editor_state->windows.show_scene_settings = false;
+        }
+    }
+
+    static void _render_main_menu(EditorState *editor_state, r64 delta_time)
+    {
+        // bool save = false;
+
+        // if((KEY(Key_LeftCtrl) || KEY(Key_RightCtrl)) && KEY_DOWN(Key_O))
+        // {
+        //     global_state->editor.display_scene_select = true;
+        // }
+        
+		// if (ImGui::BeginMainMenuBar())
+		// {
+		// 	if (ImGui::BeginMenu("File"))
+		// 	{
+		// 		save = ImGui::MenuItem("Save");
+
+        //         if(ImGui::MenuItem("Scene list"))
+        //         {
+        //             global_state->editor.display_scene_select = true;
+        //         }
+                
+		// 		if (ImGui::BeginMenu("Load scene"))
+		// 		{
+        //             if(ImGui::BeginMenu("General"))
+        //             {
+        //                 _scene_file_list(global_state->editor.scene_files.root_files);
+        //                 ImGui::EndMenu();
+        //             }
+                                        
+        //             if(ImGui::BeginMenu("Beach"))
+        //             {
+        //                 _scene_file_list(global_state->editor.scene_files.beach_files);
+        //                 ImGui::EndMenu();
+        //             }
+
+        //             if(ImGui::BeginMenu("Forest"))
+        //             {
+        //                 _scene_file_list(global_state->editor.scene_files.forest_files);
+        //                 ImGui::EndMenu();
+        //             }
+
+        //             if(ImGui::BeginMenu("Swamp"))
+        //             {
+        //                 _scene_file_list(global_state->editor.scene_files.swamp_files);
+        //                 ImGui::EndMenu();
+        //             }
+
+        //             if(ImGui::BeginMenu("Garden"))
+        //             {
+        //                 _scene_file_list(global_state->editor.scene_files.garden_files);
+        //                 ImGui::EndMenu();
+        //             }
+
+        //             ImGui::EndMenu();
+		// 		}
+
+		// 		if (ImGui::MenuItem("New scene"))
+		// 		{
+		// 			set_mode(EditorMode::NEW_LEVEL_PROMPT);
+		// 		}
+
+		// 		ImGui::EndMenu();
+		// 	}
+
+		// 	if (ImGui::BeginMenu("Settings"))
+		// 	{
+		// 		if (ImGui::MenuItem("Show scene settings"))
+		// 		{
+		// 			global_state->editor.display_scene_settings = true;
+		// 		}
+
+		// 		if (ImGui::MenuItem("Show game view"))
+		// 		{
+		// 			global_state->editor.display_game_view = true;
+		// 		}
+		// 		ImGui::EndMenu();
+		// 	}
+
+		// 	ImGui::EndMainMenuBar();
+		// }
+
+        // if(save || (KEY(Key_LeftCtrl) && KEY_DOWN(Key_S)))
+        // {
+        //     scene::editor_save(core.scene_manager);
+        // }
+    }
     
-    static void _render_resources(project::ProjectState *state, scene::SceneManager *scene_manager)
+    static void _render_resources(project::ProjectState *state, scene::SceneManager *scene_manager, r64 delta_time)
     {
         FileList &current_structure = state->resources.resource_file_structures[state->resources.structure_count - 1];
     
