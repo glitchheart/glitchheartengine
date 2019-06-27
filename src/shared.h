@@ -115,7 +115,16 @@ static char* read_file_into_buffer(MemoryArena* arena, os::File file, size_t *ou
 	return source;
 }
 
+inline b32 is_whitespace(const char* str)
+{
+    for(i32 i = 0; i < strlen(str); i++)
+    {
+        if(str[i] != ' ')
+            return false;
+    }
 
+    return true;
+}
 
 
 // @Incomplete: This doesn't even work without a memory arena

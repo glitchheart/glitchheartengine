@@ -7,7 +7,16 @@
 #include "shared.h"
 
 #if DEBUG
+#define EDITOR
+#endif
+
+#if DEBUG
 #include "debug.h"
+#endif
+
+#ifdef EDITOR
+#include "project.h"
+#include "project.cpp"
 #endif
 
 #include <glad/glad.h>
@@ -59,6 +68,11 @@ static MemoryState memory_state;
 
 #include "scene.h"
 #include "scene.cpp"
+
+#ifdef EDITOR
+#include "engine_editor.h"
+#include "engine_editor.cpp"
+#endif
 
 #if defined(__linux) || defined(__APPLE__)
 #include "dlfcn.h"
@@ -547,9 +561,9 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     standard_info.width = renderer->framebuffer_width;
     standard_info.height = renderer->framebuffer_height;
     
-    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 4);
-    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 4);
-    rendering::add_depth_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, standard_info, 4);
+    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 16);
+    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, standard_info, 16);
+    rendering::add_depth_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, standard_info, 16);
 
     rendering::FramebufferHandle standard_framebuffer = rendering::create_framebuffer(standard_info, renderer);
     rendering::RenderPassHandle standard = rendering::create_render_pass(STANDARD_PASS, standard_framebuffer, renderer);
@@ -877,6 +891,9 @@ int main(int argc, char **args)
     char *game_library_path = "libgame.so";
     char *temp_game_library_path = "libgame_temp.so";
 #endif
+    
+    project::ProjectState *project_state = push_struct(&platform_state->perm_arena, project::ProjectState);
+    project::load_project(project_state);
 
     load_config("../.config", &core.config_data, &platform_state->perm_arena);
 
@@ -922,7 +939,7 @@ int main(int argc, char **args)
     else if constexpr (global_graphics_api == GRAPHICS_OPEN_GL)
     {
         log("Initializing OpenGl");
-        initialize_opengl(render_state, renderer, &core.config_data, &platform_state->perm_arena, &do_save_config);
+        initialize_opengl(render_state, renderer, project_state, &core.config_data, &platform_state->perm_arena, &do_save_config);
     }
 
     ParticleApi particle_api = {};
@@ -1021,6 +1038,7 @@ int main(int argc, char **args)
     template_state.template_count = 0;
 
     template_state.templates = push_array(&platform_state->perm_arena, global_max_entity_templates, scene::EntityTemplate);
+
     
     core.renderer = renderer;
     core.input_controller = &input_controller;
@@ -1029,11 +1047,17 @@ int main(int argc, char **args)
     core.scene_manager = scene_manager;
     core.delta_time = delta_time;
     core.current_time = get_time();
-	
+
+    #ifdef EDITOR
+    editor::EditorState editor_state = {};
+    core.editor_state = &editor_state;
+    #endif
+    
 	ImGuiContext* context = ImGui::GetCurrentContext();
 	core.imgui_context = context;
     game_memory.core = core;
     show_mouse_cursor(false, &render_state);
+
 
     while (!should_close_window(render_state) && !renderer->should_close)
     {
@@ -1047,7 +1071,7 @@ int main(int argc, char **args)
         
         //show_mouse_cursor(render_state, renderer->show_mouse_cursor);
 
-        //reload_libraries(&game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
+        reload_libraries(&game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
         //#endif
         //auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
 
@@ -1061,17 +1085,34 @@ int main(int argc, char **args)
 
         if(scene_manager->scene_loaded)
         {
+            #ifdef EDITOR
             if(scene_manager->mode == scene::SceneMode::RUNNING)
             {
                 game.update(&game_memory);
             }
             else
+            {
                 game.update_editor(&game_memory);
+                
+                scene::Scene &current_scene = scene::get_scene(scene_manager->loaded_scene);
+
+                if(editor_state.mode == editor::EditorMode::BUILT_IN)
+                {
+                    editor::_render_hierarchy(current_scene);
+                    editor::_render_inspector(current_scene, &input_controller);
+                    editor::_render_resources(project_state, scene_manager);
+                }
+            }
+            #else
+            game.update(&game_memory);
+            #endif
 
             if(scene_manager->scene_loaded) // Check again, since there could be a call to unload_current_scene() in game.update()
             {
+                #ifdef EDITOR
                 update_scene_editor(scene_manager->loaded_scene, &input_controller, render_state, delta_time);
-
+                #endif
+                
                 scene::Scene &scene = scene::get_scene(scene_manager->loaded_scene);
                 scene::update_animators(scene, renderer, delta_time);
                 scene::push_scene_for_rendering(scene, renderer);

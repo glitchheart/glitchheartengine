@@ -137,7 +137,6 @@ PLATFORM_GET_ALL_DIRECTORIES(win32_get_all_directories)
     
     // Workaround on Windows, since Windows needs the * to search for all files and OSX + Linux don't
     char combined_path[256];
-    sprintf(combined_path, "%s*", path);
     
     h_find = FindFirstFile(combined_path, &find_file);
     
@@ -223,6 +222,79 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
         debug("No files with extension %s found in %s\n", extension, directory_path);
         return;
     }
+}
+
+#include <tchar.h>
+#include <strsafe.h>
+
+static b32 _has_extension(const char *str)
+{
+    size_t len = strlen(str);
+    
+    for(i32 i = 0; i < len; i++)
+    {
+        if(str[i] == '.' && i != len - 1 && str[i + 1] != '.')
+        {
+            printf("Has extension: %s", str);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+inline PLATFORM_LIST_ALL_FILES_AND_DIRECTORIES(win32_list_all_files_and_directories)
+{
+    list->file_count = 0;
+    list->dir_count = 0;
+    
+    strcpy(list->path, path);
+    WIN32_FIND_DATA ffd;
+    LARGE_INTEGER filesize;
+    TCHAR szDir[MAX_PATH];
+    size_t length_of_arg;
+    HANDLE hFind = INVALID_HANDLE_VALUE;
+    DWORD dwError=0;
+   
+    StringCchCopy(szDir, MAX_PATH, path);
+    StringCchCat(szDir, MAX_PATH, TEXT("\\*"));
+
+    // Find the first file in the directory.
+
+    hFind = FindFirstFile(szDir, &ffd);
+
+    if (INVALID_HANDLE_VALUE == hFind) 
+    {
+        //DisplayErrorBox(TEXT("FindFirstFile"));
+        //return dwError;
+    } 
+   
+    do
+    {
+        if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+        {
+            list->dirs[list->dir_count].type = FileType::DIRECTORY;
+            strcpy(list->dirs[list->dir_count++].name, ffd.cFileName);
+            
+        }
+        else
+        {
+            filesize.LowPart = ffd.nFileSizeLow;
+            filesize.HighPart = ffd.nFileSizeHigh;
+
+            list->files[list->file_count].type = FileType::FILE;
+            strcpy(list->files[list->file_count++].name, ffd.cFileName);
+        }
+    }
+    while (FindNextFile(hFind, &ffd) != 0);
+ 
+    dwError = GetLastError();
+    if (dwError != ERROR_NO_MORE_FILES) 
+    {
+        //DisplayErrorBox(TEXT("FindFirstFile"));
+    }
+
+    FindClose(hFind);
 }
 
 
@@ -545,6 +617,7 @@ static void init_platform(PlatformApi& platform_api)
 {
     platform_api.get_all_files_with_extension = win32_find_files_with_extensions;
     platform_api.file_exists = win32_file_exists;
+    platform_api.list_all_files_and_directories = win32_list_all_files_and_directories;
     platform_api.allocate_memory = win32_allocate_memory;
     platform_api.deallocate_memory = win32_deallocate_memory;
     platform_api.free_dynamic_library = win32_free_library;

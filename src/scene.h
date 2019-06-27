@@ -6,7 +6,6 @@
 #define EMPTY_ENTITY_HANDLE {0}
 #define EMPTY_COMP_HANDLE {-1}
 #define EMPTY_TEMPLATE_HANDLE {-1}
-#define HANDLES_EQUAL(h1, h2) ( h1.handle == h2.handle )
 #define IS_ENTITY_HANDLE_VALID(ent_handle) (ent_handle.handle > 0)
 #define IS_COMP_HANDLE_VALID(comp_handle) (comp_handle.handle > -1)
 #define IS_TEMPLATE_HANDLE_VALID(comp_handle) comp_handle.handle != -1
@@ -734,8 +733,82 @@ namespace scene
         SceneManager *manager = handle.manager;
         return manager->scenes[manager->_internal_scene_handles[handle.handle - 1]];
     }
+
+    static Scene create_scene(Renderer *renderer, EntityTemplateState &template_state, i32 initial_entity_array_size);
+    static SceneHandle create_scene_from_file(const char *scene_file_path, SceneManager *scene_manager, b32 persistent, i32 initial_entity_array_size);
+    static SceneHandle create_scene(SceneManager *scene_manager, b32 persistent, i32 initial_entity_array_size);
+    
+    static void free_scene(SceneHandle scene, b32 invalidate_handle = true);
+    static void load_scene(SceneHandle handle, u64 scene_load_flags = 0);
+    static void unload_scene(SceneManager *scene_manager);
+    
+// Scene handle
+    static RenderComponent& add_render_component(SceneHandle scene, EntityHandle entity_handle, b32 cast_shadows);
+    static TransformComponent& add_transform_component(SceneHandle scene, EntityHandle entity_handle);
+    static AnimatorComponent& add_animator_component(SceneHandle scene, EntityHandle entity_handle);
+    static ParticleSystemComponent& add_particle_system_component(SceneHandle handle, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles, rendering::MaterialHandle material);
+    static LightComponent & add_light_component(SceneHandle &handle, EntityHandle entity_handle);
+    static EntityHandle register_entity(u64 comp_flags, SceneHandle scene, b32 savable);
+    static void unregister_entity(EntityHandle handle, SceneHandle scene);
+    static EntityTemplate _load_template(const char *path, EntityTemplateState template_state, SceneHandle scene);
+    static EntityHandle register_entity_from_template_file(const char *path, SceneHandle scene, b32 savable = false, Tags* tags = nullptr);
+    static void set_active(EntityHandle handle, b32 active, SceneHandle scene);
+    static void set_hide_in_ui(EntityHandle handle, b32 hide, SceneHandle scene_handle);
+    static TransformComponent& get_transform_comp(EntityHandle handle, Scene &scene);
+    static TransformComponent& get_transform_comp(EntityHandle handle, SceneHandle scene);
+    static TransformComponent& get_transform_comp(TransformComponentHandle handle, SceneHandle scene);
+    static RenderComponent& get_render_comp(EntityHandle handle, SceneHandle scene);
+    static AnimatorComponent& get_animator_comp(EntityHandle handle, SceneHandle scene);
+    static ParticleSystemComponent& get_particle_system_comp(EntityHandle handle, SceneHandle scene);
+    static LightComponent &get_light_comp(EntityHandle handle, SceneHandle scene);
+    static Camera & get_scene_camera(SceneHandle handle);
+    static Camera& get_editor_camera(SceneHandle handle);
+    static EntityHandle pick_entity(SceneHandle handle, i32 mouse_x, i32 mouse_y);
+    static Entity& get_entity(EntityHandle handle, Scene &scene);
+    static Entity& get_entity(EntityHandle handle, SceneHandle& scene_handle);
+    static RegisteredEntityType * get_registered_type(u32 type_id, SceneManager *manager);
+    static b32 has_light_component(EntityHandle entity_handle, SceneHandle& scene);
+    static b32 has_particle_component(EntityHandle entity_handle, SceneHandle& scene);
+    static b32 has_render_component(EntityHandle entity_handle, SceneHandle& scene);
+    static b32 has_transform_component(EntityHandle entity_handle, SceneHandle& scene);
+    static void add_child(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene);
+    static b32 has_tag(const char* tag_name, EntityHandle entity_handle, SceneHandle scene_handle);
+    static void set_entity_tag(const char *tag, EntityHandle entity_handle, SceneHandle scene_handle);
+    
+// @Deprecated
+    static RenderComponent& _add_render_component(Scene &scene, EntityHandle entity_handle, b32 cast_shadows);
+    static TransformComponent& _add_transform_component(Scene &scene, EntityHandle entity_handle);
+    static ParticleSystemComponent& _add_particle_system_component(Scene &scene, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles, rendering::MaterialHandle material);
+    static LightComponent& _add_light_component(Scene &scene, EntityHandle entity_handle);
+    static EntityHandle _register_entity(u64 comp_flags, Scene &scene, b32 savable);
+    static void _unregister_entity(EntityHandle handle, Scene &scene);
+    static EntityTemplate _load_template(const char *path, EntityTemplateState &template_state, Scene &scene);
+    static EntityHandle _register_entity_from_template_file(const char *path, Scene &scene, b32 savable, Tags* tags);
+    static b32 is_active(EntityHandle handle, SceneHandle scene_handle);
+    static void _set_active(EntityHandle handle, b32 active, Scene &scene);
+    static TransformComponent& _get_transform_comp(EntityHandle handle, Scene &scene);
+    static RenderComponent& _get_render_comp(EntityHandle handle, Scene &scene);
+    static ParticleSystemComponent& _get_particle_system_comp(EntityHandle handle, Scene &scene);
+    static LightComponent &_get_light_comp(EntityHandle handle, Scene &scene);
+    
+    i32 _unused_entity_handle(Scene &scene);
+    i32 _pack_transform_components(Entity &entity, Scene &scene);
+    i32 _pack_render_components(Entity &entity, Scene &scene);
+    i32 _pack_particle_system_components(Entity &entity, Scene &scene);
+    static EntityHandle _register_entity_with_template(EntityTemplate &templ, Scene &scene);
+    static void select_entity(EntityHandle entity, SceneManager *manager);
+
+    static void set_bounding_box_enabled(b32 enabled, EntityHandle entity_handle, SceneHandle &handle);
+    static b32 get_bounding_box_enabled(EntityHandle entity_handle, SceneHandle &handle);
+
+    // Transform
+    static void set_position(TransformComponent& comp, math::Vec3 position);
+    static void set_rotation(TransformComponent& comp, math::Vec3 rotation);
+    static void set_scale(TransformComponent& comp, math::Vec3 scale);
+
+    static inline void _set_entity_name(EntityHandle handle, const char *name, Scene& scene);
+    static inline void _set_entity_template_path(EntityHandle handle, const char *template_path, Scene& scene);
+    static inline void _set_entity_type(EntityHandle handle, u32 type, Scene &scene);
 }
-
-
 
 #endif
