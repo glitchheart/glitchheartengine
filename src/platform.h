@@ -428,6 +428,11 @@ namespace sound
 
 struct Renderer;
 struct RenderState;
+namespace editor
+{
+    struct EditorState;
+}
+
 
 namespace scene
 {
@@ -443,6 +448,8 @@ struct Core
     TimerController* timer_controller;
     sound::SoundSystem* sound_system;
     scene::SceneManager *scene_manager;
+    
+    editor::EditorState *editor_state;
     
     ImGuiContext *imgui_context;
 

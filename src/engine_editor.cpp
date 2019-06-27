@@ -60,7 +60,7 @@ namespace editor
         ImGui::PopID();
     }
 
-    static void render_hierarchy(scene::Scene &scene)
+    static void _render_hierarchy(scene::Scene &scene)
     {
 		static bool hierarchy_open = true;
 
@@ -84,7 +84,7 @@ namespace editor
         ImGui::End();
     }
 
-    static void render_inspector(scene::Scene &scene, InputController *input_controller)
+    static void _render_inspector(scene::Scene &scene, InputController *input_controller)
     {
         scene::SceneManager *scene_manager = scene.handle.manager;
         
@@ -101,11 +101,17 @@ namespace editor
             if(ImGui::Begin("Inspector", &open, 0))
             {
                 bool is_active = scene::is_active(scene_manager->selected_entity, scene_manager->loaded_scene);
-                if(ImGui::Checkbox(entity.name, &is_active))
+                if(ImGui::Checkbox("", &is_active))
                 {
                     scene::set_active(scene_manager->selected_entity, is_active, scene_manager->loaded_scene);
                 }
 
+                ImGui::SameLine();
+
+                ImGui::PushID("entity_name");
+                ImGui::InputText("", entity.name, IM_ARRAYSIZE(entity.name));
+                ImGui::PopID();
+                
                 if(ImGui::TreeNode("General"))
                 {
                     bool show_bounding_box =  scene::get_bounding_box_enabled(scene_manager->selected_entity, scene_manager->loaded_scene);
@@ -621,4 +627,134 @@ namespace editor
             ImGui::End();
         }
     }
+
+    static b32 is_template(const char *file_name)
+    {
+        size_t len = strlen(file_name);
+        // printf("-4 %c -3 %c -2 %c -1 %c -0 %c\n", file_name[len - 4],
+        //        , file_name[len - 3]
+        //        , file_name[len - 2]
+        //        , file_name[len - 1]
+        //        , file_name[len]);
+        
+        return file_name[len - 5] == '.'
+           && file_name[len - 4] == 't'
+           && file_name[len - 3] == 'm'
+           && file_name[len - 2] == 'p'
+            && file_name[len - 1] == 'l';
+    }
+
+    static b32 is_scene(const char *file_name)
+    {
+        size_t len = strlen(file_name);
+        // printf("-4 %c -3 %c -2 %c -1 %c -0 %c\n", file_name[len - 4],
+        //        , file_name[len - 3]
+        //        , file_name[len - 2]
+        //        , file_name[len - 1]
+        //        , file_name[len]);
+        
+        return file_name[len - 4] == '.'
+            && file_name[len - 3] == 'g'
+            && file_name[len - 2] == 's'
+            && file_name[len - 1] == 'c';
+    }
+    
+    static void _render_resources(project::ProjectState *state, scene::SceneManager *scene_manager)
+    {
+        FileList &current_structure = state->resources.resource_file_structures[state->resources.structure_count - 1];
+    
+        char buf[32];
+
+        static bool open = true;
+
+        ImGui::Begin("Resources", &open);
+        ImGui::Text(current_structure.path);
+        ImGui::SameLine();
+
+        if(ImGui::Button("Reload"))
+        {
+            clear(&state->resources.arenas[state->resources.structure_count - 1]);
+            
+            // CLEAR!
+            current_structure.files = push_array(&state->resources.arenas[state->resources.structure_count - 1], 256, File);
+            current_structure.dirs = push_array(&state->resources.arenas[state->resources.structure_count - 1], 256, File);
+            current_structure.allocated = true;
+                
+            platform.list_all_files_and_directories(current_structure.path, &current_structure);
+        }
+        
+        ImGui::Separator();
+    
+        for(i32 i = 0; i < current_structure.dir_count; i++)
+        {
+            char *name = current_structure.dirs[i].name;
+
+            if(state->resources.structure_count == 1 && starts_with(name, "."))
+                continue;
+
+            if(strlen(name) == 1 && name[0] == '.')
+                continue;
+
+            sprintf(buf, "[DIR] %s", name);
+        
+            if(ImGui::Selectable(buf))
+            {
+                if(starts_with(name, ".."))
+                {
+                    state->resources.structure_count--;
+                }
+                else
+                {
+                    FileList &list = state->resources.resource_file_structures[state->resources.structure_count++];
+                
+                    sprintf(list.path, "%s/%s", current_structure.path, name);
+
+                    if(!list.allocated)
+                    {
+                        list.files = push_array(&state->resources.arenas[state->resources.structure_count - 1], 256, File);
+                        list.dirs = push_array(&state->resources.arenas[state->resources.structure_count - 1], 256, File);
+                        list.allocated = true;
+                    }
+                
+                    platform.list_all_files_and_directories(list.path, &list);
+                }
+            
+            }
+        }
+
+        for(i32 i = 0; i < current_structure.file_count; i++)
+        {
+            if(ImGui::Selectable(current_structure.files[i].name, false, ImGuiSelectableFlags_AllowDoubleClick))
+            {
+                if(ImGui::IsMouseDoubleClicked(0))
+                {
+                    if(is_template(current_structure.files[i].name))
+                    {
+                        char full_path[64];
+                        sprintf(full_path, "%s/%s", current_structure.path, current_structure.files[i].name);
+
+                        Camera &camera = scene::get_editor_camera(scene_manager->loaded_scene);
+                        place_entity_from_template(camera.position + camera.forward * 15.0f, full_path, scene_manager->loaded_scene, true, true);
+                    }
+                    else if(is_scene(current_structure.files[i].name))
+                    {
+                        char full_path[64];
+                        sprintf(full_path, "%s/%s", current_structure.path, current_structure.files[i].name);
+                        scene::SceneHandle scene = scene::create_scene_from_file(full_path, scene_manager, true, 4096);
+                        scene::load_scene(scene);
+                    }
+                }
+            }
+        } 
+    
+    
+        ImGui::End();
+    }
+
+    static void set_editor_mode(EditorMode mode, EditorState *state)
+    {
+        state->mode = mode;
+    }
 }
+
+
