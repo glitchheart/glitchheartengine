@@ -1979,9 +1979,9 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     }
 }
 
-static void initialize_opengl(RenderState &render_state, Renderer *renderer, ConfigData *config_data, MemoryArena *perm_arena, b32 *do_save_config)
+static void initialize_opengl(RenderState &render_state, Renderer *renderer, project::ProjectState *project_state, ConfigData *config_data, MemoryArena *perm_arena, b32 *do_save_config)
 {
-    initialize_opengl(render_state, renderer, config_data->contrast, config_data->brightness, config_data->window_mode, config_data->screen_width, config_data->screen_height, config_data->title, perm_arena, do_save_config, config_data->vsync);
+    initialize_opengl(render_state, renderer, config_data->contrast, config_data->brightness, config_data->window_mode, config_data->screen_width, config_data->screen_height, project_state->project_settings.name, perm_arena, do_save_config, config_data->vsync);
 }
 
 static void set_float_uniform(GLuint shader_handle, const char *uniform_name, r32 value)

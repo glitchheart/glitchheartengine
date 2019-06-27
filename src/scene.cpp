@@ -360,7 +360,7 @@ namespace scene
                     
                     TransformComponent &transform = get_transform_comp(entity.handle, scene_handle);
                     
-                    fprintf(file, "obj\n");
+                    fprintf(file, "obj %s\n", entity.name);
 
                     if(strlen(entity.template_path) == 0)
                     {
@@ -500,7 +500,7 @@ namespace scene
         return nullptr;
     }
 
-    static void parse_scene_object(FILE *file, SceneHandle scene)
+    static void parse_scene_object(FILE *file, SceneHandle scene, const char *name)
     {
         EntityHandle handle = { -1 };
         
@@ -558,6 +558,11 @@ namespace scene
             }
             else if(starts_with(buffer, "type"))
             {
+                if(!IS_ENTITY_HANDLE_VALID(handle))
+                {
+                    handle = register_entity(COMP_TRANSFORM, scene, true);
+                }
+                
                 u32 type;
                 sscanf(buffer, "type: %d", &type);
                 type_info = get_registered_type(type, scene.manager);
@@ -748,6 +753,12 @@ namespace scene
 
             set_hide_in_ui(handle, hide_in_ui, scene);
         }
+
+        if(!is_whitespace(name))
+        {
+            Scene &s = get_scene(scene);
+            _set_entity_name(handle, name, s);
+        }
     }
 
 static Camera get_standard_camera(SceneManager& manager)
@@ -857,7 +868,9 @@ static Camera get_standard_camera(SceneManager& manager)
             {
                 if(starts_with(line_buffer, "obj"))
                 {
-                    parse_scene_object(file, handle);
+                    char name[32];
+                    sscanf(line_buffer, "obj %[^\n]", name);
+                    parse_scene_object(file, handle, name);
                 }
                 else if(starts_with(line_buffer, "settings"))
                 {
@@ -1897,7 +1910,6 @@ static Camera get_standard_camera(SceneManager& manager)
 
         update_scene_settings(handle);
         
-#if DEBUG
         if(KEY_DOWN(Key_E) && KEY(Key_LeftCtrl))
         {
             if(manager->mode == SceneMode::RUNNING)
@@ -1931,7 +1943,7 @@ static Camera get_standard_camera(SceneManager& manager)
                 manager->mode = SceneMode::RUNNING;
             }
         }
-#endif
+
         if(manager->mode == SceneMode::EDITING)
         {
             Scene &scene = get_scene(manager->loaded_scene);

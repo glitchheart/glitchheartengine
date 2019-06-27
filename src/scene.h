@@ -805,6 +805,10 @@ namespace scene
     static void set_position(TransformComponent& comp, math::Vec3 position);
     static void set_rotation(TransformComponent& comp, math::Vec3 rotation);
     static void set_scale(TransformComponent& comp, math::Vec3 scale);
+
+    static inline void _set_entity_name(EntityHandle handle, const char *name, Scene& scene);
+    static inline void _set_entity_template_path(EntityHandle handle, const char *template_path, Scene& scene);
+    static inline void _set_entity_type(EntityHandle handle, u32 type, Scene &scene);
 }
 
 #endif

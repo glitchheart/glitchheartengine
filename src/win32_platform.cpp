@@ -137,7 +137,6 @@ PLATFORM_GET_ALL_DIRECTORIES(win32_get_all_directories)
     
     // Workaround on Windows, since Windows needs the * to search for all files and OSX + Linux don't
     char combined_path[256];
-    sprintf(combined_path, "%s*", path);
     
     h_find = FindFirstFile(combined_path, &find_file);
     
@@ -228,8 +227,27 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
 #include <tchar.h>
 #include <strsafe.h>
 
+static b32 _has_extension(const char *str)
+{
+    size_t len = strlen(str);
+    
+    for(i32 i = 0; i < len; i++)
+    {
+        if(str[i] == '.' && i != len - 1 && str[i + 1] != '.')
+        {
+            printf("Has extension: %s", str);
+            return true;
+        }
+    }
+
+    return false;
+}
+
 inline PLATFORM_LIST_ALL_FILES_AND_DIRECTORIES(win32_list_all_files_and_directories)
 {
+    list->file_count = 0;
+    list->dir_count = 0;
+    
     strcpy(list->path, path);
     WIN32_FIND_DATA ffd;
     LARGE_INTEGER filesize;
@@ -238,17 +256,6 @@ inline PLATFORM_LIST_ALL_FILES_AND_DIRECTORIES(win32_list_all_files_and_director
     HANDLE hFind = INVALID_HANDLE_VALUE;
     DWORD dwError=0;
    
-    // If the directory is not specified as a command-line argument,
-    // print usage.
-
-    // Check that the input path plus 3 is not longer than MAX_PATH.
-    // Three characters are for the "\*" plus NULL appended below.
-
-    _tprintf(TEXT("\nTarget directory is %s\n\n"), path);
-
-    // Prepare string for use with FindFile functions.  First, copy the
-    // string to a buffer, then append '\*' to the directory name.
-
     StringCchCopy(szDir, MAX_PATH, path);
     StringCchCat(szDir, MAX_PATH, TEXT("\\*"));
 
@@ -262,20 +269,18 @@ inline PLATFORM_LIST_ALL_FILES_AND_DIRECTORIES(win32_list_all_files_and_director
         //return dwError;
     } 
    
-    // List all the files in the directory with some info about them.
-
     do
     {
         if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
         {
             list->dirs[list->dir_count].type = FileType::DIRECTORY;
             strcpy(list->dirs[list->dir_count++].name, ffd.cFileName);
+            
         }
         else
         {
             filesize.LowPart = ffd.nFileSizeLow;
             filesize.HighPart = ffd.nFileSizeHigh;
-            _tprintf(TEXT("  %s   %ld bytes\n"), ffd.cFileName, filesize.QuadPart);
 
             list->files[list->file_count].type = FileType::FILE;
             strcpy(list->files[list->file_count++].name, ffd.cFileName);
