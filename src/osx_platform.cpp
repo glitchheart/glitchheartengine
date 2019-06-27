@@ -112,6 +112,74 @@ static time_t get_last_write_time(const char* file_path)
     return 0;
 }
 
+#include <dirent.h>
+
+inline PLATFORM_LIST_ALL_FILES_AND_DIRECTORIES(macos_list_all_files_and_directories)
+{
+    list->file_count = 0;
+    list->dir_count = 0;
+    
+    strcpy(list->path, path);
+
+    DIR *pdir = NULL;
+    
+    pdir = opendir(path);
+
+    if(pdir)
+    {
+        struct dirent *pent = NULL;
+
+        while (pent = readdir(pdir))
+        {
+            switch (pent->d_type)
+            {
+            case DT_REG:
+            {
+                list->files[list->file_count].type = FileType::FILE;
+                strcpy(list->files[list->file_count++].name, pent->d_name);
+            }
+            
+            break;
+            case DT_DIR:
+            {
+                list->dirs[list->dir_count].type = FileType::DIRECTORY;
+                strcpy(list->dirs[list->dir_count++].name, pent->d_name);
+            }
+            break;
+            default:
+            break;
+            }
+        }
+    }
+   
+    // do
+    // {
+    //     if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+    //     {
+    //         list->dirs[list->dir_count].type = FileType::DIRECTORY;
+    //         strcpy(list->dirs[list->dir_count++].name, ffd.cFileName);
+            
+    //     }
+    //     else
+    //     {
+    //         filesize.LowPart = ffd.nFileSizeLow;
+    //         filesize.HighPart = ffd.nFileSizeHigh;
+
+    //         list->files[list->file_count].type = FileType::FILE;
+    //         strcpy(list->files[list->file_count++].name, ffd.cFileName);
+    //     }
+    // }
+    // while (FindNextFile(hFind, &ffd) != 0);
+ 
+    // dwError = GetLastError();
+    // if (dwError != ERROR_NO_MORE_FILES) 
+    // {
+    //     //DisplayErrorBox(TEXT("FindFirstFile"));
+    // }
+
+    // FindClose(hFind);
+}
+
 PLATFORM_LOAD_LIBRARY(osx_load_library)
 {
     return dlopen(path, RTLD_NOW);
@@ -405,6 +473,7 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.tell_file = osx_tell_file;
     platform_api.create_directory = osx_create_directory;
     platform_api.is_eol = osx_is_eol;
+    platform_api.list_all_files_and_directories = macos_list_all_files_and_directories;
 
     // Threading
     platform_api.add_entry = add_entry;
