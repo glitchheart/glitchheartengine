@@ -139,6 +139,18 @@ inline char* concat(const char *s1, const char *s2, MemoryArena* arena = nullptr
     return result;
 }
 
+template<typename T, size_t SIZE>
+struct List
+{
+    T items[SIZE];
+    i32 count;
+
+    T& operator[](i32 index)
+    {
+        return items[index];
+    }
+};
+
 struct TextureData;
 
 static void eat_spaces(char **source)
