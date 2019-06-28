@@ -1564,12 +1564,12 @@ static void load_texture(Texture* texture, TextureFiltering filtering, TextureWr
             glTexStorage2D(GL_TEXTURE_2D, mip, gl_format, width, height);
         }
 
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, texture->width, texture->height, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
         glGenerateMipmap(GL_TEXTURE_2D);
     }
     else
     {
-        glTexImage2D(GL_TEXTURE_2D, 0, gl_format, width, height, 0, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
+        glTexImage2D(GL_TEXTURE_2D, 0, gl_format, texture->width, texture->height, 0, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
         glGenerateMipmap(GL_TEXTURE_2D);
     }
     
@@ -1803,8 +1803,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
 
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    glfwWindowHint(GLFW_SAMPLES, 8);
-
+    glfwWindowHint(GLFW_SAMPLES, 16);
     render_state.contrast = contrast;
     render_state.brightness = brightness;
 
@@ -1849,6 +1848,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
 
     //glfwSetInputMode(render_state.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
+
     glfwSetFramebufferSizeCallback(render_state.window, frame_buffer_size_callback);
     glfwSetWindowIconifyCallback(render_state.window, window_iconify_callback);
 
@@ -1877,7 +1877,9 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     glDebugMessageCallback((GLDEBUGPROC)message_callback, 0);
 #endif
     glDisable(GL_DITHER);
-    glDisable(GL_CULL_FACE);
+    
+    glEnable( GL_MULTISAMPLE);
+
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
@@ -2619,7 +2621,15 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
         setup_instanced_vertex_attribute_buffers(material.instanced_vertex_attributes, material.instanced_vertex_attribute_count, shader_info, render_state, renderer);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
-        glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void *)nullptr, count);
+
+        if(count == 1)
+        {
+            glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, 0);
+        }
+        else
+            glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, 0, count);
+
+        
     }
     else
     {
@@ -2786,9 +2796,8 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
         
         Framebuffer &framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
 
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_FRONT);
-        
+        static b32 hello = false;
+
         if(pass.settings & rendering::RenderPassSettings::BACKFACE_CULLING)
         {
             glEnable(GL_CULL_FACE);
@@ -2826,11 +2835,11 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
 
             if(command.blend_mode == rendering::BlendMode::ONE_MINUS_SOURCE)
             {
-                //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             }
             else if(command.blend_mode == rendering::BlendMode::ONE)
             {
-                //glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE);
             }
                 
             rendering::Material material = get_material_instance(command.material, renderer);

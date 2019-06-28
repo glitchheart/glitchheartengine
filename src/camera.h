@@ -24,6 +24,10 @@ struct Camera
 
     r32 yaw;
     r32 pitch;
+    
+    r32 near_plane;
+    r32 far_plane;
+    r32 fov;
 };
 
 static Camera create_camera(math::Vec3 position, math::Vec3 target, math::Mat4 projection_matrix)

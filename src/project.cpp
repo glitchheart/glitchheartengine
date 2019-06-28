@@ -51,7 +51,7 @@ namespace project
                     char folder[32];
                     sscanf(buffer, "resources_folder: %[^\n]", folder);
 
-                    sprintf(settings_ptr->resources_folder_path, "%s/%s/", settings_ptr->project_root_path, folder);
+                    sprintf(settings_ptr->resources_folder_path, "%s/%s", settings_ptr->project_root_path, folder);
 
                     printf("Resources path: %s\n", settings_ptr->resources_folder_path);
 
