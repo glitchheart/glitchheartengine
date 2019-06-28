@@ -287,6 +287,7 @@ namespace scene
         scene.transform_components = push_array(&memory_arena, initial_entity_array_size, TransformComponent);
         scene.render_components = push_array(&memory_arena, initial_entity_array_size, RenderComponent);
         scene.light_components = push_array(&memory_arena, initial_entity_array_size, LightComponent);
+        scene.camera_components = push_array(&memory_arena, initial_entity_array_size, CameraComponent);
         scene.particle_system_components = push_array(&memory_arena, initial_entity_array_size, ParticleSystemComponent);
         scene.animator_components = push_array(&memory_arena, initial_entity_array_size, AnimatorComponent*);
 
@@ -339,14 +340,14 @@ namespace scene
             fprintf(file, "shadows::map_width: %d\n", scene.settings.shadows.map_width);
             fprintf(file, "shadows::map_height: %d\n", scene.settings.shadows.map_height);
 
-            math::Vec3 camera_pos = scene.settings.camera.position;
-            math::Vec3 camera_target = scene.settings.camera.target;
+            // math::Vec3 camera_pos = scene.settings.camera.position;
+            // math::Vec3 camera_target = scene.settings.camera.target;
             
-            fprintf(file, "camera::position: %f %f %f\n", camera_pos.x, camera_pos.y, camera_pos.z);
-            fprintf(file, "camera::target: %f %f %f\n", camera_target.x, camera_target.y, camera_target.z);
-            fprintf(file, "camera::fov: %f\n", scene.settings.camera.fov);
-            fprintf(file, "camera::near: %f\n", scene.settings.camera.z_near);
-            fprintf(file, "camera::far: %f\n", scene.settings.camera.z_far);
+            // fprintf(file, "camera::position: %f %f %f\n", camera_pos.x, camera_pos.y, camera_pos.z);
+            // fprintf(file, "camera::target: %f %f %f\n", camera_target.x, camera_target.y, camera_target.z);
+            // fprintf(file, "camera::fov: %f\n", scene.settings.camera.fov);
+            // fprintf(file, "camera::near: %f\n", scene.settings.camera.z_near);
+            // fprintf(file, "camera::far: %f\n", scene.settings.camera.z_far);
 
             fprintf(file, "\n");
             
@@ -394,7 +395,15 @@ namespace scene
                     fprintf(file, "scale: %f %f %f\n", transform.transform.scale.x, transform.transform.scale.y, transform.transform.scale.z);
                     fprintf(file, "rotation: %f %f %f\n", transform.transform.euler_angles.x, transform.transform.euler_angles.y, transform.transform.euler_angles.z);
 
-                    if(has_light_component(entity.handle, scene_handle))
+                    if(has_camera_component(entity.handle, scene_handle))
+                    {
+                        CameraComponent &camera_comp = get_camera_comp(entity.handle, scene_handle);
+                        fprintf(file, "camera::target: %f %f %f\n", camera_comp.camera.target.x, camera_comp.camera.target.y, camera_comp.camera.target.z);
+                        fprintf(file, "camera::fov: %f\n", camera_comp.camera.fov);
+                        fprintf(file, "camera::near: %f\n", camera_comp.camera.near_plane);
+                        fprintf(file, "camera::far: %f\n", camera_comp.camera.far_plane);
+                    }
+                    else if(has_light_component(entity.handle, scene_handle))
                     {
                         LightComponent &light = get_light_comp(entity.handle, scene_handle);
 
@@ -614,6 +623,46 @@ namespace scene
             else if(starts_with(buffer, "id"))
             {
             }
+            else if(starts_with(buffer, "camera::"))
+            {
+                if(!has_camera_component(handle, scene))
+                {
+                    add_camera_component(handle, scene);
+                }
+
+                CameraComponent &camera_comp = get_camera_comp(handle, scene);
+                TransformComponent &transform = get_transform_comp(handle, scene);
+                
+                camera_comp.camera.position = transform.transform.position;
+                
+                if(starts_with(buffer, "camera::target"))
+                {
+                    sscanf(buffer, "camera::target: %f %f %f", &camera_comp.camera.target.x, &camera_comp.camera.target.y, &camera_comp.camera.target.z);
+                }
+                else if(starts_with(buffer, "camera::fov"))
+                {
+                    sscanf(buffer, "camera::fov: %f", &camera_comp.camera.fov);
+                }
+                else if(starts_with(buffer, "camera::near"))
+                {
+                    sscanf(buffer, "camera::near: %f", &camera_comp.camera.near_plane);
+                }
+                else if(starts_with(buffer, "camera::far"))
+                {
+                    sscanf(buffer, "camera::far: %f", &camera_comp.camera.far_plane);
+                }
+                else if(starts_with(buffer, "camera::main"))
+                {
+                    b32 is_main_camera = false;
+
+                    sscanf(buffer, "camera::main: %d", &is_main_camera);
+
+                    if(is_main_camera)
+                    {
+                        set_main_camera(handle, scene); 
+                    }
+                }
+            }
             else if(starts_with(buffer, "light::"))
             {
                 LightComponent &light_comp = get_light_comp(handle, scene);
@@ -787,12 +836,14 @@ static Camera get_standard_camera(SceneManager& manager)
         settings.shadows.map_width = 1024;
         settings.shadows.map_height = 1024;
 
-        settings.camera.position = math::Vec3(0.0f, 15.0f, -2.0f);
-        settings.camera.target = math::Vec3(0.0f, 0.0f, 2.0f);
-        settings.camera.fov = 90 * DEGREE_IN_RADIANS;
-        settings.camera.z_near = 0.1f;
-        settings.camera.z_far = 50.0f;
+        // settings.camera.position = math::Vec3(0.0f, 15.0f, -2.0f);
+        // settings.camera.target = math::Vec3(0.0f, 0.0f, 2.0f);
+        // settings.camera.fov = 90 * DEGREE_IN_RADIANS;
+        // settings.camera.z_near = 0.1f;
+        // settings.camera.z_far = 50.0f;
 
+        scene::EntityHandle camera_handle = EMPTY_ENTITY_HANDLE;
+        
         char buffer[256];
         while(fgets(buffer, 256, file))
         {
@@ -819,25 +870,42 @@ static Camera get_standard_camera(SceneManager& manager)
             {
                 sscanf(buffer, "shadows::map_height: %d", &settings.shadows.map_height);
             }
-            else if(starts_with(buffer, "camera::position"))
+            else if(starts_with(buffer, "camera::"))
             {
-                sscanf(buffer, "camera::position: %f %f %f", &settings.camera.position.x, &settings.camera.position.y, &settings.camera.position.z);
-            }
-            else if(starts_with(buffer, "camera::target"))
-            {
-                sscanf(buffer, "camera::target: %f %f %f", &settings.camera.target.x, &settings.camera.target.y, &settings.camera.target.z);
-            }
-            else if(starts_with(buffer, "camera::fov"))
-            {
-                sscanf(buffer, "camera::fov: %f", &settings.camera.fov);
-            }
-            else if(starts_with(buffer, "camera::near"))
-            {
-                sscanf(buffer, "camera::near: %f", &settings.camera.z_near);
-            }
-            else if(starts_with(buffer, "camera::far"))
-            {
-                sscanf(buffer, "camera::far: %f", &settings.camera.z_far);
+                if(!IS_ENTITY_HANDLE_VALID(camera_handle))
+                {
+                    camera_handle = register_entity(COMP_TRANSFORM | COMP_CAMERA, scene.handle, true);
+                    set_main_camera(camera_handle, scene.handle);
+                }
+
+                CameraComponent &camera_comp = get_camera_comp(camera_handle, scene.handle);
+                
+                _set_entity_name(camera_handle, "Main camera", scene);
+                
+                if(starts_with(buffer, "camera::position"))
+                {
+                    TransformComponent &transform = get_transform_comp(camera_handle, scene.handle);
+
+                    math::Vec3 position;
+                    sscanf(buffer, "camera::position: %f %f %f", &position.x, &position.y, &position.z);
+                    set_position(transform, position);
+                }
+                else if(starts_with(buffer, "camera::target"))
+                {
+                    sscanf(buffer, "camera::target: %f %f %f", &camera_comp.camera.target.x, &camera_comp.camera.target.y, &camera_comp.camera.target.z);
+                }
+                else if(starts_with(buffer, "camera::fov"))
+                {
+                    sscanf(buffer, "camera::fov: %f", &camera_comp.camera.fov);
+                }
+                else if(starts_with(buffer, "camera::near"))
+                {
+                    sscanf(buffer, "camera::near: %f", &camera_comp.camera.near_plane);
+                }
+                else if(starts_with(buffer, "camera::far"))
+                {
+                    sscanf(buffer, "camera::far: %f", &camera_comp.camera.far_plane);
+                }
             }
         }
     }
@@ -853,11 +921,13 @@ static Camera get_standard_camera(SceneManager& manager)
         settings.shadows.fov = 110.0f;
         settings.shadows.map_width = 1024;
         settings.shadows.map_height = 1024;
-        settings.camera.position = math::Vec3(0.0f, 15.0f, -2.0f);
-        settings.camera.target = math::Vec3(0.0f, 0.0f, 2.0f);
-        settings.camera.fov = 90 * DEGREE_IN_RADIANS;
-        settings.camera.z_near = 0.1f;
-        settings.camera.z_far = 50.0f;
+        
+        // settings.camera.position = math::Vec3(0.0f, 15.0f, -2.0f);
+        // settings.camera.target = math::Vec3(0.0f, 0.0f, 2.0f);
+        
+        // settings.camera.fov = 90 * DEGREE_IN_RADIANS;
+        // settings.camera.z_near = 0.1f;
+        // settings.camera.z_far = 50.0f;
         
         FILE *file = fopen(scene_file_path, "r");
         
@@ -1399,6 +1469,16 @@ static Camera get_standard_camera(SceneManager& manager)
 
         return (b32)(entity.comp_flags & COMP_LIGHT);
     }
+
+    static b32 has_camera_component(EntityHandle entity_handle, SceneHandle scene)
+    {
+        if(!entity_exists(entity_handle, scene))
+            return false;
+        
+        Entity& entity = get_entity(entity_handle, scene);
+
+        return (b32)(entity.comp_flags & COMP_CAMERA);
+    }
     
     static void set_wireframe_enabled(b32 enabled, EntityHandle entity_handle, SceneHandle &handle, b32 update_children = true)
     {
@@ -1877,14 +1957,45 @@ static Camera get_standard_camera(SceneManager& manager)
         }
     }
 
-    static void update_scene_camera(SceneHandle handle)
+    static void set_main_camera(EntityHandle entity_handle, SceneHandle scene_handle)
     {
-        Scene& scene = get_scene(handle);
-        Settings& settings = scene.settings;
+        Scene &scene = get_scene(scene_handle);
+        scene.main_camera_handle = entity_handle;
+    }
 
-        math::Mat4 projection = math::perspective((r32)handle.manager->renderer->window_width / (r32)handle.manager->renderer->window_height, settings.camera.fov, settings.camera.z_near, settings.camera.z_far);
+    static void set_camera_preview(EntityHandle entity_handle, SceneManager *scene_manager)
+    {
+        scene_manager->camera_preview.show_camera_preview = true;
+        scene_manager->camera_preview.handle = entity_handle;
+    }
+
+    static void stop_camera_preview(SceneManager *scene_manager)
+    {
+        scene_manager->camera_preview.show_camera_preview = false;
+        scene_manager->camera_preview.handle = EMPTY_ENTITY_HANDLE;
+    }
+
+    static void update_scene_camera(SceneManager *scene_manager)
+    {
+        Scene& scene = get_scene(scene_manager->loaded_scene);
+
+        Camera camera;
+
+        if(IS_ENTITY_HANDLE_VALID(scene.main_camera_handle))
+        {
+            CameraComponent &main = get_camera_comp(scene.main_camera_handle, scene_manager->loaded_scene);
+            TransformComponent &transform = get_transform_comp(scene.main_camera_handle, scene_manager->loaded_scene);
+            camera = main.camera;
+            camera.position = transform.transform.position;
+        }
+        else
+        {
+            camera = scene_manager->editor_camera;
+        }
         
-        scene.main_camera = create_camera(settings.camera.position, settings.camera.target, projection);
+        math::Mat4 projection = math::perspective((r32)scene_manager->renderer->window_width / (r32)scene_manager->renderer->window_height, camera.fov, camera.near_plane, camera.far_plane);
+        
+        scene.main_camera = create_camera(camera.position, camera.target, projection);
     }
 
     static void update_scene_settings(SceneHandle handle)
@@ -1899,7 +2010,6 @@ static Camera get_standard_camera(SceneManager& manager)
         renderer->render.shadow_settings.size = settings.shadows.map_width;
 
         update_shadow_framebuffer(handle);
-        update_scene_camera(handle);
     }
     
     static void update_scene_editor(SceneHandle handle, InputController *input_controller, RenderState &render_state, r64 delta_time)
@@ -2167,8 +2277,6 @@ static Camera get_standard_camera(SceneManager& manager)
         
         if(!scene->loaded)
         {
-            update_scene_camera(handle);
-            
             if(scene_manager->callbacks.on_scene_will_load)
                 scene_manager->callbacks.on_scene_will_load(handle);
             
@@ -2188,7 +2296,6 @@ static Camera get_standard_camera(SceneManager& manager)
         scene_manager->renderer->render.shadow_settings.fov = settings.shadows.fov;
 
         update_shadow_framebuffer(scene_manager->loaded_scene);
-        update_scene_camera(handle);       
         
         scene_manager->scene_loaded = true;
 
@@ -2524,6 +2631,31 @@ static Camera get_standard_camera(SceneManager& manager)
         return _add_light_component(scene, entity_handle);
     }
 
+    static CameraComponent& _add_camera_component(EntityHandle entity_handle, Scene &scene)
+    {
+        Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
+        entity.comp_flags |= COMP_CAMERA;
+        entity.camera_handle = { scene.camera_component_count++ };
+        
+        Camera camera = {};
+        camera.position = math::Vec3(0.0f, 15.0f, -2.0f);
+        camera.target = math::Vec3(0.0f, 0.0f, 2.0f);
+        camera.fov = 90 * DEGREE_IN_RADIANS;
+        camera.near_plane = 0.1f;
+        camera.far_plane = 50.0f;
+        
+        scene::CameraComponent &comp = scene.camera_components[entity.camera_handle.handle];
+        comp.camera = camera;
+        
+        return(comp);
+    }
+    
+    static CameraComponent & add_camera_component(EntityHandle entity_handle, SceneHandle handle)
+    {
+        Scene &scene = get_scene(handle);
+        return _add_camera_component(entity_handle, scene);
+    }
+
     // Returns a new valid "EntityHandle". "comp_flags" Specifies the components that the entity should contain.
     static EntityHandle _register_entity(u64 comp_flags, Scene &scene, b32 savable = false)
     {
@@ -2554,6 +2686,11 @@ static Camera get_standard_camera(SceneManager& manager)
         if(comp_flags & COMP_LIGHT)
         {
             _add_light_component(scene, handle);
+        }
+
+        if(comp_flags & COMP_CAMERA)
+        {
+            _add_camera_component(handle, scene);
         }
 
         return(handle);
@@ -3850,6 +3987,25 @@ static Camera get_standard_camera(SceneManager& manager)
         return _get_render_comp(entity, scene);
     }
     
+    static CameraComponent& _get_camera_comp(EntityHandle handle, Scene &scene)
+    {
+        assert(handle.handle != 0);
+        i32 internal_handle = scene._internal_handles[handle.handle - 1];
+        assert(internal_handle != -1);
+        Entity entity = scene.entities[internal_handle];
+        
+        assert(entity.comp_flags & COMP_CAMERA);
+        
+        CameraComponent& comp = scene.camera_components[entity.render_handle.handle];
+        return(comp);
+    }
+
+    static CameraComponent& get_camera_comp(EntityHandle entity, SceneHandle handle)
+    {
+        Scene &scene = get_scene(handle);
+        return _get_camera_comp(entity, scene);
+    }
+    
     static ParticleSystemComponent& _get_particle_system_comp(EntityHandle handle, Scene &scene)
     {
         assert(handle.handle != 0);
@@ -3888,10 +4044,23 @@ static Camera get_standard_camera(SceneManager& manager)
         return _get_light_comp(handle, scene);
     }
 
+    static TransformComponent &get_main_camera_transform(SceneHandle handle)
+    {
+        Scene& scene = get_scene(handle);
+        return _get_transform_comp(scene.main_camera_handle, scene);
+    }
+    
+    static CameraComponent &get_main_camera_comp(SceneHandle handle)
+    {
+        Scene& scene = get_scene(handle);
+        return _get_camera_comp(scene.main_camera_handle, scene);
+    }
+    
     static Camera& get_scene_camera(SceneHandle handle)
     {
         Scene& scene = get_scene(handle);
-        return scene.main_camera;
+        CameraComponent &camera_comp = get_camera_comp(scene.main_camera_handle, handle);
+        return camera_comp.camera;
     }
 
     static Camera& get_editor_camera(SceneHandle handle)

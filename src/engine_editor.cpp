@@ -1,5 +1,13 @@
 namespace editor
 {
+    static void _init(EditorState *editor_state)
+    {
+        editor_state->windows.show_hierarchy = true;
+        editor_state->windows.show_inspector = true;
+        editor_state->windows.show_scene_settings = true;
+        editor_state->windows.show_stats = true;
+    }
+    
     static void _recursive_entity_item(scene::Entity& entity, scene::SceneManager *scene_manager)
     {
         if(entity.hide_in_ui)
@@ -60,32 +68,41 @@ namespace editor
         ImGui::PopID();
     }
 
-    static void _render_hierarchy(scene::Scene &scene, r64 delta_time)
+    static void _render_hierarchy(scene::Scene &scene, EditorState *editor_state, r64 delta_time)
     {
-		static bool hierarchy_open = true;
+        if(!editor_state->windows.show_hierarchy)
+            return;
+        
+		bool hierarchy_open = true;
 
 		ImGui::SetNextWindowSize(ImVec2(1000, 200), ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
 
-		ImGui::Begin("Hierarchy", &hierarchy_open, 0);
-        
-        for (i32 i = 0; i < scene.entity_count; i++)
+		if(ImGui::Begin("Hierarchy", &hierarchy_open, 0))
         {
-            scene::EntityHandle handle = scene.entities[i].handle;
-
-            scene::Entity& entity = get_entity(handle, scene);
-
-            if (!IS_ENTITY_HANDLE_VALID(entity.parent))
+            for (i32 i = 0; i < scene.entity_count; i++)
             {
-                _recursive_entity_item(entity, scene.handle.manager);
+                scene::EntityHandle handle = scene.entities[i].handle;
+
+                scene::Entity& entity = get_entity(handle, scene);
+
+                if (!IS_ENTITY_HANDLE_VALID(entity.parent))
+                {
+                    _recursive_entity_item(entity, scene.handle.manager);
+                }
             }
         }
-    
+        
+        editor_state->windows.show_hierarchy = hierarchy_open ;
+        
         ImGui::End();
     }
 
-    static void _render_inspector(scene::Scene &scene, InputController *input_controller, r64 delta_time)
+    static void _render_inspector(scene::Scene &scene, EditorState *editor_state, InputController *input_controller, r64 delta_time)
     {
+        if(!editor_state->windows.show_inspector)
+            return;
+        
         scene::SceneManager *scene_manager = scene.handle.manager;
         
         if(IS_ENTITY_HANDLE_VALID(scene_manager->selected_entity))
@@ -180,6 +197,50 @@ namespace editor
                     scene::set_scale(selected_transform, math::Vec3(arr2[0], arr2[1], arr2[2]));
                 }
 
+                if(scene::has_camera_component(scene_manager->selected_entity, scene_manager->loaded_scene))
+                {
+                    if(ImGui::CollapsingHeader("Camera"))
+                    {
+                        scene::Scene &scene = scene::get_scene(scene_manager->loaded_scene);
+                        
+                        bool is_preview_camera = HANDLES_EQUAL(scene_manager->selected_entity, scene_manager->camera_preview.handle);
+                        bool was_preview = is_preview_camera;
+                        
+                        ImGui::Checkbox("Preview", &is_preview_camera);
+
+                        if(is_preview_camera)
+                        {
+                            scene::set_camera_preview(scene_manager->selected_entity, scene_manager);
+                        }
+                        else if(was_preview)
+                        {
+                            scene::stop_camera_preview(scene_manager);
+                        }
+                        
+                        bool is_main_camera = HANDLES_EQUAL(scene_manager->selected_entity, scene.main_camera_handle);
+                        ImGui::Checkbox("Main camera", &is_main_camera);
+
+                        if(is_main_camera)
+                        {
+                            scene::set_main_camera(scene_manager->selected_entity, scene_manager->loaded_scene);
+                        }
+
+                        
+                        
+                        scene::CameraComponent &camera_component = scene::get_camera_comp(scene_manager->selected_entity, scene_manager->loaded_scene);
+                    
+                        ImGui::DragFloat3("Camera target", camera_component.camera.target.e);
+
+                        r32 degrees = camera_component.camera.fov / DEGREE_IN_RADIANS;
+                        ImGui::InputFloat("FOV (Degrees)", &degrees);
+
+                        camera_component.camera.fov = degrees * DEGREE_IN_RADIANS;
+
+                        ImGui::InputFloat("Near", &camera_component.camera.near_plane);
+                        ImGui::InputFloat("Far", &camera_component.camera.far_plane);
+                    }
+                }
+                
                 if(scene::has_light_component(scene_manager->selected_entity, scene_manager->loaded_scene))
                 {
                     if(ImGui::CollapsingHeader("Light"))
@@ -628,6 +689,29 @@ namespace editor
         }
     }
 
+    static b32 has_extension(const char *file_name, const char *extension)
+    {
+        size_t ext_len = strlen(extension);
+        size_t file_len = strlen(file_name);
+
+        i32 count = 1;
+        
+        for(i32 i = file_len - 1; i >= 0; i--)
+        {
+            if(extension[ext_len - count] != file_name[i])
+            {
+                return false;
+            }
+
+            count++;
+            
+            if(count > ext_len)
+                break;
+        }
+
+        return true;
+    }
+
     static b32 is_template(const char *file_name)
     {
         size_t len = strlen(file_name);
@@ -638,9 +722,9 @@ namespace editor
         //        , file_name[len]);
         
         return file_name[len - 5] == '.'
-           && file_name[len - 4] == 't'
-           && file_name[len - 3] == 'm'
-           && file_name[len - 2] == 'p'
+            && file_name[len - 4] == 't'
+            && file_name[len - 3] == 'm'
+            && file_name[len - 2] == 'p'
             && file_name[len - 1] == 'l';
     }
 
@@ -666,7 +750,9 @@ namespace editor
             return;
         }
         
-        if(ImGui::Begin("Scene settings"))
+        bool open = true;
+
+        if(ImGui::Begin("Scene settings", &open))
         {
             scene::Settings& settings = scene::get_scene_settings(scene_manager->loaded_scene);
 
@@ -679,16 +765,6 @@ namespace editor
             ImGui::InputFloat("FOV", &settings.shadows.fov);
             ImGui::InputInt("Map width", &settings.shadows.map_width);
             ImGui::InputInt("Map height", &settings.shadows.map_height);
-            ImGui::DragFloat3("Camera position", settings.camera.position.e);
-            ImGui::DragFloat3("Camera target", settings.camera.target.e);
-
-            r32 degrees = settings.camera.fov / DEGREE_IN_RADIANS;
-            ImGui::InputFloat("Camera FOV degrees", &degrees);
-
-            settings.camera.fov = degrees * DEGREE_IN_RADIANS;
-
-            ImGui::InputFloat("Camera near", &settings.camera.z_near);
-            ImGui::InputFloat("Camera far", &settings.camera.z_far);
 
             if(editor_state->windows.scene_settings.show_shadow_map)
             {
@@ -699,187 +775,172 @@ namespace editor
                 
             ImGui::End();
         }
-        else
+        
+        editor_state->windows.show_scene_settings = open;
+    }
+
+    static void _render_main_menu(EditorState *editor_state, scene::SceneManager *scene_manager, InputController *input_controller, r64 delta_time)
+    {
+        bool save = false;
+
+		if (ImGui::BeginMainMenuBar())
+		{
+			if (ImGui::BeginMenu("File"))
+			{
+				save = ImGui::MenuItem("Save");
+
+                if (ImGui::MenuItem("Exit"))
+				{
+                    // TODO: SHOULD SAVE?
+                    save = true;
+                    scene_manager->renderer->should_close = true;
+				}
+
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Windows"))
+			{
+                bool open = editor_state->windows.show_resources;
+                ImGui::PushID("resources_checkbox");
+                ImGui::Checkbox("", &open);
+                ImGui::PopID();
+                ImGui::SameLine();
+                ImGui::Text("Resources");
+                editor_state->windows.show_resources = open;
+
+                open = editor_state->windows.show_scene_settings;
+                ImGui::PushID("scene_settings_checkbox");
+                ImGui::Checkbox("", &open);
+                ImGui::PopID();
+                ImGui::SameLine();
+                ImGui::Text("Scene settings");
+                editor_state->windows.show_scene_settings = open;
+                
+                // bool open = editor_state->windows.show_stats;
+                // ImGui::Checkbox("", &open);
+                // editor_state->windows.show_stats = open;
+                // ImGui::Text("Game view");
+                // ImGui::SameLine();
+
+                open = editor_state->windows.show_stats;
+                ImGui::PushID("stats_checkbox");
+                ImGui::Checkbox("", &open);
+                ImGui::PopID();
+                ImGui::SameLine();
+                ImGui::Text("Stats");
+                editor_state->windows.show_stats = open;
+                
+				ImGui::EndMenu();
+			}
+
+            if(editor_state->callbacks.on_custom_main_menu_bar)
+                editor_state->callbacks.on_custom_main_menu_bar();
+
+			ImGui::EndMainMenuBar();
+		}
+
+        if(save || (KEY(Key_LeftCtrl) && KEY_DOWN(Key_S)))
         {
-            editor_state->windows.show_scene_settings = false;
+            scene::editor_save(scene_manager);
         }
     }
-
-    static void _render_main_menu(EditorState *editor_state, r64 delta_time)
-    {
-        // bool save = false;
-
-        // if((KEY(Key_LeftCtrl) || KEY(Key_RightCtrl)) && KEY_DOWN(Key_O))
-        // {
-        //     global_state->editor.display_scene_select = true;
-        // }
-        
-		// if (ImGui::BeginMainMenuBar())
-		// {
-		// 	if (ImGui::BeginMenu("File"))
-		// 	{
-		// 		save = ImGui::MenuItem("Save");
-
-        //         if(ImGui::MenuItem("Scene list"))
-        //         {
-        //             global_state->editor.display_scene_select = true;
-        //         }
-                
-		// 		if (ImGui::BeginMenu("Load scene"))
-		// 		{
-        //             if(ImGui::BeginMenu("General"))
-        //             {
-        //                 _scene_file_list(global_state->editor.scene_files.root_files);
-        //                 ImGui::EndMenu();
-        //             }
-                                        
-        //             if(ImGui::BeginMenu("Beach"))
-        //             {
-        //                 _scene_file_list(global_state->editor.scene_files.beach_files);
-        //                 ImGui::EndMenu();
-        //             }
-
-        //             if(ImGui::BeginMenu("Forest"))
-        //             {
-        //                 _scene_file_list(global_state->editor.scene_files.forest_files);
-        //                 ImGui::EndMenu();
-        //             }
-
-        //             if(ImGui::BeginMenu("Swamp"))
-        //             {
-        //                 _scene_file_list(global_state->editor.scene_files.swamp_files);
-        //                 ImGui::EndMenu();
-        //             }
-
-        //             if(ImGui::BeginMenu("Garden"))
-        //             {
-        //                 _scene_file_list(global_state->editor.scene_files.garden_files);
-        //                 ImGui::EndMenu();
-        //             }
-
-        //             ImGui::EndMenu();
-		// 		}
-
-		// 		if (ImGui::MenuItem("New scene"))
-		// 		{
-		// 			set_mode(EditorMode::NEW_LEVEL_PROMPT);
-		// 		}
-
-		// 		ImGui::EndMenu();
-		// 	}
-
-		// 	if (ImGui::BeginMenu("Settings"))
-		// 	{
-		// 		if (ImGui::MenuItem("Show scene settings"))
-		// 		{
-		// 			global_state->editor.display_scene_settings = true;
-		// 		}
-
-		// 		if (ImGui::MenuItem("Show game view"))
-		// 		{
-		// 			global_state->editor.display_game_view = true;
-		// 		}
-		// 		ImGui::EndMenu();
-		// 	}
-
-		// 	ImGui::EndMainMenuBar();
-		// }
-
-        // if(save || (KEY(Key_LeftCtrl) && KEY_DOWN(Key_S)))
-        // {
-        //     scene::editor_save(core.scene_manager);
-        // }
-    }
     
-    static void _render_resources(project::ProjectState *state, scene::SceneManager *scene_manager, r64 delta_time)
+    static void _render_resources(project::ProjectState *state, EditorState *editor_state, scene::SceneManager *scene_manager, r64 delta_time)
     {
+        if(!editor_state->windows.show_resources)
+            return;
+        
         FileList &current_structure = state->resources.resource_file_structures[state->resources.structure_count - 1];
     
         char buf[32];
 
-        static bool open = true;
+        bool open = true;
 
-        ImGui::Begin("Resources", &open);
-        ImGui::Text(current_structure.path);
-        ImGui::SameLine();
-
-        if(ImGui::Button("Reload"))
+        if(ImGui::Begin("Resources", &open, ImGuiWindowFlags_NoFocusOnAppearing))
         {
-            clear(&state->resources.arenas[state->resources.structure_count - 1]);
-            
-            // CLEAR!
-            current_structure.files = push_array(&state->resources.arenas[state->resources.structure_count - 1], 256, File);
-            current_structure.dirs = push_array(&state->resources.arenas[state->resources.structure_count - 1], 256, File);
-            current_structure.allocated = true;
-                
-            platform.list_all_files_and_directories(current_structure.path, &current_structure);
-        }
-        
-        ImGui::Separator();
-    
-        for(i32 i = 0; i < current_structure.dir_count; i++)
-        {
-            char *name = current_structure.dirs[i].name;
+            ImGui::Text(current_structure.path);
+            ImGui::SameLine();
 
-            if(state->resources.structure_count == 1 && starts_with(name, "."))
-                continue;
-
-            if(strlen(name) == 1 && name[0] == '.')
-                continue;
-
-            sprintf(buf, "[DIR] %s", name);
-        
-            if(ImGui::Selectable(buf))
+            if(ImGui::Button("Reload"))
             {
-                if(starts_with(name, ".."))
-                {
-                    state->resources.structure_count--;
-                }
-                else
-                {
-                    FileList &list = state->resources.resource_file_structures[state->resources.structure_count++];
-                
-                    sprintf(list.path, "%s/%s", current_structure.path, name);
-
-                    if(!list.allocated)
-                    {
-                        list.files = push_array(&state->resources.arenas[state->resources.structure_count - 1], 256, File);
-                        list.dirs = push_array(&state->resources.arenas[state->resources.structure_count - 1], 256, File);
-                        list.allocated = true;
-                    }
-                
-                    platform.list_all_files_and_directories(list.path, &list);
-                }
+                clear(&state->resources.arenas[state->resources.structure_count - 1]);
             
+                // CLEAR!
+                current_structure.files = push_array(&state->resources.arenas[state->resources.structure_count - 1], 256, File);
+                current_structure.dirs = push_array(&state->resources.arenas[state->resources.structure_count - 1], 256, File);
+                current_structure.allocated = true;
+                
+                platform.list_all_files_and_directories(current_structure.path, &current_structure);
             }
-        }
-
-        for(i32 i = 0; i < current_structure.file_count; i++)
-        {
-            if(ImGui::Selectable(current_structure.files[i].name, false, ImGuiSelectableFlags_AllowDoubleClick))
+        
+            ImGui::Separator();
+    
+            for(i32 i = 0; i < current_structure.dir_count; i++)
             {
-                if(ImGui::IsMouseDoubleClicked(0))
-                {
-                    if(is_template(current_structure.files[i].name))
-                    {
-                        char full_path[64];
-                        sprintf(full_path, "%s/%s", current_structure.path, current_structure.files[i].name);
+                char *name = current_structure.dirs[i].name;
 
-                        Camera &camera = scene::get_editor_camera(scene_manager->loaded_scene);
-                        place_entity_from_template(camera.position + camera.forward * 15.0f, full_path, scene_manager->loaded_scene, true, true);
-                    }
-                    else if(is_scene(current_structure.files[i].name))
+                if(state->resources.structure_count == 1 && starts_with(name, "."))
+                    continue;
+
+                if(strlen(name) == 1 && name[0] == '.')
+                    continue;
+
+                sprintf(buf, "[DIR] %s", name);
+        
+                if(ImGui::Selectable(buf))
+                {
+                    if(starts_with(name, ".."))
                     {
-                        char full_path[64];
-                        sprintf(full_path, "%s/%s", current_structure.path, current_structure.files[i].name);
-                        scene::SceneHandle scene = scene::create_scene_from_file(full_path, scene_manager, true, 4096);
-                        scene::load_scene(scene);
+                        state->resources.structure_count--;
                     }
+                    else
+                    {
+                        FileList &list = state->resources.resource_file_structures[state->resources.structure_count++];
+                
+                        sprintf(list.path, "%s/%s", current_structure.path, name);
+
+                        if(!list.allocated)
+                        {
+                            list.files = push_array(&state->resources.arenas[state->resources.structure_count - 1], 256, File);
+                            list.dirs = push_array(&state->resources.arenas[state->resources.structure_count - 1], 256, File);
+                            list.allocated = true;
+                        }
+                
+                        platform.list_all_files_and_directories(list.path, &list);
+                    }
+            
                 }
             }
-        } 
-    
-    
+
+            for(i32 i = 0; i < current_structure.file_count; i++)
+            {
+                if(ImGui::Selectable(current_structure.files[i].name, false, ImGuiSelectableFlags_AllowDoubleClick))
+                {
+                    if(ImGui::IsMouseDoubleClicked(0))
+                    {
+                        if(has_extension(current_structure.files[i].name, ".tmpl"))
+                        {
+                            char full_path[64];
+                            sprintf(full_path, "%s/%s", current_structure.path, current_structure.files[i].name);
+
+                            Camera &camera = scene::get_editor_camera(scene_manager->loaded_scene);
+                            place_entity_from_template(camera.position + camera.forward * 15.0f, full_path, scene_manager->loaded_scene, true, true);
+                        }
+                        else if(has_extension(current_structure.files[i].name, ".gsc"))
+                        {
+                            char full_path[64];
+                            sprintf(full_path, "%s/%s", current_structure.path, current_structure.files[i].name);
+                            scene::SceneHandle scene = scene::create_scene_from_file(full_path, scene_manager, true, 4096);
+                            scene::load_scene(scene);
+                        }
+                    }
+                }
+            } 
+        }
+        
+        editor_state->windows.show_resources = open;
+        
         ImGui::End();
     }
 
