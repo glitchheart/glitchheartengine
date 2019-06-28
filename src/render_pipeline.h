@@ -530,6 +530,10 @@ namespace rendering
         math::Quat orientation;
         math::Vec3 euler_angles;
 
+        math::Vec3 forward;
+        math::Vec3 right;
+        math::Vec3 up;
+
         math::Mat4 model;
 
         b32 dirty;

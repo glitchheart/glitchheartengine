@@ -1086,6 +1086,8 @@ int main(int argc, char **args)
 
         if(scene_manager->scene_loaded)
         {
+            scene::Scene &current_scene = scene::get_scene(scene_manager->loaded_scene);
+            
             #ifdef EDITOR
             if(scene_manager->mode == scene::SceneMode::RUNNING)
             {
@@ -1095,7 +1097,6 @@ int main(int argc, char **args)
             {
                 game.update_editor(&game_memory);
                 
-                scene::Scene &current_scene = scene::get_scene(scene_manager->loaded_scene);
                 editor::_render_main_menu(&editor_state, scene_manager, &input_controller, delta_time);
 
                 if(editor_state.mode == editor::EditorMode::BUILT_IN)
@@ -1109,11 +1110,12 @@ int main(int argc, char **args)
             game.update(&game_memory);
             #endif
 
-            scene::update_scene_camera(scene_manager);
 
             if(scene_manager->scene_loaded) // Check again, since there could be a call to unload_current_scene() in game.update()
             {
-                #ifdef EDITOR
+				current_scene = scene::get_scene(scene_manager->loaded_scene);
+				scene::update_cameras(current_scene, scene_manager);
+#ifdef EDITOR
                 update_scene_editor(scene_manager->loaded_scene, &input_controller, render_state, delta_time);
                 #endif
                 
