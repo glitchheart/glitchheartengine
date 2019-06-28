@@ -340,15 +340,6 @@ namespace scene
             fprintf(file, "shadows::map_width: %d\n", scene.settings.shadows.map_width);
             fprintf(file, "shadows::map_height: %d\n", scene.settings.shadows.map_height);
 
-            // math::Vec3 camera_pos = scene.settings.camera.position;
-            // math::Vec3 camera_target = scene.settings.camera.target;
-            
-            // fprintf(file, "camera::position: %f %f %f\n", camera_pos.x, camera_pos.y, camera_pos.z);
-            // fprintf(file, "camera::target: %f %f %f\n", camera_target.x, camera_target.y, camera_target.z);
-            // fprintf(file, "camera::fov: %f\n", scene.settings.camera.fov);
-            // fprintf(file, "camera::near: %f\n", scene.settings.camera.z_near);
-            // fprintf(file, "camera::far: %f\n", scene.settings.camera.z_far);
-
             fprintf(file, "\n");
             
             for(i32 i = 0; i < scene.entity_count; i++)
@@ -390,6 +381,8 @@ namespace scene
 
                         fprintf(file, "\n");
                     }
+
+                    Scene &scene = get_scene(scene_handle);
                     
                     fprintf(file, "position: %f %f %f\n", transform.transform.position.x, transform.transform.position.y, transform.transform.position.z);
                     fprintf(file, "scale: %f %f %f\n", transform.transform.scale.x, transform.transform.scale.y, transform.transform.scale.z);
@@ -402,6 +395,7 @@ namespace scene
                         fprintf(file, "camera::fov: %f\n", camera_comp.camera.fov);
                         fprintf(file, "camera::near: %f\n", camera_comp.camera.near_plane);
                         fprintf(file, "camera::far: %f\n", camera_comp.camera.far_plane);
+                        fprintf(file, "camera::main: %d\n", HANDLES_EQUAL(entity.handle, scene.main_camera_handle));
                     }
                     else if(has_light_component(entity.handle, scene_handle))
                     {
@@ -4075,7 +4069,15 @@ static Camera get_standard_camera(SceneManager& manager)
             return get_scene_camera(handle);
         }
         else
-            return get_editor_camera(handle);
+        {
+            if(handle.manager->camera_preview.show_camera_preview)
+            {
+                CameraComponent &component = get_camera_comp(handle.manager->camera_preview.handle, handle);
+                return component.camera;
+            }
+            else
+                return get_editor_camera(handle);
+        }
     }
     
 #define SET_MAT_ARRAY_VALUE(type) static void set_uniform_array_value(scene::EntityHandle handle, const char *array_name, i32 index, const char *variable_name, type value, scene::SceneHandle &scene) \
