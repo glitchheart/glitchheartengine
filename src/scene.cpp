@@ -391,7 +391,6 @@ namespace scene
                     if(has_camera_component(entity.handle, scene_handle))
                     {
                         CameraComponent &camera_comp = get_camera_comp(entity.handle, scene_handle);
-                        fprintf(file, "camera::target: %f %f %f\n", camera_comp.camera.target.x, camera_comp.camera.target.y, camera_comp.camera.target.z);
                         fprintf(file, "camera::fov: %f\n", camera_comp.camera.fov);
                         fprintf(file, "camera::near: %f\n", camera_comp.camera.near_plane);
                         fprintf(file, "camera::far: %f\n", camera_comp.camera.far_plane);
@@ -595,6 +594,8 @@ namespace scene
                 math::Vec3 new_position;
                 sscanf(buffer, "position: %f %f %f", &new_position.x, &new_position.y, &new_position.z);
                 rendering::set_position(transform.transform, new_position);
+                
+                rendering::recompute_transform(transform.transform);
             }
             else if(starts_with(buffer, "scale"))
             {
@@ -604,6 +605,8 @@ namespace scene
                 math::Vec3 new_scale;
                 sscanf(buffer, "scale: %f %f %f", &new_scale.x, &new_scale.y, &new_scale.z);
                 rendering::set_scale(transform.transform, new_scale);
+                
+                rendering::recompute_transform(transform.transform);
             }
             else if(starts_with(buffer, "rotation"))
             {
@@ -613,6 +616,8 @@ namespace scene
                 math::Vec3 new_rotation;
                 sscanf(buffer, "rotation: %f %f %f", &new_rotation.x, &new_rotation.y, &new_rotation.z);
                 rendering::set_rotation(transform.transform, new_rotation);
+                
+                rendering::recompute_transform(transform.transform);
             }
             else if(starts_with(buffer, "id"))
             {
@@ -625,15 +630,8 @@ namespace scene
                 }
 
                 CameraComponent &camera_comp = get_camera_comp(handle, scene);
-                TransformComponent &transform = get_transform_comp(handle, scene);
                 
-                camera_comp.camera.position = transform.transform.position;
-                
-                if(starts_with(buffer, "camera::target"))
-                {
-                    sscanf(buffer, "camera::target: %f %f %f", &camera_comp.camera.target.x, &camera_comp.camera.target.y, &camera_comp.camera.target.z);
-                }
-                else if(starts_with(buffer, "camera::fov"))
+                if(starts_with(buffer, "camera::fov"))
                 {
                     sscanf(buffer, "camera::fov: %f", &camera_comp.camera.fov);
                 }
@@ -884,10 +882,6 @@ static Camera get_standard_camera(SceneManager& manager)
                     sscanf(buffer, "camera::position: %f %f %f", &position.x, &position.y, &position.z);
                     set_position(transform, position);
                 }
-                else if(starts_with(buffer, "camera::target"))
-                {
-                    sscanf(buffer, "camera::target: %f %f %f", &camera_comp.camera.target.x, &camera_comp.camera.target.y, &camera_comp.camera.target.z);
-                }
                 else if(starts_with(buffer, "camera::fov"))
                 {
                     sscanf(buffer, "camera::fov: %f", &camera_comp.camera.fov);
@@ -950,6 +944,9 @@ static Camera get_standard_camera(SceneManager& manager)
     {
         SceneHandle handle = create_scene(scene_manager, persistent, initial_entity_array_size);
         _create_scene_from_file(scene_file_path, scene_manager, handle);
+
+        update_cameras(get_scene(handle), scene_manager);
+        
         return handle;
     }
 
@@ -1087,7 +1084,7 @@ static Camera get_standard_camera(SceneManager& manager)
     {
         SceneManager *scene_manager = handle.manager;
         
-        if(!scene_manager)
+        if(!scene_manager || handle.handle <= 0)
             return;
         
         if(scene_manager->callbacks.on_scene_will_be_freed)
@@ -1181,6 +1178,7 @@ static Camera get_standard_camera(SceneManager& manager)
         i32 width = scene.renderer->window_width;
         i32 height = scene.renderer->window_height;
         Camera &camera = scene.scene_manager->editor_camera;
+        TransformComponent &transform = scene.scene_manager->editor_camera_transform;
         
         r32 x = (2.0f * mouse_x) / width - 1.0f;
         r32 y = 1.0f - (2.0f * mouse_y) / height;
@@ -1195,7 +1193,7 @@ static Camera get_standard_camera(SceneManager& manager)
         ray_wor = math::normalize(ray_wor);
         
         math::Ray ray;
-        ray.origin = camera.position;
+        ray.origin = transform.transform.position;
         ray.direction = ray_wor;
 
         return ray;
@@ -1394,7 +1392,7 @@ static Camera get_standard_camera(SceneManager& manager)
                     if(triangle_ray_intersection(local_ray, v1.position, v2.position, v3.position, &intersection_point))
                     {
                         intersection_point = transform.model * intersection_point;
-                        r32 new_dist = math::distance(scene.scene_manager->editor_camera.position, intersection_point);
+                        r32 new_dist = math::distance(scene.scene_manager->editor_camera_transform.transform.position, intersection_point);
 
                         if(new_dist < dist)
                         {
@@ -1830,8 +1828,17 @@ static Camera get_standard_camera(SceneManager& manager)
         }
     }
 
-    static void update_editor_camera(Camera &camera, Scene &scene, InputController *input_controller, r64 delta_time)
+    static void update_editor_camera(Camera &camera, TransformComponent &component, Scene &scene, InputController *input_controller, r64 delta_time)
     {
+        if(ImGui::IsMouseDragging(0) || ImGui::IsMouseDragging(1))
+        {
+            set_mouse_lock(true, *scene.renderer);
+        }
+        else
+        {
+            set_mouse_lock(false, *scene.renderer);
+        }
+        
         if(KEY(Key_LeftCtrl))
             return;
 
@@ -1840,40 +1847,41 @@ static Camera get_standard_camera(SceneManager& manager)
         {
             if(KEY(Key_W))
             {
-                translate_forward(camera, (r32)delta_time * 10.0f);
+                scene::set_position(component, component.transform.position + component.transform.forward * (r32)delta_time * 10.0f);
             }
 
             if(KEY(Key_S))
             {
-                translate_forward(camera, (r32)-delta_time * 10.0f);
+                scene::set_position(component, component.transform.position - component.transform.forward * (r32)delta_time * 10.0f);
             }
 
             if(KEY(Key_A))
             {
-                translate_right(camera, (r32)-delta_time * 10.0f);
+                scene::set_position(component, component.transform.position - component.transform.right * (r32)delta_time * 10.0f);
             }
 
             if(KEY(Key_D))
             {
-                translate_right(camera, (r32)delta_time * 10.0f);
+                scene::set_position(component, component.transform.position + component.transform.right * (r32)delta_time * 10.0f);
             }
         }
 
         if(MOUSE(Mouse_Middle))
         {
-            translate_up(camera, (r32)input_controller->mouse_y_delta * 0.01f);
-            translate_right(camera, (r32)-input_controller->mouse_x_delta * 0.01f);
+            scene::set_position(component, component.transform.position + component.transform.up * input_controller->mouse_y_delta * 0.01f);
+            scene::set_position(component, component.transform.position + component.transform.right * input_controller->mouse_x_delta * 0.01f);
         }
 
-        if(KEY_DOWN(Key_LeftAlt))
-            center(camera);
-        else if(KEY_UP(Key_LeftAlt))
-            free_roam(camera);
+        // @Incomplete
+        // if(KEY_DOWN(Key_LeftAlt))
+        //     center(camera);
+        // else if(KEY_UP(Key_LeftAlt))
+        //     free_roam(camera);
     
         if(MOUSE(Mouse_Right))
         {
-            rotate_around_x(camera, (r32)-input_controller->mouse_y_delta * 0.1f);
-            rotate_around_y(camera, (r32)input_controller->mouse_x_delta * 0.1f);
+            scene::set_rotation(component, component.transform.euler_angles - math::Vec3((r32)input_controller->mouse_y_delta * 0.1f, 0.0f, 0.0f));
+            scene::set_rotation(component, component.transform.euler_angles - math::Vec3(0.0f, (r32)input_controller->mouse_x_delta * 0.1f, 0.0f));
         }
 
         if(MOUSE_DOWN(Mouse_Right))
@@ -1903,6 +1911,8 @@ static Camera get_standard_camera(SceneManager& manager)
     {
         if(IS_ENTITY_HANDLE_VALID(entity) && !HANDLES_EQUAL(entity, manager->selected_entity))
         {
+            stop_camera_preview(manager);
+            
             // Deselect the previously selected entity
             if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
                 scene::set_wireframe_enabled(false, manager->selected_entity, manager->loaded_scene);                 
@@ -1969,28 +1979,29 @@ static Camera get_standard_camera(SceneManager& manager)
         scene_manager->camera_preview.handle = EMPTY_ENTITY_HANDLE;
     }
 
-    static void update_scene_camera(SceneManager *scene_manager)
+    static void update_camera(Camera &camera, TransformComponent &transform, SceneManager *scene_manager)
     {
-        Scene& scene = get_scene(scene_manager->loaded_scene);
-
-        Camera camera;
-
-        if(IS_ENTITY_HANDLE_VALID(scene.main_camera_handle))
-        {
-            CameraComponent &main = get_camera_comp(scene.main_camera_handle, scene_manager->loaded_scene);
-            TransformComponent &transform = get_transform_comp(scene.main_camera_handle, scene_manager->loaded_scene);
-            camera = main.camera;
-            camera.position = transform.transform.position;
-        }
-        else
-        {
-            camera = scene_manager->editor_camera;
-        }
+        camera.view_matrix = math::look_at_with_target(transform.transform.position, transform.transform.position + transform.transform.forward);
+        camera.projection_matrix = math::perspective((r32)scene_manager->renderer->window_width / (r32)scene_manager->renderer->window_height, camera.fov, camera.near_plane, camera.far_plane);
         
-        math::Mat4 projection = math::perspective((r32)scene_manager->renderer->window_width / (r32)scene_manager->renderer->window_height, camera.fov, camera.near_plane, camera.far_plane);
-        
-        scene.main_camera = create_camera(camera.position, camera.target, projection);
+        camera.pos = transform.transform.position;
+        camera.forward = transform.transform.forward;
+        camera.right = transform.transform.right;
     }
+
+    static void update_cameras(Scene &scene, SceneManager *scene_manager)
+    {
+        for(i32 i = 0; i < scene.camera_component_count; i++)
+        {
+            CameraComponent &camera_comp = scene.camera_components[i];
+            TransformComponent &transform = get_transform_comp(camera_comp.entity, scene.handle);
+            update_camera(camera_comp.camera, transform, scene_manager);
+        }
+    }
+
+/* camera = scene_manager->editor_camera;
+            camera.view_matrix = scene_manager->editor_camera_transform.transform.model;
+            camera.pos = scene_manager->editor_camera_transform.transform.position;*/
 
     static void update_scene_settings(SceneHandle handle)
     {
@@ -2016,10 +2027,17 @@ static Camera get_standard_camera(SceneManager& manager)
         
         if(KEY_DOWN(Key_E) && KEY(Key_LeftCtrl))
         {
+            stop_camera_preview(manager);
+            
             if(manager->mode == SceneMode::RUNNING)
             {
                 manager->renderer->api_functions.show_mouse_cursor(true, &render_state);
                 manager->mode = SceneMode::EDITING;
+
+                CameraComponent &main_camera = get_main_camera_comp(manager->loaded_scene);
+                TransformComponent &main_camera_transform = get_main_camera_transform(manager->loaded_scene);
+                manager->editor_camera = main_camera.camera;
+                manager->editor_camera_transform = main_camera_transform;
                 
                 find_all_template_files(manager);
                 
@@ -2037,9 +2055,7 @@ static Camera get_standard_camera(SceneManager& manager)
                 // editor-specific entities are cleaned up before the game is running again.
                 if(manager->callbacks.on_exited_edit_mode)
                     manager->callbacks.on_exited_edit_mode(handle);
-
-                // scene.settings.camera = manager->play_camera;
-
+                
                 // Disable gizmos
                 manager->gizmos.active = false;
 
@@ -2059,11 +2075,12 @@ static Camera get_standard_camera(SceneManager& manager)
                 TransformComponent &t = get_transform_comp(manager->selected_entity, handle);
                 
                 update_transform(t, camera, manager, input_controller, delta_time);
-                manager->gizmos.current_distance_to_camera = math::distance(camera.position, t.transform.position) * 0.1f;
+                manager->gizmos.current_distance_to_camera = math::distance(manager->editor_camera_transform.transform.position, t.transform.position) * 0.1f;
                 
                 if(KEY_DOWN(Key_F))
                 {
-                    set_target(camera, t.transform.position);
+                    // @Incomplete
+                    //set_target(camera, t.transform.position);
                 }
             }
 
@@ -2231,7 +2248,17 @@ static Camera get_standard_camera(SceneManager& manager)
 
             if(!manager->editor.lock_camera)
             {
-                update_editor_camera(camera, scene, input_controller, delta_time);
+                if(manager->camera_preview.show_camera_preview)
+                {
+                    CameraComponent &preview_cam = get_camera_comp(manager->camera_preview.handle, handle);
+                    TransformComponent &preview_transform = get_transform_comp(manager->camera_preview.handle, handle);
+                    update_editor_camera(preview_cam.camera, preview_transform, scene, input_controller, delta_time);
+                }
+                else
+                {
+                    update_editor_camera(manager->editor_camera, manager->editor_camera_transform, scene, input_controller, delta_time);
+                    update_camera(manager->editor_camera, manager->editor_camera_transform, manager);
+                }
             }
         }
     }
@@ -2247,6 +2274,8 @@ static Camera get_standard_camera(SceneManager& manager)
     {
         SceneManager *scene_manager = handle.manager;
 
+        stop_camera_preview(scene_manager);
+        
         if(scene_manager->scene_loaded)
         {
             scene::deactivate_particle_systems(scene_manager->loaded_scene);
@@ -2266,7 +2295,7 @@ static Camera get_standard_camera(SceneManager& manager)
         assert(scene->valid);
 
         scene_manager->loaded_scene = handle;
-
+            
         b32 first_load = !scene->loaded;
         
         if(!scene->loaded)
@@ -2632,13 +2661,13 @@ static Camera get_standard_camera(SceneManager& manager)
         entity.camera_handle = { scene.camera_component_count++ };
         
         Camera camera = {};
-        camera.position = math::Vec3(0.0f, 15.0f, -2.0f);
-        camera.target = math::Vec3(0.0f, 0.0f, 2.0f);
+        
         camera.fov = 90 * DEGREE_IN_RADIANS;
         camera.near_plane = 0.1f;
         camera.far_plane = 50.0f;
         
         scene::CameraComponent &comp = scene.camera_components[entity.camera_handle.handle];
+        comp.entity = entity_handle;
         comp.camera = camera;
         
         return(comp);
@@ -4584,8 +4613,8 @@ static Camera get_standard_camera(SceneManager& manager)
             rendering::RenderPass &pass = renderer->render.passes[i];
             if(pass.use_scene_camera)
             {
-                // pass.camera = get_scene_camera(scene.scene_manager->loaded_scene);
                 pass.camera = get_current_camera(scene.scene_manager->loaded_scene);
+                
             }
         }
     

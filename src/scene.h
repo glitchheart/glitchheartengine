@@ -347,6 +347,7 @@ namespace scene
 
     struct CameraComponent
     {
+        EntityHandle entity;
         b32 is_main_camera;
         Camera camera;
     };
@@ -637,6 +638,7 @@ namespace scene
 
         SceneMode mode;
         Camera editor_camera;
+        TransformComponent editor_camera_transform;
 
         struct
         {
@@ -837,6 +839,7 @@ namespace scene
     static inline void _set_entity_type(EntityHandle handle, u32 type, Scene &scene);
 
     // CAMERA
+    static void update_cameras(Scene &scene, SceneManager *scene_manager);
     static void set_main_camera(EntityHandle entity_handle, SceneHandle scene_handle);
     static void set_camera_preview(EntityHandle entity_handle, SceneManager *scene_manager);
     static void stop_camera_preview(SceneManager *scene_manager);

@@ -2364,7 +2364,7 @@ static void set_uniform(rendering::Transform transform, const rendering::RenderP
     break;
     case rendering::UniformMappingType::CAMERA_POSITION:
     {
-        set_vec3_uniform(gl_shader.program, location, camera.position);
+        set_vec3_uniform(gl_shader.program, location, camera.pos);
     }
     break;
     case rendering::UniformMappingType::DISSOLVE:

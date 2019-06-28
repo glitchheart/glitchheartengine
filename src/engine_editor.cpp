@@ -199,7 +199,8 @@ namespace editor
 
                 if(scene::has_camera_component(scene_manager->selected_entity, scene_manager->loaded_scene))
                 {
-                    if(ImGui::CollapsingHeader("Camera"))
+                    bool is_main_camera = HANDLES_EQUAL(scene_manager->selected_entity, scene.main_camera_handle);
+                    if(ImGui::CollapsingHeader((is_main_camera ? "Camera (MAIN)" : "Camera")))
                     {
                         scene::Scene &scene = scene::get_scene(scene_manager->loaded_scene);
                         
@@ -216,21 +217,14 @@ namespace editor
                         {
                             scene::stop_camera_preview(scene_manager);
                         }
-                        
-                        bool is_main_camera = HANDLES_EQUAL(scene_manager->selected_entity, scene.main_camera_handle);
-                        ImGui::Checkbox("Main camera", &is_main_camera);
 
-                        if(is_main_camera)
+                        if(ImGui::Button("Make main camera"))
                         {
                             scene::set_main_camera(scene_manager->selected_entity, scene_manager->loaded_scene);
                         }
 
-                        
-                        
                         scene::CameraComponent &camera_component = scene::get_camera_comp(scene_manager->selected_entity, scene_manager->loaded_scene);
                     
-                        ImGui::DragFloat3("Camera target", camera_component.camera.target.e);
-
                         r32 degrees = camera_component.camera.fov / DEGREE_IN_RADIANS;
                         ImGui::InputFloat("FOV (Degrees)", &degrees);
 
@@ -925,7 +919,7 @@ namespace editor
                             sprintf(full_path, "%s/%s", current_structure.path, current_structure.files[i].name);
 
                             Camera &camera = scene::get_editor_camera(scene_manager->loaded_scene);
-                            place_entity_from_template(camera.position + camera.forward * 15.0f, full_path, scene_manager->loaded_scene, true, true);
+                            place_entity_from_template(scene_manager->editor_camera_transform.transform.position + camera.forward * 15.0f, full_path, scene_manager->loaded_scene, true, true);
                         }
                         else if(has_extension(current_structure.files[i].name, ".gsc"))
                         {
