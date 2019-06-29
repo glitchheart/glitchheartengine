@@ -1091,6 +1091,7 @@ int main(int argc, char **args)
             #ifdef EDITOR
             if(scene_manager->mode == scene::SceneMode::RUNNING)
             {
+                editor::_render_stats(&editor_state, scene_manager, &input_controller, &sound_system, delta_time);
                 game.update(&game_memory);
             }
             else
@@ -1101,9 +1102,11 @@ int main(int argc, char **args)
 
                 if(editor_state.mode == editor::EditorMode::BUILT_IN)
                 {
-                    editor::_render_hierarchy(current_scene, &editor_state, delta_time);
+                    editor::_render_hierarchy(current_scene, &editor_state, &input_controller, delta_time);
                     editor::_render_inspector(current_scene, &editor_state, &input_controller, delta_time);
                     editor::_render_resources(project_state, &editor_state, scene_manager, delta_time);
+                    editor::_render_scene_settings(&editor_state, scene_manager, delta_time);
+                    editor::_render_stats(&editor_state, scene_manager, &input_controller, &sound_system, delta_time);
                 }
             }
             #else
@@ -1113,12 +1116,11 @@ int main(int argc, char **args)
 
             if(scene_manager->scene_loaded) // Check again, since there could be a call to unload_current_scene() in game.update()
             {
-				current_scene = scene::get_scene(scene_manager->loaded_scene);
-				scene::update_cameras(current_scene, scene_manager);
+				
+
 #ifdef EDITOR
                 update_scene_editor(scene_manager->loaded_scene, &input_controller, render_state, delta_time);
-                #endif
-                
+#endif
                 scene::Scene &scene = scene::get_scene(scene_manager->loaded_scene);
                 scene::update_animators(scene, renderer, delta_time);
                 scene::push_scene_for_rendering(scene, renderer);
@@ -1129,7 +1131,6 @@ int main(int argc, char **args)
         
         update_particle_systems(renderer, delta_time);
 
-        //tick_animation_controllers(renderer, &sound_system, &input_controller, timer_controller, delta_time);
         tick_timers(timer_controller, delta_time);
 
         if(sound_system.update)

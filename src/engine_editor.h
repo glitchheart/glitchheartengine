@@ -48,9 +48,10 @@ namespace editor
     // Internal functions
     static void _init(EditorState *editor_state);
     static void _recursive_entity_item(scene::Entity& entity, scene::SceneManager *scene_manager, r64 delta_time);
-    static void _render_hierarchy(scene::Scene &scene, EditorState *editor_state, r64 delta_time);
+    static void _render_hierarchy(scene::Scene &scene, EditorState *editor_state, InputController *input_controller, r64 delta_time);
     static void _render_inspector(scene::Scene &scene, EditorState *editor_state, InputController *input_controller, r64 delta_time);
     static void _render_resources(project::ProjectState *project_state, EditorState *editor_state, scene::SceneManager *scene_manager, r64 delta_time);
+    static void _render_stats(EditorState *editor_state, scene::SceneManager *scene_manager, InputController *input_controller, sound::SoundSystem *sound_system, r64 delta_time);
 
     static void set_editor_mode(EditorMode mode, EditorState *state);
 }

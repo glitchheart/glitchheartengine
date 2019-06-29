@@ -264,6 +264,12 @@ namespace scene
     {
         Scene &scene = get_scene(handle);
         scene = {};
+
+        for(i32 i = 0; i < 32; i++)
+        {
+            scene.render_pass_cameras[i] = {0};
+        }
+        
         scene.handle = handle;
         scene.memory_arena = {};
         
@@ -502,7 +508,7 @@ namespace scene
         return nullptr;
     }
 
-    static void parse_scene_object(FILE *file, SceneHandle scene, const char *name)
+    static void parse_scene_object(FILE *file, SceneHandle scene, char *name)
     {
         EntityHandle handle = { -1 };
         
@@ -785,15 +791,15 @@ namespace scene
                 char *val = buffer + strlen(name) + 2;
                 
                 load_entity_field(name, val, entity_data, *type_info);
-
-                if(scene.manager->callbacks.on_loaded_entity_of_type)
-                {
-                    scene.manager->callbacks.on_loaded_entity_of_type(handle, type_info->type_id, scene);
-                }
             }
-
-            set_hide_in_ui(handle, hide_in_ui, scene);
         }
+
+		if (entity_data && scene.manager->callbacks.on_loaded_entity_of_type)
+		{
+			scene.manager->callbacks.on_loaded_entity_of_type(handle, type_info->type_id, scene);
+		}
+
+		set_hide_in_ui(handle, hide_in_ui, scene);
 
         if(!is_whitespace(name))
         {
@@ -1177,8 +1183,10 @@ static Camera get_standard_camera(SceneManager& manager)
     {
         i32 width = scene.renderer->window_width;
         i32 height = scene.renderer->window_height;
-        Camera &camera = scene.scene_manager->editor_camera;
-        TransformComponent &transform = scene.scene_manager->editor_camera_transform;
+
+        CameraComponent &camera_comp = _get_camera_comp(scene.scene_manager->editor_camera, scene);
+        TransformComponent &transform = _get_transform_comp(scene.scene_manager->editor_camera, scene);
+        Camera &camera = camera_comp.camera;
         
         r32 x = (2.0f * mouse_x) / width - 1.0f;
         r32 y = 1.0f - (2.0f * mouse_y) / height;
@@ -1340,7 +1348,6 @@ static Camera get_standard_camera(SceneManager& manager)
                     
                     if(aabb_ray_intersection(ray, box, &intersection_point))
                     {
-                        printf("Hit: %s\n", ent.name);
                         // Look for selectable parents
                         if(!ent.selection_enabled)
                         {
@@ -1367,6 +1374,8 @@ static Camera get_standard_camera(SceneManager& manager)
         MemoryArena temp_arena = {};
         TemporaryMemory temp_mem = begin_temporary_memory(&temp_arena);
 
+        TransformComponent &editor_camera_transform = _get_transform_comp(scene.scene_manager->editor_camera, scene);
+        
         for(i32 i = 0; i < entity_list.entity_count; i++)
         {
             Entity entity = get_entity(entity_list.handles[i], scene);
@@ -1392,7 +1401,7 @@ static Camera get_standard_camera(SceneManager& manager)
                     if(triangle_ray_intersection(local_ray, v1.position, v2.position, v3.position, &intersection_point))
                     {
                         intersection_point = transform.model * intersection_point;
-                        r32 new_dist = math::distance(scene.scene_manager->editor_camera_transform.transform.position, intersection_point);
+                        r32 new_dist = math::distance(editor_camera_transform.transform.position, intersection_point);
 
                         if(new_dist < dist)
                         {
@@ -1651,7 +1660,7 @@ static Camera get_standard_camera(SceneManager& manager)
         return l;
     }
     
-    static void update_transform(TransformComponent &transform, Camera &camera, SceneManager *manager, InputController *input_controller, r64 delta_time)
+    static void update_transform(TransformComponent &transform, SceneManager *manager, InputController *input_controller, r64 delta_time)
     {
         if(manager->dragging)
         {
@@ -1995,13 +2004,16 @@ static Camera get_standard_camera(SceneManager& manager)
         {
             CameraComponent &camera_comp = scene.camera_components[i];
             TransformComponent &transform = get_transform_comp(camera_comp.entity, scene.handle);
+
             update_camera(camera_comp.camera, transform, scene_manager);
         }
     }
 
-/* camera = scene_manager->editor_camera;
-            camera.view_matrix = scene_manager->editor_camera_transform.transform.model;
-            camera.pos = scene_manager->editor_camera_transform.transform.position;*/
+    static void set_camera_for_render_pass(EntityHandle camera_entity, rendering::RenderPassHandle handle, SceneHandle scene_handle)
+    {
+        Scene &scene = get_scene(scene_handle);
+        scene.render_pass_cameras[handle.handle - 1] = camera_entity;
+    }
 
     static void update_scene_settings(SceneHandle handle)
     {
@@ -2015,6 +2027,17 @@ static Camera get_standard_camera(SceneManager& manager)
         renderer->render.shadow_settings.size = settings.shadows.map_width;
 
         update_shadow_framebuffer(handle);
+    }
+    
+    static void _set_particle_systems_paused(b32 paused, scene::SceneManager *scene_manager)
+    {
+        scene::Scene& scene = scene::get_scene(scene_manager->loaded_scene);
+    
+        for(i32 i = 0; i < scene.particle_system_component_count; i++)
+        {
+            scene::ParticleSystemComponent comp = scene.particle_system_components[i];
+            scene.renderer->particles.api->pause_particle_system(comp.handle, scene.renderer, paused);
+        }
     }
     
     static void update_scene_editor(SceneHandle handle, InputController *input_controller, RenderState &render_state, r64 delta_time)
@@ -2034,18 +2057,22 @@ static Camera get_standard_camera(SceneManager& manager)
                 manager->renderer->api_functions.show_mouse_cursor(true, &render_state);
                 manager->mode = SceneMode::EDITING;
 
-                CameraComponent &main_camera = get_main_camera_comp(manager->loaded_scene);
-                TransformComponent &main_camera_transform = get_main_camera_transform(manager->loaded_scene);
-                manager->editor_camera = main_camera.camera;
-                manager->editor_camera_transform = main_camera_transform;
-                
-                find_all_template_files(manager);
-                
+                scene::reload_scene(manager->loaded_scene);
+                _set_particle_systems_paused(true, manager);
+
+                TransformComponent &main_cam_transform = get_main_camera_transform(manager->loaded_scene);
+                TransformComponent &editor_cam_transform = get_transform_comp(manager->editor_camera, manager->loaded_scene);
+
+				scene::set_position(editor_cam_transform, main_cam_transform.transform.position);
+				scene::set_rotation(editor_cam_transform, main_cam_transform.transform.euler_angles);
+
                 if(manager->callbacks.on_started_edit_mode)
                     manager->callbacks.on_started_edit_mode(handle);                
             }
             else
             {
+                scene::reload_scene(manager->loaded_scene);
+                
                 manager->renderer->api_functions.show_mouse_cursor(false, &render_state);
                 // Disable wireframes
                 if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
@@ -2068,14 +2095,14 @@ static Camera get_standard_camera(SceneManager& manager)
         {
             Scene &scene = get_scene(manager->loaded_scene);
             
-            Camera &camera = manager->editor_camera;
+            TransformComponent &camera_transform = get_transform_comp(manager->editor_camera, manager->loaded_scene);
             
             if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
             {
                 TransformComponent &t = get_transform_comp(manager->selected_entity, handle);
                 
-                update_transform(t, camera, manager, input_controller, delta_time);
-                manager->gizmos.current_distance_to_camera = math::distance(manager->editor_camera_transform.transform.position, t.transform.position) * 0.1f;
+                update_transform(t, manager, input_controller, delta_time);
+                manager->gizmos.current_distance_to_camera = math::distance(camera_transform.transform.position, t.transform.position) * 0.1f;
                 
                 if(KEY_DOWN(Key_F))
                 {
@@ -2087,17 +2114,6 @@ static Camera get_standard_camera(SceneManager& manager)
             if(KEY_DOWN(Key_Escape))
             {
                 deselect_everything(manager);
-            }
-
-            if(KEY_DOWN(Key_Delete) || KEY_DOWN(Key_Backspace))
-            {
-                if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
-                {
-                    delete_entity(manager->selected_entity, manager);
-                    
-                    manager->selected_entity = { -1 };
-                    manager->gizmos.active = false;
-                }
             }
 
             if(KEY(Key_LeftCtrl) && KEY_DOWN(Key_D))
@@ -2256,8 +2272,9 @@ static Camera get_standard_camera(SceneManager& manager)
                 }
                 else
                 {
-                    update_editor_camera(manager->editor_camera, manager->editor_camera_transform, scene, input_controller, delta_time);
-                    update_camera(manager->editor_camera, manager->editor_camera_transform, manager);
+					CameraComponent& cam = get_camera_comp(manager->editor_camera, handle);
+					TransformComponent& trans = get_transform_comp(manager->editor_camera, handle);
+                    update_editor_camera(cam.camera, trans, scene, input_controller, delta_time);
                 }
             }
         }
@@ -2300,9 +2317,20 @@ static Camera get_standard_camera(SceneManager& manager)
         
         if(!scene->loaded)
         {
+            if(scene_manager->mode == SceneMode::EDITING)
+            {
+                scene_manager->editor_camera = register_entity(COMP_TRANSFORM | COMP_CAMERA, handle, false);
+                scene::set_hide_in_ui(scene_manager->editor_camera, true, handle);
+				scene::set_entity_name(scene_manager->editor_camera, "Editor Camera", handle);
+            }
+            
             if(scene_manager->callbacks.on_scene_will_load)
                 scene_manager->callbacks.on_scene_will_load(handle);
-            
+			
+			// @Robustness: This is not good behaviour...
+			// Make sure to reget the scene in case a scene was freed in the callback
+			scene = &get_scene(handle);
+
             allocate_instance_buffers(*scene);
             scene->loaded = true;
         }
@@ -3414,6 +3442,12 @@ static Camera get_standard_camera(SceneManager& manager)
         strcpy(entity.name, name);
     }
 
+    static inline void set_entity_name(EntityHandle handle, const char *name, SceneHandle scene_handle)
+    {
+        Scene &scene = get_scene(scene_handle);
+        _set_entity_name(handle, name, scene);
+    }
+
     static inline void _set_entity_template_path(EntityHandle handle, const char *template_path, Scene& scene)
     {
         Entity &entity = scene.entities[scene._internal_handles[handle.handle - 1]];
@@ -4019,7 +4053,7 @@ static Camera get_standard_camera(SceneManager& manager)
         
         assert(entity.comp_flags & COMP_CAMERA);
         
-        CameraComponent& comp = scene.camera_components[entity.render_handle.handle];
+        CameraComponent& comp = scene.camera_components[entity.camera_handle.handle];
         return(comp);
     }
 
@@ -4086,11 +4120,6 @@ static Camera get_standard_camera(SceneManager& manager)
         return camera_comp.camera;
     }
 
-    static Camera& get_editor_camera(SceneHandle handle)
-    {
-        return handle.manager->editor_camera;
-    }
-
     static Camera& get_current_camera(SceneHandle handle)
     {
         if(handle.manager->mode == SceneMode::RUNNING)
@@ -4105,7 +4134,44 @@ static Camera get_standard_camera(SceneManager& manager)
                 return component.camera;
             }
             else
-                return get_editor_camera(handle);
+            {
+                CameraComponent &component = get_camera_comp(handle.manager->editor_camera, handle);
+                return component.camera;
+            }
+        }
+    }
+
+    static TransformComponent &get_current_camera_transform(SceneHandle handle)
+    {
+        if(handle.manager->mode == SceneMode::RUNNING)
+        {
+            return get_main_camera_transform(handle);
+        }
+        else
+        {
+            if(handle.manager->camera_preview.show_camera_preview)
+            {
+                return get_transform_comp(handle.manager->camera_preview.handle, handle);
+            }
+            else
+                return get_transform_comp(handle.manager->editor_camera, handle);
+        }
+    }
+    
+    static CameraComponent &get_current_camera_comp(SceneHandle handle)
+    {
+        if(handle.manager->mode == SceneMode::RUNNING)
+        {
+            return get_main_camera_comp(handle);
+        }
+        else
+        {
+            if(handle.manager->camera_preview.show_camera_preview)
+            {
+                return get_camera_comp(handle.manager->camera_preview.handle, handle);
+            }
+            else
+                return get_camera_comp(handle.manager->editor_camera, handle);
         }
     }
     
@@ -4387,6 +4453,13 @@ static Camera get_standard_camera(SceneManager& manager)
         return add_root_animation(entity, comp, loop);
     }
 
+    static void set_animation_callback(RootAnimationHandle root, AnimationCallback callback, SceneHandle scene)
+    {
+        AnimatorComponent &comp = get_animator_comp(root.entity, scene);
+        Animation &animation = comp.animations[root.handle - 1];
+        animation.callback = callback;
+    }
+
     static void add_animation_float_key_frame(r32 value, r32 time, RootAnimationHandle root_handle, AnimationHandle handle, SceneHandle scene_handle, AnimationEasingMode mode = AnimationEasingMode::LERP)
     {
         AnimatorComponent &comp = get_animator_comp(root_handle.entity, scene_handle);
@@ -4593,6 +4666,9 @@ static Camera get_standard_camera(SceneManager& manager)
                 // @Incomplete: Change this to "current animation running" instead
                 if(!animator.running)
                 {
+                    if(animation.callback)
+                        animation.callback();
+                
                     for(i32 j = 0; j < animation.transition_count; j++)
                     {
                         if(transition_conditions_true(animator, animation.transitions[j]))
@@ -4608,13 +4684,22 @@ static Camera get_standard_camera(SceneManager& manager)
 
     static void push_scene_for_rendering(scene::Scene &scene, Renderer *renderer)
     {
+        update_cameras(scene, scene.scene_manager);
+        
+        Camera &scene_camera = get_current_camera(scene.scene_manager->loaded_scene);
+
         for(i32 i = 0; i < renderer->render.pass_count; i++)
         {
             rendering::RenderPass &pass = renderer->render.passes[i];
-            if(pass.use_scene_camera)
+            if(scene.render_pass_cameras[i].handle > 0)
             {
-                pass.camera = get_current_camera(scene.scene_manager->loaded_scene);
+                CameraComponent &camera_comp = _get_camera_comp(scene.render_pass_cameras[i], scene);
+                pass.camera = camera_comp.camera;
                 
+            }
+            else
+            {
+                pass.camera = scene_camera;
             }
         }
     
