@@ -1021,12 +1021,6 @@ namespace rendering
         pass.clipping_planes.plane = plane;
     }
 
-    static void set_camera_for_render_pass(Camera &camera, RenderPassHandle render_pass_handle, Renderer *renderer)
-    {
-        renderer->render.passes[render_pass_handle.handle - 1].camera = camera;
-        renderer->render.passes[render_pass_handle.handle - 1].use_scene_camera = false;
-    }
-
     static math::Vec2i get_texture_size(rendering::TextureHandle handle, Renderer *renderer)
     {
         Texture* texture = renderer->render.textures[handle.handle - 1];

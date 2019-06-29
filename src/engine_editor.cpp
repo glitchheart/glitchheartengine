@@ -4,8 +4,9 @@ namespace editor
     {
         editor_state->windows.show_hierarchy = true;
         editor_state->windows.show_inspector = true;
-        editor_state->windows.show_scene_settings = true;
-        editor_state->windows.show_stats = true;
+        editor_state->windows.show_scene_settings = false;
+        editor_state->windows.show_stats = false;
+        editor_state->windows.show_resources = true;
     }
     
     static void _recursive_entity_item(scene::Entity& entity, scene::SceneManager *scene_manager)
@@ -68,7 +69,7 @@ namespace editor
         ImGui::PopID();
     }
 
-    static void _render_hierarchy(scene::Scene &scene, EditorState *editor_state, r64 delta_time)
+    static void _render_hierarchy(scene::Scene &scene, EditorState *editor_state, InputController *input_controller, r64 delta_time)
     {
         if(!editor_state->windows.show_hierarchy)
             return;
@@ -78,7 +79,7 @@ namespace editor
 		ImGui::SetNextWindowSize(ImVec2(1000, 200), ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
 
-		if(ImGui::Begin("Hierarchy", &hierarchy_open, 0))
+		if(ImGui::Begin("Hierarchy", &hierarchy_open, ImGuiWindowFlags_NoFocusOnAppearing))
         {
             for (i32 i = 0; i < scene.entity_count; i++)
             {
@@ -89,6 +90,20 @@ namespace editor
                 if (!IS_ENTITY_HANDLE_VALID(entity.parent))
                 {
                     _recursive_entity_item(entity, scene.handle.manager);
+                }
+            }
+
+            if(ImGui::IsWindowFocused())
+            {
+                if(KEY_DOWN(Key_Delete) || KEY_DOWN(Key_Backspace))
+                {
+                    if(IS_ENTITY_HANDLE_VALID(scene.handle.manager->selected_entity))
+                    {
+                        delete_entity(scene.handle.manager->selected_entity, scene.handle.manager);
+                    
+                        scene.handle.manager->selected_entity = { -1 };
+                        scene.handle.manager->gizmos.active = false;
+                    }
                 }
             }
         }
@@ -164,7 +179,9 @@ namespace editor
                         }
                     }
                     ImGui::SameLine();
+                    ImGui::PushID("tag_text");
                     ImGui::InputText("", tag_text, IM_ARRAYSIZE(tag_text));
+                    ImGui::PopID();
                 }
 
                 if(ImGui::CollapsingHeader("Transform"))
@@ -283,11 +300,10 @@ namespace editor
                         ImGui::SliderFloat3("Specular", specular->e, 0.0f, 1.0f);
                     }
                 }
-
-                if(ImGui::CollapsingHeader("Fields"))
+                
+                if(entity.type_info.field_count > 0 && ImGui::CollapsingHeader("Fields"))
                 {
                     scene::EntityData *data_ptr = entity.entity_data;
-            
                     for(i32 i = 0; i < entity.type_info.field_count; i++)
                     {
                         scene::Field &field = entity.type_info.fields[i];
@@ -307,7 +323,10 @@ namespace editor
                         break;
                         case scene::FieldType::FLOAT:
                         {
-                            ImGui::DragFloat(field.name, ((r32*)ptr), delta_time);
+                            r32 *float_ptr = (r32*)ptr;
+                            r32 value = *float_ptr;
+                            ImGui::DragFloat(field.name, &value, delta_time);
+                            *float_ptr = value;
                         }
                         break;
                         case scene::FieldType::VEC2:
@@ -746,7 +765,7 @@ namespace editor
         
         bool open = true;
 
-        if(ImGui::Begin("Scene settings", &open))
+        if(ImGui::Begin("Scene settings", &open, ImGuiWindowFlags_NoFocusOnAppearing))
         {
             scene::Settings& settings = scene::get_scene_settings(scene_manager->loaded_scene);
 
@@ -831,6 +850,32 @@ namespace editor
             if(editor_state->callbacks.on_custom_main_menu_bar)
                 editor_state->callbacks.on_custom_main_menu_bar();
 
+            if(scene_manager->scene_loaded)
+            {
+                ImGui::Spacing();
+                ImGui::Spacing();
+                ImGui::Spacing();
+                ImGui::Spacing();
+
+                scene::Scene &scene = scene::get_scene(scene_manager->loaded_scene);
+                
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 0.35f, 1.0f));
+                ImGui::Text(scene.file_path);
+                ImGui::PopStyleColor();
+            }
+
+            if(scene_manager->camera_preview.show_camera_preview)
+            {
+                ImGui::Spacing();
+                ImGui::Spacing();
+                ImGui::Spacing();
+                ImGui::Spacing();
+                
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.35f, 1.0f));
+                ImGui::Text("(PREVIEWING CAMERA)");
+                ImGui::PopStyleColor();
+            }
+            
 			ImGui::EndMainMenuBar();
 		}
 
@@ -839,8 +884,49 @@ namespace editor
             scene::editor_save(scene_manager);
         }
     }
+
+    static void _render_stats(EditorState *editor_state, scene::SceneManager *scene_manager, InputController *input_controller, sound::SoundSystem *sound_system, r64 delta_time)
+    {
+        if(!editor_state->windows.show_stats)
+            return;
+
+        Renderer *renderer = scene_manager->renderer;
+        
+        bool open = true;
     
-    static void _render_resources(project::ProjectState *state, EditorState *editor_state, scene::SceneManager *scene_manager, r64 delta_time)
+        if(ImGui::Begin("Stats", &open, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            if(scene_manager->scene_loaded)
+            {
+                scene::Scene &scene = scene::get_scene(scene_manager->loaded_scene);
+                ImGui::Text("Entities: %d", (i32)scene.entity_count);
+            }
+
+            ImGui::Text("Shaders: %d", (i32)renderer->render.shader_count);
+            ImGui::Text("Material instances: %d", (i32)renderer->render.material_instance_count);
+            ImGui::Text("FPS: %.3f", renderer->fps);
+            ImGui::Text("Delta: %.3f", delta_time * 1000.0f);
+            ImGui::Text("Resolution: %d x %d", renderer->window_width, renderer->window_height);
+            ImGui::Text("Master vol: %d", (i32)(sound_system->master_volume * 100.0f));
+            ImGui::Text("Sfx vol: %d", (i32)(sound_system->sfx_volume * 100.0f));
+            ImGui::Text("Music vol: %d", (i32)(sound_system->music_volume * 100.0f));
+
+            r32 mouse_x_in_ui_coords = rendering::to_ui(renderer, renderer->window_width, (r32)input_controller->mouse_x);
+            r32 mouse_y_in_ui_coords = rendering::to_ui(renderer, renderer->window_height, renderer->window_height - (r32)input_controller->mouse_y);
+
+            ImGui::Text("UI mouse x: %f", mouse_x_in_ui_coords);
+            ImGui::Text("UI mouse y: %f", mouse_y_in_ui_coords);
+            ImGui::Text("Mouse x: %f", (i32)input_controller->mouse_x);
+            ImGui::Text("Mouse y: %f", (i32)input_controller->mouse_y);
+ 
+        }
+
+        editor_state->windows.show_stats = open;
+        
+        ImGui::End();  
+    }
+    
+        static void _render_resources(project::ProjectState *state, EditorState *editor_state, scene::SceneManager *scene_manager, r64 delta_time)
     {
         if(!editor_state->windows.show_resources)
             return;
@@ -856,6 +942,30 @@ namespace editor
             ImGui::Text(current_structure.path);
             ImGui::SameLine();
 
+            char *file_str = nullptr;
+            char *dir_str = nullptr;
+            
+            if(current_structure.file_count == 1)
+            {
+                file_str = "file";
+            }
+            else
+            {
+                file_str = "files";
+            }
+
+            if(current_structure.dir_count == 1)
+            {
+                dir_str = "directory";
+            }
+            else
+            {
+                dir_str = "directories";
+            }
+            
+            ImGui::Text("(%d %s, %d %s)", current_structure.file_count, file_str, current_structure.dir_count, dir_str);
+            ImGui::SameLine();
+            
             if(ImGui::Button("Reload"))
             {
                 clear(&state->resources.arenas[state->resources.structure_count - 1]);
@@ -918,8 +1028,9 @@ namespace editor
                             char full_path[64];
                             sprintf(full_path, "%s/%s", current_structure.path, current_structure.files[i].name);
 
-                            Camera &camera = scene::get_editor_camera(scene_manager->loaded_scene);
-                            place_entity_from_template(scene_manager->editor_camera_transform.transform.position + camera.forward * 15.0f, full_path, scene_manager->loaded_scene, true, true);
+                            scene::TransformComponent &transform_comp = scene::get_transform_comp(scene_manager->editor_camera, scene_manager->loaded_scene);
+                            
+                            place_entity_from_template(transform_comp.transform.position + transform_comp.transform.forward * 15.0f, full_path, scene_manager->loaded_scene, true, true);
                         }
                         else if(has_extension(current_structure.files[i].name, ".gsc"))
                         {

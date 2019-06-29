@@ -53,8 +53,6 @@ namespace project
 
                     sprintf(settings_ptr->resources_folder_path, "%s/%s", settings_ptr->project_root_path, folder);
 
-                    printf("Resources path: %s\n", settings_ptr->resources_folder_path);
-
                     project_state->resources.resource_file_structures = push_array(&project_state->resources.file_structure_arena, 8, FileList);
                     project_state->resources.arenas = push_array(&project_state->resources.file_structure_arena, 8, MemoryArena);
 

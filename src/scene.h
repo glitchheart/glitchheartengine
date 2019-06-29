@@ -175,6 +175,8 @@ namespace scene
         i32 render_pass_count;
     };
 
+    typedef void (*AnimationCallback)();
+    
     enum class AnimationType
     {
         FLOAT,
@@ -305,6 +307,8 @@ namespace scene
 
         AnimationTransition transitions[MAX_ANIMATION_TRANSITIONS];
         i32 transition_count;
+
+        AnimationCallback callback;
     };
 
     enum class AnimatorParameterType
@@ -537,6 +541,8 @@ namespace scene
 
         Settings settings;
         
+        EntityHandle render_pass_cameras[32];
+        
         TransformComponent *transform_components;
         i32 transform_component_count;
         
@@ -637,8 +643,8 @@ namespace scene
         i32 current_internal_index;
 
         SceneMode mode;
-        Camera editor_camera;
-        TransformComponent editor_camera_transform;
+
+        EntityHandle editor_camera;
 
         struct
         {
@@ -743,8 +749,6 @@ namespace scene
         scene_manager->gizmos.y_material = rendering::create_material_instance(renderer, scene_manager->gizmos.line_material);
         scene_manager->gizmos.z_material = rendering::create_material_instance(renderer, scene_manager->gizmos.line_material);
 
-        scene_manager->editor_camera = get_standard_camera(*scene_manager);
-        
         return scene_manager;
     }
 
@@ -786,7 +790,7 @@ namespace scene
     static Camera & get_scene_camera(SceneHandle handle);
     static TransformComponent &get_main_camera_transform(SceneHandle handle);
     static CameraComponent &get_main_camera_comp(SceneHandle handle);
-    static Camera& get_editor_camera(SceneHandle handle);
+    static void set_camera_for_render_pass(EntityHandle camera_entity, rendering::RenderPassHandle handle, SceneHandle scene_handle);
     static EntityHandle pick_entity(SceneHandle handle, i32 mouse_x, i32 mouse_y);
     static Entity& get_entity(EntityHandle handle, Scene &scene);
     static Entity& get_entity(EntityHandle handle, SceneHandle& scene_handle);
@@ -834,6 +838,7 @@ namespace scene
     static void set_rotation(TransformComponent& comp, math::Vec3 rotation);
     static void set_scale(TransformComponent& comp, math::Vec3 scale);
 
+    static inline void set_entity_name(EntityHandle handle, const char *name, SceneHandle scene_handle);
     static inline void _set_entity_name(EntityHandle handle, const char *name, Scene& scene);
     static inline void _set_entity_template_path(EntityHandle handle, const char *template_path, Scene& scene);
     static inline void _set_entity_type(EntityHandle handle, u32 type, Scene &scene);

@@ -282,6 +282,11 @@ inline PLATFORM_LIST_ALL_FILES_AND_DIRECTORIES(win32_list_all_files_and_director
             filesize.LowPart = ffd.nFileSizeLow;
             filesize.HighPart = ffd.nFileSizeHigh;
 
+			char last_char = ffd.cFileName[strlen(ffd.cFileName) - 1];
+
+            if(last_char == '~')
+                continue;
+            
             list->files[list->file_count].type = FileType::FILE;
             strcpy(list->files[list->file_count++].name, ffd.cFileName);
         }
