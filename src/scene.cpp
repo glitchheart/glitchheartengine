@@ -1,5 +1,3 @@
-#define ENTITY_IS_VALID(handle) handle.handle > 0
-
 namespace scene
 {
     static void register_type(const RegisteredEntityType &registered, SceneManager *scene_manager)
@@ -3841,7 +3839,7 @@ static Camera get_standard_camera(SceneManager& manager)
         return false;
     }
     
-    static void _set_active(EntityHandle handle, b32 active, Scene &scene)
+    static void _set_active(EntityHandle handle, b32 active, Scene &scene, b32 recursive)
     {
         if(handle.handle > 0)
         {
@@ -3850,13 +3848,23 @@ static Camera get_standard_camera(SceneManager& manager)
             {
                 scene.active_entities[internal_handle] = active;
             }
+
+            if(recursive)
+            {
+                i32 child_count = get_child_count(handle, scene.handle); // @Speed: This is yet another lookup
+
+                for(i32 i = 0; i < child_count; i++)
+                {
+                    _set_active(get_child_handle(handle, i, scene.handle), active, scene, recursive);
+                }
+            }
         }
     }
 
-    static void set_active(EntityHandle handle, b32 active, SceneHandle scene_handle)
+    static void set_active(EntityHandle handle, b32 active, SceneHandle scene_handle, b32 recursive)
     {
         Scene &scene = get_scene(scene_handle);
-        _set_active(handle, active, scene);
+        _set_active(handle, active, scene, recursive);
     }
 
     static void set_hide_in_ui(EntityHandle handle, b32 hide, SceneHandle scene_handle)
