@@ -1918,8 +1918,6 @@ static Camera get_standard_camera(SceneManager& manager)
     {
         if(IS_ENTITY_HANDLE_VALID(entity) && !HANDLES_EQUAL(entity, manager->selected_entity))
         {
-            stop_camera_preview(manager);
-            
             // Deselect the previously selected entity
             if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
                 scene::set_wireframe_enabled(false, manager->selected_entity, manager->loaded_scene);                 
@@ -2069,6 +2067,8 @@ static Camera get_standard_camera(SceneManager& manager)
             }
             else
             {
+                manager->mode = SceneMode::RUNNING;
+                
                 scene::reload_scene(manager->loaded_scene);
                 
                 manager->renderer->api_functions.show_mouse_cursor(false, &render_state);
@@ -2085,7 +2085,6 @@ static Camera get_standard_camera(SceneManager& manager)
                 manager->gizmos.active = false;
 
                 manager->selected_entity = { -1 };
-                manager->mode = SceneMode::RUNNING;
             }
         }
 
@@ -4107,6 +4106,12 @@ static Camera get_standard_camera(SceneManager& manager)
     {
         Scene &scene = get_scene(scene_handle);
         return _get_light_comp(handle, scene);
+    }
+
+    static EntityHandle get_main_camera_handle(SceneHandle handle)
+    {
+        Scene& scene = get_scene(handle);
+        return scene.main_camera_handle;
     }
 
     static TransformComponent &get_main_camera_transform(SceneHandle handle)

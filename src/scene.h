@@ -792,6 +792,7 @@ namespace scene
     static Camera & get_scene_camera(SceneHandle handle);
     static TransformComponent &get_main_camera_transform(SceneHandle handle);
     static CameraComponent &get_main_camera_comp(SceneHandle handle);
+    static EntityHandle get_main_camera_handle(SceneHandle handle);
     static void set_camera_for_render_pass(EntityHandle camera_entity, rendering::RenderPassHandle handle, SceneHandle scene_handle);
     static EntityHandle pick_entity(SceneHandle handle, i32 mouse_x, i32 mouse_y);
     static Entity& get_entity(EntityHandle handle, Scene &scene);
