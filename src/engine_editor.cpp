@@ -81,6 +81,12 @@ namespace editor
 
 		if(ImGui::Begin("Hierarchy", &hierarchy_open, ImGuiWindowFlags_NoFocusOnAppearing))
         {
+            if(ImGui::Button("+ Empty"))
+            {
+                scene::EntityHandle new_handle = scene::_register_entity(scene::COMP_TRANSFORM, scene, true);
+                scene::select_entity(new_handle, scene.handle.manager);
+            }
+            
             for (i32 i = 0; i < scene.entity_count; i++)
             {
                 scene::EntityHandle handle = scene.entities[i].handle;
@@ -872,8 +878,14 @@ namespace editor
                 ImGui::Spacing();
                 
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.35f, 1.0f));
+
                 ImGui::Text("(PREVIEWING CAMERA)");
                 ImGui::PopStyleColor();
+                
+                if(ImGui::Button("STOP PREVIEW"))
+                {
+                    stop_camera_preview(scene_manager);
+                }
             }
             
 			ImGui::EndMainMenuBar();
