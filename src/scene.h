@@ -1,6 +1,8 @@
 #ifndef SCENE_H
 #define SCENE_H
 
+#define ENTITY_IS_VALID(handle) handle.handle > 0
+
 #define SCALE_SENSITIVITY 0.01f
 
 #define EMPTY_ENTITY_HANDLE {0}
@@ -777,7 +779,7 @@ namespace scene
     static void unregister_entity(EntityHandle handle, SceneHandle scene);
     static EntityTemplate _load_template(const char *path, EntityTemplateState template_state, SceneHandle scene);
     static EntityHandle register_entity_from_template_file(const char *path, SceneHandle scene, b32 savable = false, Tags* tags = nullptr);
-    static void set_active(EntityHandle handle, b32 active, SceneHandle scene);
+    static void set_active(EntityHandle handle, b32 active, SceneHandle scene, b32 recursive = true);
     static void set_hide_in_ui(EntityHandle handle, b32 hide, SceneHandle scene_handle);
     static TransformComponent& get_transform_comp(EntityHandle handle, Scene &scene);
     static TransformComponent& get_transform_comp(EntityHandle handle, SceneHandle scene);
@@ -816,12 +818,15 @@ namespace scene
     static EntityTemplate _load_template(const char *path, EntityTemplateState &template_state, Scene &scene);
     static EntityHandle _register_entity_from_template_file(const char *path, Scene &scene, b32 savable, Tags* tags);
     static b32 is_active(EntityHandle handle, SceneHandle scene_handle);
-    static void _set_active(EntityHandle handle, b32 active, Scene &scene);
+    static void _set_active(EntityHandle handle, b32 active, Scene &scene, b32 recursive);
     static TransformComponent& _get_transform_comp(EntityHandle handle, Scene &scene);
     static RenderComponent& _get_render_comp(EntityHandle handle, Scene &scene);
     static CameraComponent& _get_camera_comp(EntityHandle handle, Scene &scene);
     static ParticleSystemComponent& _get_particle_system_comp(EntityHandle handle, Scene &scene);
     static LightComponent &_get_light_comp(EntityHandle handle, Scene &scene);
+
+    static i32 get_child_count(EntityHandle handle, SceneHandle scene);
+    static EntityHandle get_child_handle(EntityHandle handle, i32 index, SceneHandle scene);
     
     i32 _unused_entity_handle(Scene &scene);
     i32 _pack_transform_components(Entity &entity, Scene &scene);

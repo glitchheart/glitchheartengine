@@ -629,7 +629,7 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
                 }
                 else
                 {
-                    glRenderbufferStorageMultisample(GL_RENDERBUFFER, attachment.samples, GL_RGBA, width, height);
+                    glRenderbufferStorageMultisample(GL_RENDERBUFFER, attachment.samples, GL_RGB, width, height);
                 }
 
                 glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_RENDERBUFFER,
@@ -685,8 +685,7 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
                 }
                 else
                 {
-                    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, attachment.samples, GL_RGBA, width, height, GL_TRUE);
-                    //glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+                    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, attachment.samples, GL_RGB, width, height, GL_TRUE);
                 }
 
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D_MULTISAMPLE, texture->handle, NULL);
@@ -1803,7 +1802,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
 
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    glfwWindowHint(GLFW_SAMPLES, 16);
+    glfwWindowHint(GLFW_SAMPLES, 8);
     render_state.contrast = contrast;
     render_state.brightness = brightness;
 
@@ -2624,10 +2623,10 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
 
         if(count == 1)
         {
-            glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, 0);
+            glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, nullptr);
         }
         else
-            glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, 0, count);
+            glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, nullptr, count);
 
         
     }
