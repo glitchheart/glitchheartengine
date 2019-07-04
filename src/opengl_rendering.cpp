@@ -629,7 +629,7 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
                 }
                 else
                 {
-                    glRenderbufferStorageMultisample(GL_RENDERBUFFER, attachment.samples, GL_RGBA, width, height);
+                    glRenderbufferStorageMultisample(GL_RENDERBUFFER, attachment.samples, GL_RGB, width, height);
                 }
 
                 glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_RENDERBUFFER,
@@ -685,8 +685,7 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
                 }
                 else
                 {
-                    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, attachment.samples, GL_RGBA, width, height, GL_TRUE);
-                    //glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+                    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, attachment.samples, GL_RGB, width, height, GL_TRUE);
                 }
 
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D_MULTISAMPLE, texture->handle, NULL);
@@ -1564,12 +1563,12 @@ static void load_texture(Texture* texture, TextureFiltering filtering, TextureWr
             glTexStorage2D(GL_TEXTURE_2D, mip, gl_format, width, height);
         }
 
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, texture->width, texture->height, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
         glGenerateMipmap(GL_TEXTURE_2D);
     }
     else
     {
-        glTexImage2D(GL_TEXTURE_2D, 0, gl_format, width, height, 0, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
+        glTexImage2D(GL_TEXTURE_2D, 0, gl_format, texture->width, texture->height, 0, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
         glGenerateMipmap(GL_TEXTURE_2D);
     }
     
@@ -1804,7 +1803,6 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     glfwWindowHint(GLFW_SAMPLES, 8);
-
     render_state.contrast = contrast;
     render_state.brightness = brightness;
 
@@ -1849,6 +1847,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
 
     //glfwSetInputMode(render_state.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
+
     glfwSetFramebufferSizeCallback(render_state.window, frame_buffer_size_callback);
     glfwSetWindowIconifyCallback(render_state.window, window_iconify_callback);
 
@@ -1877,7 +1876,9 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     glDebugMessageCallback((GLDEBUGPROC)message_callback, 0);
 #endif
     glDisable(GL_DITHER);
-    glDisable(GL_CULL_FACE);
+    
+    glEnable( GL_MULTISAMPLE);
+
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
@@ -2362,7 +2363,7 @@ static void set_uniform(rendering::Transform transform, const rendering::RenderP
     break;
     case rendering::UniformMappingType::CAMERA_POSITION:
     {
-        set_vec3_uniform(gl_shader.program, location, camera.position);
+        set_vec3_uniform(gl_shader.program, location, camera.pos);
     }
     break;
     case rendering::UniformMappingType::DISSOLVE:
@@ -2399,15 +2400,15 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             count = renderer->render.instancing.float_buffer_counts[handle];
 
             Buffer *buffer = renderer->render.instancing.internal_float_buffers[handle];
-            
-            glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
 
+            glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+            
             if(renderer->render.instancing.dirty_float_buffers[handle])
             {
                 glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
                 renderer->render.instancing.dirty_float_buffers[handle] = false;
             }
-            
+
             glEnableVertexAttribArray(array_num);
             glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
             glVertexAttribDivisor(array_num, 1);
@@ -2421,18 +2422,18 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             count = renderer->render.instancing.float2_buffer_counts[handle];
 
             Buffer *buffer = renderer->render.instancing.internal_float2_buffers[handle];
-            
-            glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
 
+                glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+            
             if(renderer->render.instancing.dirty_float2_buffers[handle])
             {
                 glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
                 renderer->render.instancing.dirty_float2_buffers[handle] = false;
             }
 
-            glEnableVertexAttribArray(array_num);
-            glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
-            glVertexAttribDivisor(array_num, 1);
+                glEnableVertexAttribArray(array_num);
+                glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
+                glVertexAttribDivisor(array_num, 1);
         }
         break;
         case rendering::ValueType::FLOAT3:
@@ -2444,17 +2445,17 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
 
             Buffer *buffer = renderer->render.instancing.internal_float3_buffers[handle];
 
-            glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+                glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
             
             if(renderer->render.instancing.dirty_float3_buffers[handle])
             {
                 glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
                 renderer->render.instancing.dirty_float3_buffers[handle] = false;
             }
-
-            glEnableVertexAttribArray(array_num);
-            glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
-            glVertexAttribDivisor(array_num, 1);
+            
+                glEnableVertexAttribArray(array_num);
+                glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
+                glVertexAttribDivisor(array_num, 1);
         }
         break;
         case rendering::ValueType::FLOAT4:
@@ -2489,12 +2490,12 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             Buffer *buffer = renderer->render.instancing.internal_mat4_buffers[handle];
             GLsizei vec4_size = sizeof(math::Vec4);
 
-            glEnableVertexAttribArray(array_num);
-            glEnableVertexAttribArray(array_num + 1);
-            glEnableVertexAttribArray(array_num + 2);
-            glEnableVertexAttribArray(array_num + 3);
+                glEnableVertexAttribArray(array_num);
+                glEnableVertexAttribArray(array_num + 1);
+                glEnableVertexAttribArray(array_num + 2);
+                glEnableVertexAttribArray(array_num + 3);
 
-            glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+                glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
 
             if(renderer->render.instancing.dirty_mat4_buffers[handle])
             {
@@ -2502,15 +2503,15 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
                 renderer->render.instancing.dirty_mat4_buffers[handle] = false;
             }
 
-            glVertexAttribPointer(array_num, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)0);
-            glVertexAttribPointer(array_num + 1, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)(vec4_size));
-            glVertexAttribPointer(array_num + 2, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)(2 * vec4_size));
-            glVertexAttribPointer(array_num + 3, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)(3 * vec4_size));
+                glVertexAttribPointer(array_num, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)0);
+                glVertexAttribPointer(array_num + 1, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)(vec4_size));
+                glVertexAttribPointer(array_num + 2, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)(2 * vec4_size));
+                glVertexAttribPointer(array_num + 3, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)(3 * vec4_size));
 
-            glVertexAttribDivisor(array_num, 1);
-            glVertexAttribDivisor(array_num + 1, 1);
-            glVertexAttribDivisor(array_num + 2, 1);
-            glVertexAttribDivisor(array_num + 3, 1);
+                glVertexAttribDivisor(array_num, 1);
+                glVertexAttribDivisor(array_num + 1, 1);
+                glVertexAttribDivisor(array_num + 2, 1);
+                glVertexAttribDivisor(array_num + 3, 1);
         }
         break;
         case rendering::ValueType::INTEGER:
@@ -2619,7 +2620,15 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
         setup_instanced_vertex_attribute_buffers(material.instanced_vertex_attributes, material.instanced_vertex_attribute_count, shader_info, render_state, renderer);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
-        glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void *)nullptr, count);
+
+        if(count == 1)
+        {
+            glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, nullptr);
+        }
+        else
+            glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, nullptr, count);
+
+        
     }
     else
     {
@@ -2786,9 +2795,8 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
         
         Framebuffer &framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
 
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_FRONT);
-        
+        static b32 hello = false;
+
         if(pass.settings & rendering::RenderPassSettings::BACKFACE_CULLING)
         {
             glEnable(GL_CULL_FACE);
@@ -2826,14 +2834,14 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
 
             if(command.blend_mode == rendering::BlendMode::ONE_MINUS_SOURCE)
             {
-                //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             }
             else if(command.blend_mode == rendering::BlendMode::ONE)
             {
-                //glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE);
             }
                 
-            rendering::Material material = get_material_instance(command.material, renderer);
+            rendering::Material &material = get_material_instance(command.material, renderer);
             ShaderGL *shader = &render_state.gl_shaders[material.shader.handle];
 
             switch(command.type)

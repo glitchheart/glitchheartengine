@@ -545,6 +545,11 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     rendering::ShaderHandle blur_shader = renderer->render.blur_shader;
     rendering::ShaderHandle bloom_shader = renderer->render.bloom_shader;
 
+    // Create opaque and transparent passes
+    // Set same framebuffer
+    // If in editor blit into texture and render into scene view
+    // If in game-mode blit to final framebuffer
+
     // Create the framebuffers
     rendering::FramebufferInfo standard_resolve_info = rendering::generate_framebuffer_info();
     standard_resolve_info.width = renderer->framebuffer_width;
@@ -566,6 +571,7 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     rendering::add_depth_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, standard_info, 8);
 
     rendering::FramebufferHandle standard_framebuffer = rendering::create_framebuffer(standard_info, renderer);
+    
     rendering::RenderPassHandle standard = rendering::create_render_pass(STANDARD_PASS, standard_framebuffer, renderer);
     
     renderer->render.standard_pass = standard;
@@ -595,8 +601,8 @@ static void init_renderer(Renderer *renderer, WorkQueue *reload_queue, ThreadInf
     final_info.width = renderer->framebuffer_width;
     final_info.height = renderer->framebuffer_height;
     
-    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::MULTISAMPLED | rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, final_info, 8);
-    rendering::add_depth_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::DepthAttachmentFlags::DEPTH_TEXTURE | rendering::DepthAttachmentFlags::DEPTH_MULTISAMPLED, final_info, 8);
+    rendering::add_color_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::ColorAttachmentFlags::CLAMP_TO_EDGE, final_info);
+    rendering::add_depth_attachment(rendering::AttachmentType::RENDER_BUFFER, rendering::DepthAttachmentFlags::DEPTH_TEXTURE, final_info);
 
     rendering::FramebufferHandle final_framebuffer = rendering::create_framebuffer(final_info, renderer);
     rendering::set_final_framebuffer(renderer, final_framebuffer);
@@ -1050,6 +1056,7 @@ int main(int argc, char **args)
 
     #ifdef EDITOR
     editor::EditorState editor_state = {};
+    editor::_init(&editor_state);
     core.editor_state = &editor_state;
     #endif
     
@@ -1085,34 +1092,41 @@ int main(int argc, char **args)
 
         if(scene_manager->scene_loaded)
         {
+            scene::Scene &current_scene = scene::get_scene(scene_manager->loaded_scene);
+            
             #ifdef EDITOR
             if(scene_manager->mode == scene::SceneMode::RUNNING)
             {
+                editor::_render_stats(&editor_state, scene_manager, &input_controller, &sound_system, delta_time);
                 game.update(&game_memory);
             }
             else
             {
                 game.update_editor(&game_memory);
                 
-                scene::Scene &current_scene = scene::get_scene(scene_manager->loaded_scene);
+                editor::_render_main_menu(&editor_state, scene_manager, &input_controller, delta_time);
 
                 if(editor_state.mode == editor::EditorMode::BUILT_IN)
                 {
-                    editor::_render_hierarchy(current_scene, delta_time);
-                    editor::_render_inspector(current_scene, &input_controller, delta_time);
-                    editor::_render_resources(project_state, scene_manager, delta_time);
+                    editor::_render_hierarchy(current_scene, &editor_state, &input_controller, delta_time);
+                    editor::_render_inspector(current_scene, &editor_state, &input_controller, delta_time);
+                    editor::_render_resources(project_state, &editor_state, scene_manager, delta_time);
+                    editor::_render_scene_settings(&editor_state, scene_manager, delta_time);
+                    editor::_render_stats(&editor_state, scene_manager, &input_controller, &sound_system, delta_time);
                 }
             }
             #else
             game.update(&game_memory);
             #endif
 
+
             if(scene_manager->scene_loaded) // Check again, since there could be a call to unload_current_scene() in game.update()
             {
-                #ifdef EDITOR
+				
+
+#ifdef EDITOR
                 update_scene_editor(scene_manager->loaded_scene, &input_controller, render_state, delta_time);
-                #endif
-                
+#endif
                 scene::Scene &scene = scene::get_scene(scene_manager->loaded_scene);
                 scene::update_animators(scene, renderer, delta_time);
                 scene::push_scene_for_rendering(scene, renderer);
@@ -1123,7 +1137,6 @@ int main(int argc, char **args)
         
         update_particle_systems(renderer, delta_time);
 
-        //tick_animation_controllers(renderer, &sound_system, &input_controller, timer_controller, delta_time);
         tick_timers(timer_controller, delta_time);
 
         if(sound_system.update)

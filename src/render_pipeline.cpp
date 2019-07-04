@@ -678,8 +678,6 @@ namespace rendering
 
         Camera camera = {};
         camera.zoom = 1.0f;
-        camera.position = math::Vec3(0.0f);
-        camera.target = math::Vec3();
         camera.view_matrix = math::Mat4();
 
         camera.projection_matrix = math::ortho(0.0f, (r32)renderer->framebuffer_width, 0.0f,
@@ -1021,12 +1019,6 @@ namespace rendering
     {
         RenderPass &pass = renderer->render.passes[render_pass_handle.handle - 1];
         pass.clipping_planes.plane = plane;
-    }
-
-    static void set_camera_for_render_pass(Camera &camera, RenderPassHandle render_pass_handle, Renderer *renderer)
-    {
-        renderer->render.passes[render_pass_handle.handle - 1].camera = camera;
-        renderer->render.passes[render_pass_handle.handle - 1].use_scene_camera = false;
     }
 
     static math::Vec2i get_texture_size(rendering::TextureHandle handle, Renderer *renderer)
@@ -5307,6 +5299,9 @@ namespace rendering
         transform.model = math::scale(transform.model, transform.scale);
         transform.model = math::to_matrix(transform.orientation) * transform.model;
         transform.model = math::translate(transform.model, transform.position);
+        transform.forward = math::forward(transform.model);
+        transform.right = math::right(transform.model);
+        transform.up = math::up(transform.model);
         transform.dirty = false;
     }
 

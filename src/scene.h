@@ -1,6 +1,8 @@
 #ifndef SCENE_H
 #define SCENE_H
 
+#define ENTITY_IS_VALID(handle) handle.handle > 0
+
 #define SCALE_SENSITIVITY 0.01f
 
 #define EMPTY_ENTITY_HANDLE {0}
@@ -47,6 +49,11 @@ namespace scene
         i32 handle;
     };
 
+    struct CameraComponentHandle
+    {
+        i32 handle;
+    };
+
     enum LightType
     {
         DIRECTIONAL,
@@ -60,7 +67,8 @@ namespace scene
         COMP_RENDER = 1 << 1,
         COMP_PARTICLES = 1 << 2,
         COMP_LIGHT = 1 << 3,
-        COMP_ANIMATOR = 1 << 4
+        COMP_ANIMATOR = 1 << 4,
+        COMP_CAMERA = 1 << 5
     };
 
     struct EntityData
@@ -133,6 +141,7 @@ namespace scene
         AnimatorHandle animator_handle;
         ParticleSystemComponentHandle particle_system_handle;
         LightComponentHandle light_handle;
+        CameraComponentHandle camera_handle;
 
         EntityHandle parent;
         
@@ -168,6 +177,8 @@ namespace scene
         i32 render_pass_count;
     };
 
+    typedef void (*AnimationCallback)();
+    
     enum class AnimationType
     {
         FLOAT,
@@ -298,6 +309,8 @@ namespace scene
 
         AnimationTransition transitions[MAX_ANIMATION_TRANSITIONS];
         i32 transition_count;
+
+        AnimationCallback callback;
     };
 
     enum class AnimatorParameterType
@@ -336,6 +349,13 @@ namespace scene
 
         AnimationTransition transitions[MAX_ANIMATION_TRANSITIONS];
         i32 transition_count;
+    };
+
+    struct CameraComponent
+    {
+        EntityHandle entity;
+        b32 is_main_camera;
+        Camera camera;
     };
     
     struct ParticleSystemComponent
@@ -379,6 +399,9 @@ namespace scene
             math::Vec3 rotation;
             TemplateHandle child_handle;
         } transform;
+
+        Camera camera;
+        
         struct
         {
             b32 is_static;
@@ -395,6 +418,7 @@ namespace scene
             rendering::MaterialHandle material_handles[8];
             i32 render_pass_count;
         } render;
+        
         struct
         {
             ParticleSystemAttributes attributes;
@@ -493,14 +517,6 @@ namespace scene
             i32 map_width;
             i32 map_height;
         } shadows;
-        struct
-        {
-            math::Vec3 position;
-            math::Vec3 target;
-            r32 fov;
-            r32 z_near;
-            r32 z_far;
-        } camera;
     };
 
     #define GIZMO_TOLERANCE 0.07f
@@ -527,6 +543,8 @@ namespace scene
 
         Settings settings;
         
+        EntityHandle render_pass_cameras[32];
+        
         TransformComponent *transform_components;
         i32 transform_component_count;
         
@@ -542,6 +560,10 @@ namespace scene
         LightComponent *light_components;
         i32 light_component_count;
 
+        CameraComponent *camera_components;
+        i32 camera_component_count;
+
+        EntityHandle main_camera_handle;
         Camera main_camera;
 
         i32 max_entity_count;
@@ -623,8 +645,15 @@ namespace scene
         i32 current_internal_index;
 
         SceneMode mode;
-        Camera editor_camera;
 
+        EntityHandle editor_camera;
+
+        struct
+        {
+            b32 show_camera_preview;
+            EntityHandle handle;
+        } camera_preview;
+        
         EntityHandle selected_entity;
 
         b32 dragging;
@@ -722,8 +751,6 @@ namespace scene
         scene_manager->gizmos.y_material = rendering::create_material_instance(renderer, scene_manager->gizmos.line_material);
         scene_manager->gizmos.z_material = rendering::create_material_instance(renderer, scene_manager->gizmos.line_material);
 
-        scene_manager->editor_camera = get_standard_camera(*scene_manager);
-        
         return scene_manager;
     }
 
@@ -752,17 +779,21 @@ namespace scene
     static void unregister_entity(EntityHandle handle, SceneHandle scene);
     static EntityTemplate _load_template(const char *path, EntityTemplateState template_state, SceneHandle scene);
     static EntityHandle register_entity_from_template_file(const char *path, SceneHandle scene, b32 savable = false, Tags* tags = nullptr);
-    static void set_active(EntityHandle handle, b32 active, SceneHandle scene);
+    static void set_active(EntityHandle handle, b32 active, SceneHandle scene, b32 recursive = true);
     static void set_hide_in_ui(EntityHandle handle, b32 hide, SceneHandle scene_handle);
     static TransformComponent& get_transform_comp(EntityHandle handle, Scene &scene);
     static TransformComponent& get_transform_comp(EntityHandle handle, SceneHandle scene);
     static TransformComponent& get_transform_comp(TransformComponentHandle handle, SceneHandle scene);
     static RenderComponent& get_render_comp(EntityHandle handle, SceneHandle scene);
+    static CameraComponent& get_camera_comp(EntityHandle handle, SceneHandle scene);
     static AnimatorComponent& get_animator_comp(EntityHandle handle, SceneHandle scene);
     static ParticleSystemComponent& get_particle_system_comp(EntityHandle handle, SceneHandle scene);
     static LightComponent &get_light_comp(EntityHandle handle, SceneHandle scene);
     static Camera & get_scene_camera(SceneHandle handle);
-    static Camera& get_editor_camera(SceneHandle handle);
+    static TransformComponent &get_main_camera_transform(SceneHandle handle);
+    static CameraComponent &get_main_camera_comp(SceneHandle handle);
+    static EntityHandle get_main_camera_handle(SceneHandle handle);
+    static void set_camera_for_render_pass(EntityHandle camera_entity, rendering::RenderPassHandle handle, SceneHandle scene_handle);
     static EntityHandle pick_entity(SceneHandle handle, i32 mouse_x, i32 mouse_y);
     static Entity& get_entity(EntityHandle handle, Scene &scene);
     static Entity& get_entity(EntityHandle handle, SceneHandle& scene_handle);
@@ -771,6 +802,7 @@ namespace scene
     static b32 has_particle_component(EntityHandle entity_handle, SceneHandle& scene);
     static b32 has_render_component(EntityHandle entity_handle, SceneHandle& scene);
     static b32 has_transform_component(EntityHandle entity_handle, SceneHandle& scene);
+    static b32 has_camera_component(EntityHandle entity_handle, SceneHandle scene);
     static void add_child(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene);
     static b32 has_tag(const char* tag_name, EntityHandle entity_handle, SceneHandle scene_handle);
     static void set_entity_tag(const char *tag, EntityHandle entity_handle, SceneHandle scene_handle);
@@ -780,16 +812,22 @@ namespace scene
     static TransformComponent& _add_transform_component(Scene &scene, EntityHandle entity_handle);
     static ParticleSystemComponent& _add_particle_system_component(Scene &scene, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles, rendering::MaterialHandle material);
     static LightComponent& _add_light_component(Scene &scene, EntityHandle entity_handle);
+    static CameraComponent& _add_camera_component(EntityHandle entity_handle, Scene &scene);
+    static CameraComponent & add_camera_component(EntityHandle entity_handle, SceneHandle handle);
     static EntityHandle _register_entity(u64 comp_flags, Scene &scene, b32 savable);
     static void _unregister_entity(EntityHandle handle, Scene &scene);
     static EntityTemplate _load_template(const char *path, EntityTemplateState &template_state, Scene &scene);
     static EntityHandle _register_entity_from_template_file(const char *path, Scene &scene, b32 savable, Tags* tags);
     static b32 is_active(EntityHandle handle, SceneHandle scene_handle);
-    static void _set_active(EntityHandle handle, b32 active, Scene &scene);
+    static void _set_active(EntityHandle handle, b32 active, Scene &scene, b32 recursive);
     static TransformComponent& _get_transform_comp(EntityHandle handle, Scene &scene);
     static RenderComponent& _get_render_comp(EntityHandle handle, Scene &scene);
+    static CameraComponent& _get_camera_comp(EntityHandle handle, Scene &scene);
     static ParticleSystemComponent& _get_particle_system_comp(EntityHandle handle, Scene &scene);
     static LightComponent &_get_light_comp(EntityHandle handle, Scene &scene);
+
+    static i32 get_child_count(EntityHandle handle, SceneHandle scene);
+    static EntityHandle get_child_handle(EntityHandle handle, i32 index, SceneHandle scene);
     
     i32 _unused_entity_handle(Scene &scene);
     i32 _pack_transform_components(Entity &entity, Scene &scene);
@@ -806,9 +844,16 @@ namespace scene
     static void set_rotation(TransformComponent& comp, math::Vec3 rotation);
     static void set_scale(TransformComponent& comp, math::Vec3 scale);
 
+    static inline void set_entity_name(EntityHandle handle, const char *name, SceneHandle scene_handle);
     static inline void _set_entity_name(EntityHandle handle, const char *name, Scene& scene);
     static inline void _set_entity_template_path(EntityHandle handle, const char *template_path, Scene& scene);
     static inline void _set_entity_type(EntityHandle handle, u32 type, Scene &scene);
+
+    // CAMERA
+    static void update_cameras(Scene &scene, SceneManager *scene_manager);
+    static void set_main_camera(EntityHandle entity_handle, SceneHandle scene_handle);
+    static void set_camera_preview(EntityHandle entity_handle, SceneManager *scene_manager);
+    static void stop_camera_preview(SceneManager *scene_manager);
 }
 
 #endif
