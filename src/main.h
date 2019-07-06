@@ -19,6 +19,7 @@ struct GameCode
     
     Update *update;
     UpdateEditor *update_editor;
+    BuildRenderPipeline *build_render_pipeline;
     
     b32 is_valid;
 };
