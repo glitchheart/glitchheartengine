@@ -3,6 +3,7 @@
 #define VC_EXTRA_LEAN
 #endif
 
+#include "assimp_loader.cpp"
 #include "imgui/imgui.h"
 #include "shared.h"
 
@@ -861,6 +862,11 @@ int main(int argc, char **args)
     
     init_renderer(game, renderer, &reload_queue, &reload_thread, particle_api);
 
+    if(import_file("../assets/models/arrow.obj"))
+    {
+        printf("Arrow loaded successfuly!\n");
+    }
+    
     scene::SceneManager *scene_manager = scene::create_scene_manager(&platform_state->perm_arena, renderer);
     
     TimerController *timer_controller_ptr = (TimerController*)malloc(sizeof(TimerController));
