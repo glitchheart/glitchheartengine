@@ -3,8 +3,6 @@
 #define VC_EXTRA_LEAN
 #endif
 
-#include "assimp_loader.cpp"
-
 #include "imgui/imgui.h"
 #include "shared.h"
 
@@ -62,6 +60,7 @@ static MemoryState memory_state;
 #include "fmod_sound.cpp"
 #include "filehandling.h"
 
+#include "assimp_loader.cpp"
 #include "shader_loader.cpp"
 #include "render_pipeline.cpp"
 #include "rendering.cpp"
@@ -863,10 +862,10 @@ int main(int argc, char **args)
     
     init_renderer(game, renderer, &reload_queue, &reload_thread, particle_api);
 
-    // if(import_file("../assets/models/arrow.obj"))
-    // {
-    //     printf("Arrow loaded successfuly!\n");
-    // }
+    if(load_model_file("../assets/models/arrow.obj"))
+    {
+        printf("Arrow loaded successfuly!\n");
+    }
     
     scene::SceneManager *scene_manager = scene::create_scene_manager(&platform_state->perm_arena, renderer);
     
