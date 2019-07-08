@@ -57,6 +57,8 @@ struct Buffer
     GLint vertex_count;
     GLint index_buffer_size;
     GLint index_buffer_count;
+
+    size_t size;
     GLenum usage;
 };
 

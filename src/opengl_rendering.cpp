@@ -446,9 +446,10 @@ static void create_instance_buffer(Buffer *buffer, size_t buffer_size, rendering
     }
 
     buffer->usage = get_usage(buffer_usage);
+    buffer->size = buffer_size;
     
     glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)buffer_size, nullptr, buffer->usage);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)buffer->size, nullptr, buffer->usage);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -491,6 +492,8 @@ static void update_uniform_buffer(UniformBuffer *buffer, rendering::UniformBuffe
     // glBindBuffer(GL_UNIFORM_BUFFER, buffer->ubo);
 
     // @Incomplete: Consider updating with offset as well
+    
+    glBufferData(GL_ARRAY_BUFFER, buffer->size, NULL, GL_DYNAMIC_DRAW);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, size, buffer->memory);
 }
 
@@ -1551,8 +1554,9 @@ static void load_texture(Texture* texture, TextureFiltering filtering, TextureWr
     i32 mip = 4;
 
 #if defined(__APPLE__)
-     glTexImage2D(GL_TEXTURE_2D, 0, gl_format, width, height, 0, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
-     glGenerateMipmap(GL_TEXTURE_2D);
+    glEnable(GL_TEXTURE_2D);
+    glTexImage2D(GL_TEXTURE_2D, 0, gl_format, width, height, 0, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
+    glGenerateMipmap(GL_TEXTURE_2D);
     
  #else
 
@@ -1797,7 +1801,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     //glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
-    glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GL_TRUE);
+    //glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GL_TRUE);
 #endif
 
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -2402,6 +2406,7 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             Buffer *buffer = renderer->render.instancing.internal_float_buffers[handle];
 
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+            glBufferData(GL_ARRAY_BUFFER, buffer->size, NULL, GL_DYNAMIC_DRAW);
             
             if(renderer->render.instancing.dirty_float_buffers[handle])
             {
@@ -2423,7 +2428,8 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
 
             Buffer *buffer = renderer->render.instancing.internal_float2_buffers[handle];
 
-                glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+            glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+            glBufferData(GL_ARRAY_BUFFER, buffer->size, NULL, GL_DYNAMIC_DRAW);
             
             if(renderer->render.instancing.dirty_float2_buffers[handle])
             {
@@ -2445,7 +2451,8 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
 
             Buffer *buffer = renderer->render.instancing.internal_float3_buffers[handle];
 
-                glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+            glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+            glBufferData(GL_ARRAY_BUFFER, buffer->size, NULL, GL_DYNAMIC_DRAW);
             
             if(renderer->render.instancing.dirty_float3_buffers[handle])
             {
@@ -2468,7 +2475,8 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             Buffer *buffer = renderer->render.instancing.internal_float4_buffers[handle];
             
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-
+            glBufferData(GL_ARRAY_BUFFER, buffer->size, NULL, GL_DYNAMIC_DRAW);
+            
             if(renderer->render.instancing.dirty_float4_buffers[handle])
             {
                 glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
@@ -2490,28 +2498,29 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             Buffer *buffer = renderer->render.instancing.internal_mat4_buffers[handle];
             GLsizei vec4_size = sizeof(math::Vec4);
 
-                glEnableVertexAttribArray(array_num);
-                glEnableVertexAttribArray(array_num + 1);
-                glEnableVertexAttribArray(array_num + 2);
-                glEnableVertexAttribArray(array_num + 3);
+            glEnableVertexAttribArray(array_num);
+            glEnableVertexAttribArray(array_num + 1);
+            glEnableVertexAttribArray(array_num + 2);
+            glEnableVertexAttribArray(array_num + 3);
 
-                glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-
+            glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+            glBufferData(GL_ARRAY_BUFFER, buffer->size, NULL, GL_DYNAMIC_DRAW);
+            
             if(renderer->render.instancing.dirty_mat4_buffers[handle])
             {
                 glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), &((math::Mat4*)buf_ptr)[0]);
                 renderer->render.instancing.dirty_mat4_buffers[handle] = false;
             }
 
-                glVertexAttribPointer(array_num, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)0);
-                glVertexAttribPointer(array_num + 1, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)(vec4_size));
-                glVertexAttribPointer(array_num + 2, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)(2 * vec4_size));
-                glVertexAttribPointer(array_num + 3, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)(3 * vec4_size));
+            glVertexAttribPointer(array_num, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)0);
+            glVertexAttribPointer(array_num + 1, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)(vec4_size));
+            glVertexAttribPointer(array_num + 2, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)(2 * vec4_size));
+            glVertexAttribPointer(array_num + 3, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)(3 * vec4_size));
 
-                glVertexAttribDivisor(array_num, 1);
-                glVertexAttribDivisor(array_num + 1, 1);
-                glVertexAttribDivisor(array_num + 2, 1);
-                glVertexAttribDivisor(array_num + 3, 1);
+            glVertexAttribDivisor(array_num, 1);
+            glVertexAttribDivisor(array_num + 1, 1);
+            glVertexAttribDivisor(array_num + 2, 1);
+            glVertexAttribDivisor(array_num + 3, 1);
         }
         break;
         case rendering::ValueType::INTEGER:
