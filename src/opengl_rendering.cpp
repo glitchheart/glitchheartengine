@@ -2992,6 +2992,11 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
 
 static void swap_buffers(RenderState &render_state)
 {
+    // @Note(Daniel): Temporary fix for MacOS
+    #if __APPLE__
+    glFinish();
+    #endif
+    
     glfwSwapBuffers(render_state.window);
 }
 
