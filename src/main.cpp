@@ -3,7 +3,7 @@
 #define VC_EXTRA_LEAN
 #endif
 
-//#include "assimp_loader.cpp"
+#include "assimp_loader.cpp"
 
 #include "imgui/imgui.h"
 #include "shared.h"
