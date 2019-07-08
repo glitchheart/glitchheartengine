@@ -862,11 +862,6 @@ int main(int argc, char **args)
     
     init_renderer(game, renderer, &reload_queue, &reload_thread, particle_api);
 
-    if(load_model_file("../assets/models/arrow.obj"))
-    {
-        printf("Arrow loaded successfuly!\n");
-    }
-    
     scene::SceneManager *scene_manager = scene::create_scene_manager(&platform_state->perm_arena, renderer);
     
     TimerController *timer_controller_ptr = (TimerController*)malloc(sizeof(TimerController));
@@ -1033,6 +1028,7 @@ int main(int argc, char **args)
         {
             save_config("../.config", renderer, &sound_system);
         }
+        
         do_save_config = false;
 
         set_controller_invalid_keys();
