@@ -3,7 +3,6 @@
 #define VC_EXTRA_LEAN
 #endif
 
-#include "assimp_loader.cpp"
 #include "imgui/imgui.h"
 #include "shared.h"
 
@@ -61,6 +60,7 @@ static MemoryState memory_state;
 #include "fmod_sound.cpp"
 #include "filehandling.h"
 
+#include "assimp_loader.cpp"
 #include "shader_loader.cpp"
 #include "render_pipeline.cpp"
 #include "rendering.cpp"
