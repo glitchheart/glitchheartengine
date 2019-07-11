@@ -551,7 +551,7 @@ struct Renderer
 
     /* Camera camera; */
 	
-	MemoryArena command_arena;
+    MemoryArena command_arena;
     
 	Mesh *meshes;
 	i32 mesh_count;

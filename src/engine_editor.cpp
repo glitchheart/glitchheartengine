@@ -87,7 +87,7 @@ namespace editor
                 scene::select_entity(new_handle, scene.handle.manager);
             }
             
-            for (i32 i = 0; i < scene.entity_count; i++)
+            for (i32 i = 0; i < scene.entities.count; i++)
             {
                 scene::EntityHandle handle = scene.entities[i].handle;
 
@@ -911,7 +911,7 @@ namespace editor
             if(scene_manager->scene_loaded)
             {
                 scene::Scene &scene = scene::get_scene(scene_manager->loaded_scene);
-                ImGui::Text("Entities: %d", (i32)scene.entity_count);
+                ImGui::Text("Entities: %d", (i32)scene.entities.count);
             }
 
             ImGui::Text("Shaders: %d", (i32)renderer->render.shader_count);
