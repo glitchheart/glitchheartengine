@@ -450,7 +450,7 @@ static void create_instance_buffer(Buffer *buffer, size_t buffer_size, rendering
     
     glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
     glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)buffer->size, nullptr, buffer->usage);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    //glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 static rendering::BufferUsage get_buffer_usage(Buffer *buffer)
@@ -2406,15 +2406,15 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             Buffer *buffer = renderer->render.instancing.internal_float_buffers[handle];
 
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-            glBufferData(GL_ARRAY_BUFFER, buffer->size, NULL, GL_DYNAMIC_DRAW);
+            glEnableVertexAttribArray(array_num);
             
             if(renderer->render.instancing.dirty_float_buffers[handle])
             {
+                glBufferData(GL_ARRAY_BUFFER, buffer->size, NULL, GL_DYNAMIC_DRAW);
                 glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
                 renderer->render.instancing.dirty_float_buffers[handle] = false;
             }
 
-            glEnableVertexAttribArray(array_num);
             glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
             glVertexAttribDivisor(array_num, 1);
         }
@@ -2429,17 +2429,17 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             Buffer *buffer = renderer->render.instancing.internal_float2_buffers[handle];
 
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-            glBufferData(GL_ARRAY_BUFFER, buffer->size, NULL, GL_DYNAMIC_DRAW);
+            glEnableVertexAttribArray(array_num);
             
             if(renderer->render.instancing.dirty_float2_buffers[handle])
             {
+                glBufferData(GL_ARRAY_BUFFER, buffer->size, NULL, GL_DYNAMIC_DRAW);
                 glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
                 renderer->render.instancing.dirty_float2_buffers[handle] = false;
             }
 
-                glEnableVertexAttribArray(array_num);
-                glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
-                glVertexAttribDivisor(array_num, 1);
+            glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
+            glVertexAttribDivisor(array_num, 1);
         }
         break;
         case rendering::ValueType::FLOAT3:
@@ -2452,17 +2452,17 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             Buffer *buffer = renderer->render.instancing.internal_float3_buffers[handle];
 
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-            glBufferData(GL_ARRAY_BUFFER, buffer->size, NULL, GL_DYNAMIC_DRAW);
+            glEnableVertexAttribArray(array_num);
             
             if(renderer->render.instancing.dirty_float3_buffers[handle])
             {
+                glBufferData(GL_ARRAY_BUFFER, buffer->size, NULL, GL_DYNAMIC_DRAW);
                 glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
                 renderer->render.instancing.dirty_float3_buffers[handle] = false;
             }
             
-                glEnableVertexAttribArray(array_num);
-                glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
-                glVertexAttribDivisor(array_num, 1);
+            glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
+            glVertexAttribDivisor(array_num, 1);
         }
         break;
         case rendering::ValueType::FLOAT4:
@@ -2475,15 +2475,16 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             Buffer *buffer = renderer->render.instancing.internal_float4_buffers[handle];
             
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-            glBufferData(GL_ARRAY_BUFFER, buffer->size, NULL, GL_DYNAMIC_DRAW);
+            
+            glEnableVertexAttribArray(array_num);
             
             if(renderer->render.instancing.dirty_float4_buffers[handle])
             {
+                glBufferData(GL_ARRAY_BUFFER, buffer->size, NULL, GL_DYNAMIC_DRAW);
                 glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
                 renderer->render.instancing.dirty_float4_buffers[handle] = false;
             }
-            
-            glEnableVertexAttribArray(array_num);         
+                   
             glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
             glVertexAttribDivisor(array_num, 1);
         }
@@ -2504,10 +2505,10 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             glEnableVertexAttribArray(array_num + 3);
 
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-            glBufferData(GL_ARRAY_BUFFER, buffer->size, NULL, GL_DYNAMIC_DRAW);
             
             if(renderer->render.instancing.dirty_mat4_buffers[handle])
             {
+                glBufferData(GL_ARRAY_BUFFER, buffer->size, NULL, GL_DYNAMIC_DRAW);
                 glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), &((math::Mat4*)buf_ptr)[0]);
                 renderer->render.instancing.dirty_mat4_buffers[handle] = false;
             }
@@ -2636,8 +2637,6 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
         }
         else
             glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, nullptr, count);
-
-        
     }
     else
     {
