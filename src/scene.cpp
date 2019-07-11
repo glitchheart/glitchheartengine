@@ -3614,7 +3614,7 @@ static Camera get_standard_camera(SceneManager& manager)
         assert(templ);
 
         EntityHandle entity = _register_entity_with_template(*templ, scene, savable);
-
+            
         //// Add all children registered to the template
         for(i32 i = 0; i < templ->child_count; i++)
         {

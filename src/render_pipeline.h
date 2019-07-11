@@ -387,8 +387,16 @@ namespace rendering
 		Shader () {}
     };
 
+    enum RenderType
+    {
+        OPAQUE,
+        TRANSPARENT
+    };
+    
     struct Material
     {
+        RenderType render_type;
+        
 		ShaderHandle shader;
         
         VertexAttributeInstanced instanced_vertex_attributes[8];

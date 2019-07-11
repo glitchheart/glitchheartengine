@@ -446,10 +446,11 @@ static void create_instance_buffer(Buffer *buffer, size_t buffer_size, rendering
     }
 
     buffer->usage = get_usage(buffer_usage);
+    buffer->size = buffer_size;
     
     glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)buffer_size, nullptr, buffer->usage);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)buffer->size, nullptr, buffer->usage);
+    //glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 static rendering::BufferUsage get_buffer_usage(Buffer *buffer)
@@ -491,6 +492,8 @@ static void update_uniform_buffer(UniformBuffer *buffer, rendering::UniformBuffe
     // glBindBuffer(GL_UNIFORM_BUFFER, buffer->ubo);
 
     // @Incomplete: Consider updating with offset as well
+    
+    glBufferData(GL_ARRAY_BUFFER, buffer->size, NULL, GL_DYNAMIC_DRAW);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, size, buffer->memory);
 }
 
@@ -646,7 +649,7 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
                 }
                 else
                 {
-                    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA, width, height);
+                    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB, width, height);
                 }
 
                 glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_RENDERBUFFER,
@@ -701,13 +704,13 @@ static void create_framebuffer_color_attachment(RenderState &render_state, Rende
                 }
                 else
                 {
-                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
                 }
 
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, texture->handle, NULL);
 
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
                 
                 if(attachment.flags & rendering::ColorAttachmentFlags::CLAMP_TO_EDGE)   
                 {
@@ -749,13 +752,13 @@ static void _create_framebuffer_depth_texture_attachment(rendering::DepthAttachm
         
         glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, attachment.samples, GL_DEPTH24_STENCIL8, width, height, GL_TRUE);
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
         
-        float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
-        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+        // float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+        // glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, texture->handle, NULL);
 
@@ -773,11 +776,11 @@ static void _create_framebuffer_depth_texture_attachment(rendering::DepthAttachm
         // Prevent shadows outside of the shadow map
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
-        float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
-        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+        // float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+        // glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, texture->handle, 0);
 
@@ -1551,8 +1554,9 @@ static void load_texture(Texture* texture, TextureFiltering filtering, TextureWr
     i32 mip = 4;
 
 #if defined(__APPLE__)
-     glTexImage2D(GL_TEXTURE_2D, 0, gl_format, width, height, 0, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
-     glGenerateMipmap(GL_TEXTURE_2D);
+    glEnable(GL_TEXTURE_2D);
+    glTexImage2D(GL_TEXTURE_2D, 0, gl_format, width, height, 0, img_format, GL_UNSIGNED_BYTE, (GLvoid*)image_data);
+    glGenerateMipmap(GL_TEXTURE_2D);
     
  #else
 
@@ -1797,7 +1801,7 @@ static void initialize_opengl(RenderState &render_state, Renderer *renderer, r32
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     //glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
-    glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GL_TRUE);
+    //glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GL_TRUE);
 #endif
 
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -2402,14 +2406,15 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             Buffer *buffer = renderer->render.instancing.internal_float_buffers[handle];
 
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+            glEnableVertexAttribArray(array_num);
             
             if(renderer->render.instancing.dirty_float_buffers[handle])
             {
+                glBufferData(GL_ARRAY_BUFFER, buffer->size, NULL, GL_DYNAMIC_DRAW);
                 glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
                 renderer->render.instancing.dirty_float_buffers[handle] = false;
             }
 
-            glEnableVertexAttribArray(array_num);
             glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
             glVertexAttribDivisor(array_num, 1);
         }
@@ -2423,17 +2428,18 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
 
             Buffer *buffer = renderer->render.instancing.internal_float2_buffers[handle];
 
-                glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+            glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+            glEnableVertexAttribArray(array_num);
             
             if(renderer->render.instancing.dirty_float2_buffers[handle])
             {
+                glBufferData(GL_ARRAY_BUFFER, buffer->size, NULL, GL_DYNAMIC_DRAW);
                 glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
                 renderer->render.instancing.dirty_float2_buffers[handle] = false;
             }
 
-                glEnableVertexAttribArray(array_num);
-                glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
-                glVertexAttribDivisor(array_num, 1);
+            glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
+            glVertexAttribDivisor(array_num, 1);
         }
         break;
         case rendering::ValueType::FLOAT3:
@@ -2445,17 +2451,18 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
 
             Buffer *buffer = renderer->render.instancing.internal_float3_buffers[handle];
 
-                glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+            glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+            glEnableVertexAttribArray(array_num);
             
             if(renderer->render.instancing.dirty_float3_buffers[handle])
             {
+                glBufferData(GL_ARRAY_BUFFER, buffer->size, NULL, GL_DYNAMIC_DRAW);
                 glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
                 renderer->render.instancing.dirty_float3_buffers[handle] = false;
             }
             
-                glEnableVertexAttribArray(array_num);
-                glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
-                glVertexAttribDivisor(array_num, 1);
+            glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
+            glVertexAttribDivisor(array_num, 1);
         }
         break;
         case rendering::ValueType::FLOAT4:
@@ -2468,14 +2475,16 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             Buffer *buffer = renderer->render.instancing.internal_float4_buffers[handle];
             
             glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-
+            
+            glEnableVertexAttribArray(array_num);
+            
             if(renderer->render.instancing.dirty_float4_buffers[handle])
             {
+                glBufferData(GL_ARRAY_BUFFER, buffer->size, NULL, GL_DYNAMIC_DRAW);
                 glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), buf_ptr);
                 renderer->render.instancing.dirty_float4_buffers[handle] = false;
             }
-            
-            glEnableVertexAttribArray(array_num);         
+                   
             glVertexAttribPointer(array_num, num_values, GL_FLOAT, GL_FALSE, (GLsizei)size, (void *)nullptr);
             glVertexAttribDivisor(array_num, 1);
         }
@@ -2490,28 +2499,29 @@ static void setup_instanced_vertex_attribute_buffers(rendering::VertexAttributeI
             Buffer *buffer = renderer->render.instancing.internal_mat4_buffers[handle];
             GLsizei vec4_size = sizeof(math::Vec4);
 
-                glEnableVertexAttribArray(array_num);
-                glEnableVertexAttribArray(array_num + 1);
-                glEnableVertexAttribArray(array_num + 2);
-                glEnableVertexAttribArray(array_num + 3);
+            glEnableVertexAttribArray(array_num);
+            glEnableVertexAttribArray(array_num + 1);
+            glEnableVertexAttribArray(array_num + 2);
+            glEnableVertexAttribArray(array_num + 3);
 
-                glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-
+            glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+            
             if(renderer->render.instancing.dirty_mat4_buffers[handle])
             {
+                glBufferData(GL_ARRAY_BUFFER, buffer->size, NULL, GL_DYNAMIC_DRAW);
                 glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(size * count), &((math::Mat4*)buf_ptr)[0]);
                 renderer->render.instancing.dirty_mat4_buffers[handle] = false;
             }
 
-                glVertexAttribPointer(array_num, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)0);
-                glVertexAttribPointer(array_num + 1, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)(vec4_size));
-                glVertexAttribPointer(array_num + 2, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)(2 * vec4_size));
-                glVertexAttribPointer(array_num + 3, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)(3 * vec4_size));
+            glVertexAttribPointer(array_num, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)0);
+            glVertexAttribPointer(array_num + 1, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)(vec4_size));
+            glVertexAttribPointer(array_num + 2, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)(2 * vec4_size));
+            glVertexAttribPointer(array_num + 3, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void *)(3 * vec4_size));
 
-                glVertexAttribDivisor(array_num, 1);
-                glVertexAttribDivisor(array_num + 1, 1);
-                glVertexAttribDivisor(array_num + 2, 1);
-                glVertexAttribDivisor(array_num + 3, 1);
+            glVertexAttribDivisor(array_num, 1);
+            glVertexAttribDivisor(array_num + 1, 1);
+            glVertexAttribDivisor(array_num + 2, 1);
+            glVertexAttribDivisor(array_num + 3, 1);
         }
         break;
         case rendering::ValueType::INTEGER:
@@ -2627,8 +2637,6 @@ static void render_buffer(rendering::PrimitiveType primitive_type, rendering::Tr
         }
         else
             glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, nullptr, count);
-
-        
     }
     else
     {
@@ -2795,8 +2803,6 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
         
         Framebuffer &framebuffer = render_state.v2.framebuffers[pass.framebuffer.handle - 1];
 
-        static b32 hello = false;
-
         if(pass.settings & rendering::RenderPassSettings::BACKFACE_CULLING)
         {
             glEnable(GL_CULL_FACE);
@@ -2812,8 +2818,16 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
 
         // @Incomplete: Not all framebuffers should have depth testing or clear both bits
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LESS);
+
+        if(framebuffer.depth_buffer_count > 0)
+        {
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_LESS);
+        }
+        else
+        {
+            glDisable(GL_DEPTH_TEST);
+        }
 
         if(pass.has_clear_color)
             glClearColor(pass.clear_color.r, pass.clear_color.g, pass.clear_color.b, pass.clear_color.a);
@@ -2890,8 +2904,6 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
             }
         }
 
-        glEnable(GL_DEPTH_TEST);
-        
         pass.commands.render_command_count = 0;
         pass.commands.depth_free_command_count = 0;
         glDisable(GL_CULL_FACE);
@@ -2911,7 +2923,7 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
             glReadBuffer(GL_COLOR_ATTACHMENT0 + i);
             glDrawBuffer(GL_COLOR_ATTACHMENT0 + i);
             
-            glBlitFramebuffer(0, 0, draw_framebuffer.width, draw_framebuffer.height, 0, 0, draw_framebuffer.width, draw_framebuffer.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+            glBlitFramebuffer(0, 0, draw_framebuffer.width, draw_framebuffer.height, 0, 0, draw_framebuffer.width, draw_framebuffer.height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
         }
             
         glReadBuffer(GL_COLOR_ATTACHMENT0);
@@ -2923,17 +2935,15 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
 
 static void render_all_passes(RenderState &render_state, Renderer *renderer)
 {
-    glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
-
-    bind_vertex_array(0, &render_state);
-
     // @Incomplete: Create a better way for enabling/disabling the clipping planes
     // Check if we have clipping planes
     glEnable(GL_CLIP_PLANE0);
 
     glDisable(GL_BLEND);
+    
     rendering::RenderPass &shadow_pass = renderer->render.passes[renderer->render.shadow_pass.handle - 1];
     render_pass(render_state, renderer, shadow_pass);
+    shadow_pass.commands.render_command_count = 0;
     
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -2947,9 +2957,6 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
         rendering::RenderPass &pass = renderer->render.passes[pass_index];
         render_pass(render_state, renderer, pass);
     }
-
-    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glActiveTexture(GL_TEXTURE0);
 
     for (i32 i = 0; i < MAX_INSTANCE_BUFFERS; i++)
     {
@@ -2984,6 +2991,11 @@ static void render_all_passes(RenderState &render_state, Renderer *renderer)
 
 static void swap_buffers(RenderState &render_state)
 {
+    // @Note(Daniel): Temporary fix for MacOS
+    #if __APPLE__
+    glFinish();
+    #endif
+    
     glfwSwapBuffers(render_state.window);
 }
 
@@ -3028,7 +3040,6 @@ static void render(RenderState &render_state, Renderer *renderer, r64 delta_time
     if (should_render)
     {
         // Render through all passes
-        // render_shadows(render_state, renderer, render_state.shadow_map_buffer);
         render_all_passes(render_state, renderer);
         render_post_processing_passes(render_state, renderer);
         render_ui_pass(render_state, renderer);

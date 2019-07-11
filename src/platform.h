@@ -488,6 +488,11 @@ UPDATE_EDITOR(update_editor_stub)
 {
 }
 
+#define BUILD_RENDER_PIPELINE(name) void name(PlatformApi &platform_api, Renderer *renderer)
+typedef BUILD_RENDER_PIPELINE(BuildRenderPipeline);
+BUILD_RENDER_PIPELINE(build_render_pipeline_stub)
+{}
+
 #define ERR(msg) HandleError(__FILE__,__LINE__,msg)
 
 #endif

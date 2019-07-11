@@ -1,6 +1,6 @@
 namespace rendering
 {
-	static void push_line_to_render_pass(Renderer *renderer, math::Vec3 p0, math::Vec3 p1, r32 thickness, math::Rgba color, Transform transform, MaterialInstanceHandle material_instance_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH);
+	static void push_line_to_render_s(Renderer *renderer, math::Vec3 p0, math::Vec3 p1, r32 thickness, math::Rgba color, Transform transform, MaterialInstanceHandle material_instance_handle, RenderPassHandle render_pass_handle, CommandType type = CommandType::WITH_DEPTH);
     static Transform create_transform(Transform t);
     static Transform create_transform(math::Vec3 position, math::Vec3 scale, math::Vec3 rotation);
     
