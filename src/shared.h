@@ -14,7 +14,6 @@ struct MemoryArena;
 #include "types.h"
 
 #include "platform.h"
-#include "list.h"
 
 #include "engine_memory.h"
 #include "simd.h"

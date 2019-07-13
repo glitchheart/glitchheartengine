@@ -390,7 +390,6 @@ inline void* bootstrap_push_size_(umm struct_size, umm offset_to_arena,
     return new_struct;
 }
 
-
 // Stretchy buffer
 struct BufHdr
 {

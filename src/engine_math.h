@@ -7,6 +7,7 @@
 #include <cmath>
 #endif
 
+
 namespace math
 {
     inline i32 clamp(i32 minimum, i32 value, i32 maximum)
@@ -41,17 +42,17 @@ namespace math
         
     Vec2(r32 x, r32 y) : x(x), y(y) {}
 	Vec2() : x(0.0f), y(0.0f) {}
-    Vec2(r32 i) : e{i,i} {}
-    Vec2(r32 i[2]) : e{i[0],i[1]} {}
+        Vec2(r32 i) : e{i,i} {}
+        Vec2(r32 i[2]) : e{i[0],i[1]} {}
         Vec2(const Vec2& o) = default;
-    Vec2(i32 x, i32 y) : x((r32)x), y((r32)y) {}
-    Vec2(r64 x, r64 y) : x((r32)x), y((r32)y) {}
-    Vec2(r32 x, r64 y) : x(x), y((r32)y) {}
-    Vec2(r32 x, i32 y) : x(x), y((r32)y) {}
-    Vec2(i32 x, r32 y) : x((r32)x), y(y) {}
-    Vec2(i32 x, r64 y) : x((r32)x), y((r32)y) {}
-    Vec2(r64 x, i32 y) : x((r32)x), y((r32)y) {}
-    Vec2(r64 x, r32 y) : x((r32)x), y(y) {}
+        Vec2(i32 x, i32 y) : x((r32)x), y((r32)y) {}
+        Vec2(r64 x, r64 y) : x((r32)x), y((r32)y) {}
+        Vec2(r32 x, r64 y) : x(x), y((r32)y) {}
+        Vec2(r32 x, i32 y) : x(x), y((r32)y) {}
+        Vec2(i32 x, r32 y) : x((r32)x), y(y) {}
+        Vec2(i32 x, r64 y) : x((r32)x), y((r32)y) {}
+        Vec2(r64 x, i32 y) : x((r32)x), y((r32)y) {}
+        Vec2(r64 x, r32 y) : x((r32)x), y(y) {}
         
         Vec2& operator=(const Vec2& v) = default;
         
@@ -1143,10 +1144,22 @@ namespace math
         inline Mat4 operator*(r32 s)
         {
             Mat4 result(*this);
-            for(i32 i = 0; i < 16; i++)
-            {
-                result.q[i] *= s;
-            }
+            result.m11 *= s;
+            result.m12 *= s;
+            result.m13 *= s;
+            result.m14 *= s;
+            result.m21 *= s;
+            result.m22 *= s;
+            result.m23 *= s;
+            result.m24 *= s;
+            result.m31 *= s;
+            result.m32 *= s;
+            result.m33 *= s;
+            result.m34 *= s;
+            result.m41 *= s;
+            result.m42 *= s;
+            result.m43 *= s;
+            result.m44 *= s;
             return result;
         }
         
@@ -1155,10 +1168,22 @@ namespace math
     inline Mat4 operator*(r32 s, Mat4 m)
     {
         Mat4 result(m);
-        for(i32 i = 0; i < 16; i++)
-        {
-            result.q[i] *= s;
-        }
+        result.m11 *= s;
+        result.m12 *= s;
+        result.m13 *= s;
+        result.m14 *= s;
+        result.m21 *= s;
+        result.m22 *= s;
+        result.m23 *= s;
+        result.m24 *= s;
+        result.m31 *= s;
+        result.m32 *= s;
+        result.m33 *= s;
+        result.m34 *= s;
+        result.m41 *= s;
+        result.m42 *= s;
+        result.m43 *= s;
+        result.m44 *= s;
         return result;
     }
     
@@ -1804,7 +1829,7 @@ namespace math
     {
         return v1.x * v2.x + v1.y * v2.y;
     }
-    
+    \
     inline i32 dot(Vec3i v1, Vec3i v2)
     {
         return v1.x * v2.x + v1.y * v2.y + v1.z + v2.z;
@@ -2434,24 +2459,24 @@ namespace math
         return -c/2.0f * (t *( t - 2.0f) - 1.0f) + b;
     }
 
-    inline Vec3 linear_tween(Vec3 b, r32 t, Vec3 _c)
+    inline math::Vec3 linear_tween(math::Vec3 b, r32 t, math::Vec3 _c)
     {
-        return Vec3(linear_tween(b.x, t, _c.x), linear_tween(b.y, t, _c.y), linear_tween(b.z, t, _c.z));
+        return math::Vec3(linear_tween(b.x, t, _c.x), linear_tween(b.y, t, _c.y), linear_tween(b.z, t, _c.z));
     }
 
-    inline Vec3 ease_in_quad(Vec3 b, r32 t, Vec3 _c)
+    inline math::Vec3 ease_in_quad(math::Vec3 b, r32 t, math::Vec3 _c)
     {
-        return Vec3(ease_in_quad(b.x, t, _c.x), ease_in_quad(b.y, t, _c.y), ease_in_quad(b.z, t, _c.z));
+        return math::Vec3(ease_in_quad(b.x, t, _c.x), ease_in_quad(b.y, t, _c.y), ease_in_quad(b.z, t, _c.z));
     }
 
-    inline Vec3 ease_out_quad(Vec3 b, r32 t, Vec3 _c)
+    inline math::Vec3 ease_out_quad(math::Vec3 b, r32 t, math::Vec3 _c)
     {
-        return Vec3(ease_out_quad(b.x, t, _c.x), ease_out_quad(b.y, t, _c.y), ease_out_quad(b.z, t, _c.z));
+        return math::Vec3(ease_out_quad(b.x, t, _c.x), ease_out_quad(b.y, t, _c.y), ease_out_quad(b.z, t, _c.z));
     }
 
-    inline Vec3 ease_in_out_quad(Vec3 b, r32 t, Vec3 _c)
+    inline math::Vec3 ease_in_out_quad(math::Vec3 b, r32 t, math::Vec3 _c)
     {
-        return Vec3(ease_in_out_quad(b.x, t, _c.x), ease_in_out_quad(b.y, t, _c.y), ease_in_out_quad(b.z, t, _c.z));
+        return math::Vec3(ease_in_out_quad(b.x, t, _c.x), ease_in_out_quad(b.y, t, _c.y), ease_in_out_quad(b.z, t, _c.z));
     }
 
     inline r32 ease_in_cubic(r32 b, r32 t, r32 _c)
@@ -2539,7 +2564,7 @@ namespace math
     
     inline Vec2 rotate_by_angle(Vec2 in, r32 angle)
     {
-        Vec2 result(0.0f);
+        math::Vec2 result(0.0f);
         result.x = in.x * cos(angle) - in.y * sin(angle);
         result.y = in.x * sin(angle) + in.y * cos(angle);
         return result;
@@ -2572,7 +2597,7 @@ namespace math
     
     inline Rgba random_color()
     {
-        Rgba res;
+        math::Rgba res;
         
         res.a = 1.0f;
         
@@ -2596,13 +2621,13 @@ namespace math
         Vec3 max;
     };
     
-    inline b32 aabb_ray_intersection(Ray r, BoundingBox b, Vec3* intersection_point)
+    inline b32 aabb_ray_intersection(Ray r, BoundingBox b, math::Vec3* intersection_point)
     {
         r32 t = 0;
-        Vec3 lb = b.min;
-        Vec3 rt = b.max;
+        math::Vec3 lb = b.min;
+        math::Vec3 rt = b.max;
         // r.dir is unit direction vector of ray
-        Vec3 dirfrac;
+        math::Vec3 dirfrac;
         dirfrac.x = 1.0f / r.direction.x;
         dirfrac.y = 1.0f / r.direction.y;
         dirfrac.z = 1.0f / r.direction.z;
@@ -2672,7 +2697,7 @@ namespace math
         return false;
     }
     
-    inline b32 new_aabb_ray_intersection(Ray ray, BoundingBox b, Vec3* intersection_point)
+    inline b32 new_aabb_ray_intersection(Ray ray, BoundingBox b, math::Vec3* intersection_point)
     {
         auto ray_dir = ray.direction;
         auto ray_origin = ray.origin;
@@ -2727,7 +2752,7 @@ namespace math
         r32 d;
     };
 
-    static Plane get_plane(Vec3 a, Vec3 b, Vec3 c)
+    static Plane get_plane(math::Vec3 a, math::Vec3 b, math::Vec3 c)
     {
         Vec3 u = b - a;
         Vec3 v = c - a;
@@ -2755,7 +2780,7 @@ namespace math
                 r32 x;
                 r32 y;
             };
-            Vec2 position;
+            math::Vec2 position;
         };
         union
         {
@@ -2764,7 +2789,7 @@ namespace math
                 r32 width;
                 r32 height;
             };
-            Vec2 size;
+            math::Vec2 size;
         };
         
         Rect(r32 x, r32 y, r32 width, r32 height) : x(x), y(y), width(width), height(height) {}
@@ -2783,7 +2808,7 @@ namespace math
                 i32 x;
                 i32 y;
             };
-            Vec2i position;
+            math::Vec2i position;
         };
         union
         {
@@ -2792,7 +2817,7 @@ namespace math
                 i32 width;
                 i32 height;
             };
-            Vec2i size;
+            math::Vec2i size;
         };
         
         
@@ -2806,43 +2831,45 @@ namespace math
             rect1.y + rect1.height > rect2.y && rect1.y < rect2.y + rect2.height;
     }
     
-    inline b32 point_inside_rect(Vec2i point, Recti rect)
+    inline b32 point_inside_rect(math::Vec2i point, Recti rect)
     {
         return point.x >= rect.x && rect.y >= rect.y && point.x < rect.x + rect.width && point.y < rect.y + rect.height;
     }
     
-    inline r32 sign(Vec2 p1, Vec2 p2, Vec2 p3)
+    inline r32 sign(math::Vec2 p1, math::Vec2 p2, math::Vec2 p3)
     {
         return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
     }
     
-    inline Vec2 to_cartesian(Vec2 position)
+    
+    
+    inline math::Vec2 to_cartesian(math::Vec2 position)
     {
         // @Cleanup: Move these to a global variable or similar
         r32 tile_width_half = 0.5f;
         r32 tile_height_half = 0.25f;
         
-        Vec2 temp_pt(0.0f);
+        math::Vec2 temp_pt(0.0f);
         
         temp_pt.x = (position.x / tile_width_half + position.y / tile_height_half) / 2.0f;
         temp_pt.y = (position.y / tile_height_half - position.x / tile_width_half) / 2.0f;
         return temp_pt;
     }
     
-    inline Vec2 to_isometric(Vec2 position)
+    inline math::Vec2 to_isometric(math::Vec2 position)
     {
         // @Cleanup: Move these to a global variable or similar
         r32 tile_width_half = 0.5f;
         r32 tile_height_half = 0.25f;
         
-        Vec2 temp_pt(0.0f);
+        math::Vec2 temp_pt(0.0f);
         temp_pt.x = (position.x - position.y) * tile_width_half;
         temp_pt.y = (position.x + position.y) * tile_height_half;
         //return tempPt;
         return position;
     }
     
-    inline b32 point_in_triangle(Vec2 pt, Vec2 v1, Vec2 v2, Vec2 v3)
+    inline b32 point_in_triangle(math::Vec2 pt, math::Vec2 v1, math::Vec2 v2, math::Vec2 v3)
     {
         bool b1, b2, b3;
         
@@ -2852,6 +2879,7 @@ namespace math
         
         return ((b1 == b2) && (b2 == b3));
     }
+    
 }
 
 #endif

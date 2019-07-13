@@ -417,6 +417,7 @@ namespace os
     }
 }
 
+
 struct MemoryArena;
 struct InputController;
 

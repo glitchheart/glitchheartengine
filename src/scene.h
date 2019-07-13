@@ -535,13 +535,11 @@ namespace scene
         InstanceBufferData instance_buffer_data[MAX_INSTANCE_BUFFER_HANDLES];
         i32 instance_buffer_data_count;
 
-        list::SwapList<Entity> entities;
-        
-        /* Entity *entities; */
-        /* i32 *_internal_handles; */
-        /* i32 current_internal_handle; */
+        Entity *entities;
+        i32 *_internal_handles;
+        i32 current_internal_handle;
         b32 *active_entities;
-        /* i32 entity_count; */
+        i32 entity_count;
 
         Settings settings;
         

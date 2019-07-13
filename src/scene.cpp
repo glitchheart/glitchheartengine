@@ -278,15 +278,15 @@ namespace scene
         scene.template_state = &scene_manager->template_state;
         scene.renderer = scene_manager->renderer;
         scene.max_entity_count = initial_entity_array_size;
-
-        list::init(&scene.entities, initial_entity_array_size);
+        scene.entity_count = 0;
+        scene.current_internal_handle = 0;
         scene.transform_component_count = 0;
         scene.render_component_count = 0;
         scene.animator_component_count = 0;
 		
         auto &memory_arena = scene.memory_arena;
-        // scene.entities = push_array(&memory_arena, initial_entity_array_size, Entity);
-        // scene._internal_handles = push_array(&memory_arena, initial_entity_array_size, i32);
+        scene.entities = push_array(&memory_arena, initial_entity_array_size, Entity);
+        scene._internal_handles = push_array(&memory_arena, initial_entity_array_size, i32);
         scene.active_entities = push_array(&memory_arena, initial_entity_array_size, b32);
         scene.transform_components = push_array(&memory_arena, initial_entity_array_size, TransformComponent);
         scene.render_components = push_array(&memory_arena, initial_entity_array_size, RenderComponent);
@@ -304,6 +304,7 @@ namespace scene
 
         for(i32 index = 0; index < initial_entity_array_size; index++)
         {
+            scene._internal_handles[index] = -1;
             scene.active_entities[index] = true;
             scene.transform_components[index].transform = rendering::create_transform(math::Vec3(0, 0, 0), math::Vec3(1, 1, 1), math::Vec3(0.0f));
             
@@ -345,7 +346,7 @@ namespace scene
 
             fprintf(file, "\n");
             
-            for(i32 i = 0; i < scene.entities.count; i++)
+            for(i32 i = 0; i < scene.entity_count; i++)
             {
                 Entity &entity = scene.entities[i];
                 if(entity.savable)
@@ -1102,7 +1103,7 @@ static Camera get_standard_camera(SceneManager& manager)
 			scene.valid = false;
             scene.loaded = false;
 
-			if (scene.entities.count > 0)
+			if (scene.entity_count > 0)
             {
                 for(i32 i = 0; i < scene.render_component_count; i++)
                 {
@@ -1112,7 +1113,7 @@ static Camera get_standard_camera(SceneManager& manager)
                     }
                 }
                 
-                list::clear(&scene.entities);
+                scene.entity_count = 0;
                 scene.transform_component_count = 0;
                 scene.render_component_count = 0;
             
@@ -1124,6 +1125,7 @@ static Camera get_standard_camera(SceneManager& manager)
                 
                 scene.particle_system_component_count = 0;
                 scene.light_component_count = 0;
+                scene.current_internal_handle = 0;
                 clear(&scene.memory_arena);
             }
 
@@ -1304,7 +1306,7 @@ static Camera get_standard_camera(SceneManager& manager)
 
         EntityList entity_list = {};
         
-        for(i32 i = 0; i < scene.entities.count; i++)
+        for(i32 i = 0; i < scene.entity_count; i++)
         {
             const scene::Entity &ent = scene.entities[i];
 
@@ -1420,7 +1422,11 @@ static Camera get_standard_camera(SceneManager& manager)
     static b32 entity_exists(EntityHandle entity_handle, SceneHandle scene_handle)
     {
         Scene& scene = get_scene(scene_handle);
-        return list::has_value(&scene.entities, entity_handle.handle);
+        i32 internal_handle = scene._internal_handles[entity_handle.handle - 1];
+        if(internal_handle == -1)
+            return false;
+
+        return true;
     }
 
     static b32 has_render_component(EntityHandle entity_handle, SceneHandle& scene)
@@ -1770,11 +1776,13 @@ static Camera get_standard_camera(SceneManager& manager)
 
     static Entity& get_entity(EntityHandle handle, Scene &scene)
     {
-        assert(list::has_value(&scene.entities, handle.handle));
-        Entity& entity = list::get(&scene.entities, handle.handle);
+        i32 internal_handle = scene._internal_handles[handle.handle - 1];
+        assert(internal_handle > -1);
+        
+        Entity& entity = scene.entities[internal_handle];
         
         assert(entity.comp_flags & COMP_TRANSFORM);
-        
+
         return entity;
     }
     
@@ -2354,38 +2362,38 @@ static Camera get_standard_camera(SceneManager& manager)
         return scene.settings;
     }
     
-    // i32 _unused_entity_handle(Scene &scene)
-    // {
-    //     for(i32 index = scene.current_internal_handle; index < scene.max_entity_count; index++)
-    //     {
-    //         i32 i = scene._internal_handles[index];
-    //         if(i == -1)
-    //         {
-    //             scene.current_internal_handle = index;
-    //             return(index);
-    //         }
-    //     }
+    i32 _unused_entity_handle(Scene &scene)
+    {
+        for(i32 index = scene.current_internal_handle; index < scene.max_entity_count; index++)
+        {
+            i32 i = scene._internal_handles[index];
+            if(i == -1)
+            {
+                scene.current_internal_handle = index;
+                return(index);
+            }
+        }
         
-    //     // start from 0 afterwards
-    //     for(i32 index = 0; index < scene.current_internal_handle; index++)
-    //     {
-    //         i32 i = scene._internal_handles[index];
-    //         if(i == -1)
-    //         {
-    //             scene.current_internal_handle = index;
-    //             return(index);
-    //         }
-    //     }
+        // start from 0 afterwards
+        for(i32 index = 0; index < scene.current_internal_handle; index++)
+        {
+            i32 i = scene._internal_handles[index];
+            if(i == -1)
+            {
+                scene.current_internal_handle = index;
+                return(index);
+            }
+        }
         
-    //     debug("All entities are in use.");
-    //     assert(false);
+        debug("All entities are in use.");
+        assert(false);
         
-    //     return -1;
-    // }
+        return -1;
+    }
     
     static RenderComponent& _add_render_component(Scene &scene, EntityHandle entity_handle, b32 cast_shadows = true)
     {
-        Entity &entity = list::get(&scene.entities, entity_handle.handle);
+        Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
         entity.comp_flags |= COMP_RENDER;
         
         entity.render_handle = { scene.render_component_count++ };
@@ -2528,7 +2536,7 @@ static Camera get_standard_camera(SceneManager& manager)
         }
 
         Scene &scene = scene::get_scene(handle);
-        for(i32 i = 0; i < scene.entities.count; i++)
+        for(i32 i = 0; i < scene.entity_count; i++)
         {
             Entity& entity = scene.entities[i];
             if(has_tag(tag, entity.handle, handle))
@@ -2592,7 +2600,7 @@ static Camera get_standard_camera(SceneManager& manager)
 
     static TransformComponent& _add_transform_component(Scene &scene, EntityHandle entity_handle)
     {
-        Entity& entity = list::get(&scene.entities, entity_handle.handle);
+        Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
         entity.comp_flags |= COMP_TRANSFORM;
         entity.transform_handle = { scene.transform_component_count++ };
 
@@ -2612,7 +2620,7 @@ static Camera get_standard_camera(SceneManager& manager)
     static AnimatorComponent& add_animator_component(SceneHandle handle, EntityHandle entity_handle)
     {
         Scene &scene = get_scene(handle);
-        Entity& entity = list::get(&scene.entities, entity_handle.handle);
+        Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
         entity.comp_flags |= COMP_ANIMATOR;
         entity.animator_handle = { scene.animator_component_count++ };
 
@@ -2628,7 +2636,7 @@ static Camera get_standard_camera(SceneManager& manager)
     
     static ParticleSystemComponent & _add_particle_system_component(Scene &scene, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles, rendering::MaterialHandle material)
     {
-        Entity& entity = list::get(&scene.entities, entity_handle.handle);
+        Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
         entity.comp_flags |= COMP_PARTICLES;
         
         entity.particle_system_handle = {scene.particle_system_component_count++};
@@ -2657,7 +2665,7 @@ static Camera get_standard_camera(SceneManager& manager)
 
     static LightComponent& _add_light_component(Scene &scene, EntityHandle entity_handle)
     {
-        Entity& entity = list::get(&scene.entities, entity_handle.handle);
+        Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
         entity.comp_flags |= COMP_LIGHT;
         entity.light_handle = { scene.light_component_count++ };
         scene::LightComponent &comp = scene.light_components[entity.light_handle.handle];
@@ -2673,7 +2681,7 @@ static Camera get_standard_camera(SceneManager& manager)
 
     static CameraComponent& _add_camera_component(EntityHandle entity_handle, Scene &scene)
     {
-        Entity& entity = list::get(&scene.entities, entity_handle.handle);
+        Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
         entity.comp_flags |= COMP_CAMERA;
         entity.camera_handle = { scene.camera_component_count++ };
         
@@ -2699,18 +2707,19 @@ static Camera get_standard_camera(SceneManager& manager)
     // Returns a new valid "EntityHandle". "comp_flags" Specifies the components that the entity should contain.
     static EntityHandle _register_entity(u64 comp_flags, Scene &scene, b32 savable = false)
     {
-        Entity new_entity = {};
-        new_entity.savable = savable;
-        new_entity.selection_enabled = true;
-
-        new_entity.comp_flags = comp_flags;
-        new_entity.child_count = 0;
-        new_entity.parent = EMPTY_ENTITY_HANDLE;
-        i32 new_handle = list::add(&scene.entities, new_entity);
+        i32 new_handle = _unused_entity_handle(scene) + 1;
         
         EntityHandle handle = { new_handle };
-        Entity& entity = list::get(&scene.entities, handle.handle);
+        scene._internal_handles[new_handle - 1] = scene.entity_count++;
+        
+        Entity &entity = scene.entities[scene._internal_handles[new_handle - 1]];
+        entity = {};
+        entity.savable = savable;
+        entity.selection_enabled = true;
         entity.handle = handle;
+        entity.comp_flags = comp_flags;
+        entity.child_count = 0;
+        entity.parent = EMPTY_ENTITY_HANDLE;
         
         if(comp_flags & COMP_TRANSFORM)
         {
@@ -3426,7 +3435,7 @@ static Camera get_standard_camera(SceneManager& manager)
 
     static inline void _set_entity_name(EntityHandle handle, const char *name, Scene& scene)
     {
-        Entity& entity = list::get(&scene.entities, handle.handle);
+        Entity &entity = scene.entities[scene._internal_handles[handle.handle - 1]];
         strcpy(entity.name, name);
     }
 
@@ -3438,13 +3447,13 @@ static Camera get_standard_camera(SceneManager& manager)
 
     static inline void _set_entity_template_path(EntityHandle handle, const char *template_path, Scene& scene)
     {
-        Entity& entity = list::get(&scene.entities, handle.handle);
+        Entity &entity = scene.entities[scene._internal_handles[handle.handle - 1]];
         strcpy(entity.template_path, template_path);
     }
 
     static inline void _set_entity_type(EntityHandle handle, u32 type, Scene &scene)
     {
-        Entity& entity = list::get(&scene.entities, handle.handle);
+        Entity &entity = scene.entities[scene._internal_handles[handle.handle - 1]];
         entity.type = type;
     }
 
@@ -3718,28 +3727,31 @@ static Camera get_standard_camera(SceneManager& manager)
         handle.handle = 0;
         
         // If only one entity was present, we should just zero everything...
-        if(scene.entities.count == 1)
+        if(scene.entity_count == 1)
         {
-            list::clear(&scene.entities);
+            scene.entity_count = 0;
             scene.transform_component_count = 0;
             scene.render_component_count = 0;
             scene.particle_system_component_count = 0;
+            scene.current_internal_handle = 0;
         }
         else
         {
             // Get the handle into the real entity array
-            Entity &entity = list::get(&scene.entities, removed_handle);
+            i32 real_handle = scene._internal_handles[removed_handle - 1];
+            Entity &entity = scene.entities[real_handle];
             
             // Pack the components in scene by removing the unregistered entity's components and moving the rest to pack the arrays. If the returned handles are -1 the entity didn't have that component set.
             i32 transform_handle = _pack_transform_components(entity, scene);
             i32 render_handle = _pack_render_components(entity, scene);
             i32 particle_system_handle = _pack_particle_system_components(entity, scene);
             i32 light_component_handle = _pack_light_components(entity, scene);
-                        
+            
+            // Remember to reset the internal handle to -1 to indicate an unused index
+            scene._internal_handles[removed_handle - 1] = -1;
+            
             // Run through all existing entities and pack the array to remove the unregistered one. All component handles affected by the removal are decremented.
-
-            i32 real_handle = list::get_internal_handle(&scene.entities, removed_handle);
-            for(i32 index = real_handle; index < scene.entities.count - 1; index++)
+            for(i32 index = real_handle; index < scene.entity_count - 1; index++)
             {
                 scene.entities[index] = scene.entities[index + 1];
 
@@ -3766,19 +3778,15 @@ static Camera get_standard_camera(SceneManager& manager)
                 scene.active_entities[index] = scene.active_entities[index + 1];
             }
 
-            // list::remove(&scene.entities, removed_handle);
-            scene.entities.count--;
-
-            // Remember to reset the internal handle to -1 to indicate an unused index
-            scene.entities._internal_handles[removed_handle - 1] = -1;
+            scene.entity_count--;
             
             //@Note: We also have to update the internal handles if they were placed after the unregistered entity
             for(i32 internal_index = 0; internal_index < scene.max_entity_count; internal_index++)
             {
-                i32 current_handle = scene.entities._internal_handles[internal_index];
+                i32 current_handle = scene._internal_handles[internal_index];
                 if(current_handle > real_handle)
                 {
-                    scene.entities._internal_handles[internal_index] = current_handle - 1;
+                    scene._internal_handles[internal_index] = current_handle - 1;
                 }
             }
         }
@@ -3787,8 +3795,8 @@ static Camera get_standard_camera(SceneManager& manager)
     static void unregister_entity(EntityHandle handle, SceneHandle scene_handle)
     {
         Scene &scene = get_scene(scene_handle);
-
-        if(!list::has_value(&scene.entities, handle.handle))
+        
+        if(handle.handle == 0 || (scene._internal_handles[handle.handle - 1] == -1 && scene._internal_handles[handle.handle - 1] < scene.entity_count))
             return;
 
         Entity entity = get_entity(handle, scene_handle);
@@ -3821,7 +3829,7 @@ static Camera get_standard_camera(SceneManager& manager)
         Scene &scene = get_scene(scene_handle);
         if(handle.handle > 0)
         {
-            i32 internal_handle = list::get_internal_handle(&scene.entities, handle.handle);
+            i32 internal_handle = scene._internal_handles[handle.handle - 1];
             if(internal_handle > -1)
             {
                 return scene.active_entities[internal_handle];
@@ -3834,7 +3842,7 @@ static Camera get_standard_camera(SceneManager& manager)
     {
         if(handle.handle > 0)
         {
-            i32 internal_handle = list::get_internal_handle(&scene.entities, handle.handle);
+            i32 internal_handle = scene._internal_handles[handle.handle - 1];
             if(internal_handle > -1)
             {
                 scene.active_entities[internal_handle] = active;
@@ -3867,14 +3875,17 @@ static Camera get_standard_camera(SceneManager& manager)
     static void set_entity_selection_enabled(EntityHandle entity_handle, b32 enabled, SceneHandle scene_handle)
     {
         Scene &scene = get_scene(scene_handle);
-        Entity &entity = list::get(&scene.entities, entity_handle.handle);
+        i32 internal_handle = scene._internal_handles[entity_handle.handle - 1];
+        assert(internal_handle > -1);
+        
+        Entity &entity = scene.entities[internal_handle];
         entity.selection_enabled = enabled;
     }
 
     static EntityHandle find_entity_by_name(const char* name, SceneHandle scene_handle)
     {
         Scene &scene = get_scene(scene_handle);
-        for(i32 i = 0; i < scene.entities.count; i++)
+        for(i32 i = 0; i < scene.entity_count; i++)
         {
             Entity& e = scene.entities[i];
             if(strcmp(e.name, name) == 0)
@@ -3888,11 +3899,13 @@ static Camera get_standard_camera(SceneManager& manager)
     static void set_entity_tag(const char *tag, EntityHandle entity_handle, SceneHandle scene_handle)
     {
         Scene &scene = get_scene(scene_handle);
+        i32 internal_handle = scene._internal_handles[entity_handle.handle - 1];
+        assert(internal_handle > -1);
 
         if(has_tag(tag, entity_handle, scene_handle))
             return;
         
-        Entity &entity = list::get(&scene.entities, entity_handle.handle);
+        Entity &entity = scene.entities[internal_handle];
         if(entity.tags.tag_count >= MAX_ENTITY_TAGS)
         {
             debug_log("Max count for entity tags reached (%d/%d).", MAX_ENTITY_TAGS, MAX_ENTITY_TAGS);
@@ -3910,7 +3923,7 @@ static Camera get_standard_camera(SceneManager& manager)
 
         EntityList list = {};
 
-        for(i32 i = 0; i < scene.entities.count; i++)
+        for(i32 i = 0; i < scene.entity_count; i++)
         {
             const Entity& entity = scene.entities[i];
             if(has_tag(tag, entity.handle, scene_handle))
@@ -3948,14 +3961,20 @@ static Camera get_standard_camera(SceneManager& manager)
     static void set_entity_name(const char *name, EntityHandle entity_handle, SceneHandle scene_handle)
     {
         Scene &scene = get_scene(scene_handle);
-        Entity &entity = list::get(&scene.entities, entity_handle.handle);
+        i32 internal_handle = scene._internal_handles[entity_handle.handle - 1];
+        assert(internal_handle > -1);
+        
+        Entity &entity = scene.entities[internal_handle];
         strcpy(entity.name, name);
     }
 
     static const char * get_entity_name(EntityHandle entity_handle, SceneHandle scene_handle)
     {
         Scene &scene = get_scene(scene_handle);
-        const Entity &entity = list::get(&scene.entities, entity_handle.handle);
+        i32 internal_handle = scene._internal_handles[entity_handle.handle - 1];
+        assert(internal_handle > -1);
+        
+        const Entity &entity = scene.entities[internal_handle];
         return entity.name;
     }
 
@@ -3974,10 +3993,13 @@ static Camera get_standard_camera(SceneManager& manager)
     static TransformComponent& _get_transform_comp(EntityHandle handle, Scene &scene)
     {
         assert(handle.handle != 0);
-
-        Entity &entity = list::get(&scene.entities, handle.handle);        
+        i32 internal_handle = scene._internal_handles[handle.handle - 1];
+        assert(internal_handle > -1);
+        
+        Entity entity = scene.entities[internal_handle];
+        
         assert(entity.comp_flags & COMP_TRANSFORM);
-
+        
         TransformComponent& comp = scene.transform_components[entity.transform_handle.handle];
         return(comp);
     }
@@ -3995,12 +4017,16 @@ static Camera get_standard_camera(SceneManager& manager)
 
     static AnimatorComponent& get_animator_comp(EntityHandle entity_handle, SceneHandle handle)
     {
-        Scene &scene = get_scene(handle);
+        Scene *scene = &get_scene(handle);
 
-        Entity &entity = list::get(&scene.entities, entity_handle.handle);        
+        i32 internal_handle = scene->_internal_handles[entity_handle.handle - 1];
+        assert(internal_handle > -1);
+        
+        Entity entity = scene->entities[internal_handle];
+        
         assert(entity.comp_flags & COMP_ANIMATOR);
         
-        AnimatorComponent& comp = *scene.animator_components[entity.animator_handle.handle];
+        AnimatorComponent& comp = *scene->animator_components[entity.animator_handle.handle];
         return(comp);
     }
      
@@ -4009,7 +4035,10 @@ static Camera get_standard_camera(SceneManager& manager)
     static RenderComponent& _get_render_comp(EntityHandle handle, Scene &scene)
     {
         assert(handle.handle != 0);
-        Entity &entity = list::get(&scene.entities, handle.handle);        
+        i32 internal_handle = scene._internal_handles[handle.handle - 1];
+        assert(internal_handle != -1);
+        Entity entity = scene.entities[internal_handle];
+        
         assert(entity.comp_flags & COMP_RENDER);
         
         RenderComponent& comp = scene.render_components[entity.render_handle.handle];
@@ -4025,7 +4054,10 @@ static Camera get_standard_camera(SceneManager& manager)
     static CameraComponent& _get_camera_comp(EntityHandle handle, Scene &scene)
     {
         assert(handle.handle != 0);
-        Entity &entity = list::get(&scene.entities, handle.handle);        
+        i32 internal_handle = scene._internal_handles[handle.handle - 1];
+        assert(internal_handle != -1);
+        Entity entity = scene.entities[internal_handle];
+        
         assert(entity.comp_flags & COMP_CAMERA);
         
         CameraComponent& comp = scene.camera_components[entity.camera_handle.handle];
@@ -4041,8 +4073,10 @@ static Camera get_standard_camera(SceneManager& manager)
     static ParticleSystemComponent& _get_particle_system_comp(EntityHandle handle, Scene &scene)
     {
         assert(handle.handle != 0);
-
-        Entity &entity = list::get(&scene.entities, handle.handle);        
+        i32 internal_handle = scene._internal_handles[handle.handle - 1];
+        assert(internal_handle != -1);
+        Entity entity = scene.entities[internal_handle];
+        
         assert(entity.comp_flags & COMP_PARTICLES);
         
         ParticleSystemComponent& comp = scene.particle_system_components[entity.particle_system_handle.handle];
@@ -4058,7 +4092,10 @@ static Camera get_standard_camera(SceneManager& manager)
     static LightComponent &_get_light_comp(EntityHandle handle, Scene &scene)
     {
         assert(handle.handle != 0);
-        Entity &entity = list::get(&scene.entities, handle.handle);        
+        i32 internal_handle = scene._internal_handles[handle.handle - 1];
+        assert(internal_handle != -1);
+        Entity entity = scene.entities[internal_handle];
+        
         assert(entity.comp_flags & COMP_LIGHT);
         
         LightComponent& comp = scene.light_components[entity.light_handle.handle];
@@ -4688,7 +4725,7 @@ static Camera get_standard_camera(SceneManager& manager)
         i32 particles_to_push[64];
         i32 particles_count = 0;
 
-        for(i32 ent_index = 0; ent_index < scene.entities.count; ent_index++)
+        for(i32 ent_index = 0; ent_index < scene.entity_count; ent_index++)
         {
             const scene::Entity *ent = &scene.entities[ent_index];
             
@@ -4720,7 +4757,7 @@ static Camera get_standard_camera(SceneManager& manager)
             }
         }
     
-        for(i32 ent_index = 0; ent_index < scene.entities.count; ent_index++)
+        for(i32 ent_index = 0; ent_index < scene.entity_count; ent_index++)
         {
             const scene::Entity &ent = scene.entities[ent_index];
         
