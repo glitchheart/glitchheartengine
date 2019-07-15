@@ -1827,9 +1827,13 @@ static Camera get_standard_camera(SceneManager& manager)
         }
     }
 
+    // @Incomplete: Move into engine_editor.cpp instead
     static void update_editor_camera(Camera &camera, TransformComponent &component, Scene &scene, InputController *input_controller, r64 delta_time)
     {
-        if(ImGui::IsMouseDragging(0) || ImGui::IsMouseDragging(1))
+        // @Incomplete: Hide mouse on input field drag
+        // Dragging speed can be slowed down/sped up by holding alt/shift
+        
+        if(ImGui::IsMouseDragging(1))
         {
             set_mouse_lock(true, *scene.renderer);
         }
@@ -2064,10 +2068,6 @@ static Camera get_standard_camera(SceneManager& manager)
                 scene::reload_scene(manager->loaded_scene);
                 
                 manager->renderer->api_functions.show_mouse_cursor(false, &render_state);
-
-                // Disable wireframes
-                /*if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
-                    scene::set_wireframe_enabled(false, manager->selected_entity, handle);*/
                 
                 // When exiting to running mode we should make sure to notify the game about it, to ensure that all
                 // editor-specific entities are cleaned up before the game is running again.
