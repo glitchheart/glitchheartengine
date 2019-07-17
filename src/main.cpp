@@ -993,6 +993,8 @@ int main(int argc, char **args)
                     editor::_render_resources(project_state, &editor_state, scene_manager, delta_time);
                     editor::_render_scene_settings(&editor_state, scene_manager, delta_time);
                     editor::_render_stats(&editor_state, scene_manager, &input_controller, &sound_system, delta_time);
+
+                    editor::_update_engine_editor(&input_controller, scene_manager);
                 }
             }
             #else

@@ -8,6 +8,20 @@ namespace editor
         editor_state->windows.show_stats = false;
         editor_state->windows.show_resources = true;
     }
+
+    static void _update_engine_editor(InputController *input_controller, scene::SceneManager *scene_manager)
+    {
+        if(KEY_DOWN(Key_Delete) || KEY_DOWN(Key_Backspace))
+        {
+            if(IS_ENTITY_HANDLE_VALID(scene_manager->selected_entity))
+            {
+                delete_entity(scene_manager->selected_entity, scene_manager);
+                    
+                scene_manager->selected_entity = { -1 };
+                scene_manager->gizmos.active = false;
+            }
+        }
+    }
     
     static void _recursive_entity_item(scene::Entity& entity, scene::SceneManager *scene_manager)
     {
@@ -96,20 +110,6 @@ namespace editor
                 if (!IS_ENTITY_HANDLE_VALID(entity.parent))
                 {
                     _recursive_entity_item(entity, scene.handle.manager);
-                }
-            }
-
-            if(ImGui::IsWindowFocused())
-            {
-                if(KEY_DOWN(Key_Delete) || KEY_DOWN(Key_Backspace))
-                {
-                    if(IS_ENTITY_HANDLE_VALID(scene.handle.manager->selected_entity))
-                    {
-                        delete_entity(scene.handle.manager->selected_entity, scene.handle.manager);
-                    
-                        scene.handle.manager->selected_entity = { -1 };
-                        scene.handle.manager->gizmos.active = false;
-                    }
                 }
             }
         }
