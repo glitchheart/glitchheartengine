@@ -11,7 +11,7 @@ CommonLinkerFlags="../libs/glad/osx/glad.o -L/usr/local/lib -L../libs/glfw/osx/ 
 
 pushd build
 
-clang --std=c++17 -Weverything $WIGNORE $DEBUG $CommonCompilerFlags -g $OPT ../src/main.cpp ../libs/imgui/imgui*.cpp $CommonLinkerFlags
+clang --std=c++17 -W3 $WIGNORE $DEBUG $CommonCompilerFlags -g $OPT ../src/main.cpp ../libs/imgui/imgui*.cpp $CommonLinkerFlags
 
 popd
 
