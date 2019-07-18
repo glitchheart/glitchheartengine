@@ -142,16 +142,14 @@ namespace list
         list->items = (T*)malloc(sizeof(T) * count);
         _init(list, count);
     }
-    
+
     template<typename T>
-        static void init(SwapList<T>* list, i32 count, MemoryArena *arena)
+    static void init(SwapList<T>* list, i32 count, MemoryArena *arena)
     {
-        list->internal_handles = push_array(memory_arena, count, i32);
-        list->items = push_array(memory_arena, count, T);
+        list->internal_handles = push_array(arena, count, i32);
+        list->items = push_array(arena, count, T);
         _init(list, count);
     }
-
-
 }
 
 #endif
