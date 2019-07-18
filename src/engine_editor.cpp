@@ -36,6 +36,10 @@ namespace editor
         {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.35f, 0.35f, 0.35f, 1.0f));
         }
+        else if (!entity.selection_enabled)
+        {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.0f, 0.0f, 1.0f));
+        }
         else
         {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
@@ -43,7 +47,7 @@ namespace editor
 
         if (ImGui::TreeNodeEx(entity.name, tree_node_flags))
         {
-            if (ImGui::IsItemClicked())
+            if (entity.selection_enabled && ImGui::IsItemClicked())
             {
                 scene::select_entity(entity.handle, scene_manager);
             }

@@ -150,8 +150,6 @@ namespace list
         list->items = push_array(arena, count, T);
         _init(list, count);
     }
-
-
 }
 
 #endif

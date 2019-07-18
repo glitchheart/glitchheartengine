@@ -1376,6 +1376,10 @@ static Camera get_standard_camera(SceneManager& manager)
         {
             Entity entity = get_entity(entity_list.handles[i], scene);
             rendering::Transform transform = get_transform_comp(entity_list.handles[i], scene).transform;
+
+            if(!(entity.comp_flags & scene::COMP_RENDER))
+                continue;
+
             RenderComponent render = get_render_comp(entity_list.handles[i], scene.handle);
             if(Mesh* mesh = rendering::get_mesh(scene.renderer, render.buffer_handle.loaded_mesh_handle))
             {
@@ -1829,7 +1833,7 @@ static Camera get_standard_camera(SceneManager& manager)
 
     static void update_editor_camera(Camera &camera, TransformComponent &component, Scene &scene, InputController *input_controller, r64 delta_time)
     {
-        if(ImGui::IsMouseDragging(0) || ImGui::IsMouseDragging(1))
+        if(ImGui::IsMouseDragging(1))
         {
             set_mouse_lock(true, *scene.renderer);
         }
@@ -1868,7 +1872,7 @@ static Camera get_standard_camera(SceneManager& manager)
         if(MOUSE(Mouse_Middle))
         {
             scene::set_position(component, component.transform.position + component.transform.up * input_controller->mouse_y_delta * 0.01f);
-            scene::set_position(component, component.transform.position + component.transform.right * input_controller->mouse_x_delta * 0.01f);
+            scene::set_position(component, component.transform.position - component.transform.right * input_controller->mouse_x_delta * 0.01f);
         }
 
         // @Incomplete
@@ -3120,6 +3124,7 @@ static Camera get_standard_camera(SceneManager& manager)
                         {
                             const rendering::MeshObjectData &data = obj_info.data[i];
                             templ->child_handles[templ->child_count++] = _create_template_copy_with_new_render_data(temp, templ, template_state, scene.renderer, data);
+                            
                         }
             
                         templ->comp_flags = templ->comp_flags & ~ COMP_RENDER;
@@ -3612,6 +3617,7 @@ static Camera get_standard_camera(SceneManager& manager)
         {
 			scene::EntityHandle child = _register_entity_with_template(template_state->templates[templ->child_handles[i].handle - 1], scene, false);
 			scene::add_child(entity, child, scene.handle);
+            scene::set_entity_selection_enabled(child, false, scene.handle);
         }
 
         if(tags)

@@ -846,6 +846,7 @@ namespace scene
     static void set_rotation(TransformComponent& comp, math::Vec3 rotation);
     static void set_scale(TransformComponent& comp, math::Vec3 scale);
 
+    static void set_entity_selection_enabled(EntityHandle entity_handle, b32 enabled, SceneHandle scene_handle);
     static inline void set_entity_name(EntityHandle handle, const char *name, SceneHandle scene_handle);
     static inline void _set_entity_name(EntityHandle handle, const char *name, Scene& scene);
     static inline void _set_entity_template_path(EntityHandle handle, const char *template_path, Scene& scene);
