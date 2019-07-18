@@ -1868,7 +1868,7 @@ static Camera get_standard_camera(SceneManager& manager)
         if(MOUSE(Mouse_Middle))
         {
             scene::set_position(component, component.transform.position + component.transform.up * input_controller->mouse_y_delta * 0.01f);
-            scene::set_position(component, component.transform.position + component.transform.right * input_controller->mouse_x_delta * 0.01f);
+            scene::set_position(component, component.transform.position - component.transform.right * input_controller->mouse_x_delta * 0.01f);
         }
 
         // @Incomplete
@@ -3120,6 +3120,7 @@ static Camera get_standard_camera(SceneManager& manager)
                         {
                             const rendering::MeshObjectData &data = obj_info.data[i];
                             templ->child_handles[templ->child_count++] = _create_template_copy_with_new_render_data(temp, templ, template_state, scene.renderer, data);
+                            
                         }
             
                         templ->comp_flags = templ->comp_flags & ~ COMP_RENDER;
@@ -3612,6 +3613,7 @@ static Camera get_standard_camera(SceneManager& manager)
         {
 			scene::EntityHandle child = _register_entity_with_template(template_state->templates[templ->child_handles[i].handle - 1], scene, false);
 			scene::add_child(entity, child, scene.handle);
+            scene::set_entity_selection_enabled(child, false, scene.handle);
         }
 
         if(tags)
