@@ -401,7 +401,7 @@ namespace scene
                     }
                     else if(has_light_component(entity.handle, scene_handle))
                     {
-                        LightComponent &light = get_light_comp(entity.handle, scene_handle);
+                        LightComponent &light = get_light_comp(entity.handle, scene_handle);
 
                         switch(light.type)
                         {
@@ -1815,7 +1815,7 @@ static Camera get_standard_camera(SceneManager& manager)
 
     static void update_editor_camera(Camera &camera, TransformComponent &component, Scene &scene, InputController *input_controller, r64 delta_time)
     {
-        if(ImGui::IsMouseDragging(0) || ImGui::IsMouseDragging(1))
+        if(ImGui::IsMouseDragging(1))
         {
             set_mouse_lock(true, *scene.renderer);
         }
@@ -1854,7 +1854,7 @@ static Camera get_standard_camera(SceneManager& manager)
         if(MOUSE(Mouse_Middle))
         {
             scene::set_position(component, component.transform.position + component.transform.up * input_controller->mouse_y_delta * 0.01f);
-            scene::set_position(component, component.transform.position + component.transform.right * input_controller->mouse_x_delta * 0.01f);
+            scene::set_position(component, component.transform.position - component.transform.right * input_controller->mouse_x_delta * 0.01f);
         }
 
         // @Incomplete
@@ -2302,7 +2302,15 @@ static Camera get_standard_camera(SceneManager& manager)
             
             if(scene_manager->callbacks.on_scene_will_load)
                 scene_manager->callbacks.on_scene_will_load(handle);
-			
+
+            if(scene_manager->mode == SceneMode::EDITING)
+            {
+                editor_setup(scene_manager);
+            
+                if(scene_manager->callbacks.on_load)
+                    scene_manager->callbacks.on_load(handle);
+            }
+            
 			// @Robustness: This is not good behaviour...
 			// Make sure to reget the scene in case a scene was freed in the callback
 			scene = &get_scene(handle);
@@ -2325,14 +2333,6 @@ static Camera get_standard_camera(SceneManager& manager)
         update_shadow_framebuffer(scene_manager->loaded_scene);
         
         scene_manager->scene_loaded = true;
-
-        if(scene_manager->mode == SceneMode::EDITING)
-        {
-            editor_setup(scene_manager);
-            
-            if(scene_manager->callbacks.on_load)
-                scene_manager->callbacks.on_load(handle);
-        }
     }
 
     Settings& get_scene_settings(SceneHandle handle)
@@ -3106,6 +3106,7 @@ static Camera get_standard_camera(SceneManager& manager)
                         {
                             const rendering::MeshObjectData &data = obj_info.data[i];
                             templ->child_handles[templ->child_count++] = _create_template_copy_with_new_render_data(temp, templ, template_state, scene.renderer, data);
+                            
                         }
             
                         templ->comp_flags = templ->comp_flags & ~ COMP_RENDER;
@@ -3598,6 +3599,7 @@ static Camera get_standard_camera(SceneManager& manager)
         {
 			scene::EntityHandle child = _register_entity_with_template(template_state->templates[templ->child_handles[i].handle - 1], scene, false);
 			scene::add_child(entity, child, scene.handle);
+            scene::set_entity_selection_enabled(child, false, scene.handle);
         }
 
         if(tags)

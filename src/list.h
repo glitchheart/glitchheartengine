@@ -4,35 +4,35 @@
 namespace list
 {
     template<typename T, size_t SIZE>
-        struct List
-        {
-            T items[SIZE];
-            i32 count;
+    struct List
+    {
+        T items[SIZE];
+        i32 count;
 
-            T& operator[](i32 index)
-            {
-                return items[index];
-            }
-        };
+        T& operator[](i32 index)
+        {
+            return items[index];
+        }
+    };
 
     template<typename T>
-        struct SwapList
-        {
-            T *items;
-            i32 count;
+    struct SwapList
+    {
+        T *items;
+        i32 count;
             
-            i32 *_internal_handles;
-            i32 _current_internal_handle;
-            size_t max_size;
+        i32 *_internal_handles;
+        i32 _current_internal_handle;
+        size_t max_size;
 
-            T& operator[](i32 index)
-            {
-                return items[index];
-            }
-        };
+        T& operator[](i32 index)
+        {
+            return items[index];
+        }
+    };
 
     template<typename T>
-        static bool has_value(SwapList<T> *list, i32 index)
+    static bool has_value(SwapList<T> *list, i32 index)
     {
         if(index == 0)
             return false;
@@ -54,7 +54,7 @@ namespace list
     }
 
     template<typename T>
-        static i32 _find_next_free_internal_handle(SwapList<T>* list)
+    static i32 _find_next_free_internal_handle(SwapList<T>* list)
     {
         i32 handle = -1;
 
@@ -82,7 +82,7 @@ namespace list
     }
 
     template<typename T>
-        static T& get(SwapList<T>* list, i32 index)
+    static T& get(SwapList<T>* list, i32 index)
     {
         assert(list->max_size > index);
         i32 _internal_handle = list->_internal_handles[index - 1];
@@ -90,13 +90,13 @@ namespace list
     }
 
     template<typename T>
-        static i32 get_internal_handle(SwapList<T> *list, i32 index)
+    static i32 get_internal_handle(SwapList<T> *list, i32 index)
     {
         return list->_internal_handles[index - 1];
     }
 
     template<typename T>
-        static i32 add(SwapList<T>* list, T value)
+    static i32 add(SwapList<T>* list, T value)
     {
         i32 new_handle = _find_next_free_internal_handle<T>(list) + 1;
         list->_internal_handles[new_handle - 1] = list->count++;
@@ -105,7 +105,7 @@ namespace list
     }
 
     template<typename T>
-        static void remove(SwapList<T>* list, i32 index)
+    static void remove(SwapList<T>* list, i32 index)
     {
         if(index == 0)
             return;
@@ -116,14 +116,14 @@ namespace list
     }
 
     template<typename T>
-        static void clear(SwapList<T>* list)
+    static void clear(SwapList<T>* list)
     {
         list->count = 0;
         list->_current_internal_handle = 0;
     }
     
     template<typename T>
-        static void _init(SwapList<T>* list, i32 count)
+    static void _init(SwapList<T>* list, i32 count)
     {
         list->count = 0;
         list->_current_internal_handle = 0;
@@ -136,7 +136,7 @@ namespace list
     }
 
     template<typename T>
-        static void init(SwapList<T>* list, i32 count)
+    static void init(SwapList<T>* list, i32 count)
     {
         list->_internal_handles = (i32*)malloc(sizeof(i32) * count);
         list->items = (T*)malloc(sizeof(T) * count);
