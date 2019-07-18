@@ -708,6 +708,14 @@ namespace math
             result.y -= o.y;
             return result;
         }
+
+        inline Vec2i operator- ()
+        {
+            Vec2i result(*this);
+            result.x = -result.x;
+            result.y = -result.y;
+            return result;
+        }
         
         inline void operator-= (Vec2i o)
         {

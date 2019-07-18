@@ -142,7 +142,7 @@ namespace list
         list->items = (T*)malloc(sizeof(T) * count);
         _init(list, count);
     }
-    
+
     template<typename T>
     static void init(SwapList<T>* list, i32 count, MemoryArena *arena)
     {

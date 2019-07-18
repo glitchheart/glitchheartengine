@@ -401,7 +401,7 @@ namespace scene
                     }
                     else if(has_light_component(entity.handle, scene_handle))
                     {
-                        LightComponent &light = get_light_comp(entity.handle, scene_handle);
+                        LightComponent &light = get_light_comp(entity.handle, scene_handle);
 
                         switch(light.type)
                         {
@@ -931,18 +931,17 @@ static Camera get_standard_camera(SceneManager& manager)
                 {
                     char name[32];
                     memset(name, 0, 32);
-
+ 
                     if(!starts_with(line_buffer, "obj\n"))
                         sscanf(line_buffer, "obj %[^\n]", name);
-                    
+                   
                     parse_scene_object(file, handle, name);
                 }
                 else if(starts_with(line_buffer, "settings"))
                 {
                     parse_scene_settings(file, handle);
                 }
-            }
-                
+            }                
             fclose(file);
         }
     }
@@ -1283,7 +1282,6 @@ static Camera get_standard_camera(SceneManager& manager)
     {
         list.handles[list.entity_count++] = entity;
     }
-    
     static EntityHandle pick_entity(SceneHandle handle, i32 mouse_x, i32 mouse_y)
     {
         Scene &scene = get_scene(handle);
@@ -1329,41 +1327,9 @@ static Camera get_standard_camera(SceneManager& manager)
                     box.max = transform.transform.model * box.max;
 
                     math::Vec3 intersection_point;
-                    // if(!ent.selection_enabled)
-                    // {
-                    //     EntityHandle parent = get_root_entity(ent.handle, scene);
-                            
-                    //     // If a selectable parent was found
-                    //     if(IS_ENTITY_HANDLE_VALID(parent))
-                    //     {
-                    //         add_to_list(entity_list, parent);
-                    //     }
-                                
-                    //     else
-                    //         continue;
-                    // }
-                    // else
-                    //     add_to_list(entity_list, ent.handle);
-
-                    
                     if(aabb_ray_intersection(ray, box, &intersection_point))
                     {
-                        // Look for selectable parents
-                        if(!ent.selection_enabled)
-                        {
-                            EntityHandle parent = get_root_entity(ent.handle, scene);
-                            
-                            // If a selectable parent was found
-                            if(IS_ENTITY_HANDLE_VALID(parent))
-                            {
-                                add_to_list(entity_list, parent);
-                            }
-                                
-                            else
-                                continue;
-                        }
-                        else
-                            add_to_list(entity_list, ent.handle);
+                        add_to_list(entity_list, ent.handle);
                     }
                 }
             }
@@ -1380,9 +1346,6 @@ static Camera get_standard_camera(SceneManager& manager)
         {
             Entity entity = get_entity(entity_list.handles[i], scene);
             rendering::Transform transform = get_transform_comp(entity_list.handles[i], scene).transform;
-
-            if(!(entity.comp_flags & scene::COMP_RENDER))
-                continue;
 
             RenderComponent render = get_render_comp(entity_list.handles[i], scene.handle);
             if(Mesh* mesh = rendering::get_mesh(scene.renderer, render.buffer_handle.loaded_mesh_handle))
@@ -1419,10 +1382,28 @@ static Camera get_standard_camera(SceneManager& manager)
 		
         end_temporary_memory(temp_mem);
 
-    if(IS_ENTITY_HANDLE_VALID(entity_handle))
-        handle.manager->gizmos.selected_gizmo = Gizmos::NONE;
+        if(IS_ENTITY_HANDLE_VALID(entity_handle))
+            handle.manager->gizmos.selected_gizmo = Gizmos::NONE;
+
+        Entity entity = get_entity(entity_handle, scene);
     
-        return entity_handle;
+        // Look for selectable parents
+        if(entity.selection_enabled)
+        {
+            return entity_handle;
+        }
+
+        EntityHandle parent = get_root_entity(entity.handle, scene);
+                            
+        // If a selectable parent was found
+        if(IS_ENTITY_HANDLE_VALID(parent))
+        {
+            return parent;
+        }
+        else
+        {
+            return { 0 };
+        }
     }
 
     static b32 entity_exists(EntityHandle entity_handle, SceneHandle scene_handle)
