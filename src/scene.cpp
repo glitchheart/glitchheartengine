@@ -2320,7 +2320,15 @@ static Camera get_standard_camera(SceneManager& manager)
             
             if(scene_manager->callbacks.on_scene_will_load)
                 scene_manager->callbacks.on_scene_will_load(handle);
-			
+
+            if(scene_manager->mode == SceneMode::EDITING)
+            {
+                editor_setup(scene_manager);
+            
+                if(scene_manager->callbacks.on_load)
+                    scene_manager->callbacks.on_load(handle);
+            }
+            
 			// @Robustness: This is not good behaviour...
 			// Make sure to reget the scene in case a scene was freed in the callback
 			scene = &get_scene(handle);
@@ -2343,14 +2351,6 @@ static Camera get_standard_camera(SceneManager& manager)
         update_shadow_framebuffer(scene_manager->loaded_scene);
         
         scene_manager->scene_loaded = true;
-
-        if(scene_manager->mode == SceneMode::EDITING)
-        {
-            editor_setup(scene_manager);
-            
-            if(scene_manager->callbacks.on_load)
-                scene_manager->callbacks.on_load(handle);
-        }
     }
 
     Settings& get_scene_settings(SceneHandle handle)
