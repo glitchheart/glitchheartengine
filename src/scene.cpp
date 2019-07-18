@@ -930,7 +930,11 @@ static Camera get_standard_camera(SceneManager& manager)
                 if(starts_with(line_buffer, "obj"))
                 {
                     char name[32];
-                    sscanf(line_buffer, "obj %[^\n]", name);
+                    memset(name, 0, 32);
+
+                    if(!starts_with(line_buffer, "obj\n"))
+                        sscanf(line_buffer, "obj %[^\n]", name);
+                    
                     parse_scene_object(file, handle, name);
                 }
                 else if(starts_with(line_buffer, "settings"))
