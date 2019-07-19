@@ -356,7 +356,8 @@ namespace scene
                     TransformComponent &transform = get_transform_comp(entity.handle, scene_handle);
                     
                     fprintf(file, "obj %s\n", entity.name);
-
+                    fprintf(file, "active: %d\n", scene.active_entities[i]);
+                    
                     if(strlen(entity.template_path) == 0)
                     {
                         fprintf(file, "empty\n");
@@ -401,7 +402,8 @@ namespace scene
                     }
                     else if(has_light_component(entity.handle, scene_handle))
                     {
-                        LightComponent &light = get_light_comp(entity.handle, scene_handle);
+                        LightComponent &light = get_light_comp(entity.handle, scene_handle);
+
 
                         switch(light.type)
                         {
@@ -508,6 +510,8 @@ namespace scene
     static void parse_scene_object(FILE *file, SceneHandle scene, char *name)
     {
         EntityHandle handle = { -1 };
+
+        b32 active = true;
         
         char buffer[256];
         b32 hide_in_ui = false;
@@ -533,6 +537,10 @@ namespace scene
             else if(starts_with(buffer, "hide_in_ui"))
             {
                 sscanf(buffer, "hide_in_ui: %d", &hide_in_ui);
+            }
+            else if(starts_with(buffer, "active"))
+            {
+                sscanf(buffer, "active: %d", &active);
             }
             else if(starts_with(buffer, "tags"))
             {
@@ -803,6 +811,8 @@ namespace scene
             Scene &s = get_scene(scene);
             _set_entity_name(handle, name, s);
         }
+
+        scene::set_active(handle, active, scene);
     }
 
 static Camera get_standard_camera(SceneManager& manager)
@@ -1920,6 +1930,11 @@ static Camera get_standard_camera(SceneManager& manager)
 
     static void editor_setup(SceneManager *manager)
     {
+        TransformComponent &main_cam_transform = get_main_camera_transform(manager->loaded_scene);
+        TransformComponent &editor_cam_transform = get_transform_comp(manager->editor_camera, manager->loaded_scene);
+
+        scene::set_position(editor_cam_transform, main_cam_transform.transform.position);
+        scene::set_rotation(editor_cam_transform, main_cam_transform.transform.euler_angles);
         // Register all debug entities
         for(i32 i = 0; i < 4; i++)
         {
