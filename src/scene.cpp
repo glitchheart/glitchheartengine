@@ -402,7 +402,8 @@ namespace scene
                     }
                     else if(has_light_component(entity.handle, scene_handle))
                     {
-                        LightComponent &light = get_light_comp(entity.handle, scene_handle);
+                        LightComponent &light = get_light_comp(entity.handle, scene_handle);
+
 
                         switch(light.type)
                         {
@@ -1929,6 +1930,11 @@ static Camera get_standard_camera(SceneManager& manager)
 
     static void editor_setup(SceneManager *manager)
     {
+        TransformComponent &main_cam_transform = get_main_camera_transform(manager->loaded_scene);
+        TransformComponent &editor_cam_transform = get_transform_comp(manager->editor_camera, manager->loaded_scene);
+
+        scene::set_position(editor_cam_transform, main_cam_transform.transform.position);
+        scene::set_rotation(editor_cam_transform, main_cam_transform.transform.euler_angles);
         // Register all debug entities
         for(i32 i = 0; i < 4; i++)
         {
