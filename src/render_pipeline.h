@@ -822,7 +822,7 @@ namespace rendering
         NO_DEPTH
     };
     
-#define STANDARD_PASS "STANDARD_PASS"
+#define STANDARD_PASS "opaque"
 #define SHADOW_PASS "SHADOW_PASS"
 
     enum class RenderPassType

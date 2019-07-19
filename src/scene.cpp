@@ -1566,7 +1566,7 @@ static Camera get_standard_camera(SceneManager& manager)
             rendering::set_uniform_value(manager->renderer, manager->gizmos.x_material, "color", c == TranslationConstraint::X ? math::Rgba(yellow, 1.0f) : math::Rgba(1.0f, 0.0f, 0.0f, 1.0f));
             math::Rgba color = c == TranslationConstraint::X ? math::Rgba(yellow, 1.0f) : math::Rgba(1.0f, 0.0f, 0.0f, 1.0f);
 
-            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.x_material,  manager->renderer->render.standard_pass, rendering::CommandType::NO_DEPTH);
+            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.x_material,  manager->renderer->render.standard_opaque_pass, rendering::CommandType::NO_DEPTH);
 
             // Y
             v1 = math::Vec3(0.0f, 0.0f, 0.0f);
@@ -1574,7 +1574,7 @@ static Camera get_standard_camera(SceneManager& manager)
 
             color = c == TranslationConstraint::Y ? math::Rgba(yellow, 1.0f) : math::Rgba(0.0f, 1.0f, 0.0f, 1.0f);
 
-            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.y_material, manager->renderer->render.standard_pass, rendering::CommandType::NO_DEPTH);
+            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.y_material, manager->renderer->render.standard_opaque_pass, rendering::CommandType::NO_DEPTH);
 
             // Z
             v1 = math::Vec3(0.0f, 0.0f, 0.0f);
@@ -1582,7 +1582,7 @@ static Camera get_standard_camera(SceneManager& manager)
 
             color = c == TranslationConstraint::Z ? math::Rgba(yellow, 1.0f) : math::Rgba(0.0f, 0.0f, 1.0f, 1.0f);
 
-            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.z_material, manager->renderer->render.standard_pass, rendering::CommandType::NO_DEPTH);
+            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.z_material, manager->renderer->render.standard_opaque_pass, rendering::CommandType::NO_DEPTH);
         }
     }
 
@@ -4889,7 +4889,7 @@ static Camera get_standard_camera(SceneManager& manager)
 
                         if(render.wireframe_enabled)
                         {
-                            rendering::push_buffer_to_render_pass(renderer, render.buffer_handle, renderer->render.wireframe_material, transform.transform, renderer->render.standard_pass, rendering::CommandType::NO_DEPTH);
+                            rendering::push_buffer_to_render_pass(renderer, render.buffer_handle, renderer->render.wireframe_material, transform.transform, renderer->render.standard_opaque_pass, rendering::CommandType::NO_DEPTH);
                         }
 
                         if(render.bounding_box_enabled)
@@ -4901,7 +4901,7 @@ static Camera get_standard_camera(SceneManager& manager)
                             rendering::Transform box_transform = rendering::create_transform(box_position, size, math::Quat());
                             box_transform.model = transform.transform.model * box_transform.model;
 
-                            rendering::push_buffer_to_render_pass(renderer, renderer->render.bounding_box_buffer, renderer->render.bounding_box_material, box_transform, renderer->render.standard_pass, rendering::CommandType::WITH_DEPTH, rendering::PrimitiveType::LINE_LOOP);
+                            rendering::push_buffer_to_render_pass(renderer, renderer->render.bounding_box_buffer, renderer->render.bounding_box_material, box_transform, renderer->render.standard_opaque_pass, rendering::CommandType::WITH_DEPTH, rendering::PrimitiveType::LINE_LOOP);
                         }
                         
                         CombinedCommand &batch_command = command->commands[command->count];
@@ -4987,7 +4987,7 @@ static Camera get_standard_camera(SceneManager& manager)
 
             rendering::BufferHandle buffer = system.attributes.buffer.handle != 0 ? system.attributes.buffer : (system.attributes.texture_handle.handle != 0 ? renderer->particles.textured_quad_buffer : renderer->particles.quad_buffer);
 
-            rendering::push_instanced_buffer_to_render_pass(renderer, system.particle_count, buffer, system.material_handle, renderer->render.standard_pass, rendering::CommandType::WITH_DEPTH);
+            rendering::push_instanced_buffer_to_render_pass(renderer, system.particle_count, buffer, system.material_handle, renderer->render.standard_opaque_pass, rendering::CommandType::WITH_DEPTH);
         }
 
         draw_gizmos(scene.scene_manager);
