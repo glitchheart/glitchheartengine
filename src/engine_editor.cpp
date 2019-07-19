@@ -102,20 +102,6 @@ namespace editor
                     _recursive_entity_item(entity, scene.handle.manager);
                 }
             }
-
-            if(ImGui::IsWindowFocused())
-            {
-                if(KEY_DOWN(Key_Delete) || KEY_DOWN(Key_Backspace))
-                {
-                    if(IS_ENTITY_HANDLE_VALID(scene.handle.manager->selected_entity))
-                    {
-                        delete_entity(scene.handle.manager->selected_entity, scene.handle.manager);
-                    
-                        scene.handle.manager->selected_entity = { -1 };
-                        scene.handle.manager->gizmos.active = false;
-                    }
-                }
-            }
         }
         
         editor_state->windows.show_hierarchy = hierarchy_open ;

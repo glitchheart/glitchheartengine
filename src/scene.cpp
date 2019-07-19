@@ -2090,6 +2090,17 @@ static Camera get_standard_camera(SceneManager& manager)
             Scene &scene = get_scene(manager->loaded_scene);
             
             TransformComponent &camera_transform = get_transform_comp(manager->editor_camera, manager->loaded_scene);
+
+            if(KEY_DOWN(Key_Delete) || KEY_DOWN(Key_Backspace))
+            {
+                if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
+                {
+                    delete_entity(manager->selected_entity, manager);
+                    
+                    manager->selected_entity = { -1 };
+                    manager->gizmos.active = false;
+                }
+            }
             
             if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
             {
