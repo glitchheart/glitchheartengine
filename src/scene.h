@@ -155,8 +155,16 @@ namespace scene
         EntityHandle entity;
 	};
     
+    enum class RenderMode
+    {
+        OPAQUE,
+        TRANSPARENT
+    };
+    
     struct RenderComponent
     {
+        RenderMode render_mode;
+        
         rendering::BufferHandle buffer_handle;
         
         math::Vec3 mesh_scale;
@@ -404,6 +412,7 @@ namespace scene
         
         struct
         {
+            RenderMode render_mode;
             b32 is_static;
             b32 ignore_depth;
             b32 casts_shadows;

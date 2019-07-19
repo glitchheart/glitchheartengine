@@ -2893,11 +2893,22 @@ static Camera get_standard_camera(SceneManager& manager)
 				{
 					templ->comp_flags |= COMP_RENDER;
                     templ->render.is_static = false;
-
+                    templ->render.render_mode = scene::RenderMode::OPAQUE;
+                    
 					while (fgets(buffer, 256, file) && !starts_with(buffer, "-"))
 					{
 						// FIRST PARSE ALL SHADER PASS INFORMATION
-                        if(starts_with(buffer, "static:"))
+                        if(starts_with(buffer, "mode:"))
+                        {
+                            char mode[32];
+                            sscanf(buffer, "mode: %[^\n]", mode);
+
+                            if(starts_with(mode, "opaque"))
+                                templ->render.render_mode = scene::RenderMode::OPAQUE;
+                            else if(starts_with(mode, "transparent"))
+                                templ->render.render_mode = scene::RenderMode::TRANSPARENT;
+                        }
+                        else if(starts_with(buffer, "static:"))
                         {
                             sscanf(buffer, "static: %d", &templ->render.is_static);
                         } 
@@ -2905,9 +2916,18 @@ static Camera get_standard_camera(SceneManager& manager)
 						{
 							if (starts_with(buffer, "shd::uvs:"))
 							{
+                                char *pass = nullptr;
+
+                                if(templ->render.render_mode == scene::RenderMode::OPAQUE)
+                                    pass = "opaque";
+                                else if(templ->render.render_mode == scene::RenderMode::TRANSPARENT)
+                                    pass = "transparency";
+                                
 								rendering::PassMaterial pass_mat = {};
 								pass_mat.pass_type = rendering::PassType::WITH_UVS;
-								strncpy(pass_mat.pass_name, STANDARD_PASS, strlen(STANDARD_PASS) + 1);
+
+                                
+								strncpy(pass_mat.pass_name, pass, strlen(pass) + 1);
 
 								char shader_file[256];
 								sscanf(buffer, "shd::uvs: %s", shader_file);
@@ -2918,9 +2938,16 @@ static Camera get_standard_camera(SceneManager& manager)
 							}
 							else if (starts_with(buffer, "shd::no_uvs:"))
 							{
+                                char *pass = nullptr;
+
+                                if(templ->render.render_mode == scene::RenderMode::OPAQUE)
+                                    pass = "opaque";
+                                else if(templ->render.render_mode == scene::RenderMode::TRANSPARENT)
+                                    pass = "transparency";
+                                
 								rendering::PassMaterial pass_mat = {};
 								pass_mat.pass_type = rendering::PassType::NO_UVS;
-								strncpy(pass_mat.pass_name, STANDARD_PASS, strlen(STANDARD_PASS) + 1);
+								strncpy(pass_mat.pass_name, pass, strlen(pass) + 1);
 
 								char shader_file[256];
 								sscanf(buffer, "shd::no_uvs: %s", shader_file);
@@ -2970,9 +2997,16 @@ static Camera get_standard_camera(SceneManager& manager)
 							}
 							else if (starts_with(buffer, "shd:"))
 							{
+                                char *pass = nullptr;
+
+                                if(templ->render.render_mode == scene::RenderMode::OPAQUE)
+                                    pass = "opaque";
+                                else if(templ->render.render_mode == scene::RenderMode::TRANSPARENT)
+                                    pass = "transparency";
+                                
 								rendering::PassMaterial pass_mat = {};
 								pass_mat.pass_type = rendering::PassType::STANDARD;
-								strncpy(pass_mat.pass_name, STANDARD_PASS, strlen(STANDARD_PASS) + 1);
+								strncpy(pass_mat.pass_name, pass, strlen(pass) + 1);
 
 								char shader_file[256];
 								sscanf(buffer, "shd: %s", shader_file);
