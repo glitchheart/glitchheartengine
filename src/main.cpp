@@ -1043,10 +1043,11 @@ int main(int argc, char **args)
         else
             game.update(&game_memory);
 
-        if(project_state->project_settings.startup_scene_path != nullptr && !project_state->startup_scene_loaded)
+        if(asset_state.load_mode == assets::AssetLoadMode::FINISHED && !fade::fading())
         {
-            if(asset_state.load_mode == assets::AssetLoadMode::FINISHED && !fade::fading())
+            if(project_state->project_settings.startup_scene_path != nullptr && !project_state->startup_scene_loaded)
             {
+
                 project_state->startup_scene_loaded = true;
                 scene::SceneHandle startup_scene = scene::create_scene_from_file(project_state->project_settings.startup_scene_path, core.scene_manager, false, 1024);
                 scene::load_scene(startup_scene);
