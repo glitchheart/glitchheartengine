@@ -17,6 +17,7 @@ namespace project
         settings_ptr->lib_file_name = push_string(&settings_ptr->arena, 32);
         settings_ptr->project_root_path = push_string(&settings_ptr->arena, 64);
         settings_ptr->resources_folder_path = push_string(&settings_ptr->arena, 32);
+        settings_ptr->startup_scene_path = nullptr;
     
         // Start by getting the project's root folder from the project file path
         // This can later be used for loading any 
@@ -63,6 +64,11 @@ namespace project
                     list.dirs = push_array(&project_state->resources.arenas[project_state->resources.structure_count], 256, File);
                     platform.list_all_files_and_directories(settings_ptr->resources_folder_path, &list);
                     project_state->resources.resource_file_structures[project_state->resources.structure_count++] = list;
+                }
+                else if(starts_with(buffer, "startup_scene"))
+                {
+                    settings_ptr->startup_scene_path = push_string(&settings_ptr->arena, 64);
+                    sscanf(buffer, "startup_scene: %[^\n]", settings_ptr->startup_scene_path);
                 }
             }
         

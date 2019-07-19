@@ -310,6 +310,11 @@ static GLuint load_shader(Renderer *renderer, rendering::Shader &shader, ShaderG
     char *vert_shader = shader.vert_shader;
     gl_shader.vert_program = glCreateShader(GL_VERTEX_SHADER);
 
+	if (!gl_shader.vert_program)
+	{
+		error_gl();
+	}
+
     // @Incomplete: Think about common preamble stuff like #version 330 core and stuff
     glShaderSource(gl_shader.vert_program, 1, (GLchar **)&vert_shader, nullptr);
 

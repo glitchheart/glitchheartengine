@@ -3967,7 +3967,7 @@ static Camera get_standard_camera(SceneManager& manager)
     {
         assert(handle.handle != 0);
 
-        Entity &entity = list::get(&scene.entities, handle.handle);        
+        Entity &entity = list::get(&scene.entities, handle.handle);
         assert(entity.comp_flags & COMP_TRANSFORM);
 
         TransformComponent& comp = scene.transform_components[entity.transform_handle.handle];

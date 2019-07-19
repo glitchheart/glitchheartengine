@@ -21,6 +21,8 @@ struct MemoryArena;
 #include "simd.h"
 #include "random.h"
 #include "init_globals.h"
+#include "fade.h"
+#include "assets.h"
 
 #include "log_state.h"
 #include "log.h"

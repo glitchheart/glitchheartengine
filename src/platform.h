@@ -438,6 +438,21 @@ namespace scene
     struct SceneManager;
 }
 
+namespace assets
+{
+    struct AssetState;
+}
+
+namespace fade
+{
+    struct FadeState;
+}
+
+namespace project
+{
+    struct ProjectState;
+}
+
 struct TimerController;
 
 struct Core
@@ -447,6 +462,7 @@ struct Core
     TimerController* timer_controller;
     sound::SoundSystem* sound_system;
     scene::SceneManager *scene_manager;
+    project::ProjectState *project_state;
     
     editor::EditorState *editor_state;
     
@@ -456,7 +472,11 @@ struct Core
     r64 current_time;
 
     ConfigData config_data;
+    assets::AssetState* asset_state;
+    fade::FadeState* fade_state;
 };
+
+extern Core core;
 
 struct GameMemory
 {
@@ -491,6 +511,29 @@ UPDATE_EDITOR(update_editor_stub)
 typedef BUILD_RENDER_PIPELINE(BuildRenderPipeline);
 BUILD_RENDER_PIPELINE(build_render_pipeline_stub)
 {}
+
+#define ON_LOAD_ASSETS(name) void name()
+typedef ON_LOAD_ASSETS(OnLoadAssets);
+ON_LOAD_ASSETS(on_load_ssets_stub)
+{}
+
+#define ON_ASSETS_LOADED(name) void name()
+typedef ON_ASSETS_LOADED(OnAssetsLoaded);
+ON_ASSETS_LOADED(on_assets_loaded_stub)
+{}
+
+#define INITIALIZE_GAME(name) void name(GameMemory* game_memory)
+typedef INITIALIZE_GAME(InitializeGame);
+INITIALIZE_GAME(initialize_game_stub)
+{
+}
+
+#define REINITIALIZE_GAME(name) struct GameState* name(GameMemory* game_memory)
+typedef REINITIALIZE_GAME(ReinitializeGame);
+REINITIALIZE_GAME(reinitialize_game_stub)
+{
+    return nullptr;
+}
 
 #define ERR(msg) HandleError(__FILE__,__LINE__,msg)
 

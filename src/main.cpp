@@ -64,6 +64,8 @@ static MemoryState memory_state;
 #include "shader_loader.cpp"
 #include "render_pipeline.cpp"
 #include "rendering.cpp"
+#include "fade.cpp"
+#include "assets.cpp"
 #include "particles.cpp"
 #include "particle_api.cpp"
 
@@ -104,7 +106,14 @@ static void load_game_code(GameCode &game_code, char *game_library_path, char *t
         game_code.update = (Update *)platform.load_symbol(game_code.game_code_library, "update");
         game_code.update_editor = (UpdateEditor *)platform.load_symbol(game_code.game_code_library, "update_editor");
         game_code.build_render_pipeline = (BuildRenderPipeline *)platform.load_symbol(game_code.game_code_library, "build_render_pipeline");
-        game_code.is_valid = game_code.update != nullptr || game_code.update_editor != nullptr && game_code.build_render_pipeline != nullptr;
+        game_code.on_load_assets = (OnLoadAssets*)platform.load_symbol(game_code.game_code_library, "on_load_assets");
+        game_code.on_assets_loaded = (OnAssetsLoaded*)platform.load_symbol(game_code.game_code_library, "on_assets_loaded");
+        game_code.initialize_game = (InitializeGame*)platform.load_symbol(game_code.game_code_library, "initialize_game");
+        game_code.reinitialize_game = (ReinitializeGame*)platform.load_symbol(game_code.game_code_library, "reinitialize_game");
+        (game_code.is_valid = game_code.update != nullptr
+            || game_code.update_editor != nullptr) && game_code.build_render_pipeline != nullptr
+            && game_code.on_load_assets != nullptr && game_code.initialize_game != nullptr
+            && game_code.reinitialize_game != nullptr;
     }
     else
         debug("The game library file could not be loaded\n");
@@ -868,6 +877,21 @@ int main(int argc, char **args)
     TimerController &timer_controller = *timer_controller_ptr;
     timer_controller.timer_count = 0;
     timer_controller.paused = false;
+
+    assets::AssetState asset_state = {};
+    asset_state.load_mode = assets::AssetLoadMode::NONE;
+    asset_state.on_load_assets = game.on_load_assets;
+    asset_state.on_assets_loaded = game.on_assets_loaded;
+
+    fade::FadeState fade_state = {};
+    fade_state.running_fade_command = false;
+    fade_state.current_fade_index = 0;
+    fade_state.fade_command_count = 0;
+    fade_state.fading = false;
+    fade_state.fade_mode = fade::FADE_NONE;
+    fade_state.fade_alpha = 1.0f;
+    fade_state.fade_speed = 3.0f;
+    fade_state.enqueue_command = &fade::_enqueue_fade_command;
     
     SoundDevice sound_device = {};
     sound_device.system = nullptr;
@@ -925,15 +949,18 @@ int main(int argc, char **args)
     template_state.template_count = 0;
 
     template_state.templates = push_array(&platform_state->perm_arena, global_max_entity_templates, scene::EntityTemplate);
-
     
     core.renderer = renderer;
     core.input_controller = &input_controller;
     core.timer_controller = &timer_controller;
+    core.asset_state = &asset_state;
     core.sound_system = &sound_system;
     core.scene_manager = scene_manager;
     core.delta_time = delta_time;
     core.current_time = get_time();
+    core.fade_state = &fade_state;
+    core.asset_state = &asset_state;
+    core.project_state = project_state;
 
     #ifdef EDITOR
     editor::EditorState editor_state = {};
@@ -946,6 +973,9 @@ int main(int argc, char **args)
     game_memory.core = core;
     show_mouse_cursor(false, &render_state);
 
+    game.initialize_game(&game_memory);
+    platform.add_entry(&asset_queue, assets::load_assets, &asset_state);
+
     while (!should_close_window(render_state) && !renderer->should_close)
     {
 		ui_rendering::start_imgui_frame(&render_state.imgui_state);
@@ -955,12 +985,12 @@ int main(int argc, char **args)
             debug_log("Quit\n");
             glfwSetWindowShouldClose(render_state.window, GLFW_TRUE);
         }
-        
-        //show_mouse_cursor(render_state, renderer->show_mouse_cursor);
 
-        reload_libraries(&game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
-        //#endif
-        //auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
+        b32 reloaded = reload_libraries(&game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
+        if(reloaded)
+        {
+            game.reinitialize_game(&game_memory);
+        }
 
         if (controller_present())
         {
@@ -969,6 +999,7 @@ int main(int argc, char **args)
 
         ImGuiIO& io = ImGui::GetIO();
         input_controller.ignore_all_keys = io.WantCaptureMouse;
+        fade::update_fade_commands(&fade_state, renderer, &input_controller, delta_time);
 
         if(scene_manager->scene_loaded)
         {
@@ -999,11 +1030,8 @@ int main(int argc, char **args)
             game.update(&game_memory);
             #endif
 
-
             if(scene_manager->scene_loaded) // Check again, since there could be a call to unload_current_scene() in game.update()
             {
-				
-
 #ifdef EDITOR
                 update_scene_editor(scene_manager->loaded_scene, &input_controller, render_state, delta_time);
 #endif
@@ -1014,6 +1042,21 @@ int main(int argc, char **args)
         }
         else
             game.update(&game_memory);
+
+        if(project_state->project_settings.startup_scene_path != nullptr && !project_state->startup_scene_loaded)
+        {
+            if(asset_state.load_mode == assets::AssetLoadMode::FINISHED && !fade::fading())
+            {
+                project_state->startup_scene_loaded = true;
+                scene::SceneHandle startup_scene = scene::create_scene_from_file(project_state->project_settings.startup_scene_path, core.scene_manager, false, 1024);
+                scene::load_scene(startup_scene);
+            }
+        }
+        else if(asset_state.load_mode == assets::AssetLoadMode::GAME_ASSETS_LOADED)
+        {
+            asset_state.on_assets_loaded();
+            asset_state.load_mode = assets::AssetLoadMode::FINISHED;
+        }
         
         update_particle_systems(renderer, delta_time);
 
@@ -1022,6 +1065,7 @@ int main(int argc, char **args)
         if(sound_system.update)
             update_sound_commands(&sound_device, &sound_system, delta_time, &do_save_config);
 
+        render_fades(&fade_state, renderer);
         render(render_state, renderer, delta_time);
         
         if (do_save_config)

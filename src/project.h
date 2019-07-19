@@ -9,6 +9,7 @@ namespace project
         char *lib_file_name;
         char *project_root_path;
         char *resources_folder_path;
+        char *startup_scene_path;
     
         MemoryArena arena;
     };
@@ -25,6 +26,8 @@ namespace project
 
             MemoryArena file_structure_arena;
         } resources;
+
+        b32 startup_scene_loaded;
     };
 
 // Loads a project file (.gpj format)
