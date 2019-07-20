@@ -13,6 +13,11 @@ namespace list
         {
             return items[index];
         }
+
+        void add(T &value)
+        {
+            items[count++] = value;
+        }
     };
 
     template<typename T>

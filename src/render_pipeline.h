@@ -835,7 +835,8 @@ namespace rendering
     {
         BACKFACE_CULLING = (1 << 0),
         FRONTFACE_CULLING = (1 << 1),
-        DONT_CLEAR = (1 << 2)
+        DONT_CLEAR = (1 << 2),
+        DISABLE_DEPTH = (1 << 3)
     };
     
     // @Note: When rendering a scene, multiple render passes can be used.

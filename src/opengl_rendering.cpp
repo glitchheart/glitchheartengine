@@ -2305,12 +2305,12 @@ static void set_uniform(rendering::Transform transform, const rendering::RenderP
     break;
     case rendering::UniformMappingType::FRAMEBUFFER_WIDTH:
     {
-        set_int_uniform(gl_shader.program, location, renderer->window_width);
+        set_int_uniform(gl_shader.program, location, renderer->framebuffer_width);
     }
     break;
     case rendering::UniformMappingType::FRAMEBUFFER_HEIGHT:
     {
-        set_int_uniform(gl_shader.program, location, renderer->window_height);
+        set_int_uniform(gl_shader.program, location, renderer->framebuffer_height);
     }
     break;
     case rendering::UniformMappingType::TIME:
@@ -2824,8 +2824,13 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
 
         // @Incomplete: Not all framebuffers should have depth testing or clear both bits
 
-        if(framebuffer.depth_buffer_count > 0)
+        if(pass.settings & rendering::RenderPassSettings::DISABLE_DEPTH)
         {
+            glDepthMask(GL_FALSE);
+        }
+        else if(framebuffer.depth_buffer_count > 0)
+        {
+            glDepthMask(GL_TRUE);
             glEnable(GL_DEPTH_TEST);
             glDepthFunc(GL_LESS);
         }
