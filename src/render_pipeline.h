@@ -834,7 +834,8 @@ namespace rendering
     enum RenderPassSettings
     {
         BACKFACE_CULLING = (1 << 0),
-        FRONTFACE_CULLING = (1 << 1)
+        FRONTFACE_CULLING = (1 << 1),
+        DONT_CLEAR = (1 << 2)
     };
     
     // @Note: When rendering a scene, multiple render passes can be used.

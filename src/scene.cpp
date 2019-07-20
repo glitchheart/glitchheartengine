@@ -2893,7 +2893,7 @@ static Camera get_standard_camera(SceneManager& manager)
 				{
 					templ->comp_flags |= COMP_RENDER;
                     templ->render.is_static = false;
-                    templ->render.render_mode = scene::RenderMode::OPAQUE;
+                    templ->render.render_mode = scene::RenderMode::RENDER_OPAQUE;
                     
 					while (fgets(buffer, 256, file) && !starts_with(buffer, "-"))
 					{
@@ -2904,9 +2904,9 @@ static Camera get_standard_camera(SceneManager& manager)
                             sscanf(buffer, "mode: %[^\n]", mode);
 
                             if(starts_with(mode, "opaque"))
-                                templ->render.render_mode = scene::RenderMode::OPAQUE;
+                                templ->render.render_mode = scene::RenderMode::RENDER_OPAQUE;
                             else if(starts_with(mode, "transparent"))
-                                templ->render.render_mode = scene::RenderMode::TRANSPARENT;
+                                templ->render.render_mode = scene::RenderMode::RENDER_TRANSPARENT;
                         }
                         else if(starts_with(buffer, "static:"))
                         {
@@ -2918,9 +2918,9 @@ static Camera get_standard_camera(SceneManager& manager)
 							{
                                 char *pass = nullptr;
 
-                                if(templ->render.render_mode == scene::RenderMode::OPAQUE)
+                                if(templ->render.render_mode == scene::RenderMode::RENDER_OPAQUE)
                                     pass = "opaque";
-                                else if(templ->render.render_mode == scene::RenderMode::TRANSPARENT)
+                                else if(templ->render.render_mode == scene::RenderMode::RENDER_TRANSPARENT)
                                     pass = "transparency";
                                 
 								rendering::PassMaterial pass_mat = {};
@@ -2940,9 +2940,9 @@ static Camera get_standard_camera(SceneManager& manager)
 							{
                                 char *pass = nullptr;
 
-                                if(templ->render.render_mode == scene::RenderMode::OPAQUE)
+                                if(templ->render.render_mode == scene::RenderMode::RENDER_OPAQUE)
                                     pass = "opaque";
-                                else if(templ->render.render_mode == scene::RenderMode::TRANSPARENT)
+                                else if(templ->render.render_mode == scene::RenderMode::RENDER_TRANSPARENT)
                                     pass = "transparency";
                                 
 								rendering::PassMaterial pass_mat = {};
@@ -2999,9 +2999,9 @@ static Camera get_standard_camera(SceneManager& manager)
 							{
                                 char *pass = nullptr;
 
-                                if(templ->render.render_mode == scene::RenderMode::OPAQUE)
+                                if(templ->render.render_mode == scene::RenderMode::RENDER_OPAQUE)
                                     pass = "opaque";
-                                else if(templ->render.render_mode == scene::RenderMode::TRANSPARENT)
+                                else if(templ->render.render_mode == scene::RenderMode::RENDER_TRANSPARENT)
                                     pass = "transparency";
                                 
 								rendering::PassMaterial pass_mat = {};

@@ -155,10 +155,10 @@ namespace scene
         EntityHandle entity;
 	};
     
-    enum class RenderMode
+    enum RenderMode
     {
-        OPAQUE,
-        TRANSPARENT
+        RENDER_OPAQUE,
+        RENDER_TRANSPARENT
     };
     
     struct RenderComponent
