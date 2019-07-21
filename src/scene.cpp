@@ -2091,7 +2091,8 @@ static Camera get_standard_camera(SceneManager& manager)
             
             TransformComponent &camera_transform = get_transform_comp(manager->editor_camera, manager->loaded_scene);
 
-            if(KEY_DOWN(Key_Delete) || KEY_DOWN(Key_Backspace))
+            auto &io = ImGui::GetIO();
+            if(!io.WantCaptureKeyboard && (KEY_DOWN(Key_Delete) || KEY_DOWN(Key_Backspace)))
             {
                 if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
                 {
