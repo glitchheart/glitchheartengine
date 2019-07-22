@@ -2516,8 +2516,17 @@ static Camera get_standard_camera(SceneManager& manager)
 
     static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, EntityHandle entity, SceneHandle &scene_handle)
     {
-        RenderComponent &render_comp = get_render_comp(entity, scene_handle);
-        add_to_render_pass(render_pass_handle, render_comp, scene_handle);
+        Entity &e = get_entity(entity, scene_handle);
+        if(e.comp_flags & COMP_RENDER)
+        {
+            RenderComponent &render_comp = get_render_comp(entity, scene_handle);
+            add_to_render_pass(render_pass_handle, render_comp, scene_handle);
+        }
+
+        for(i32 i = 0; i < e.child_count; i++)
+        {
+            add_to_render_pass(render_pass_handle, e.children[i], scene_handle);
+        }
     }
 
     static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, rendering::MaterialInstanceHandle material, EntityHandle entity, SceneHandle &scene)
