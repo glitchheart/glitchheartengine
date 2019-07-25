@@ -16,6 +16,8 @@ namespace list
 
         void add(T &value)
         {
+            assert(count < SIZE);
+                
             items[count++] = value;
         }
     };
