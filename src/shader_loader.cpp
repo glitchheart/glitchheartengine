@@ -801,7 +801,7 @@ namespace rendering
 				char *included_path = concat("../assets/shaders/", include_name, &temp_arena);
 
 				// FILE *included_shd = fopen(included_path, "rb");
-                PlatformFile included_shd = os::open_file(included_path, POF_READ | POF_OPEN_EXISTING);
+                os::File included_shd = os::open_file(included_path, POF_READ | POF_OPEN_EXISTING);
 
 				if (included_shd.handle)
 				{

@@ -20,6 +20,10 @@ struct GameCode
     Update *update;
     UpdateEditor *update_editor;
     BuildRenderPipeline *build_render_pipeline;
+    OnLoadAssets *on_load_assets;
+    OnAssetsLoaded *on_assets_loaded;
+    InitializeGame *initialize_game;
+    ReinitializeGame *reinitialize_game;
     
     b32 is_valid;
 };

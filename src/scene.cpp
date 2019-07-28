@@ -356,7 +356,8 @@ namespace scene
                     TransformComponent &transform = get_transform_comp(entity.handle, scene_handle);
                     
                     fprintf(file, "obj %s\n", entity.name);
-
+                    fprintf(file, "active: %d\n", scene.active_entities[i]);
+                    
                     if(strlen(entity.template_path) == 0)
                     {
                         fprintf(file, "empty\n");
@@ -402,6 +403,7 @@ namespace scene
                     else if(has_light_component(entity.handle, scene_handle))
                     {
                         LightComponent &light = get_light_comp(entity.handle, scene_handle);
+
 
                         switch(light.type)
                         {
@@ -508,6 +510,8 @@ namespace scene
     static void parse_scene_object(FILE *file, SceneHandle scene, char *name)
     {
         EntityHandle handle = { -1 };
+
+        b32 active = true;
         
         char buffer[256];
         b32 hide_in_ui = false;
@@ -533,6 +537,10 @@ namespace scene
             else if(starts_with(buffer, "hide_in_ui"))
             {
                 sscanf(buffer, "hide_in_ui: %d", &hide_in_ui);
+            }
+            else if(starts_with(buffer, "active"))
+            {
+                sscanf(buffer, "active: %d", &active);
             }
             else if(starts_with(buffer, "tags"))
             {
@@ -803,6 +811,8 @@ namespace scene
             Scene &s = get_scene(scene);
             _set_entity_name(handle, name, s);
         }
+
+        scene::set_active(handle, active, scene);
     }
 
 static Camera get_standard_camera(SceneManager& manager)
@@ -930,15 +940,18 @@ static Camera get_standard_camera(SceneManager& manager)
                 if(starts_with(line_buffer, "obj"))
                 {
                     char name[32];
-                    sscanf(line_buffer, "obj %[^\n]", name);
+                    memset(name, 0, 32);
+ 
+                    if(!starts_with(line_buffer, "obj\n"))
+                        sscanf(line_buffer, "obj %[^\n]", name);
+                   
                     parse_scene_object(file, handle, name);
                 }
                 else if(starts_with(line_buffer, "settings"))
                 {
                     parse_scene_settings(file, handle);
                 }
-            }
-                
+            }                
             fclose(file);
         }
     }
@@ -1279,7 +1292,6 @@ static Camera get_standard_camera(SceneManager& manager)
     {
         list.handles[list.entity_count++] = entity;
     }
-    
     static EntityHandle pick_entity(SceneHandle handle, i32 mouse_x, i32 mouse_y)
     {
         Scene &scene = get_scene(handle);
@@ -1325,41 +1337,9 @@ static Camera get_standard_camera(SceneManager& manager)
                     box.max = transform.transform.model * box.max;
 
                     math::Vec3 intersection_point;
-                    // if(!ent.selection_enabled)
-                    // {
-                    //     EntityHandle parent = get_root_entity(ent.handle, scene);
-                            
-                    //     // If a selectable parent was found
-                    //     if(IS_ENTITY_HANDLE_VALID(parent))
-                    //     {
-                    //         add_to_list(entity_list, parent);
-                    //     }
-                                
-                    //     else
-                    //         continue;
-                    // }
-                    // else
-                    //     add_to_list(entity_list, ent.handle);
-
-                    
                     if(aabb_ray_intersection(ray, box, &intersection_point))
                     {
-                        // Look for selectable parents
-                        if(!ent.selection_enabled)
-                        {
-                            EntityHandle parent = get_root_entity(ent.handle, scene);
-                            
-                            // If a selectable parent was found
-                            if(IS_ENTITY_HANDLE_VALID(parent))
-                            {
-                                add_to_list(entity_list, parent);
-                            }
-                                
-                            else
-                                continue;
-                        }
-                        else
-                            add_to_list(entity_list, ent.handle);
+                        add_to_list(entity_list, ent.handle);
                     }
                 }
             }
@@ -1376,6 +1356,7 @@ static Camera get_standard_camera(SceneManager& manager)
         {
             Entity entity = get_entity(entity_list.handles[i], scene);
             rendering::Transform transform = get_transform_comp(entity_list.handles[i], scene).transform;
+
             RenderComponent render = get_render_comp(entity_list.handles[i], scene.handle);
             if(Mesh* mesh = rendering::get_mesh(scene.renderer, render.buffer_handle.loaded_mesh_handle))
             {
@@ -1411,10 +1392,28 @@ static Camera get_standard_camera(SceneManager& manager)
 		
         end_temporary_memory(temp_mem);
 
-    if(IS_ENTITY_HANDLE_VALID(entity_handle))
-        handle.manager->gizmos.selected_gizmo = Gizmos::NONE;
+        if(IS_ENTITY_HANDLE_VALID(entity_handle))
+            handle.manager->gizmos.selected_gizmo = Gizmos::NONE;
+
+        Entity entity = get_entity(entity_handle, scene);
     
-        return entity_handle;
+        // Look for selectable parents
+        if(entity.selection_enabled)
+        {
+            return entity_handle;
+        }
+
+        EntityHandle parent = get_root_entity(entity.handle, scene);
+                            
+        // If a selectable parent was found
+        if(IS_ENTITY_HANDLE_VALID(parent))
+        {
+            return parent;
+        }
+        else
+        {
+            return { 0 };
+        }
     }
 
     static b32 entity_exists(EntityHandle entity_handle, SceneHandle scene_handle)
@@ -1567,7 +1566,7 @@ static Camera get_standard_camera(SceneManager& manager)
             rendering::set_uniform_value(manager->renderer, manager->gizmos.x_material, "color", c == TranslationConstraint::X ? math::Rgba(yellow, 1.0f) : math::Rgba(1.0f, 0.0f, 0.0f, 1.0f));
             math::Rgba color = c == TranslationConstraint::X ? math::Rgba(yellow, 1.0f) : math::Rgba(1.0f, 0.0f, 0.0f, 1.0f);
 
-            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.x_material,  manager->renderer->render.standard_pass, rendering::CommandType::NO_DEPTH);
+            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.x_material,  manager->renderer->render.standard_opaque_pass, rendering::CommandType::NO_DEPTH);
 
             // Y
             v1 = math::Vec3(0.0f, 0.0f, 0.0f);
@@ -1575,7 +1574,7 @@ static Camera get_standard_camera(SceneManager& manager)
 
             color = c == TranslationConstraint::Y ? math::Rgba(yellow, 1.0f) : math::Rgba(0.0f, 1.0f, 0.0f, 1.0f);
 
-            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.y_material, manager->renderer->render.standard_pass, rendering::CommandType::NO_DEPTH);
+            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.y_material, manager->renderer->render.standard_opaque_pass, rendering::CommandType::NO_DEPTH);
 
             // Z
             v1 = math::Vec3(0.0f, 0.0f, 0.0f);
@@ -1583,7 +1582,7 @@ static Camera get_standard_camera(SceneManager& manager)
 
             color = c == TranslationConstraint::Z ? math::Rgba(yellow, 1.0f) : math::Rgba(0.0f, 0.0f, 1.0f, 1.0f);
 
-            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.z_material, manager->renderer->render.standard_pass, rendering::CommandType::NO_DEPTH);
+            rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.z_material, manager->renderer->render.standard_opaque_pass, rendering::CommandType::NO_DEPTH);
         }
     }
 
@@ -1827,12 +1826,8 @@ static Camera get_standard_camera(SceneManager& manager)
         }
     }
 
-    // @Incomplete: Move into engine_editor.cpp instead
     static void update_editor_camera(Camera &camera, TransformComponent &component, Scene &scene, InputController *input_controller, r64 delta_time)
     {
-        // @Incomplete: Hide mouse on input field drag
-        // Dragging speed can be slowed down/sped up by holding alt/shift
-        
         if(ImGui::IsMouseDragging(1))
         {
             set_mouse_lock(true, *scene.renderer);
@@ -1872,7 +1867,7 @@ static Camera get_standard_camera(SceneManager& manager)
         if(MOUSE(Mouse_Middle))
         {
             scene::set_position(component, component.transform.position + component.transform.up * input_controller->mouse_y_delta * 0.01f);
-            scene::set_position(component, component.transform.position + component.transform.right * input_controller->mouse_x_delta * 0.01f);
+            scene::set_position(component, component.transform.position - component.transform.right * input_controller->mouse_x_delta * 0.01f);
         }
 
         // @Incomplete
@@ -1935,6 +1930,11 @@ static Camera get_standard_camera(SceneManager& manager)
 
     static void editor_setup(SceneManager *manager)
     {
+        TransformComponent &main_cam_transform = get_main_camera_transform(manager->loaded_scene);
+        TransformComponent &editor_cam_transform = get_transform_comp(manager->editor_camera, manager->loaded_scene);
+
+        scene::set_position(editor_cam_transform, main_cam_transform.transform.position);
+        scene::set_rotation(editor_cam_transform, main_cam_transform.transform.euler_angles);
         // Register all debug entities
         for(i32 i = 0; i < 4; i++)
         {
@@ -2068,6 +2068,10 @@ static Camera get_standard_camera(SceneManager& manager)
                 scene::reload_scene(manager->loaded_scene);
                 
                 manager->renderer->api_functions.show_mouse_cursor(false, &render_state);
+
+                // Disable wireframes
+                /*if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
+                    scene::set_wireframe_enabled(false, manager->selected_entity, handle);*/
                 
                 // When exiting to running mode we should make sure to notify the game about it, to ensure that all
                 // editor-specific entities are cleaned up before the game is running again.
@@ -2086,6 +2090,18 @@ static Camera get_standard_camera(SceneManager& manager)
             Scene &scene = get_scene(manager->loaded_scene);
             
             TransformComponent &camera_transform = get_transform_comp(manager->editor_camera, manager->loaded_scene);
+
+            auto &io = ImGui::GetIO();
+            if(!io.WantCaptureKeyboard && (KEY_DOWN(Key_Delete) || KEY_DOWN(Key_Backspace)))
+            {
+                if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
+                {
+                    delete_entity(manager->selected_entity, manager);
+                    
+                    manager->selected_entity = { -1 };
+                    manager->gizmos.active = false;
+                }
+            }
             
             if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
             {
@@ -2316,7 +2332,15 @@ static Camera get_standard_camera(SceneManager& manager)
             
             if(scene_manager->callbacks.on_scene_will_load)
                 scene_manager->callbacks.on_scene_will_load(handle);
-			
+
+            if(scene_manager->mode == SceneMode::EDITING)
+            {
+                editor_setup(scene_manager);
+            
+                if(scene_manager->callbacks.on_load)
+                    scene_manager->callbacks.on_load(handle);
+            }
+            
 			// @Robustness: This is not good behaviour...
 			// Make sure to reget the scene in case a scene was freed in the callback
 			scene = &get_scene(handle);
@@ -2339,14 +2363,6 @@ static Camera get_standard_camera(SceneManager& manager)
         update_shadow_framebuffer(scene_manager->loaded_scene);
         
         scene_manager->scene_loaded = true;
-
-        if(scene_manager->mode == SceneMode::EDITING)
-        {
-            editor_setup(scene_manager);
-            
-            if(scene_manager->callbacks.on_load)
-                scene_manager->callbacks.on_load(handle);
-        }
     }
 
     Settings& get_scene_settings(SceneHandle handle)
@@ -2500,8 +2516,17 @@ static Camera get_standard_camera(SceneManager& manager)
 
     static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, EntityHandle entity, SceneHandle &scene_handle)
     {
-        RenderComponent &render_comp = get_render_comp(entity, scene_handle);
-        add_to_render_pass(render_pass_handle, render_comp, scene_handle);
+        Entity &e = get_entity(entity, scene_handle);
+        if(e.comp_flags & COMP_RENDER)
+        {
+            RenderComponent &render_comp = get_render_comp(entity, scene_handle);
+            add_to_render_pass(render_pass_handle, render_comp, scene_handle);
+        }
+
+        for(i32 i = 0; i < e.child_count; i++)
+        {
+            add_to_render_pass(render_pass_handle, e.children[i], scene_handle);
+        }
     }
 
     static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, rendering::MaterialInstanceHandle material, EntityHandle entity, SceneHandle &scene)
@@ -2878,11 +2903,22 @@ static Camera get_standard_camera(SceneManager& manager)
 				{
 					templ->comp_flags |= COMP_RENDER;
                     templ->render.is_static = false;
-
+                    templ->render.render_mode = scene::RenderMode::RENDER_OPAQUE;
+                    
 					while (fgets(buffer, 256, file) && !starts_with(buffer, "-"))
 					{
 						// FIRST PARSE ALL SHADER PASS INFORMATION
-                        if(starts_with(buffer, "static:"))
+                        if(starts_with(buffer, "mode:"))
+                        {
+                            char mode[32];
+                            sscanf(buffer, "mode: %[^\n]", mode);
+
+                            if(starts_with(mode, "opaque"))
+                                templ->render.render_mode = scene::RenderMode::RENDER_OPAQUE;
+                            else if(starts_with(mode, "transparent"))
+                                templ->render.render_mode = scene::RenderMode::RENDER_TRANSPARENT;
+                        }
+                        else if(starts_with(buffer, "static:"))
                         {
                             sscanf(buffer, "static: %d", &templ->render.is_static);
                         } 
@@ -2890,9 +2926,18 @@ static Camera get_standard_camera(SceneManager& manager)
 						{
 							if (starts_with(buffer, "shd::uvs:"))
 							{
+                                char *pass = nullptr;
+
+                                if(templ->render.render_mode == scene::RenderMode::RENDER_OPAQUE)
+                                    pass = "opaque";
+                                else if(templ->render.render_mode == scene::RenderMode::RENDER_TRANSPARENT)
+                                    pass = "transparency";
+                                
 								rendering::PassMaterial pass_mat = {};
 								pass_mat.pass_type = rendering::PassType::WITH_UVS;
-								strncpy(pass_mat.pass_name, STANDARD_PASS, strlen(STANDARD_PASS) + 1);
+
+                                
+								strncpy(pass_mat.pass_name, pass, strlen(pass) + 1);
 
 								char shader_file[256];
 								sscanf(buffer, "shd::uvs: %s", shader_file);
@@ -2903,9 +2948,16 @@ static Camera get_standard_camera(SceneManager& manager)
 							}
 							else if (starts_with(buffer, "shd::no_uvs:"))
 							{
+                                char *pass = nullptr;
+
+                                if(templ->render.render_mode == scene::RenderMode::RENDER_OPAQUE)
+                                    pass = "opaque";
+                                else if(templ->render.render_mode == scene::RenderMode::RENDER_TRANSPARENT)
+                                    pass = "transparency";
+                                
 								rendering::PassMaterial pass_mat = {};
 								pass_mat.pass_type = rendering::PassType::NO_UVS;
-								strncpy(pass_mat.pass_name, STANDARD_PASS, strlen(STANDARD_PASS) + 1);
+								strncpy(pass_mat.pass_name, pass, strlen(pass) + 1);
 
 								char shader_file[256];
 								sscanf(buffer, "shd::no_uvs: %s", shader_file);
@@ -2955,9 +3007,16 @@ static Camera get_standard_camera(SceneManager& manager)
 							}
 							else if (starts_with(buffer, "shd:"))
 							{
+                                char *pass = nullptr;
+
+                                if(templ->render.render_mode == scene::RenderMode::RENDER_OPAQUE)
+                                    pass = "opaque";
+                                else if(templ->render.render_mode == scene::RenderMode::RENDER_TRANSPARENT)
+                                    pass = "transparency";
+                                
 								rendering::PassMaterial pass_mat = {};
 								pass_mat.pass_type = rendering::PassType::STANDARD;
-								strncpy(pass_mat.pass_name, STANDARD_PASS, strlen(STANDARD_PASS) + 1);
+								strncpy(pass_mat.pass_name, pass, strlen(pass) + 1);
 
 								char shader_file[256];
 								sscanf(buffer, "shd: %s", shader_file);
@@ -3120,6 +3179,7 @@ static Camera get_standard_camera(SceneManager& manager)
                         {
                             const rendering::MeshObjectData &data = obj_info.data[i];
                             templ->child_handles[templ->child_count++] = _create_template_copy_with_new_render_data(temp, templ, template_state, scene.renderer, data);
+                            
                         }
             
                         templ->comp_flags = templ->comp_flags & ~ COMP_RENDER;
@@ -3612,6 +3672,7 @@ static Camera get_standard_camera(SceneManager& manager)
         {
 			scene::EntityHandle child = _register_entity_with_template(template_state->templates[templ->child_handles[i].handle - 1], scene, false);
 			scene::add_child(entity, child, scene.handle);
+            scene::set_entity_selection_enabled(child, false, scene.handle);
         }
 
         if(tags)
@@ -3976,7 +4037,7 @@ static Camera get_standard_camera(SceneManager& manager)
     {
         assert(handle.handle != 0);
 
-        Entity &entity = list::get(&scene.entities, handle.handle);        
+        Entity &entity = list::get(&scene.entities, handle.handle);
         assert(entity.comp_flags & COMP_TRANSFORM);
 
         TransformComponent& comp = scene.transform_components[entity.transform_handle.handle];
@@ -4872,7 +4933,7 @@ static Camera get_standard_camera(SceneManager& manager)
 
                         if(render.wireframe_enabled)
                         {
-                            rendering::push_buffer_to_render_pass(renderer, render.buffer_handle, renderer->render.wireframe_material, transform.transform, renderer->render.standard_pass, rendering::CommandType::NO_DEPTH);
+                            rendering::push_buffer_to_render_pass(renderer, render.buffer_handle, renderer->render.wireframe_material, transform.transform, renderer->render.standard_opaque_pass, rendering::CommandType::NO_DEPTH);
                         }
 
                         if(render.bounding_box_enabled)
@@ -4884,7 +4945,7 @@ static Camera get_standard_camera(SceneManager& manager)
                             rendering::Transform box_transform = rendering::create_transform(box_position, size, math::Quat());
                             box_transform.model = transform.transform.model * box_transform.model;
 
-                            rendering::push_buffer_to_render_pass(renderer, renderer->render.bounding_box_buffer, renderer->render.bounding_box_material, box_transform, renderer->render.standard_pass, rendering::CommandType::WITH_DEPTH, rendering::PrimitiveType::LINE_LOOP);
+                            rendering::push_buffer_to_render_pass(renderer, renderer->render.bounding_box_buffer, renderer->render.bounding_box_material, box_transform, renderer->render.standard_opaque_pass, rendering::CommandType::WITH_DEPTH, rendering::PrimitiveType::LINE_LOOP);
                         }
                         
                         CombinedCommand &batch_command = command->commands[command->count];
@@ -4970,7 +5031,7 @@ static Camera get_standard_camera(SceneManager& manager)
 
             rendering::BufferHandle buffer = system.attributes.buffer.handle != 0 ? system.attributes.buffer : (system.attributes.texture_handle.handle != 0 ? renderer->particles.textured_quad_buffer : renderer->particles.quad_buffer);
 
-            rendering::push_instanced_buffer_to_render_pass(renderer, system.particle_count, buffer, system.material_handle, renderer->render.standard_pass, rendering::CommandType::WITH_DEPTH);
+            rendering::push_instanced_buffer_to_render_pass(renderer, system.particle_count, buffer, system.material_handle, renderer->render.standard_opaque_pass, rendering::CommandType::WITH_DEPTH);
         }
 
         draw_gizmos(scene.scene_manager);

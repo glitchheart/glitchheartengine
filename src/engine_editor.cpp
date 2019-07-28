@@ -50,6 +50,10 @@ namespace editor
         {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.35f, 0.35f, 0.35f, 1.0f));
         }
+        else if (!entity.selection_enabled)
+        {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.0f, 0.0f, 1.0f));
+        }
         else
         {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
@@ -57,7 +61,7 @@ namespace editor
 
         if (ImGui::TreeNodeEx(entity.name, tree_node_flags))
         {
-            if (ImGui::IsItemClicked())
+            if (entity.selection_enabled && ImGui::IsItemClicked())
             {
                 scene::select_entity(entity.handle, scene_manager);
             }
@@ -951,6 +955,7 @@ namespace editor
 
         if(ImGui::Begin("Resources", &open, ImGuiWindowFlags_NoFocusOnAppearing))
         {
+
             ImGui::Text(current_structure.path);
             ImGui::SameLine();
 
@@ -989,6 +994,9 @@ namespace editor
                 
                 platform.list_all_files_and_directories(current_structure.path, &current_structure);
             }
+
+            static char search_str[256];
+            ImGui::InputText("Search", search_str, IM_ARRAYSIZE(search_str));
         
             ImGui::Separator();
     
@@ -996,7 +1004,7 @@ namespace editor
             {
                 char *name = current_structure.dirs[i].name;
 
-                if(state->resources.structure_count == 1 && starts_with(name, "."))
+                if(state->resources.structure_count == 1 && starts_with(name, ".") || (!starts_with(name, "..") && strlen(search_str) > 0 && !starts_with(name, search_str)))
                     continue;
 
                 if(strlen(name) == 1 && name[0] == '.')
@@ -1012,6 +1020,8 @@ namespace editor
                     }
                     else
                     {
+                        memset(search_str, 0, sizeof(strlen(search_str)));
+                               
                         FileList &list = state->resources.resource_file_structures[state->resources.structure_count++];
                 
                         sprintf(list.path, "%s/%s", current_structure.path, name);
@@ -1031,6 +1041,9 @@ namespace editor
 
             for(i32 i = 0; i < current_structure.file_count; i++)
             {
+                if(strlen(search_str) > 0 && !starts_with(current_structure.files[i].name, search_str))
+                   continue;
+                   
                 if(ImGui::Selectable(current_structure.files[i].name, false, ImGuiSelectableFlags_AllowDoubleClick))
                 {
                     if(ImGui::IsMouseDoubleClicked(0))

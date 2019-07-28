@@ -310,6 +310,11 @@ static GLuint load_shader(Renderer *renderer, rendering::Shader &shader, ShaderG
     char *vert_shader = shader.vert_shader;
     gl_shader.vert_program = glCreateShader(GL_VERTEX_SHADER);
 
+	if (!gl_shader.vert_program)
+	{
+		error_gl();
+	}
+
     // @Incomplete: Think about common preamble stuff like #version 330 core and stuff
     glShaderSource(gl_shader.vert_program, 1, (GLchar **)&vert_shader, nullptr);
 
@@ -754,11 +759,11 @@ static void _create_framebuffer_depth_texture_attachment(rendering::DepthAttachm
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
         
-        // float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
-        // glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+        float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, texture->handle, NULL);
 
@@ -776,11 +781,11 @@ static void _create_framebuffer_depth_texture_attachment(rendering::DepthAttachm
         // Prevent shadows outside of the shadow map
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
-        // float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
-        // glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+        float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, texture->handle, 0);
 
@@ -2300,12 +2305,12 @@ static void set_uniform(rendering::Transform transform, const rendering::RenderP
     break;
     case rendering::UniformMappingType::FRAMEBUFFER_WIDTH:
     {
-        set_int_uniform(gl_shader.program, location, renderer->window_width);
+        set_int_uniform(gl_shader.program, location, renderer->framebuffer_width);
     }
     break;
     case rendering::UniformMappingType::FRAMEBUFFER_HEIGHT:
     {
-        set_int_uniform(gl_shader.program, location, renderer->window_height);
+        set_int_uniform(gl_shader.program, location, renderer->framebuffer_height);
     }
     break;
     case rendering::UniformMappingType::TIME:
@@ -2819,8 +2824,13 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
 
         // @Incomplete: Not all framebuffers should have depth testing or clear both bits
 
-        if(framebuffer.depth_buffer_count > 0)
+        if(pass.settings & rendering::RenderPassSettings::DISABLE_DEPTH)
         {
+            glDepthMask(GL_FALSE);
+        }
+        else if(framebuffer.depth_buffer_count > 0)
+        {
+            glDepthMask(GL_TRUE);
             glEnable(GL_DEPTH_TEST);
             glDepthFunc(GL_LESS);
         }
@@ -2829,18 +2839,20 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
             glDisable(GL_DEPTH_TEST);
         }
 
-        if(pass.has_clear_color)
-            glClearColor(pass.clear_color.r, pass.clear_color.g, pass.clear_color.b, pass.clear_color.a);
-        else
-            glClearColor(renderer->clear_color.r, renderer->clear_color.g, renderer->clear_color.b, renderer->clear_color.a);
+        if(!(pass.settings & rendering::RenderPassSettings::DONT_CLEAR))
+        {
+            if(pass.has_clear_color)
+                glClearColor(pass.clear_color.r, pass.clear_color.g, pass.clear_color.b, pass.clear_color.a);
+            else
+                glClearColor(renderer->clear_color.r, renderer->clear_color.g, renderer->clear_color.b, renderer->clear_color.a);
             
-        if(framebuffer.tex_color_buffer_count > 0 && framebuffer.depth_buffer_count > 0)
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        else if(framebuffer.tex_color_buffer_count > 0)
-            glClear(GL_COLOR_BUFFER_BIT);
-        else
-            glClear(GL_DEPTH_BUFFER_BIT);
-
+            if(framebuffer.tex_color_buffer_count > 0 && framebuffer.depth_buffer_count > 0)
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            else if(framebuffer.tex_color_buffer_count > 0)
+                glClear(GL_COLOR_BUFFER_BIT);
+            else
+                glClear(GL_DEPTH_BUFFER_BIT);
+        }
             
         for (i32 i = 0; i < pass.commands.render_command_count; i++)
         {

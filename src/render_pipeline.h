@@ -822,7 +822,7 @@ namespace rendering
         NO_DEPTH
     };
     
-#define STANDARD_PASS "STANDARD_PASS"
+#define STANDARD_PASS "opaque"
 #define SHADOW_PASS "SHADOW_PASS"
 
     enum class RenderPassType
@@ -834,7 +834,9 @@ namespace rendering
     enum RenderPassSettings
     {
         BACKFACE_CULLING = (1 << 0),
-        FRONTFACE_CULLING = (1 << 1)
+        FRONTFACE_CULLING = (1 << 1),
+        DONT_CLEAR = (1 << 2),
+        DISABLE_DEPTH = (1 << 3)
     };
     
     // @Note: When rendering a scene, multiple render passes can be used.

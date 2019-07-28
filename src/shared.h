@@ -14,12 +14,15 @@ struct MemoryArena;
 #include "types.h"
 
 #include "platform.h"
-#include "list.h"
 
 #include "engine_memory.h"
+
+#include "list.h"
 #include "simd.h"
 #include "random.h"
 #include "init_globals.h"
+#include "fade.h"
+#include "assets.h"
 
 #include "log_state.h"
 #include "log.h"
