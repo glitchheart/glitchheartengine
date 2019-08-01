@@ -66,6 +66,7 @@ static MemoryState memory_state;
 #include "rendering.cpp"
 #include "fade.cpp"
 #include "assets.cpp"
+#include "bezier.cpp"
 #include "particles.cpp"
 #include "particle_api.cpp"
 

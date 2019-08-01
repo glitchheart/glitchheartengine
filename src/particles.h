@@ -119,12 +119,12 @@ struct ParticleSystemAttributes
     {
         struct
         {
-            r64 l0;
-            r64 l1;
+            r32 l0;
+            r32 l1;
         } random_between_two_constants;
         struct
         {
-            r64 life_time;            
+            r32 life_time;            
         } constant;
     } life;
 
@@ -159,10 +159,10 @@ struct Particles
 
     Vec2_4x* start_size;
     r32_4x* start_speed;
-    r64_4x* start_life;
+    r32_4x* start_life;
     r32_4x* start_angle;
     
-    r64_4x *life;
+    r32_4x *life;
 };
 
 struct ParticleSystemHandle

@@ -149,7 +149,7 @@ inline Vec3_4x random_rect_4x(RandomSeries& series, r32 _min, r32 _max)
     r32 max = _max - (_min + _max) / 2.0f;
 
     result.x = random_between_4x(series, min, max);
-    result.y = _mm_set1_ps(0.0f);
+    result.y = r32_4x(0.0f);
     
     result.z = random_between_4x(series, min, max);
     
@@ -217,7 +217,7 @@ inline Vec3_4x random_disc_4x(RandomSeries& series, r32 radius)
     Vec2_4x vec = random_from_disc(series, radius);
     
     result.x = vec.x;
-    result.y = _mm_set1_ps(0.0f);
+    result.y = r32_4x(0.0f);
     
     result.z = vec.y;
     
@@ -231,7 +231,7 @@ inline Vec3_4x random_circle_4x(RandomSeries& series, r32 radius)
     Vec2_4x vec = random_from_circle(series, radius);
     
     result.x = vec.x;
-    result.y = _mm_set1_ps(0.0f);
+    result.y = r32_4x(0.0f);
     
     result.z = vec.y;
     

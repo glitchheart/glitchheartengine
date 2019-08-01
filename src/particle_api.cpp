@@ -121,13 +121,13 @@ static void _allocate_particle_system(Renderer *renderer, ParticleSystemInfo& sy
     system_info.particles.direction = push_array_simd(simd_arena, max_over_four, Vec3_4x);
     
     system_info.particles.start_size = push_array_simd(simd_arena, max_over_four, Vec2_4x);
-    system_info.particles.start_life = push_array_simd(simd_arena, max_over_four, r64_4x);
+    system_info.particles.start_life = push_array_simd(simd_arena, max_over_four, r32_4x);
     system_info.particles.start_speed = push_array_simd(simd_arena, max_over_four, r32_4x);
     
     system_info.particles.start_angle = push_array_simd(simd_arena, max_over_four, r32_4x);
     system_info.particles.relative_position = push_array_simd(simd_arena, max_over_four, Vec3_4x);
 
-    system_info.particles.life = push_array_simd(simd_arena, max_over_four, r64_4x);
+    system_info.particles.life = push_array_simd(simd_arena, max_over_four, r32_4x);
     
     system_info.color_over_lifetime.value_count = 0;
     system_info.size_over_lifetime.value_count = 0;
