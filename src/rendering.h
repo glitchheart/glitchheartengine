@@ -653,6 +653,7 @@ struct Renderer
         rendering::ShaderHandle blur_shader;
         rendering::ShaderHandle hdr_shader;
         rendering::ShaderHandle ui_quad_shader;
+        rendering::ShaderHandle gradient_ui_quad_shader;
         rendering::ShaderHandle textured_ui_quad_shader;
         rendering::ShaderHandle font_shader;
         rendering::ShaderHandle font3d_shader;
@@ -771,6 +772,7 @@ struct Renderer
             rendering::BufferHandle centered_textured_quad_buffer;
             rendering::RenderPass pass;
             rendering::MaterialHandle material;
+            rendering::MaterialHandle gradient_material;
             rendering::MaterialHandle textured_material;
 
             rendering::MaterialHandle font_material;

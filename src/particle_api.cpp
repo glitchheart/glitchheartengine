@@ -371,7 +371,7 @@ static i32 add_angle_key(ParticleSystemInfo &particle_system, r64 key_time, r32 
     if(particle_system.angle_over_lifetime.value_count == 0)
     {
         particle_system.angle_over_lifetime.values = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, r32);
-        particle_system.angle_over_lifetime.keys = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, r64);
+        particle_system.angle_over_lifetime.keys = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, r32);
     }
     
     assert(particle_system.angle_over_lifetime.value_count + 1 < MAX_LIFETIME_VALUES);
@@ -429,7 +429,7 @@ static i32 add_color_key(ParticleSystemInfo &particle_system, r64 key_time, math
     if(particle_system.color_over_lifetime.value_count == 0)
     {
         particle_system.color_over_lifetime.values = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, math::Rgba);
-        particle_system.color_over_lifetime.keys = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, r64);
+        particle_system.color_over_lifetime.keys = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, r32);
     }
     
     assert(particle_system.color_over_lifetime.value_count + 1 < MAX_LIFETIME_VALUES);
@@ -487,7 +487,7 @@ static i32 add_size_key(ParticleSystemInfo &particle_system, r64 key_time, math:
     if(particle_system.size_over_lifetime.value_count == 0)
     {
         particle_system.size_over_lifetime.values = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, math::Vec2);
-        particle_system.size_over_lifetime.keys = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, r64);
+        particle_system.size_over_lifetime.keys = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, r32);
     }
     
     assert(particle_system.size_over_lifetime.value_count + 1 < MAX_LIFETIME_VALUES);
@@ -545,7 +545,7 @@ static i32 add_speed_key(ParticleSystemInfo &particle_system, r64 key_time, r32 
     if(particle_system.speed_over_lifetime.value_count == 0)
     {
         particle_system.speed_over_lifetime.values = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, r32);
-        particle_system.speed_over_lifetime.keys = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, r64);
+        particle_system.speed_over_lifetime.keys = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, r32);
     }
     
     assert(particle_system.speed_over_lifetime.value_count + 1 < MAX_LIFETIME_VALUES);

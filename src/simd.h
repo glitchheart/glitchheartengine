@@ -4,9 +4,13 @@
 #include "check_intrinsics.h"
 
 #if defined(__APPLE__ ) || defined(__linux)
+#define SSE41 os::HW_SSE41
 /* #include "smmintrin.h" */
 #include "immintrin.h"
 #include "emmintrin.h"
+#elif defined(_WIN32)
+#define AVX os::HW_AVX
+#define AVX512 os::HW_AVX512F
 #endif
 
 union r32_4x
@@ -21,7 +25,6 @@ union r32_4x
     }
 
     r32_4x(const r32_4x& other) = default;
-    
     
     explicit r32_4x(r32 _p) 
     {
@@ -48,7 +51,12 @@ union r32_4x
     
     explicit r32_4x(u32 _a)
     {
-        p = _mm_set1_ps(*(float*)&_a);
+        p = _mm_set1_ps(*(r32*)&_a);
+    }
+
+    explicit r32_4x(r32* v)
+    {
+        p = _mm_load_ps(v);
     }
     
     explicit r32_4x(__m128 v)
@@ -59,6 +67,13 @@ union r32_4x
     inline r32_4x& operator=(const r32& v)
     {
         p = _mm_set1_ps(v);
+        
+        return *this;
+    }
+
+    inline r32_4x& operator=(const __m128 v)
+    {
+        p = v;
         
         return *this;
     }
@@ -159,6 +174,51 @@ inline r32_4x operator/ (r32_4x a, r32_4x b)
     r32_4x res(0.0f);
     res.p = _mm_div_ps(a.p, b.p);
     return res;
+}
+
+inline __m128 equal_mask_epsilon(__m128 a, __m128 b, r32 epsilon = 0.001f)
+{
+    __m128 sub = _mm_sub_ps(a, _mm_set1_ps(epsilon));
+    __m128 add = _mm_add_ps(a, _mm_set1_ps(epsilon));
+
+    __m128 le = _mm_cmple_ps(sub, b);
+    __m128 ge = _mm_cmpge_ps(add, b);
+    __m128 start_mask = _mm_and_ps(le, ge);
+    return start_mask;
+}
+
+inline r32_4x equal_mask_epsilon(r32_4x a, r32_4x b, r32 epsilon = 0.001f)
+{
+    return r32_4x(equal_mask_epsilon(a.p, b.p, epsilon));
+}
+
+inline __m128 ge_mask(__m128 a, __m128 b)
+{
+    __m128 ge = _mm_cmpge_ps(a, b);
+    return ge;
+}
+
+inline r32_4x ge_mask(r32_4x a, r32_4x b)
+{
+    return r32_4x(ge_mask(a.p, b.p));
+}
+
+inline r32_4x ge_mask(r32_4x a, r32 b)
+{
+    return r32_4x(ge_mask(a.p, _mm_set1_ps(b)));
+}
+
+inline __m128 mask_conditional(__m128 mask, __m128 a, __m128 b)
+{
+    __m128 a_cond = _mm_and_ps(mask, a);
+    __m128 b_cond = _mm_andnot_ps(mask, b);
+    __m128 res = _mm_or_ps(a_cond, b_cond);
+    return res;
+}
+
+inline r32_4x mask_conditional(r32_4x mask, r32_4x a, r32_4x b)
+{
+    return r32_4x(mask_conditional(mask.p, a.p, b.p));
 }
 
 union h64_4x
@@ -273,337 +333,8 @@ inline r32_4x u32_to_r32(r32_4x a)
     return(result);
 }
 
-#if defined(__APPLE__) /* || defined(_WIN32) || defined(__linux) */
-// Used to store 4 doubles in one SIMD construction
-union r64_4x
-{
-    struct
-    {
-        h64_4x upper_bits;
-        h64_4x lower_bits;
-    };
-    r64 e[4];
-    u64 u[4];
 
-    explicit r64_4x(const r64_4x& other) = default;
-    
-    explicit    r64_4x(r64 v)
-    {
-        upper_bits = h64_4x(v);
-        lower_bits = h64_4x(v);
-    }
-    
-    explicit    r64_4x(r64 v1, r64 v2, r64 v3, r64 v4)
-    {
-        upper_bits = h64_4x(v1, v2);
-        lower_bits = h64_4x(v3, v4);
-    }
-
-    explicit r64_4x(r32_4x v) : r64_4x((r64)v.e[0], (r64)v.e[1], (r64)v.e[2], (r64)v.e[3])
-    {}
-    
-    explicit    r64_4x(__m128d upper, __m128d lower)
-    {
-        upper_bits = h64_4x(upper);
-        lower_bits = h64_4x(lower);
-    }
-
-    explicit r64_4x(r64* values)
-    {
-        
-    }
-    
-    inline r64_4x& operator=(const r64_4x& v)
-    {
-        upper_bits = h64_4x(v.e[0], v.e[1]);
-        lower_bits = h64_4x(v.e[2], v.e[3]);
-        
-        return *this;
-    }
-    
-    inline r64_4x& operator=(const r64& v)
-    {
-        upper_bits = h64_4x(v, v);
-        lower_bits = h64_4x(v, v);
-        
-        return *this;
-    }
-    
-    inline r64_4x operator+ (r64_4x b)
-    {
-        r64_4x res(0.0);
-        
-        res.upper_bits = upper_bits + b.upper_bits;
-        res.lower_bits = lower_bits + b.lower_bits;
-        
-        return res;
-    }
-    
-    inline r64_4x& operator+= (r64_4x b)
-    {
-        upper_bits += b.upper_bits;
-        lower_bits += b.lower_bits;
-        
-        return *this;
-    }
-    
-    inline r64_4x operator- (r64_4x b)
-    {
-        r64_4x res(0.0);
-        
-        res.upper_bits = upper_bits - b.upper_bits;
-        res.lower_bits = lower_bits - b.lower_bits;
-        
-        return res;
-    }
-    
-    inline r64_4x operator-= (r64_4x b)
-    {
-        upper_bits -= b.upper_bits;
-        lower_bits -= b.lower_bits;
-        return *this;
-    }
-    
-    inline r64_4x operator* (r64_4x b)
-    {
-        r64_4x res(0.0);
-        
-        res.upper_bits = upper_bits * b.upper_bits;
-        res.lower_bits = lower_bits * b.lower_bits;
-        
-        return res;
-    }
-    
-    inline r64_4x& operator*= (r64_4x b)
-    {
-        upper_bits *= b.upper_bits;
-        lower_bits *= b.lower_bits;
-        return *this;
-    }
-    
-    inline r64_4x operator/ (r64_4x b)
-    {
-        r64_4x res(0.0);
-        
-        res.upper_bits = upper_bits / b.upper_bits;
-        res.lower_bits = lower_bits / b.lower_bits;
-        
-        return res;
-    }
-    
-    inline r64_4x& operator/= (r64_4x b)
-    {
-        upper_bits /= b.upper_bits;
-        lower_bits /= b.lower_bits;
-        return *this;
-    }
-};
-
-inline r32_4x operator+(r32_4x a, r64_4x b)
-{
-    r32_4x res(0.0f);
-    
-    double *_v_upper = (double*)&b.upper_bits;
-    double *_v_lower = (double*)&b.lower_bits;
-    
-    res = a + r32_4x((float)_v_upper[0], (float)_v_upper[1], (float)_v_lower[0], (float)_v_lower[0]);
-    
-    return res;
-}
-
-inline r32_4x operator+(r64_4x a, r32_4x b)
-{
-    r32_4x res(0.0f);
-    
-    double *_v_upper = (double*)&a.upper_bits;
-    double *_v_lower = (double*)&a.lower_bits;
-    
-    res = r32_4x((float)_v_upper[0], (float)_v_upper[1], (float)_v_lower[0], (float)_v_lower[0]) + b;
-    
-    return res;
-}
-
-inline r32_4x operator*(r32_4x a, r64_4x b)
-{
-    r32_4x res(0.0f);
-    
-    double *_v_upper = (double*)&b.upper_bits;
-    double *_v_lower = (double*)&b.lower_bits;
-    
-    res = a * r32_4x((float)_v_upper[0], (float)_v_upper[1], (float)_v_lower[0], (float)_v_lower[0]);
-    
-    return res;
-}
-
-inline r32_4x operator*(r64_4x a, r32_4x b)
-{
-    r32_4x res(0.0f);
-    
-    double *_v_upper = (double*)&a.upper_bits;
-    double *_v_lower = (double*)&a.lower_bits;
-    
-    res = r32_4x((float)_v_upper[0], (float)_v_upper[1], (float)_v_lower[0], (float)_v_lower[0]) * b;
-    
-    return res;
-}
-
-inline r32_4x operator/(r32_4x a, r64_4x b)
-{
-    r32_4x res(0.0f);
-    
-    double *_v_upper = (double*)&b.upper_bits;
-    double *_v_lower = (double*)&b.lower_bits;
-    
-    res = a / r32_4x((float)_v_upper[0], (float)_v_upper[1], (float)_v_lower[0], (float)_v_lower[0]);
-    
-    return res;
-}
-
-inline r32_4x operator/(r64_4x a, r32_4x b)
-{
-    r32_4x res(0.0f);
-    
-    double *_v_upper = (double*)&a.upper_bits;
-    double *_v_lower = (double*)&a.lower_bits;
-    
-    res = r32_4x((float)_v_upper[0], (float)_v_upper[1], (float)_v_lower[0], (float)_v_lower[0]) / b;
-    
-    return res;
-}
-
-inline r64_4x operator-(r64 left, r64_4x right)
-{
-    return r64_4x(left) - right;
-}
-
-inline r64_4x& operator-=(r64_4x &left, r64 right)
-{
-    left = left - r64_4x(right);
-    return left;
-}
-
-inline r64_4x simd_min(r64_4x left, r64_4x right)
-{
-    __m128d min_upper = _mm_min_pd(left.upper_bits.p, right.upper_bits.p);
-    __m128d min_lower = _mm_min_pd(left.lower_bits.p, right.lower_bits.p);
-    return r64_4x(min_upper, min_lower);
-}
-
-inline r64_4x simd_min(r64 left, r64_4x right)
-{
-    __m128d min_upper = _mm_min_pd(_mm_set1_pd(left), right.upper_bits.p);
-    __m128d min_lower = _mm_min_pd(_mm_set1_pd(left), right.lower_bits.p);
-    return r64_4x(min_upper, min_lower);
-}
-
-inline r32_4x simd_min(r32 left, r32_4x right)
-{
-    __m128 min = _mm_min_ps(_mm_set1_ps(left), right.p);
-    return r32_4x(min);
-}
-
-inline r64_4x simd_max(r64_4x left, r64_4x right)
-{
-    __m128d max_upper = _mm_max_pd(left.upper_bits.p, right.upper_bits.p);
-    __m128d max_lower = _mm_max_pd(left.lower_bits.p, right.lower_bits.p);
-    return r64_4x(max_upper, max_lower);
-}
-
-inline r64_4x simd_max(r64 left, r64_4x right)
-{
-    __m128d max_upper = _mm_max_pd(_mm_set1_pd(left), right.upper_bits.p);
-    __m128d max_lower = _mm_max_pd(_mm_set1_pd(left), right.lower_bits.p);
-    return r64_4x(max_upper, max_lower);
-}
-
-inline r32_4x simd_max(r32 left, r32_4x right)
-{
-    __m128 max = _mm_max_ps(_mm_set1_ps(left), right.p);
-    return r32_4x(max);
-}
-
-inline b32 equal_epsilon(r64_4x v, r64 cmp, r64 epsilon)
-{
-    __m128d vcmp_me_up = _mm_cmplt_pd(_mm_set1_pd(cmp - epsilon), v.upper_bits.p);
-    __m128d vcmp_pe_up = _mm_cmpgt_pd(_mm_set1_pd(cmp + epsilon), v.upper_bits.p);
-    __m128d vcmp_me_lo = _mm_cmplt_pd(_mm_set1_pd(cmp - epsilon), v.lower_bits.p);
-    __m128d vcmp_pe_lo = _mm_cmpgt_pd(_mm_set1_pd(cmp + epsilon), v.lower_bits.p);
-    
-    i32 cmp_me_up = _mm_movemask_pd(vcmp_me_up);
-    i32 cmp_pe_up = _mm_movemask_pd(vcmp_pe_up);
-    i32 cmp_me_lo = _mm_movemask_pd(vcmp_me_lo);
-    i32 cmp_pe_lo = _mm_movemask_pd(vcmp_pe_lo);
-    
-    return cmp_me_up != 0 && cmp_pe_up != 0 && cmp_me_lo != 0 && cmp_pe_lo != 0;
-}
-
-inline b32 any_lt(r64_4x v, r64_4x val)
-{
-    __m128d vcmp_lt_up = _mm_cmplt_pd(v.upper_bits.p, val.upper_bits.p);
-    __m128d vcmp_lt_lo = _mm_cmplt_pd(v.lower_bits.p, val.lower_bits.p);
-    
-    i32 cmp_lt_up = _mm_movemask_pd(vcmp_lt_up);
-    i32 cmp_lt_lo = _mm_movemask_pd(vcmp_lt_lo);
-    
-    return cmp_lt_up != 0 && cmp_lt_lo != 0;
-}
-
-inline b32 any_lt(r64_4x v, r64 val)
-{
-    __m128d vcmp_lt_up = _mm_cmplt_pd(v.upper_bits.p, _mm_set1_pd(val));
-    __m128d vcmp_lt_lo = _mm_cmplt_pd(v.lower_bits.p, _mm_set1_pd(val));
-    
-    i32 cmp_lt_up = _mm_movemask_pd(vcmp_lt_up);
-    i32 cmp_lt_lo = _mm_movemask_pd(vcmp_lt_lo);
-    
-    return cmp_lt_up != 0 && cmp_lt_lo != 0;
-}
-
-inline b32 any_lt_eq(r64_4x v, r64_4x val)
-{
-    __m128d vcmp_lt_up = _mm_cmplt_pd(v.upper_bits.p, val.upper_bits.p);
-    __m128d vcmp_lt_lo = _mm_cmplt_pd(v.lower_bits.p, val.lower_bits.p);
-    
-    __m128d vcmp_eq_up = _mm_cmpeq_pd(v.upper_bits.p, val.upper_bits.p);
-    __m128d vcmp_eq_lo = _mm_cmpeq_pd(v.lower_bits.p, val.lower_bits.p);
-    
-    i32 cmp_lt_up = _mm_movemask_pd(vcmp_lt_up);
-    i32 cmp_lt_lo = _mm_movemask_pd(vcmp_lt_lo);
-    i32 cmp_eq_up = _mm_movemask_pd(vcmp_eq_up);
-    i32 cmp_eq_lo = _mm_movemask_pd(vcmp_eq_lo);
-    
-    return cmp_lt_up != 0 || (cmp_eq_up != 0 && cmp_lt_lo != 0) || cmp_eq_lo != 0;
-}
-
-inline b32 any_lt_eq(r64_4x v, r64 val)
-{
-    __m128d vcmp_lt_up = _mm_cmplt_pd(v.upper_bits.p, _mm_set1_pd(val));
-    __m128d vcmp_lt_lo = _mm_cmplt_pd(v.lower_bits.p, _mm_set1_pd(val));
-    
-    __m128d vcmp_eq_up = _mm_cmpeq_pd(v.upper_bits.p, _mm_set1_pd(val));
-    __m128d vcmp_eq_lo = _mm_cmpeq_pd(v.lower_bits.p, _mm_set1_pd(val));
-    
-    i32 cmp_lt_up = _mm_movemask_pd(vcmp_lt_up);
-    i32 cmp_lt_lo = _mm_movemask_pd(vcmp_lt_lo);
-    i32 cmp_eq_up = _mm_movemask_pd(vcmp_eq_up);
-    i32 cmp_eq_lo = _mm_movemask_pd(vcmp_eq_lo);
-    
-    return cmp_lt_up != 0 || (cmp_eq_up != 0 && cmp_lt_lo != 0) || cmp_eq_lo != 0;
-}
-
-
-inline b32 any_nz(r64_4x v)
-{
-    __m128d upper_vcmp = _mm_cmplt_pd(_mm_setzero_pd(), v.upper_bits.p);
-    i32 upper_cmp = _mm_movemask_pd(upper_vcmp);
-    
-    __m128d lower_vcmp = _mm_cmplt_pd(_mm_setzero_pd(), v.lower_bits.p);
-    i32 lower_cmp = _mm_movemask_pd(lower_vcmp);
-    
-    return lower_cmp != 0 || upper_cmp != 0;
-}
-
-#else
+#if defined(AVX)
 union r64_4x
 {
     __m256d p;
@@ -735,7 +466,7 @@ inline r32_4x operator+(r32_4x a, r64_4x b)
     
     double *_v = (double*)&b.p;
     
-    res = a + r32_4x((float)_v[0], (float)_v[1], (float)_v[2], (float)_v[3]);
+    res = a + r32_4x((r32)_v[0], (r32)_v[1], (r32)_v[2], (r32)_v[3]);
     
     return res;
 }
@@ -746,7 +477,7 @@ inline r32_4x operator+(r64_4x a, r32_4x b)
     
     double *_v = (double*)&b.p;
     
-    res = r32_4x((float)_v[0], (float)_v[1], (float)_v[2], (float)_v[3]) + b;
+    res = r32_4x((r32)_v[0], (r32)_v[1], (r32)_v[2], (r32)_v[3]) + b;
     
     return res;
 }
@@ -757,7 +488,7 @@ inline r32_4x operator*(r32_4x a, r64_4x b)
     
     double *_v = (double*)&b.p;
     
-    res = a * r32_4x((float)_v[0], (float)_v[1], (float)_v[2], (float)_v[3]);
+    res = a * r32_4x((r32)_v[0], (r32)_v[1], (r32)_v[2], (r32)_v[3]);
     
     return res;
 }
@@ -768,7 +499,7 @@ inline r32_4x operator*(r64_4x a, r32_4x b)
     
     double *_v = (double*)&a.p;
     
-    res = r32_4x((float)_v[0], (float)_v[1], (float)_v[2], (float)_v[3]) * b;
+    res = r32_4x((r32)_v[0], (r32)_v[1], (r32)_v[2], (r32)_v[3]) * b;
     
     return res;
 }
@@ -779,16 +510,7 @@ inline r32_4x operator/(r32_4x a, r64_4x b)
     
     double *_v = (double*)&b.p;
     
-    res = a / r32_4x((float)_v[0], (float)_v[1], (float)_v[2], (float)_v[3]);
-    
-    return res;
-}
-
-inline r32_4x operator/(r32_4x a, r32 b)
-{
-    r32_4x res(0.0f);
-
-    res.p = _mm_div_ps(a.p, _mm_set1_ps(b));
+    res = a / r32_4x((r32)_v[0], (r32)_v[1], (r32)_v[2], (r32)_v[3]);
     
     return res;
 }
@@ -799,7 +521,7 @@ inline r32_4x operator/(r64_4x a, r32_4x b)
     
     double *_v = (double*)&a.p;
     
-    res = r32_4x((float)_v[0], (float)_v[1], (float)_v[2], (float)_v[3]) / b;
+    res = r32_4x((r32)_v[0], (r32)_v[1], (r32)_v[2], (r32)_v[3]) / b;
     
     return res;
 }
@@ -814,18 +536,6 @@ inline r64_4x simd_min(r64 left, r64_4x right)
 {
     __m256d min = _mm256_min_pd(_mm256_set1_pd(left), right.p);
     return r64_4x(min);
-}
-
-inline r32_4x simd_min(r32 left, r32_4x right)
-{
-    __m128 min = _mm_min_ps(_mm_set1_ps(left), right.p);
-    return r32_4x(min);
-}
-
-inline r32_4x simd_max(r32 left, r32_4x right)
-{
-    __m128 max = _mm_max_ps(_mm_set1_ps(left), right.p);
-    return r32_4x(max);
 }
 
 inline r64_4x simd_max(r64 left, r64_4x right)
@@ -897,7 +607,43 @@ inline b32 any_nz(r64_4x v)
     return cmp != 0;
 }
 
+r32_4x operator-(r32 left, r64_4x right)
+{
+    return r32_4x(left - (r32)right.e[0], left - (r32)right.e[1], left - (r32)right.e[2], left - (r32)right.e[3]);
+}
+
+namespace math
+{
+
+}
+
 #endif
+
+
+inline r32_4x operator/(r32_4x a, r32 b)
+{
+    r32_4x res(0.0f);
+
+    res.p = _mm_div_ps(a.p, _mm_set1_ps(b));
+    
+    return res;
+}
+
+
+
+inline r32_4x simd_min(r32 left, r32_4x right)
+{
+    __m128 min = _mm_min_ps(_mm_set1_ps(left), right.p);
+    return r32_4x(min);
+}
+
+inline r32_4x simd_max(r32 left, r32_4x right)
+{
+    __m128 max = _mm_max_ps(_mm_set1_ps(left), right.p);
+    return r32_4x(max);
+}
+
+
 
 inline r32_4x operator^(r32_4x a, r32_4x b)
 {
@@ -953,10 +699,9 @@ inline r32_4x& operator|=(r32_4x &a, r32_4x b)
 
 inline b32 any_nz(r32_4x v)
 {
-    __m128 vcmp = _mm_cmplt_ps(_mm_setzero_ps(), v.p);
-    i32 cmp = _mm_movemask_ps(vcmp);
-    
-    return cmp != 0;
+    __m128 eq = _mm_cmpeq_ps(_mm_setzero_ps(), v.p);
+    i32 cmp = _mm_movemask_ps(eq);
+    return cmp != 0xf;
 }
 
 union Vec2_4x
@@ -1359,7 +1104,8 @@ union Vec3_4x
 
         return res;
     }
-    
+
+#if defined(AVX)
     inline Vec3_4x operator*(r64 a)
     {
         Vec3_4x res(0.0f);
@@ -1372,6 +1118,7 @@ union Vec3_4x
         
         return res;
     }
+#endif
     
     inline Vec3_4x operator/(Vec3_4x& a)
     {
@@ -1671,10 +1418,6 @@ inline b32 all_zero(r32_4x v)
     return false;
 }
 
-r32_4x operator-(r32 left, r64_4x right)
-{
-    return r32_4x(left - (r32)right.e[0], left - (r32)right.e[1], left - (r32)right.e[2], left - (r32)right.e[3]);
-}
 
 using Rgba_4x = Vec4_4x;
 
@@ -1682,17 +1425,6 @@ using Rgba_4x = Vec4_4x;
 
 namespace math
 {
-    inline r32_4x lerp(r32_4x a, r64_4x t, r32_4x b)
-    {
-        r32_4x res(0.0f);
-        
-        r64_4x min = simd_min(1.0, t);
-        r32_4x inverse_min = 1.0f - min;
-        r32_4x a_times_inverse = inverse_min * a;
-        
-        res = a_times_inverse + (t * b);
-        return res;
-    }
     
     inline r32_4x lerp(r32_4x a, r32_4x t, r32_4x b)
     {
@@ -1712,12 +1444,7 @@ namespace math
         return c * t + b;
     }
 
-    inline r32_4x linear_tween(r32_4x b, r64_4x t, r32_4x _c)
-    {
-        r32_4x c = _c - b;
-        return c * t + b;
-    }
-
+    
     inline r32_4x ease_in_quad(r32_4x b, r32_4x t, r32_4x _c)
     {
         r32_4x c = _c - b;
@@ -1804,28 +1531,7 @@ namespace math
         }
 
         return res;
-    }
-    
-    inline r64_4x lerp(r64_4x a, r64_4x t, r64_4x b)
-    {
-        r64_4x res(0.0);
-        
-        r64_4x min = simd_min(1.0, t);
-        r64_4x inverse_min = r64_4x(1.0 - min);
-        r64_4x a_times_inverse = inverse_min * a;
-        
-        res = a_times_inverse + (t * b);
-        return res;
-    }
-    
-    inline Vec2_4x lerp(Vec2_4x a, r64_4x t, Vec2_4x b)
-    {
-        Vec2_4x res(0.0f);
-        res.x = lerp(a.x, t, b.x);
-        res.y = lerp(a.y, t, b.y);
-        
-        return res;
-    }
+    }       
 
     inline Vec2_4x lerp(Vec2_4x a, r32_4x t, Vec2_4x b)
     {
@@ -1834,29 +1540,7 @@ namespace math
         res.y = lerp(a.y, t, b.y);
         
         return res;
-    }
-    
-    inline Vec3_4x lerp(Vec3_4x a, r64_4x t, Vec3_4x b)
-    {
-        Vec3_4x res(0.0f);
-        res.x = lerp(a.x, t, b.x);
-        res.y = lerp(a.y, t, b.y);
-        res.z = lerp(a.z, t, b.z);
-        
-        return res;
-    }
-    
-    inline Vec4_4x lerp(Vec4_4x a, r64_4x t, Vec4_4x b)
-    {
-        Vec4_4x res(0.0f);
-
-        res.x = linear_tween(a.x, t, b.x);
-        res.y = linear_tween(a.y, t, b.y);
-        res.z = linear_tween(a.z, t, b.z);
-        res.w = linear_tween(a.w, t, b.w);
-        
-        return res;
-    }
+    }        
 
     inline Vec4_4x lerp(Vec4_4x a, r32_4x t, Vec4_4x b)
     {
@@ -1896,47 +1580,74 @@ namespace math
     {
         return _mm_cvtss_f32(_mm_sqrt_ss(_mm_set_ss(val)));
     }
+
+#if defined(AVX)
+    inline r32_4x lerp(r32_4x a, r64_4x t, r32_4x b)
+    {
+        r32_4x res(0.0f);
+        
+        r64_4x min = simd_min(1.0, t);
+        r32_4x inverse_min = 1.0f - min;
+        r32_4x a_times_inverse = inverse_min * a;
+        
+        res = a_times_inverse + (t * b);
+        return res;
+    }
+
+    inline r32_4x linear_tween(r32_4x b, r64_4x t, r32_4x _c)
+    {
+        r32_4x c = _c - b;
+        return c * t + b;
+    }
+
+    inline r64_4x lerp(r64_4x a, r64_4x t, r64_4x b)
+    {
+        r64_4x res(0.0);
+        
+        r64_4x min = simd_min(1.0, t);
+        r64_4x inverse_min = r64_4x(1.0 - min);
+        r64_4x a_times_inverse = inverse_min * a;
+        
+        res = a_times_inverse + (t * b);
+        return res;
+    }
+    
+    inline Vec2_4x lerp(Vec2_4x a, r64_4x t, Vec2_4x b)
+    {
+        Vec2_4x res(0.0f);
+        res.x = lerp(a.x, t, b.x);
+        res.y = lerp(a.y, t, b.y);
+        
+        return res;
+    }
+
+    inline Vec3_4x lerp(Vec3_4x a, r64_4x t, Vec3_4x b)
+    {
+        Vec3_4x res(0.0f);
+        res.x = lerp(a.x, t, b.x);
+        res.y = lerp(a.y, t, b.y);
+        res.z = lerp(a.z, t, b.z);
+        
+        return res;
+    }
+    
+    inline Vec4_4x lerp(Vec4_4x a, r64_4x t, Vec4_4x b)
+    {
+        Vec4_4x res(0.0f);
+
+        res.x = linear_tween(a.x, t, b.x);
+        res.y = linear_tween(a.y, t, b.y);
+        res.z = linear_tween(a.z, t, b.z);
+        res.w = linear_tween(a.w, t, b.w);
+        
+        return res;
+    }
+#endif
 }
 
-inline math::Vec2 to_vec2(Vec2_4x vec, i32 index)
+inline void r32_4x_to_float4(r32_4x v, r32* f1, r32* f2, r32* f3, r32* f4)
 {
-    assert(index >= 0 && index <= 3);
-    math::Vec2 res(0.0f);
-    
-    res.x = vec.x.e[index];
-    res.y = vec.y.e[index];
-    
-    return res;
-}
-
-inline math::Vec3 to_vec3(Vec3_4x vec, i32 index)
-{
-    assert(index >= 0 && index <= 3);
-    math::Vec3 res(0.0f);
-    
-    res.x = vec.x.e[index];
-    res.y = vec.y.e[index];
-    res.z = vec.z.e[index];
-    
-    return res;
-}
-
-inline math::Vec4 to_vec4(Vec4_4x vec, i32 index)
-{
-    assert(index >= 0 && index <= 3);
-    math::Vec4 res(0.0f);
-    
-    res.x = vec.x.e[index];
-    res.y = vec.y.e[index];
-    res.z = vec.z.e[index];
-    res.w = vec.w.e[index];
-    
-    return res;
-}
-
-inline void r32_4x_to_float4(r32_4x v, float* f1, float* f2, float* f3, float* f4)
-{
-    __m128 x_mm_0 = _mm_load_ps((float*)&v);
+    __m128 x_mm_0 = _mm_load_ps((r32*)&v);
     __m128 x_mm_1 = _mm_set1_ps(1.0f);
     __m128 x_mm_2 = _mm_set1_ps(1.0f);
     __m128 x_mm_3 = _mm_set1_ps(1.0f);
@@ -1958,10 +1669,10 @@ inline void r32_4x_to_float4(r32_4x v, float* f1, float* f2, float* f3, float* f
 }
 
 
-inline void vec2_4x_to_float4(Vec2_4x v, float* f1, float* f2, float* f3, float* f4)
+inline void vec2_4x_to_float4(Vec2_4x v, r32* f1, r32* f2, r32* f3, r32* f4)
 {
-    __m128 x_mm_0 = _mm_load_ps((float*)&v.x);
-    __m128 x_mm_1 = _mm_load_ps((float*)&v.y);
+    __m128 x_mm_0 = _mm_load_ps((r32*)&v.x);
+    __m128 x_mm_1 = _mm_load_ps((r32*)&v.y);
     __m128 x_mm_2 = _mm_set1_ps(1.0f);
     __m128 x_mm_3 = _mm_set1_ps(1.0f);
     
@@ -1981,11 +1692,11 @@ inline void vec2_4x_to_float4(Vec2_4x v, float* f1, float* f2, float* f3, float*
     _mm_store_ps(f4, x_mm_3);
 }
 
-inline void vec3_4x_to_float4(Vec3_4x v, float* f1, float* f2, float* f3, float* f4)
+inline void vec3_4x_to_float4(Vec3_4x v, r32* f1, r32* f2, r32* f3, r32* f4)
 {
-    __m128 x_mm_0 = _mm_load_ps((float*)&v.x);
-    __m128 x_mm_1 = _mm_load_ps((float*)&v.y);
-    __m128 x_mm_2 = _mm_load_ps((float*)&v.z);
+    __m128 x_mm_0 = _mm_load_ps((r32*)&v.x);
+    __m128 x_mm_1 = _mm_load_ps((r32*)&v.y);
+    __m128 x_mm_2 = _mm_load_ps((r32*)&v.z);
     __m128 x_mm_3 = _mm_set1_ps(1.0f);
     
     __m128 x_mm_4 = _mm_unpacklo_ps(x_mm_0, x_mm_1);
@@ -2004,12 +1715,12 @@ inline void vec3_4x_to_float4(Vec3_4x v, float* f1, float* f2, float* f3, float*
     _mm_store_ps(f4, x_mm_3);
 }
 
-inline void vec4_4x_to_float4(Vec4_4x v, float* f1, float* f2, float* f3, float* f4)
+inline void vec4_4x_to_float4(Vec4_4x v, r32* f1, r32* f2, r32* f3, r32* f4)
 {
-    __m128 x_mm_0 = _mm_load_ps((float*)&v.r);
-    __m128 x_mm_1 = _mm_load_ps((float*)&v.g);
-    __m128 x_mm_2 = _mm_load_ps((float*)&v.b);
-    __m128 x_mm_3 = _mm_load_ps((float*)&v.a);
+    __m128 x_mm_0 = _mm_load_ps((r32*)&v.r);
+    __m128 x_mm_1 = _mm_load_ps((r32*)&v.g);
+    __m128 x_mm_2 = _mm_load_ps((r32*)&v.b);
+    __m128 x_mm_3 = _mm_load_ps((r32*)&v.a);
     
     __m128 x_mm_4 = _mm_unpacklo_ps(x_mm_0, x_mm_1);
     __m128 x_mm_6 = _mm_unpackhi_ps(x_mm_0, x_mm_1);

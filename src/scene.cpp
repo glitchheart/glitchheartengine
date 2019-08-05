@@ -962,6 +962,7 @@ static Camera get_standard_camera(SceneManager& manager)
         _create_scene_from_file(scene_file_path, scene_manager, handle);
 
         update_cameras(get_scene(handle), scene_manager);
+        deactivate_particle_systems(handle);
         
         return handle;
     }
@@ -3262,13 +3263,13 @@ static Camera get_standard_camera(SceneManager& manager)
                         {
                             if(attributes.start_life_time_type != StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
                             {
-                                sscanf(buffer, "life_time: %lf", &attributes.life.constant.life_time);
+                                sscanf(buffer, "life_time: %f", &attributes.life.constant.life_time);
                                 attributes.start_life_time_type = StartParameterType::CONSTANT;
                             }
                         }
                         else if(starts_with(buffer, "random_life_time"))
                         {
-                            sscanf(buffer, "random_life_time: %lf %lf", &attributes.life.random_between_two_constants.l0, &attributes.life.random_between_two_constants.l1);
+                            sscanf(buffer, "random_life_time: %f %f", &attributes.life.random_between_two_constants.l0, &attributes.life.random_between_two_constants.l1);
                             attributes.start_life_time_type = StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS;
                         }
                         else if(starts_with(buffer, "per_second"))
@@ -3358,7 +3359,7 @@ static Camera get_standard_camera(SceneManager& manager)
                         }
                         else if(starts_with(buffer, "duration"))
                         {
-                            sscanf(buffer, "duration: %lf", &attributes.duration);
+                            sscanf(buffer, "duration: %f", &attributes.duration);
                         }
                         else if(starts_with(buffer, "base_position"))
                         {
@@ -3367,8 +3368,8 @@ static Camera get_standard_camera(SceneManager& manager)
                         else if(starts_with(buffer, "size_key"))
                         {
                             math::Vec2 &value = templ->particles.size_over_lifetime.values[templ->particles.size_over_lifetime.value_count];
-                            r64 &key = templ->particles.size_over_lifetime.keys[templ->particles.size_over_lifetime.value_count];
-                            sscanf(buffer, "size_key: %lf %f %f", &key, &value.x, &value.y);
+                            r32 &key = templ->particles.size_over_lifetime.keys[templ->particles.size_over_lifetime.value_count];
+                            sscanf(buffer, "size_key: %f %f %f", &key, &value.x, &value.y);
                             templ->particles.size_over_lifetime.value_count++;
                         }
                         else if(starts_with(buffer, "color_key"))
@@ -3384,18 +3385,18 @@ static Camera get_standard_camera(SceneManager& manager)
                             }
 
                             math::Rgba &value = templ->particles.color_over_lifetime.values[templ->particles.color_over_lifetime.value_count];
-                            r64 &key = templ->particles.color_over_lifetime.keys[templ->particles.color_over_lifetime.value_count];
+                            r32 &key = templ->particles.color_over_lifetime.keys[templ->particles.color_over_lifetime.value_count];
 
                             if(keep_start_color)
                             {
-                                sscanf(buffer, "color_key: %lf - %f", &key, &value.a);
+                                sscanf(buffer, "color_key: %f - %f", &key, &value.a);
                                 value.r = attributes.start_color.r;
                                 value.g = attributes.start_color.g;
                                 value.b = attributes.start_color.b;
                             }
                             else
                             {
-                                sscanf(buffer, "color_key: %lf %f %f %f %f", &key, &value.r, &value.g, &value.b, &value.a);
+                                sscanf(buffer, "color_key: %f %f %f %f %f", &key, &value.r, &value.g, &value.b, &value.a);
                             }
                             
                             templ->particles.color_over_lifetime.value_count++;
@@ -3403,8 +3404,8 @@ static Camera get_standard_camera(SceneManager& manager)
                         else if(starts_with(buffer, "speed_key"))
                         {
                             r32 &value = templ->particles.speed_over_lifetime.values[templ->particles.speed_over_lifetime.value_count];
-                            r64 &key = templ->particles.speed_over_lifetime.keys[templ->particles.speed_over_lifetime.value_count];
-                            sscanf(buffer, "speed_key: %lf %f", &key, &value);
+                            r32 &key = templ->particles.speed_over_lifetime.keys[templ->particles.speed_over_lifetime.value_count];
+                            sscanf(buffer, "speed_key: %f %f", &key, &value);
                             templ->particles.speed_over_lifetime.value_count++;
                         }
                     }

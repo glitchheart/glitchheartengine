@@ -634,7 +634,7 @@ namespace editor
                                 }
                             }
                         
-                            if(ImGui::CollapsingHeader("Size over time"))
+                            if(ImGui::CollapsingHeader("Speed over time"))
                             {
                                 i32 deleted_index = -1;
 

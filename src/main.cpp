@@ -575,6 +575,8 @@ static void init_renderer(GameCode &game, Renderer *renderer, WorkQueue *reload_
     renderer->render.textured_ui_quad_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/ui_texture_quad.shd");
     renderer->render.ui.material = rendering::create_material(renderer, renderer->render.ui_quad_shader);
     renderer->render.ui.textured_material = rendering::create_material(renderer, renderer->render.textured_ui_quad_shader);
+    renderer->render.gradient_ui_quad_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/ui_gradient.shd");
+    renderer->render.ui.gradient_material = rendering::create_material(renderer, renderer->render.gradient_ui_quad_shader);
     
     // Initialize font material
     renderer->render.font_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/font.shd");

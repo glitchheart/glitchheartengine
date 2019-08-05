@@ -158,7 +158,7 @@ Rgba_4x get_color_by_time(ParticleSystemInfo &particle_system, i32 index, r32_4x
 {
 	i32 value_count = particle_system.color_over_lifetime.value_count;
 	math::Rgba* values = particle_system.color_over_lifetime.values;
-	r64* keys = particle_system.color_over_lifetime.keys;
+	r32* keys = particle_system.color_over_lifetime.keys;
 
 	r32_4x start_life = particle_system.particles.start_life[index];
 
@@ -208,7 +208,7 @@ Vec2_4x get_size_by_time(ParticleSystemInfo &particle_system, i32 index, r32_4x 
 {
 	i32 value_count = particle_system.size_over_lifetime.value_count;
 	math::Vec2* values = particle_system.size_over_lifetime.values;
-	r64* keys = particle_system.size_over_lifetime.keys;
+	r32* keys = particle_system.size_over_lifetime.keys;
 
 	r32_4x start_life = particle_system.particles.start_life[index];
 	Vec2_4x _start_size = particle_system.particles.start_size[index];
@@ -259,7 +259,7 @@ r32_4x get_speed_by_time(ParticleSystemInfo &particle_system, i32 index, r32_4x 
 {
 	i32 value_count = particle_system.speed_over_lifetime.value_count;
 	r32* values = particle_system.speed_over_lifetime.values;
-	r64* keys = particle_system.speed_over_lifetime.keys;
+	r32* keys = particle_system.speed_over_lifetime.keys;
 
 	r32_4x start_life = particle_system.particles.start_life[index];
 	r32_4x _start_speed = particle_system.particles.start_speed[index];
@@ -312,7 +312,7 @@ r32_4x get_angle_by_time(ParticleSystemInfo &particle_system, i32 index, r32_4x 
 {
 	i32 value_count = particle_system.angle_over_lifetime.value_count;
 	r32* values = particle_system.angle_over_lifetime.values;
-	r64* keys = particle_system.angle_over_lifetime.keys;
+	r32* keys = particle_system.angle_over_lifetime.keys;
 
 	r32_4x start_life = particle_system.particles.start_life[index];
 
@@ -357,6 +357,18 @@ r32_4x get_angle_by_time(ParticleSystemInfo &particle_system, i32 index, r32_4x 
 	return result;
 }
 
+static r32_4x get_angle_by_time(ParticleSystemInfo& particle_system, i32 index, r32_4x time_spent)
+{
+    i32 value_count = particle_system.angle_over_lifetime.value_count;
+    r32* values = particle_system.angle_over_lifetime.values;
+    r32* keys = particle_system.angle_over_lifetime.keys;
+
+    r32_4x start_life = particle_system.particles.start_life[index];
+    r32_4x result = r32_4x(values[value_count - 1]);
+
+    
+}
+
 static void update_particles(ParticleWorkData &work_data)
 {
     assert(work_data.renderer);
@@ -372,32 +384,15 @@ static void update_particles(ParticleWorkData &work_data)
     {
         i32 main_index = work_data.emitted_buffer[alive_index];
 
-        i32 active_particle_count = 0;
-        i32 active_particles[4] = {-1, -1, -1, -1};
+        r32_4x start_life = info.particles.start_life[main_index];
+        r32_4x life = info.particles.life[main_index];
 
-        for(i32 i = 0; i < 4; i++)
-        {
-            if(info.particles.life[main_index].e[i] >= 0.0)
-            {
-                active_particles[active_particle_count++] = i;
-            }
-        }
-
-        b32 start[4];
-
-        for(i32 j = 0; j < active_particle_count; j++)
-        {
-            i32 i = active_particles[j];
-
-            r64 start_life = info.particles.start_life[main_index].e[i];
-            r64 life = info.particles.life[main_index].e[i];
-
-            start[i] = start_life - 0.001 <= life && start_life + 0.001 >= life;
-        }
+        r32_4x start_mask = equal_mask_epsilon(start_life, life);
 
         info.particles.life[main_index] -= (r32)work_data.delta_time;
 
-        active_particle_count = 0;
+        i32 active_particle_count = 0;
+        i32 active_particles[4] = {-1, -1, -1, -1};
         
         for(i32 i = 0; i < 4; i++)
         {
@@ -407,18 +402,37 @@ static void update_particles(ParticleWorkData &work_data)
             }
         }
 
-        if(active_particle_count == 0)
+        r32_4x alive_mask = ge_mask(info.particles.life[main_index], 0.0f);
+
+        if(any_nz(alive_mask))
+        {
+            work_data.next_frame_buffer[work_data.next_frame_count++] = main_index;
+
+            __m128i alive = _mm_castps_si128(alive_mask.p);
+
+            __m128i i1 = _mm_shuffle_epi32(alive, 0);
+            __m128i i2 = _mm_shuffle_epi32(alive, 1);
+            __m128i i3 = _mm_shuffle_epi32(alive, 2);
+            __m128i i4 = _mm_shuffle_epi32(alive, 3);
+
+            __m128i count = _mm_set1_epi32(0);
+            count = _mm_sub_epi32(count, i1);
+            count = _mm_sub_epi32(count, i2);
+            count = _mm_sub_epi32(count, i3);
+            count = _mm_sub_epi32(count, i4);
+
+            assert(active_particle_count == _mm_cvtsi128_si32(count));
+
+            active_particle_count = _mm_cvtsi128_si32(count);
+        }
+        else
         {
             work_data.dead_particle_indices[work_data.dead_particle_count++] = main_index;
             assert(work_data.dead_particle_count <= info.max_particles / 4);
             continue;
         }
-        else
-        {
-            work_data.next_frame_buffer[work_data.next_frame_count++] = main_index;
-        }
 
-        r32_4x life = info.particles.life[main_index];
+        life = info.particles.life[main_index];
         r32_4x time_spent = info.particles.start_life[main_index] - life;
 
         info.particles.direction[main_index] += Vec3_4x(math::Vec3(0.0f, - info.attributes.gravity * (r32)work_data.delta_time, 0.0f));
@@ -468,27 +482,29 @@ static void update_particles(ParticleWorkData &work_data)
 
         if(info.attributes.particle_space == PS_WORLD)
         {
-            for(i32 j = 0; j < active_particle_count; j++)
-            {
-                i32 i = active_particles[j];
+            // @Note: We do both calculations and use a SIMD mask, to not load data out of SIMD registers
+            Vec3_4x non_start_final(0.0f);
+            Vec3_4x start_final(0.0f);
 
-                if(!start[i])
-                {
-                    final_pos.x.e[i] = info.particles.position[main_index].x.e[i] + info.particles.relative_position[main_index].x.e[i];
-                    final_pos.y.e[i] = info.particles.position[main_index].y.e[i] + info.particles.relative_position[main_index].y.e[i];
-                    final_pos.z.e[i] = info.particles.position[main_index].z.e[i] + info.particles.relative_position[main_index].z.e[i];
-                }
-                else
-                {
-                    final_pos.x.e[i] = info.particles.position[main_index].x.e[i] + info.transform.position.x;
-                    final_pos.y.e[i] = info.particles.position[main_index].y.e[i] + info.transform.position.y;
-                    final_pos.z.e[i] = info.particles.position[main_index].z.e[i] + info.transform.position.z;
-                    
-                    info.particles.relative_position[main_index].x.e[i] = info.transform.position.x;
-                    info.particles.relative_position[main_index].y.e[i] = info.transform.position.y;
-                    info.particles.relative_position[main_index].z.e[i] = info.transform.position.z;
-                }
-            }
+            Vec3_4x relative_pos = info.particles.relative_position[main_index];
+
+            start_final = info.particles.position[main_index] + info.particles.relative_position[main_index];
+            non_start_final = info.particles.position[main_index] + info.transform.position;
+
+            r32_4x res_x = mask_conditional(start_mask, non_start_final.x, start_final.x);
+            r32_4x res_y = mask_conditional(start_mask, non_start_final.y, start_final.y);
+            r32_4x res_z = mask_conditional(start_mask, non_start_final.z, start_final.z);
+
+            relative_pos.x = mask_conditional(start_mask, r32_4x(info.transform.position.x), relative_pos.x);
+            relative_pos.y = mask_conditional(start_mask, r32_4x(info.transform.position.y), relative_pos.y);
+            relative_pos.z = mask_conditional(start_mask, r32_4x(info.transform.position.z), relative_pos.z);
+
+            info.particles.relative_position[main_index] = relative_pos;
+
+            final_pos.x = res_x;
+            final_pos.y = res_y;
+            final_pos.z = res_z;
+            
         }
         else
         {
@@ -536,15 +552,6 @@ static void update_particle_system_job(WorkQueue *work_queue, void *data_ptr)
     assert(work_data->info);
     assert(work_data->renderer);
     update_particle_system(*work_data->info, work_data->renderer, work_data->delta_time);
-
-    math::Rgba* values = work_data->info->color_over_lifetime.values;
-            
-    bezier::BezierCurve curve;
-    curve.p0 = math::Vec2(0, 0);
-    curve.p1 = math::Vec2(0, values[0].r * 100.0f);
-    curve.p2 = math::Vec2(50, values[1].r * 100.0f);
-    curve.p3 = math::Vec2(50, values[1].r * 100.0f);
-    bezier::draw_bezier_curve(curve, 1.0f);
 }
 
 static void update_particles_job(WorkQueue *work_queue, void* data_ptr)
@@ -951,6 +958,28 @@ void update_particle_systems(Renderer *renderer, r64 delta_time)
             work_data.delta_time = delta_time;
             platform.add_entry(renderer->particles.system_work_queue, update_particle_system_job, &work_data);
         }
+
+        math::Rgba* values = particle_system.color_over_lifetime.values;
+            
+        bezier::CubicBezier curve;
+        curve.p0 = math::Vec2(0, 0);
+        curve.p1 = math::Vec2(0, values[0].r);
+        curve.p2 = math::Vec2(1, values[1].r);
+        curve.p3 = math::Vec2(1, values[1].r);
+        bezier::draw_bezier_curve(curve, 1.0f, math::Vec2(100.0f), 50.0f);
+
+        rendering::CreateUICommandInfo quad_command = rendering::create_ui_command_info();
+        quad_command.transform.position = math::Vec2(100.0f, 100.0f);
+        quad_command.transform.scale = math::Vec2(50.0f, curve.p2.y * 50.0f);
+        quad_command.z_layer = 5;
+        quad_command.scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO;
+        quad_command.anchor_flag = rendering::UIAlignment::BOTTOM | rendering::UIAlignment::LEFT;
+        quad_command.clip = false;
+        quad_command.color = COLOR_WHITE;
+        rendering::set_uniform_value(renderer, renderer->render.materials[renderer->render.ui.gradient_material.handle], "c1", values[0].rgb);
+        rendering::set_uniform_value(renderer, renderer->render.materials[renderer->render.ui.gradient_material.handle], "c2", values[1].rgb);
+        quad_command.custom_material = renderer->render.ui.gradient_material;
+        rendering::push_ui_quad(renderer, quad_command);
 	}
 
     if(renderer->particles.particle_system_count > 0)

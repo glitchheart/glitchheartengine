@@ -208,28 +208,28 @@ struct ParticleSystemInfo
     struct
     {
         r32 *values;
-        r64 *keys;
+        r32 *keys;
         i32 value_count;
     } angle_over_lifetime;
     
     struct
     {
         math::Rgba *values;
-        r64 *keys;
+        r32 *keys;
         i32 value_count;
     } color_over_lifetime;
 
     struct
     {
         math::Vec2 *values;
-        r64 *keys;
+        r32 *keys;
         i32 value_count;
     } size_over_lifetime;
     
     struct
     {
         r32 *values;
-        r64 *keys;
+        r32 *keys;
         i32 value_count;
     } speed_over_lifetime;
     

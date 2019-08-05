@@ -687,6 +687,8 @@ namespace rendering
         
         math::Rgba color;
 
+        MaterialHandle custom_material;
+
         TextureHandle texture_handle;
 
         math::Rect clip_rect;

@@ -86,6 +86,7 @@ inline r32_4x random_between_4x(RandomSeries& series, r32 min, r32 max)
     return(result);
 }
 
+#if defined(AVX)
 inline r64_4x random_between_4x(RandomSeries& series, r64 min, r64 max)
 {
     r64_4x r = r64_4x(random_unilateral_4x(series));
@@ -93,6 +94,7 @@ inline r64_4x random_between_4x(RandomSeries& series, r64 min, r64 max)
     
     return(result);
 }
+#endif
 
 /* // @Note:(Niels): No simd remainder/mod function :( */
 /* inline i32_4x random_between_4x(RandomSeries& series, i32 min, i32 max) */

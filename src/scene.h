@@ -439,19 +439,19 @@ namespace scene
             struct
             {
                 math::Rgba values[32];
-                r64 keys[32];
+                r32 keys[32];
                 i32 value_count;
             } color_over_lifetime;
             struct 
             {
                 math::Vec2 values[32];
-                r64 keys[32];
+                r32 keys[32];
                 i32 value_count;
             } size_over_lifetime;
             struct
             {
                 r32 values[32];
-                r64 keys[32];
+                r32 keys[32];
                 i32 value_count;
             } speed_over_lifetime;
         } particles;
@@ -817,7 +817,8 @@ namespace scene
     static void add_child(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene);
     static b32 has_tag(const char* tag_name, EntityHandle entity_handle, SceneHandle scene_handle);
     static void set_entity_tag(const char *tag, EntityHandle entity_handle, SceneHandle scene_handle);
-    
+	static void deactivate_particle_systems(SceneHandle handle);
+
 // @Deprecated
     static RenderComponent& _add_render_component(Scene &scene, EntityHandle entity_handle, b32 cast_shadows);
     static TransformComponent& _add_transform_component(Scene &scene, EntityHandle entity_handle);
