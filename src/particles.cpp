@@ -153,220 +153,36 @@ r32_4x get_t(r32_4x time_spent, r32_4x start_time, r32_4x end_time)
 	return t;
 }
 
-// @Incomplete(Niels): Rethink how this is done to be more SIMD like...
-Rgba_4x get_color_by_time(ParticleSystemInfo &particle_system, i32 index, r32_4x time_spent, i32* active_indices, i32 count)
+template<typename T, typename V>
+T get_value_by_time(ParticleSystemInfo& particle_system, i32 index, r32_4x time_spent, i32 count, V* values, r32* keys, T* _start_value = nullptr)
 {
 	i32 value_count = particle_system.color_over_lifetime.value_count;
-	math::Rgba* values = particle_system.color_over_lifetime.values;
-	r32* keys = particle_system.color_over_lifetime.keys;
 
 	r32_4x start_life = particle_system.particles.start_life[index];
 
-	Rgba_4x result = values[value_count - 1];
+    r32_4x time_spent_normalized = time_spent / start_life;
 
-	i32 found_keys[4] = {};
-	i32 found_next_keys[4] = {};
+    T start_value = T(values[0]);
+    T end_value = T(values[1]);
 
-	for (i32 j = 0; j < count; j++)
-	{
-        i32 i = active_indices[j];
-		for (i32 key = 0; key < value_count; key++)
-		{
-			r64 current_key = keys[key] * start_life.e[i];
-			r64 next_key = keys[key + 1] * start_life.e[i];
+    r32_4x start_key = r32_4x(keys[0]);
+    r32_4x end_key = r32_4x(keys[1]);
 
-			if (current_key <= time_spent.e[i] && time_spent.e[i] < next_key)
-			{
-				found_keys[i] = key;
-				found_next_keys[i] = key + 1;
-				break;
-			}
-			else if (key + 1 == value_count - 1 && time_spent.e[i] >= next_key)
-			{
-				found_keys[i] = key + 1;
-				found_next_keys[i] = key + 1;
-				break;
-			}
-		}
-	}
+    for(i32 i = 0; i < value_count; i++)
+    {
+        r32_4x mask = le_mask(time_spent_normalized, end_key);
+        
+        start_value = mask_conditional(mask, start_value, end_value);
+        end_value = mask_conditional(mask, end_value, T(values[MIN(i + 1, value_count - 1)]));
 
-	r32_4x current_keys = r32_4x(keys[found_keys[0]], keys[found_keys[1]], keys[found_keys[2]], keys[found_keys[3]]) * start_life;
-	r32_4x next_keys = r32_4x(keys[found_next_keys[0]], keys[found_next_keys[1]], keys[found_next_keys[2]], keys[found_next_keys[3]]) * start_life;
+        start_key = mask_conditional(mask, start_key, end_key);
+        end_key = mask_conditional(mask, end_key, r32_4x(keys[MIN(i + 1, value_count - 1)]));
+    }
 
-	Rgba_4x start_color = Rgba_4x(values[found_keys[0]], values[found_keys[1]], values[found_keys[2]], values[found_keys[3]]);
-	Rgba_4x end_color = Rgba_4x(values[found_next_keys[0]], values[found_next_keys[1]], values[found_next_keys[2]], values[found_next_keys[3]]);
+    r32_4x t = get_t(time_spent_normalized, start_key, end_key);
+	T result = math::lerp(start_value, t, end_value);
 
-	r32_4x t = get_t(time_spent, current_keys, next_keys);
-
-	result = math::lerp(start_color, t, end_color);
-
-	return result;
-}
-
-// @Incomplete(Niels): Rethink how this is done to be more SIMD like...
-Vec2_4x get_size_by_time(ParticleSystemInfo &particle_system, i32 index, r32_4x time_spent, i32* active_indices, i32 count)
-{
-	i32 value_count = particle_system.size_over_lifetime.value_count;
-	math::Vec2* values = particle_system.size_over_lifetime.values;
-	r32* keys = particle_system.size_over_lifetime.keys;
-
-	r32_4x start_life = particle_system.particles.start_life[index];
-	Vec2_4x _start_size = particle_system.particles.start_size[index];
-
-	Vec2_4x result = _start_size * values[value_count - 1];
-
-	i32 found_keys[4] = {};
-	i32 found_next_keys[4] = {};
-
-	for (i32 j = 0; j < count; j++)
-	{
-        i32 i = active_indices[j];
-		for (i32 key = 0; key < value_count; key++)
-		{
-			r64 current_key = keys[key] * start_life.e[i];
-			r64 next_key = keys[key + 1] * start_life.e[i];
-
-			if (current_key <= time_spent.e[i] && time_spent.e[i] < next_key)
-			{
-				found_keys[i] = key;
-				found_next_keys[i] = key + 1;
-				break;
-			}
-			else if (key + 1 == value_count - 1 && time_spent.e[i] >= next_key)
-			{
-				found_keys[i] = key + 1;
-				found_next_keys[i] = key + 1;
-				break;
-			}
-		}
-	}
-
-	r32_4x current_keys = r32_4x(keys[found_keys[0]], keys[found_keys[1]], keys[found_keys[2]], keys[found_keys[3]]) * start_life;
-	r32_4x next_keys = r32_4x(keys[found_next_keys[0]], keys[found_next_keys[1]], keys[found_next_keys[2]], keys[found_next_keys[3]]) * start_life;
-
-	Vec2_4x start_size = Vec2_4x(values[found_keys[0]], values[found_keys[1]], values[found_keys[2]], values[found_keys[3]]) * _start_size;
-	Vec2_4x end_size = Vec2_4x(values[found_next_keys[0]], values[found_next_keys[1]], values[found_next_keys[2]], values[found_next_keys[3]]) * start_size;
-
-	r32_4x t = get_t(time_spent, current_keys, next_keys);
-
-	result = math::lerp(start_size, t, end_size);
-
-	return result;
-}
-
-// @Incomplete(Niels): Rethink how this is done to be more SIMD like...
-r32_4x get_speed_by_time(ParticleSystemInfo &particle_system, i32 index, r32_4x time_spent, i32* active_indices, i32 count)
-{
-	i32 value_count = particle_system.speed_over_lifetime.value_count;
-	r32* values = particle_system.speed_over_lifetime.values;
-	r32* keys = particle_system.speed_over_lifetime.keys;
-
-	r32_4x start_life = particle_system.particles.start_life[index];
-	r32_4x _start_speed = particle_system.particles.start_speed[index];
-
-	r32_4x result = r32_4x(values[value_count - 1]);
-
-	i32 found_keys[4] = {};
-	i32 found_next_keys[4] = {};
-
-	for (i32 j = 0; j < count; j++)
-	{
-        i32 i = active_indices[j];
-		for (i32 key = 0; key < value_count; key++)
-		{
-			r64 current_key = keys[key] * start_life.e[i];
-			r64 next_key = keys[key + 1] * start_life.e[i];
-
-			if (current_key <= time_spent.e[i] && time_spent.e[i] < next_key)
-			{
-				found_keys[i] = key;
-				found_next_keys[i] = key + 1;
-				break;
-			}
-			else if (key + 1 == value_count - 1 && time_spent.e[i] >= next_key)
-			{
-				found_keys[i] = key + 1;
-				found_next_keys[i] = key + 1;
-				break;
-			}
-		}
-	}
-
-	r32_4x current_keys = r32_4x(keys[found_keys[0]], keys[found_keys[1]], keys[found_keys[2]], keys[found_keys[3]]) * start_life;
-	r32_4x next_keys = r32_4x(keys[found_next_keys[0]], keys[found_next_keys[1]], keys[found_next_keys[2]], keys[found_next_keys[3]]) * start_life;
-
-	r32_4x start_speed = r32_4x(values[found_keys[0]], values[found_keys[1]], values[found_keys[2]], values[found_keys[3]]);
-	r32_4x end_speed = r32_4x(values[found_next_keys[0]], values[found_next_keys[1]], values[found_next_keys[2]], values[found_next_keys[3]]);
-
-	r32_4x t = get_t(time_spent, current_keys, next_keys);
-
-	result = math::lerp(start_speed, t, end_speed);
-
-	result *= _start_speed;
-
-	return result;
-}
-
-// @Incomplete(Niels): Rethink how this is done to be more SIMD like...
-r32_4x get_angle_by_time(ParticleSystemInfo &particle_system, i32 index, r32_4x time_spent, i32* active_indices, i32 count)
-{
-	i32 value_count = particle_system.angle_over_lifetime.value_count;
-	r32* values = particle_system.angle_over_lifetime.values;
-	r32* keys = particle_system.angle_over_lifetime.keys;
-
-	r32_4x start_life = particle_system.particles.start_life[index];
-
-	r32_4x result = r32_4x(values[value_count - 1]);
-
-	i32 found_keys[4] = {};
-	i32 found_next_keys[4] = {};
-
-	for (i32 j = 0; j < count; j++)
-	{
-        i32 i = active_indices[j];
-		for (i32 key = 0; key < value_count; key++)
-		{
-			r64 current_key = keys[key] * start_life.e[i];
-			r64 next_key = keys[key + 1] * start_life.e[i];
-
-			if (current_key <= time_spent.e[i] && time_spent.e[i] < next_key)
-			{
-				found_keys[i] = key;
-				found_next_keys[i] = key + 1;
-				break;
-			}
-			else if (key + 1 == value_count - 1 && time_spent.e[i] >= next_key)
-			{
-				found_keys[i] = key + 1;
-				found_next_keys[i] = key + 1;
-				break;
-			}
-		}
-	}
-
-	r32_4x current_keys = r32_4x(keys[found_keys[0]], keys[found_keys[1]], keys[found_keys[2]], keys[found_keys[3]]) * start_life;
-	r32_4x next_keys = r32_4x(keys[found_next_keys[0]], keys[found_next_keys[1]], keys[found_next_keys[2]], keys[found_next_keys[3]]) * start_life;
-
-	r32_4x start_angle = r32_4x(values[found_keys[0]], values[found_keys[1]], values[found_keys[2]], values[found_keys[3]]);
-	r32_4x end_angle = r32_4x(values[found_next_keys[0]], values[found_next_keys[1]], values[found_next_keys[2]], values[found_next_keys[3]]);
-
-	r32_4x t = get_t(time_spent, current_keys, next_keys);
-
-	result = math::lerp(start_angle, t, end_angle);
-
-	return result;
-}
-
-static r32_4x get_angle_by_time(ParticleSystemInfo& particle_system, i32 index, r32_4x time_spent)
-{
-    i32 value_count = particle_system.angle_over_lifetime.value_count;
-    r32* values = particle_system.angle_over_lifetime.values;
-    r32* keys = particle_system.angle_over_lifetime.keys;
-
-    r32_4x start_life = particle_system.particles.start_life[index];
-    r32_4x result = r32_4x(values[value_count - 1]);
-
-    
+	return _start_value ? (*_start_value) * result : result;
 }
 
 static void update_particles(ParticleWorkData &work_data)
@@ -443,7 +259,7 @@ static void update_particles(ParticleWorkData &work_data)
 
         if(size_value_count > 0)
         {
-            size = get_size_by_time(info, main_index, time_spent, &active_particles[0], active_particle_count);
+            size = get_value_by_time<Vec2_4x, math::Vec2>(info, main_index, time_spent, info.size_over_lifetime.value_count, info.size_over_lifetime.values, info.size_over_lifetime.keys, &info.particles.start_size[main_index]);
         }
         else
         {
@@ -452,7 +268,7 @@ static void update_particles(ParticleWorkData &work_data)
 
         if(angle_value_count > 0)
         {
-            angle = get_angle_by_time(info, main_index, time_spent, &active_particles[0], active_particle_count);
+            angle = get_value_by_time<r32_4x, r32>(info, main_index, time_spent, info.angle_over_lifetime.value_count, info.angle_over_lifetime.values, info.angle_over_lifetime.keys, &info.particles.start_angle[main_index]);
         }
         else
         {
@@ -461,7 +277,7 @@ static void update_particles(ParticleWorkData &work_data)
 
         if(color_value_count > 0)
         {
-            color = get_color_by_time(info, main_index, time_spent, &active_particles[0], active_particle_count);
+            color = get_value_by_time<Rgba_4x, math::Rgba>(info, main_index, time_spent, info.color_over_lifetime.value_count, info.color_over_lifetime.values, info.color_over_lifetime.keys);
         }
         else
         {
@@ -470,7 +286,7 @@ static void update_particles(ParticleWorkData &work_data)
 
         if(speed_value_count > 0)
         {
-            r32_4x speed = get_speed_by_time(info, main_index, time_spent, &active_particles[0], active_particle_count);
+            r32_4x speed = get_value_by_time<r32_4x, r32>(info, main_index, time_spent, info.speed_over_lifetime.value_count, info.speed_over_lifetime.values, info.speed_over_lifetime.keys, &info.particles.start_speed[main_index]);
             info.particles.position[main_index] += info.particles.direction[main_index] * speed * (r32)work_data.delta_time;
         }
         else
@@ -504,7 +320,6 @@ static void update_particles(ParticleWorkData &work_data)
             final_pos.x = res_x;
             final_pos.y = res_y;
             final_pos.z = res_z;
-            
         }
         else
         {

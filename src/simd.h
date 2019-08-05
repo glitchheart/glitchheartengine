@@ -208,6 +208,22 @@ inline r32_4x ge_mask(r32_4x a, r32 b)
     return r32_4x(ge_mask(a.p, _mm_set1_ps(b)));
 }
 
+inline __m128 le_mask(__m128 a, __m128 b)
+{
+    __m128 le = _mm_cmple_ps(a, b);
+    return le;
+}
+
+inline r32_4x le_mask(r32_4x a, r32_4x b)
+{
+    return r32_4x(le_mask(a.p, b.p));
+}
+
+inline r32_4x le_mask(r32_4x a, r32 b)
+{
+    return r32_4x(le_mask(a.p, _mm_set1_ps(b)));
+}
+
 inline __m128 mask_conditional(__m128 mask, __m128 a, __m128 b)
 {
     __m128 a_cond = _mm_and_ps(mask, a);
@@ -1420,6 +1436,34 @@ inline b32 all_zero(r32_4x v)
 
 
 using Rgba_4x = Vec4_4x;
+
+inline Vec2_4x mask_conditional(r32_4x mask, Vec2_4x a, Vec2_4x b)
+{
+    Vec2_4x result(0.0f);
+    result.x = r32_4x(mask_conditional(mask.p, a.x.p, b.x.p));
+    result.y = r32_4x(mask_conditional(mask.p, a.y.p, b.y.p));
+    return result;
+}
+
+inline Vec3_4x mask_conditional(r32_4x mask, Vec3_4x a, Vec3_4x b)
+{
+    Vec3_4x result(0.0f);
+    result.x = r32_4x(mask_conditional(mask.p, a.x.p, b.x.p));
+    result.y = r32_4x(mask_conditional(mask.p, a.y.p, b.y.p));
+    result.z = r32_4x(mask_conditional(mask.p, a.z.p, b.z.p));
+    return result;
+}
+
+
+inline Rgba_4x mask_conditional(r32_4x mask, Rgba_4x a, Rgba_4x b)
+{
+    Rgba_4x result(0.0f);
+    result.x = r32_4x(mask_conditional(mask.p, a.x.p, b.x.p));
+    result.y = r32_4x(mask_conditional(mask.p, a.y.p, b.y.p));
+    result.z = r32_4x(mask_conditional(mask.p, a.z.p, b.z.p));
+    result.w = r32_4x(mask_conditional(mask.p, a.w.p, b.w.p));
+    return result;
+}
 
 // Extra math
 
