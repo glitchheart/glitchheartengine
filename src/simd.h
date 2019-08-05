@@ -237,6 +237,23 @@ inline r32_4x mask_conditional(r32_4x mask, r32_4x a, r32_4x b)
     return r32_4x(mask_conditional(mask.p, a.p, b.p));
 }
 
+inline b32 equal(__m128 a, __m128 b, r32 epsilon = 0.001f)
+{
+    __m128 sub = _mm_sub_ps(a, _mm_set1_ps(epsilon));
+    __m128 add = _mm_add_ps(a, _mm_set1_ps(epsilon));
+
+    __m128 le = _mm_cmple_ps(sub, b);
+    __m128 ge = _mm_cmpge_ps(add, b);
+    __m128 start_mask = _mm_and_ps(le, ge);
+    i32 mask = _mm_movemask_ps(start_mask);
+    return (mask == 0xf);
+}
+
+inline b32 equal(r32_4x a, r32_4x b, r32 epsilon = 0.001f)
+{
+    return equal(a.p, b.p, epsilon);
+}
+
 union h64_4x
 {
     struct
@@ -1433,7 +1450,6 @@ inline b32 all_zero(r32_4x v)
 {
     return false;
 }
-
 
 using Rgba_4x = Vec4_4x;
 

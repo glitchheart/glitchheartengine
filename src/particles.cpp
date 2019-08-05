@@ -160,26 +160,33 @@ T get_value_by_time(ParticleSystemInfo& particle_system, i32 index, r32_4x time_
 
 	r32_4x start_life = particle_system.particles.start_life[index];
 
-    r32_4x time_spent_normalized = time_spent / start_life;
-
     T start_value = T(values[0]);
     T end_value = T(values[1]);
 
-    r32_4x start_key = r32_4x(keys[0]);
-    r32_4x end_key = r32_4x(keys[1]);
+    r32_4x start_key = r32_4x(keys[0]) * start_life;
+    r32_4x end_key = r32_4x(keys[1]) * start_life;
+
+    r32_4x prev_key = start_key;
 
     for(i32 i = 0; i < value_count; i++)
     {
-        r32_4x mask = le_mask(time_spent_normalized, end_key);
+        r32_4x mask = le_mask(time_spent, end_key);
         
         start_value = mask_conditional(mask, start_value, end_value);
-        end_value = mask_conditional(mask, end_value, T(values[MIN(i + 1, value_count - 1)]));
+        end_value = mask_conditional(mask, end_value, T(values[MIN(i + 1, value_count - 1)]) * start_life);
 
         start_key = mask_conditional(mask, start_key, end_key);
         end_key = mask_conditional(mask, end_key, r32_4x(keys[MIN(i + 1, value_count - 1)]));
+
+        if(equal(prev_key, start_key))
+        {
+            break;
+        }
+
+        prev_key = start_key;
     }
 
-    r32_4x t = get_t(time_spent_normalized, start_key, end_key);
+    r32_4x t = get_t(time_spent, start_key, end_key);
 	T result = math::lerp(start_value, t, end_value);
 
 	return _start_value ? (*_start_value) * result : result;
@@ -773,28 +780,6 @@ void update_particle_systems(Renderer *renderer, r64 delta_time)
             work_data.delta_time = delta_time;
             platform.add_entry(renderer->particles.system_work_queue, update_particle_system_job, &work_data);
         }
-
-        math::Rgba* values = particle_system.color_over_lifetime.values;
-            
-        bezier::CubicBezier curve;
-        curve.p0 = math::Vec2(0, 0);
-        curve.p1 = math::Vec2(0, values[0].r);
-        curve.p2 = math::Vec2(1, values[1].r);
-        curve.p3 = math::Vec2(1, values[1].r);
-        bezier::draw_bezier_curve(curve, 1.0f, math::Vec2(100.0f), 50.0f);
-
-        rendering::CreateUICommandInfo quad_command = rendering::create_ui_command_info();
-        quad_command.transform.position = math::Vec2(100.0f, 100.0f);
-        quad_command.transform.scale = math::Vec2(50.0f, curve.p2.y * 50.0f);
-        quad_command.z_layer = 5;
-        quad_command.scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO;
-        quad_command.anchor_flag = rendering::UIAlignment::BOTTOM | rendering::UIAlignment::LEFT;
-        quad_command.clip = false;
-        quad_command.color = COLOR_WHITE;
-        rendering::set_uniform_value(renderer, renderer->render.materials[renderer->render.ui.gradient_material.handle], "c1", values[0].rgb);
-        rendering::set_uniform_value(renderer, renderer->render.materials[renderer->render.ui.gradient_material.handle], "c2", values[1].rgb);
-        quad_command.custom_material = renderer->render.ui.gradient_material;
-        rendering::push_ui_quad(renderer, quad_command);
 	}
 
     if(renderer->particles.particle_system_count > 0)
