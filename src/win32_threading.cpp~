@@ -1,4 +1,0 @@
-#ifndef WIN32_THREADING
-#define WIN32_THREADING
-
-#endif

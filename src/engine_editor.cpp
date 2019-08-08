@@ -347,7 +347,7 @@ namespace editor
                         break;
                         case scene::FieldType::VEC3:
                         {
-                            ImGui::DragFloat2(field.name, ((math::Vec3*)ptr)->e, delta_time);
+                            ImGui::DragFloat3(field.name, ((math::Vec3*)ptr)->e, delta_time);
                         }
                         break;
                         default:
