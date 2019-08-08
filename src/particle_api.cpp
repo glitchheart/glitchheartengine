@@ -430,11 +430,13 @@ static i32 add_color_key(ParticleSystemInfo &particle_system, r64 key_time, math
     {
         particle_system.color_over_lifetime.values = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, math::Rgba);
         particle_system.color_over_lifetime.keys = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, r32);
+        particle_system.color_over_lifetime.recip_times = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, r32);
     }
     
     assert(particle_system.color_over_lifetime.value_count + 1 < MAX_LIFETIME_VALUES);
     auto &values = particle_system.color_over_lifetime.values;
     auto &keys = particle_system.color_over_lifetime.keys;
+    auto &recip_times = particle_system.color_over_lifetime.recip_times;
     
     b32 replaced = false;
     i32 new_index = -1;
@@ -443,10 +445,15 @@ static i32 add_color_key(ParticleSystemInfo &particle_system, r64 key_time, math
     {
         if(keys[i] > key_time)
         {
-            memmove(&keys[i + 1], &keys[i], sizeof(r64) * (particle_system.color_over_lifetime.value_count - i));
+            memmove(&keys[i + 1], &keys[i], sizeof(r32) * (particle_system.color_over_lifetime.value_count - i));
             memmove(&values[i + 1], &values[i], sizeof(math::Rgba) * (particle_system.color_over_lifetime.value_count - i));
+            memmove(&recip_times[i + 1], &recip_times[i], sizeof(r32) * (particle_system.color_over_lifetime.value_count - i));
+
+            r32 time = keys[i] - keys[i - 1];
+            
             keys[i] = key_time;
             values[i] = value;
+            recip_times[i] = 1 / time;
             new_index = i;
             replaced = true;
             break;
@@ -457,6 +464,7 @@ static i32 add_color_key(ParticleSystemInfo &particle_system, r64 key_time, math
     {
         values[particle_system.color_over_lifetime.value_count] = value;
         keys[particle_system.color_over_lifetime.value_count] = key_time;
+        recip_times[particle_system.color_over_lifetime.value_count] = 1 / (key_time - keys[particle_system.color_over_lifetime.value_count]);
         // new_index = particle_system.color_over_lifetime.value_count;
     }
     

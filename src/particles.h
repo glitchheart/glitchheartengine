@@ -209,6 +209,7 @@ struct ParticleSystemInfo
     {
         r32 *values;
         r32 *keys;
+        r32 *recip_times;
         i32 value_count;
     } angle_over_lifetime;
     
@@ -216,6 +217,7 @@ struct ParticleSystemInfo
     {
         math::Rgba *values;
         r32 *keys;
+        r32 *recip_times;
         i32 value_count;
     } color_over_lifetime;
 
@@ -223,6 +225,7 @@ struct ParticleSystemInfo
     {
         math::Vec2 *values;
         r32 *keys;
+        r32 *recip_times;
         i32 value_count;
     } size_over_lifetime;
     
@@ -230,6 +233,7 @@ struct ParticleSystemInfo
     {
         r32 *values;
         r32 *keys;
+        r32 *recip_times;
         i32 value_count;
     } speed_over_lifetime;
     
