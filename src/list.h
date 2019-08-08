@@ -127,6 +127,18 @@ namespace list
     {
         list->count = 0;
         list->_current_internal_handle = 0;
+        for(i32 i = 0; i < list->max_size; i++)
+        {
+            list->_internal_handles[i] = -1;
+        }
+    }
+
+    template<typename T>
+    static void free(SwapList<T>* list)
+    {
+        clear(list);
+        ::free(list->_internal_handles);
+        ::free(list->items);
     }
     
     template<typename T>

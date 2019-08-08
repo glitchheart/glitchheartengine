@@ -1125,7 +1125,7 @@ static Camera get_standard_camera(SceneManager& manager)
                     }
                 }
                 
-                list::clear(&scene.entities);
+                list::free(&scene.entities);
                 scene.transform_component_count = 0;
                 scene.render_component_count = 0;
             
@@ -1394,6 +1394,9 @@ static Camera get_standard_camera(SceneManager& manager)
 
         if(IS_ENTITY_HANDLE_VALID(entity_handle))
             handle.manager->gizmos.selected_gizmo = Gizmos::NONE;
+        else
+            return {0};
+        
 
         Entity entity = get_entity(entity_handle, scene);
     
@@ -2326,6 +2329,8 @@ static Camera get_standard_camera(SceneManager& manager)
             if(scene_manager->mode == SceneMode::EDITING)
             {
                 scene_manager->editor_camera = register_entity(COMP_TRANSFORM | COMP_CAMERA, handle, false);
+                CameraComponent &camera_comp = get_camera_comp(scene_manager->editor_camera, handle);
+                camera_comp.camera.far_plane = 500.0f;
                 scene::set_hide_in_ui(scene_manager->editor_camera, true, handle);
 				scene::set_entity_name(scene_manager->editor_camera, "Editor Camera", handle);
             }
@@ -4264,6 +4269,9 @@ static Camera get_standard_camera(SceneManager& manager)
 
     static void add_child(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
     {
+        if(parent_handle.handle == 0)
+            return;
+        
         assert(parent_handle.handle != child_handle.handle);
 
         Entity& parent = get_entity(parent_handle, scene);

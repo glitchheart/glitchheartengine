@@ -117,7 +117,7 @@ namespace scene
         i32 entity_count;
     };
 
-    #define MAX_CHILDREN 64
+    #define MAX_CHILDREN 256
     struct Entity
     {
         char name[256];
