@@ -141,12 +141,13 @@ i32 find_unused_particle(ParticleSystemInfo &particle_system)
 	return -1;
 }
 
-r32_4x get_t(r32_4x time_spent, r32_4x start_time, r32_4x end_time)
+r32_4x get_t(r32_4x time_spent, r32_4x start_time, r32_4x recip)
 {
-	r32_4x diff = end_time - start_time;
+	// r32_4x diff = end_time - start_time;
 	r32_4x in_this_index = time_spent - start_time;
 
-	r32_4x index_over_diff = in_this_index / diff;
+	// r32_4x index_over_diff = in_this_index / diff;
+    r32_4x index_over_diff = in_this_index * recip;
 
 	r32_4x t = simd_max(0.0, simd_min(1.0, index_over_diff));
 
@@ -154,17 +155,18 @@ r32_4x get_t(r32_4x time_spent, r32_4x start_time, r32_4x end_time)
 }
 
 template<typename T, typename V>
-T get_value_by_time(ParticleSystemInfo& particle_system, i32 index, r32_4x time_spent, i32 count, V* values, r32* keys, T* _start_value = nullptr)
+T get_value_by_time(ParticleSystemInfo& particle_system, i32 index, r32_4x time_spent, OverLifetime<V> over_lifetime, T* _start_value = nullptr)
 {
-	i32 value_count = particle_system.color_over_lifetime.value_count;
+	i32 value_count = over_lifetime.count;
 
 	r32_4x start_life = particle_system.particles.start_life[index];
 
-    T start_value = T(values[0]);
-    T end_value = T(values[1]);
+    T start_value = T(over_lifetime.values[0]);
+    T end_value = T(over_lifetime.values[1]);
 
-    r32_4x start_key = r32_4x(keys[0]) * start_life;
-    r32_4x end_key = r32_4x(keys[1]) * start_life;
+    r32_4x start_key = r32_4x(over_lifetime.keys[0]) * start_life;
+    r32_4x end_key = r32_4x(over_lifetime.keys[1]) * start_life;
+    r32_4x recip = r32_4x(over_lifetime.recip_keys[0]);
 
     r32_4x prev_key = start_key;
 
@@ -173,10 +175,11 @@ T get_value_by_time(ParticleSystemInfo& particle_system, i32 index, r32_4x time_
         r32_4x mask = le_mask(time_spent, end_key);
         
         start_value = mask_conditional(mask, start_value, end_value);
-        end_value = mask_conditional(mask, end_value, T(values[MIN(i + 1, value_count - 1)]) * start_life);
+        end_value = mask_conditional(mask, end_value, T(over_lifetime.values[MIN(i + 1, value_count - 1)]) * start_life);
 
         start_key = mask_conditional(mask, start_key, end_key);
-        end_key = mask_conditional(mask, end_key, r32_4x(keys[MIN(i + 1, value_count - 1)]));
+        recip = mask_conditional(mask, recip, r32_4x(over_lifetime.recip_keys[MIN(i + 1, value_count - 1)]));
+        end_key = mask_conditional(mask, end_key, r32_4x(over_lifetime.keys[MIN(i + 1, value_count - 1)]));
 
         if(equal(prev_key, start_key))
         {
@@ -186,7 +189,7 @@ T get_value_by_time(ParticleSystemInfo& particle_system, i32 index, r32_4x time_
         prev_key = start_key;
     }
 
-    r32_4x t = get_t(time_spent, start_key, end_key);
+    r32_4x t = get_t(time_spent, start_key, recip * start_life);
 	T result = math::lerp(start_value, t, end_value);
 
 	return _start_value ? (*_start_value) * result : result;
@@ -198,10 +201,10 @@ static void update_particles(ParticleWorkData &work_data)
     assert(work_data.info);
     ParticleSystemInfo &info = *work_data.info;
 
-	i32 speed_value_count = info.speed_over_lifetime.value_count;
-	i32 color_value_count = info.color_over_lifetime.value_count;
-	i32 size_value_count = info.size_over_lifetime.value_count;
-	i32 angle_value_count = info.angle_over_lifetime.value_count;
+	i32 speed_value_count = info.speed_over_lifetime.count;
+	i32 color_value_count = info.color_over_lifetime.count;
+	i32 size_value_count = info.size_over_lifetime.count;
+	i32 angle_value_count = info.angle_over_lifetime.count;
     
     for(i32 alive_index = 0; alive_index < work_data.emitted_this_frame; alive_index++)
     {
@@ -266,7 +269,7 @@ static void update_particles(ParticleWorkData &work_data)
 
         if(size_value_count > 0)
         {
-            size = get_value_by_time<Vec2_4x, math::Vec2>(info, main_index, time_spent, info.size_over_lifetime.value_count, info.size_over_lifetime.values, info.size_over_lifetime.keys, &info.particles.start_size[main_index]);
+            size = get_value_by_time<Vec2_4x, math::Vec2>(info, main_index, time_spent, info.size_over_lifetime, &info.particles.start_size[main_index]);
         }
         else
         {
@@ -275,7 +278,7 @@ static void update_particles(ParticleWorkData &work_data)
 
         if(angle_value_count > 0)
         {
-            angle = get_value_by_time<r32_4x, r32>(info, main_index, time_spent, info.angle_over_lifetime.value_count, info.angle_over_lifetime.values, info.angle_over_lifetime.keys, &info.particles.start_angle[main_index]);
+            angle = get_value_by_time<r32_4x, r32>(info, main_index, time_spent, info.angle_over_lifetime, &info.particles.start_angle[main_index]);
         }
         else
         {
@@ -284,7 +287,7 @@ static void update_particles(ParticleWorkData &work_data)
 
         if(color_value_count > 0)
         {
-            color = get_value_by_time<Rgba_4x, math::Rgba>(info, main_index, time_spent, info.color_over_lifetime.value_count, info.color_over_lifetime.values, info.color_over_lifetime.keys);
+            color = get_value_by_time<Rgba_4x, math::Rgba>(info, main_index, time_spent, info.color_over_lifetime);
         }
         else
         {
@@ -293,7 +296,7 @@ static void update_particles(ParticleWorkData &work_data)
 
         if(speed_value_count > 0)
         {
-            r32_4x speed = get_value_by_time<r32_4x, r32>(info, main_index, time_spent, info.speed_over_lifetime.value_count, info.speed_over_lifetime.values, info.speed_over_lifetime.keys, &info.particles.start_speed[main_index]);
+            r32_4x speed = get_value_by_time<r32_4x, r32>(info, main_index, time_spent, info.speed_over_lifetime, &info.particles.start_speed[main_index]);
             info.particles.position[main_index] += info.particles.direction[main_index] * speed * (r32)work_data.delta_time;
         }
         else

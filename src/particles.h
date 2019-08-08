@@ -72,7 +72,7 @@ struct EmissionModule
 struct ParticleSystemAttributes
 {
     b32 looping;
-    r64 duration;
+    r32 duration;
     b32 play_on_awake;
 
     b32 prewarm;
@@ -180,7 +180,16 @@ struct UpdateParticleSystemWorkData
 {
     ParticleSystemInfo *info;
     Renderer *renderer;
-    r64 delta_time;
+    r32 delta_time;
+};
+
+template<typename T>
+struct OverLifetime
+{
+    T *values;
+    r32 *keys;
+    r32 *recip_keys;
+    i32 count;
 };
 
 struct ParticleSystemInfo
@@ -198,44 +207,17 @@ struct ParticleSystemInfo
     i32 work_data_count;
     UpdateParticleSystemWorkData update_work_data;
 
-    r64 time_spent;
+    r32 time_spent;
 
     ParticleSystemAttributes attributes;
     rendering::MaterialInstanceHandle material_handle;
 
     r32 particles_cumulative;
 
-    struct
-    {
-        r32 *values;
-        r32 *keys;
-        r32 *recip_times;
-        i32 value_count;
-    } angle_over_lifetime;
-    
-    struct
-    {
-        math::Rgba *values;
-        r32 *keys;
-        r32 *recip_times;
-        i32 value_count;
-    } color_over_lifetime;
-
-    struct
-    {
-        math::Vec2 *values;
-        r32 *keys;
-        r32 *recip_times;
-        i32 value_count;
-    } size_over_lifetime;
-    
-    struct
-    {
-        r32 *values;
-        r32 *keys;
-        r32 *recip_times;
-        i32 value_count;
-    } speed_over_lifetime;
+    OverLifetime<r32> angle_over_lifetime;
+    OverLifetime<math::Rgba> color_over_lifetime;
+    OverLifetime<math::Vec2> size_over_lifetime;
+    OverLifetime<r32> speed_over_lifetime;
     
     rendering::InstanceBufferHandle offset_buffer_handle;
     rendering::InstanceBufferHandle color_buffer_handle;
@@ -262,7 +244,7 @@ struct ParticleSystemInfo
     i32 last_used_particle;
     i32 max_particles;
     
-    r64 current_emission_time;
+    r32 current_emission_time;
     
     MemoryArena arena;
     MemoryArena simd_arena;
@@ -273,7 +255,7 @@ struct ParticleWorkData
 {
     Renderer *renderer;
     ParticleSystemInfo *info;
-    r64 delta_time;
+    r32 delta_time;
     i32 particle_count;
     
     r32 angle_buffer[PARTICLE_DATA_SIZE * 4];
@@ -303,18 +285,18 @@ typedef ParticleSystemHandle (*CreateParticleSystem)(Renderer *renderer, i32 max
 typedef void (*RemoveParticleSystem)(Renderer *renderer, ParticleSystemHandle &handle);
 typedef void (*UpdateParticleSystem)(Renderer *renderer, ParticleSystemHandle handle, i32 max_particles);
 
-typedef void (*AddBurstOverTimeKey)(ParticleSystemInfo &particle_system, r64 key_time, i32 count, i32 cycle_count, i32 max_count, i32 min_count);
-typedef i32 (*AddAngleKey)(ParticleSystemInfo &particle_system, r64 key_time, r32 value) ;
-typedef void (*RemoveAngleKey)(ParticleSystemInfo &particle_system, r64 key_time);
+typedef void (*AddBurstOverTimeKey)(ParticleSystemInfo &particle_system, r32 key_time, i32 count, i32 cycle_count, i32 max_count, i32 min_count);
+typedef i32 (*AddAngleKey)(OverLifetime<r32> &over_lifetime, r32 key_time, r32 value, MemoryArena *arena);
+typedef void (*RemoveAngleKey)(OverLifetime<r32> &over_lifetime, r32 key_time);
 
-typedef i32 (*AddColorKey)(ParticleSystemInfo &particle_system, r64 key_time, math::Rgba value);
-typedef void (*RemoveColorKey)(ParticleSystemInfo &particle_system, r64 key_time);
+typedef i32 (*AddColorKey)(OverLifetime<math::Rgba> &over_lifetime, r32 key_time, math::Rgba value, MemoryArena *arena);
+typedef void (*RemoveColorKey)(OverLifetime<math::Rgba> &over_lifetime, r32 key_time);
 
-typedef i32 (*AddSizeKey)(ParticleSystemInfo &particle_system, r64 key_time, math::Vec2 value);
-typedef void (*RemoveSizeKey)(ParticleSystemInfo &particle_system, r64 key_time);
+typedef i32 (*AddSizeKey)(OverLifetime<math::Vec2> &over_lifetime, r32 key_time, math::Vec2 value, MemoryArena *arena);
+typedef void (*RemoveSizeKey)(OverLifetime<math::Vec2> &over_lifetime, r32 key_time);
 
-typedef i32 (*AddSpeedKey)(ParticleSystemInfo &particle_system, r64 key_time, r32 value);
-typedef void (*RemoveSpeedKey)(ParticleSystemInfo &particle_system, r64 key_time);
+typedef i32 (*AddSpeedKey)(OverLifetime<r32> &over_lifetime, r32 key_time, r32 value, MemoryArena *arena);
+typedef void (*RemoveSpeedKey)(OverLifetime<r32> &over_lifetime, r32 key_time);
 
 struct ParticleApi
 {

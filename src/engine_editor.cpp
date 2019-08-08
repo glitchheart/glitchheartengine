@@ -504,7 +504,7 @@ namespace editor
 
                                 static i32 selected_color_index = 0;
                                 
-                                for(i32 i = 0; i < ps->color_over_lifetime.value_count; i++)
+                                for(i32 i = 0; i < ps->color_over_lifetime.count; i++)
                                 {
                                     math::Rgba color = ps->color_over_lifetime.values[i];
                                     r64 key = ps->color_over_lifetime.keys[i];
@@ -525,18 +525,18 @@ namespace editor
 
                                 if(deleted_index != -1)
                                 {
-                                    core.renderer->particles.api->remove_color_key(*ps, ps->color_over_lifetime.keys[deleted_index]);
+                                    core.renderer->particles.api->remove_color_key(ps->color_over_lifetime, ps->color_over_lifetime.keys[deleted_index]);
                                 }
                 
-                                for(i32 i = 0; i < ps->color_over_lifetime.value_count - 1; i++)
+                                for(i32 i = 0; i < ps->color_over_lifetime.count - 1; i++)
                                 {
                                     if(ps->color_over_lifetime.keys[i] > ps->color_over_lifetime.keys[i + 1])
                                     {
                                         r64 current_key = ps->color_over_lifetime.keys[i];
                                         math::Rgba current_value = ps->color_over_lifetime.values[i];
 
-                                        scene_manager->renderer->particles.api->remove_color_key(*ps, current_key);
-                                        selected_color_index = core.renderer->particles.api->add_color_key(*ps, current_key, current_value);
+                                        scene_manager->renderer->particles.api->remove_color_key(ps->color_over_lifetime, current_key);
+                                        selected_color_index = core.renderer->particles.api->add_color_key(ps->color_over_lifetime, current_key, current_value, &ps->arena);
                                         break;
                                     }
                                 }
@@ -560,7 +560,7 @@ namespace editor
 
                                 if(ImGui::Button("Add"))
                                 {
-                                    core.renderer->particles.api->add_color_key(*ps, new_color_key, new_color);
+                                    core.renderer->particles.api->add_color_key(ps->color_over_lifetime, new_color_key, new_color, &ps->arena);
                                 }
 
                             }
@@ -573,7 +573,7 @@ namespace editor
                             
                                 ImGui::ListBoxHeader("Values");
                             
-                                for(i32 i = 0; i < ps->size_over_lifetime.value_count; i++)
+                                for(i32 i = 0; i < ps->size_over_lifetime.count; i++)
                                 {
                                     math::Vec2 size = ps->size_over_lifetime.values[i];
                                     r64 key = ps->size_over_lifetime.keys[i];
@@ -595,18 +595,18 @@ namespace editor
                             
                                 if(deleted_index != -1)
                                 {
-                                    core.renderer->particles.api->remove_size_key(*ps, ps->size_over_lifetime.keys[deleted_index]);
+                                    core.renderer->particles.api->remove_size_key(ps->size_over_lifetime, ps->size_over_lifetime.keys[deleted_index]);
                                 }
 
-                                for(i32 i = 0; i < ps->size_over_lifetime.value_count - 1; i++)
+                                for(i32 i = 0; i < ps->size_over_lifetime.count - 1; i++)
                                 {
                                     if(ps->size_over_lifetime.keys[i] > ps->size_over_lifetime.keys[i + 1])
                                     {
                                         r64 current_key = ps->size_over_lifetime.keys[i];
                                         math::Vec2 current_value = ps->size_over_lifetime.values[i];
 
-                                        scene_manager->renderer->particles.api->remove_size_key(*ps, current_key);
-                                        selected_size_index = core.renderer->particles.api->add_size_key(*ps, current_key, current_value);
+                                        scene_manager->renderer->particles.api->remove_size_key(ps->size_over_lifetime, current_key);
+                                        selected_size_index = core.renderer->particles.api->add_size_key(ps->size_over_lifetime, current_key, current_value, &ps->arena);
                                         break;
                                     }
                                 }
@@ -630,7 +630,7 @@ namespace editor
                             
                                 if(ImGui::Button("Add"))
                                 {
-                                    core.renderer->particles.api->add_size_key(*ps, new_size_key, new_size);
+                                    core.renderer->particles.api->add_size_key(ps->size_over_lifetime, new_size_key, new_size, &ps->arena);
                                 }
                             }
                         
@@ -642,7 +642,7 @@ namespace editor
                                 
                                 ImGui::ListBoxHeader("Values");
                             
-                                for(i32 i = 0; i < ps->speed_over_lifetime.value_count; i++)
+                                for(i32 i = 0; i < ps->speed_over_lifetime.count; i++)
                                 {
                                     r32 speed = ps->speed_over_lifetime.values[i];
                                     r64 key = ps->speed_over_lifetime.keys[i];
@@ -664,20 +664,20 @@ namespace editor
                                 
                                 if(deleted_index != -1)
                                 {
-                                    core.renderer->particles.api->remove_speed_key(*ps, ps->speed_over_lifetime.keys[deleted_index]);
+                                    core.renderer->particles.api->remove_speed_key(ps->speed_over_lifetime, ps->speed_over_lifetime.keys[deleted_index]);
                                 }
 
                                 deleted_index = -1;
 
-                                for(i32 i = 0; i < ps->speed_over_lifetime.value_count - 1; i++)
+                                for(i32 i = 0; i < ps->speed_over_lifetime.count - 1; i++)
                                 {
                                     if(ps->speed_over_lifetime.keys[i] > ps->speed_over_lifetime.keys[i + 1])
                                     {
                                         r64 current_key = ps->speed_over_lifetime.keys[i];
                                         r32 current_value = ps->speed_over_lifetime.values[i];
 
-                                        scene_manager->renderer->particles.api->remove_speed_key(*ps, current_key);
-                                        selected_speed_index = core.renderer->particles.api->add_speed_key(*ps, current_key, current_value);
+                                        scene_manager->renderer->particles.api->remove_speed_key(ps->speed_over_lifetime, current_key);
+                                        selected_speed_index = core.renderer->particles.api->add_speed_key(ps->speed_over_lifetime, current_key, current_value, &ps->arena);
                                         break;
                                     }
                                 }
@@ -701,7 +701,7 @@ namespace editor
 
                                 if(ImGui::Button("Add"))
                                 {
-                                    core.renderer->particles.api->add_speed_key(*ps, new_speed_key, new_speed);
+                                    core.renderer->particles.api->add_speed_key(ps->speed_over_lifetime, new_speed_key, new_speed, &ps->arena);
                                 }
                             }
                         }

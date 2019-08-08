@@ -129,10 +129,10 @@ static void _allocate_particle_system(Renderer *renderer, ParticleSystemInfo& sy
 
     system_info.particles.life = push_array_simd(simd_arena, max_over_four, r32_4x);
     
-    system_info.color_over_lifetime.value_count = 0;
-    system_info.size_over_lifetime.value_count = 0;
-    system_info.speed_over_lifetime.value_count = 0;
-    system_info.angle_over_lifetime.value_count = 0;
+    system_info.color_over_lifetime.count = 0;
+    system_info.size_over_lifetime.count = 0;
+    system_info.speed_over_lifetime.count = 0;
+    system_info.angle_over_lifetime.count = 0;
     system_info.color_over_lifetime.values = nullptr;
     system_info.size_over_lifetime.values = nullptr;
     system_info.speed_over_lifetime.values = nullptr;
@@ -345,7 +345,7 @@ static void update_particle_system(Renderer *renderer, ParticleSystemHandle hand
     _allocate_particle_system(renderer, system_info, max_particles);
 }
 
-static void add_burst_over_time_key(ParticleSystemInfo &particle_system, r64 key_time, i32 count, i32 cycle_count = 0, i32 max_count = 0, i32 min_count = 0)
+static void add_burst_over_time_key(ParticleSystemInfo &particle_system, r32 key_time, i32 count, i32 cycle_count = 0, i32 max_count = 0, i32 min_count = 0)
 {
     if(particle_system.attributes.emission_module.burst_over_lifetime.value_count == 0)
     {
@@ -366,94 +366,35 @@ static void add_burst_over_time_key(ParticleSystemInfo &particle_system, r64 key
     particle_system.attributes.emission_module.burst_over_lifetime.value_count++;
 }
 
-static i32 add_angle_key(ParticleSystemInfo &particle_system, r64 key_time, r32 value)
+template<typename T>
+static i32 add_key(OverLifetime<T> &over_lifetime, r32 key_time, T value, MemoryArena *arena)
 {
-    if(particle_system.angle_over_lifetime.value_count == 0)
+    if(over_lifetime.count == 0)
     {
-        particle_system.angle_over_lifetime.values = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, r32);
-        particle_system.angle_over_lifetime.keys = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, r32);
+       over_lifetime.values = push_array(arena, MAX_LIFETIME_VALUES, T);
+       over_lifetime.keys = push_array(arena, MAX_LIFETIME_VALUES, r32);
+       over_lifetime.recip_keys = push_array(arena, MAX_LIFETIME_VALUES, r32);
     }
-    
-    assert(particle_system.angle_over_lifetime.value_count + 1 < MAX_LIFETIME_VALUES);
-    auto &values = particle_system.angle_over_lifetime.values;
-    auto &keys = particle_system.angle_over_lifetime.keys;
+
+    assert(over_lifetime.count + 1 < MAX_LIFETIME_VALUES);
+    auto &values = over_lifetime.values;
+    auto &keys = over_lifetime.keys;
+    auto &recip_keys = over_lifetime.recip_keys;
     
     b32 replaced = false;
     i32 new_index = -1;
-    
-    for(i32 i = 0; i < particle_system.angle_over_lifetime.value_count; i++)
+
+    for(i32 i = 0; i < over_lifetime.count; i++)
     {
         if(keys[i] > key_time)
         {
-            memmove(&keys[i + 1], &keys[i], sizeof(r64) * (particle_system.angle_over_lifetime.value_count - i));
-            memmove(&values[i + 1], &values[i], sizeof(r32) * (particle_system.angle_over_lifetime.value_count - i));
-            keys[i] = key_time;
-            values[i] = value;
-            new_index = i;
-            replaced = true;
-            break;
-        }
-    }
-    
-    if(!replaced)
-    {
-        values[particle_system.angle_over_lifetime.value_count] = value;
-        keys[particle_system.angle_over_lifetime.value_count] = key_time;
-    }
-    
-    particle_system.angle_over_lifetime.value_count++;
-
-    return new_index;
-}
-
-
-static void remove_angle_key(ParticleSystemInfo &particle_system, r64 key_time)
-{
-    auto& values = particle_system.angle_over_lifetime.values;
-    auto& keys = particle_system.angle_over_lifetime.keys;
-    
-    for(i32 i = 0; i < particle_system.angle_over_lifetime.value_count; i++)
-    {
-        if(keys[i] == key_time)
-        {
-            memmove(&keys[i], &keys[i + 1], sizeof(r32) * (particle_system.angle_over_lifetime.value_count - i));
-            memmove(&values[i], &values[i + 1], sizeof(r64) * (particle_system.angle_over_lifetime.value_count - i));
-            particle_system.angle_over_lifetime.value_count--;
-            break;
-        }
-    }
-}
-
-static i32 add_color_key(ParticleSystemInfo &particle_system, r64 key_time, math::Rgba value)
-{
-    if(particle_system.color_over_lifetime.value_count == 0)
-    {
-        particle_system.color_over_lifetime.values = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, math::Rgba);
-        particle_system.color_over_lifetime.keys = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, r32);
-        particle_system.color_over_lifetime.recip_times = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, r32);
-    }
-    
-    assert(particle_system.color_over_lifetime.value_count + 1 < MAX_LIFETIME_VALUES);
-    auto &values = particle_system.color_over_lifetime.values;
-    auto &keys = particle_system.color_over_lifetime.keys;
-    auto &recip_times = particle_system.color_over_lifetime.recip_times;
-    
-    b32 replaced = false;
-    i32 new_index = -1;
-    
-    for(i32 i = 0; i < particle_system.color_over_lifetime.value_count; i++)
-    {
-        if(keys[i] > key_time)
-        {
-            memmove(&keys[i + 1], &keys[i], sizeof(r32) * (particle_system.color_over_lifetime.value_count - i));
-            memmove(&values[i + 1], &values[i], sizeof(math::Rgba) * (particle_system.color_over_lifetime.value_count - i));
-            memmove(&recip_times[i + 1], &recip_times[i], sizeof(r32) * (particle_system.color_over_lifetime.value_count - i));
+            memmove(&keys[i + 1], &keys[i], sizeof(r64) * (over_lifetime.count - i));
+            memmove(&values[i + 1], &values[i], sizeof(r32) * (over_lifetime.count - i));
 
             r32 time = keys[i] - keys[i - 1];
             
             keys[i] = key_time;
             values[i] = value;
-            recip_times[i] = 1 / time;
             new_index = i;
             replaced = true;
             break;
@@ -462,149 +403,43 @@ static i32 add_color_key(ParticleSystemInfo &particle_system, r64 key_time, math
     
     if(!replaced)
     {
-        values[particle_system.color_over_lifetime.value_count] = value;
-        keys[particle_system.color_over_lifetime.value_count] = key_time;
-        recip_times[particle_system.color_over_lifetime.value_count] = 1 / (key_time - keys[particle_system.color_over_lifetime.value_count]);
-        // new_index = particle_system.color_over_lifetime.value_count;
+        values[over_lifetime.count] = value;
+        keys[over_lifetime.count] = key_time;
+        new_index = over_lifetime.count;
     }
     
-    particle_system.color_over_lifetime.value_count++;
+    over_lifetime.count++;
+
+    for(i32 i = 0; i < over_lifetime.count - 1; i++)
+    {
+        recip_keys[i] = 1 / (keys[i + 1] - keys[i]);
+    }
 
     return new_index;
 }
 
-static void remove_color_key(ParticleSystemInfo &particle_system, r64 key_time)
+template<typename T>
+static void remove_key(OverLifetime<T> &over_lifetime, r32 key_time)
 {
-    auto& values = particle_system.color_over_lifetime.values;
-    auto& keys = particle_system.color_over_lifetime.keys;
+    auto& values = over_lifetime.values;
+    auto& keys = over_lifetime.keys;
+    auto& recip_keys = over_lifetime.recip_keys;
     
-    for(i32 i = 0; i < particle_system.color_over_lifetime.value_count; i++)
+    for(i32 i = 0; i < over_lifetime.count; i++)
     {
         if(keys[i] == key_time)
         {
-            memmove(&keys[i], &keys[i + 1], sizeof(math::Rgba) * (particle_system.color_over_lifetime.value_count - i));
-            memmove(&values[i], &values[i + 1], sizeof(r64) * (particle_system.color_over_lifetime.value_count - i));
-            particle_system.color_over_lifetime.value_count--;
+            memmove(&keys[i], &keys[i + 1], sizeof(r32) * (over_lifetime.count - i));
+            memmove(&values[i], &values[i + 1], sizeof(r64) * (over_lifetime.count - i));
+            memmove(&recip_keys[i], &recip_keys[i + 1], sizeof(r64) * (over_lifetime.count - i));
+            over_lifetime.count--;
             break;
         }
     }
-}
 
-static i32 add_size_key(ParticleSystemInfo &particle_system, r64 key_time, math::Vec2 value)
-{
-    if(particle_system.size_over_lifetime.value_count == 0)
+    for(i32 i = 0; i < over_lifetime.count - 1; i++)
     {
-        particle_system.size_over_lifetime.values = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, math::Vec2);
-        particle_system.size_over_lifetime.keys = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, r32);
-    }
-    
-    assert(particle_system.size_over_lifetime.value_count + 1 < MAX_LIFETIME_VALUES);
-    auto &values = particle_system.size_over_lifetime.values;
-    auto &keys = particle_system.size_over_lifetime.keys;
-    
-    b32 replaced = false;
-    i32 new_index = -1;
-    
-    for(i32 i = 0; i < particle_system.size_over_lifetime.value_count; i++)
-    {
-        if(keys[i] > key_time)
-        {
-            memmove(&keys[i + 1], &keys[i], sizeof(r64) * (particle_system.size_over_lifetime.value_count - i));
-            memmove(&values[i + 1], &values[i], sizeof(math::Vec2) * (particle_system.size_over_lifetime.value_count - i));
-            keys[i] = key_time;
-            values[i] = value;
-            replaced = true;
-            new_index = i;
-            break;
-        }
-    }
-    
-    if(!replaced)
-    {
-        values[particle_system.size_over_lifetime.value_count] = value;
-        keys[particle_system.size_over_lifetime.value_count] = key_time;
-        new_index = particle_system.size_over_lifetime.value_count;
-    }
-    
-    particle_system.size_over_lifetime.value_count++;
-
-    return new_index;
-}
-
-static void remove_size_key(ParticleSystemInfo &particle_system, r64 key_time)
-{
-    auto& values = particle_system.size_over_lifetime.values;
-    auto& keys = particle_system.size_over_lifetime.keys;
-
-    for(i32 i = 0; i < particle_system.size_over_lifetime.value_count; i++)
-    {
-        if(keys[i] == key_time)
-        {
-            memmove(&keys[i], &keys[i + 1], sizeof(math::Vec2) * (particle_system.size_over_lifetime.value_count - i));
-            memmove(&values[i], &values[i + 1], sizeof(r64) * (particle_system.size_over_lifetime.value_count - i));
-            particle_system.size_over_lifetime.value_count--;
-            break;
-        }
-    }
-}
-
-static i32 add_speed_key(ParticleSystemInfo &particle_system, r64 key_time, r32 value)
-{
-    if(particle_system.speed_over_lifetime.value_count == 0)
-    {
-        particle_system.speed_over_lifetime.values = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, r32);
-        particle_system.speed_over_lifetime.keys = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, r32);
-    }
-    
-    assert(particle_system.speed_over_lifetime.value_count + 1 < MAX_LIFETIME_VALUES);
-    auto &values = particle_system.speed_over_lifetime.values;
-    auto &keys = particle_system.speed_over_lifetime.keys;
-    
-    b32 replaced = false;
-    i32 new_index = -1;
-    
-    for(i32 i = 0; i < particle_system.speed_over_lifetime.value_count; i++)
-    {
-        if(keys[i] > key_time)
-        {
-            memmove(&values[i + 1], &values[i], sizeof(r32) * (particle_system.speed_over_lifetime.value_count - i));
-            memmove(&keys[i + 1], &keys[i], sizeof(r64) * (particle_system.speed_over_lifetime.value_count - i));
-            keys[i] = key_time;
-            values[i] = value;
-            new_index = i;
-            replaced = true;
-            break;
-        }
-    }
-    
-    if(!replaced)
-    {
-        values[particle_system.speed_over_lifetime.value_count] = value;
-        keys[particle_system.speed_over_lifetime.value_count] = key_time;
-        new_index = particle_system.speed_over_lifetime.value_count;;
-    }
-    
-    
-    particle_system.speed_over_lifetime.value_count++;
-
-    return new_index;
-}
-
-
-static void remove_speed_key(ParticleSystemInfo &particle_system, r64 key_time)
-{
-    auto& values = particle_system.speed_over_lifetime.values;
-    auto& keys = particle_system.speed_over_lifetime.keys;
-    
-    for(i32 i = 0; i < particle_system.speed_over_lifetime.value_count; i++)
-    {
-        if(keys[i] == key_time)
-        {
-            memmove(&keys[i], &keys[i + 1], sizeof(r32) * (particle_system.speed_over_lifetime.value_count - i));
-            memmove(&values[i], &values[i + 1], sizeof(r64) * (particle_system.speed_over_lifetime.value_count - i));
-            particle_system.speed_over_lifetime.value_count--;
-            break;
-        }
+        recip_keys[i] = 1 / (keys[i + 1] - keys[i]);
     }
 }
 

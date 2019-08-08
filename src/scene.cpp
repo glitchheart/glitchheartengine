@@ -3565,23 +3565,23 @@ static Camera get_standard_camera(SceneManager& manager)
             
             for(i32 i = 0; i < templ.particles.size_over_lifetime.value_count; i++)
             {
-                r64 key = templ.particles.size_over_lifetime.keys[i];
+                r32 key = templ.particles.size_over_lifetime.keys[i];
                 math::Vec2 value = templ.particles.size_over_lifetime.values[i];
-                scene.renderer->particles.api->add_size_key(*ps, key, value);
+                scene.renderer->particles.api->add_size_key(ps->size_over_lifetime, key, value, &ps->arena);
             }
 
             for(i32 i = 0; i < templ.particles.color_over_lifetime.value_count; i++)
             {
-                r64 key = templ.particles.color_over_lifetime.keys[i];
+                r32 key = templ.particles.color_over_lifetime.keys[i];
                 math::Rgba value = templ.particles.color_over_lifetime.values[i];
-                scene.renderer->particles.api->add_color_key(*ps, key, value);
+                scene.renderer->particles.api->add_color_key(ps->color_over_lifetime, key, value, &ps->arena);
             }
 
             for(i32 i = 0; i < templ.particles.speed_over_lifetime.value_count; i++)
             {
-                r64 key = templ.particles.speed_over_lifetime.keys[i];
+                r32 key = templ.particles.speed_over_lifetime.keys[i];
                 r32 value = templ.particles.speed_over_lifetime.values[i];
-                scene.renderer->particles.api->add_speed_key(*ps, key, value);
+                scene.renderer->particles.api->add_speed_key(ps->speed_over_lifetime, key, value, &ps->arena);
             }
 
             if(templ.comp_flags & COMP_TRANSFORM)

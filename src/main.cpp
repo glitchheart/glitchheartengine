@@ -854,15 +854,15 @@ int main(int argc, char **args)
     particle_api.update_particle_system = &update_particle_system;
 
     particle_api.add_burst_over_time_key = &add_burst_over_time_key;
-    particle_api.add_angle_key = &add_angle_key;
-    particle_api.remove_angle_key = &remove_angle_key;
-    particle_api.add_color_key = &add_color_key;
-    particle_api.remove_color_key = &remove_color_key;
-    particle_api.add_size_key = &add_size_key;
-    particle_api.remove_size_key = &remove_size_key;
+    particle_api.add_angle_key = &(add_key<r32>);
+    particle_api.remove_angle_key = &remove_key<r32>;
+    particle_api.add_color_key = &add_key<math::Rgba>;
+    particle_api.remove_color_key = &remove_key<math::Rgba>;
+    particle_api.add_size_key = &add_key<math::Vec2>;
+    particle_api.remove_size_key = &remove_key<math::Vec2>;
 
-    particle_api.add_speed_key = &add_speed_key;
-    particle_api.remove_speed_key = &remove_speed_key;
+    particle_api.add_speed_key = &add_key<r32>;
+    particle_api.remove_speed_key = &remove_key<r32>;
 
     GameCode game = {};
     game.is_valid = false;
