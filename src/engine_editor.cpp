@@ -11,7 +11,7 @@ namespace editor
 
     static void _update_engine_editor(InputController *input_controller, scene::SceneManager *scene_manager)
     {
-        if(KEY_DOWN(Key_Delete) || KEY_DOWN(Key_Backspace))
+        if(KEY_DOWN(Key_Delete))
         {
             if(IS_ENTITY_HANDLE_VALID(scene_manager->selected_entity))
             {
@@ -514,7 +514,7 @@ namespace editor
                                     if(ImGui::Selectable(buf, selected_color_index == i))
                                     {
                                         selected_color_index = i;
-                                        if(KEY_DOWN(Key_Backspace) || KEY_DOWN(Key_Delete))
+                                        if(KEY_DOWN(Key_Delete))
                                         {
                                             deleted_index = selected_color_index;
                                         }
@@ -584,7 +584,7 @@ namespace editor
                                     {
                                         selected_size_index = i;
                                     
-                                        if(KEY_DOWN(Key_Backspace) || KEY_DOWN(Key_Delete))
+                                        if(KEY_DOWN(Key_Delete))
                                         {
                                             deleted_index = selected_size_index;
                                         }
@@ -653,7 +653,7 @@ namespace editor
                                     {
                                         selected_speed_index = i;
                                     
-                                        if(KEY_DOWN(Key_Backspace) || KEY_DOWN(Key_Delete))
+                                        if(KEY_DOWN(Key_Delete))
                                         {
                                             deleted_index = selected_speed_index;
                                         }

@@ -388,11 +388,9 @@ static i32 add_key(OverLifetime<T> &over_lifetime, r32 key_time, T value, Memory
     {
         if(keys[i] > key_time)
         {
-            memmove(&keys[i + 1], &keys[i], sizeof(r64) * (over_lifetime.count - i));
-            memmove(&values[i + 1], &values[i], sizeof(r32) * (over_lifetime.count - i));
+            memmove(&keys[i + 1], &keys[i], sizeof(r32) * (over_lifetime.count - i));
+            memmove(&values[i + 1], &values[i], sizeof(T) * (over_lifetime.count - i));
 
-            r32 time = keys[i] - keys[i - 1];
-            
             keys[i] = key_time;
             values[i] = value;
             new_index = i;
@@ -430,8 +428,7 @@ static void remove_key(OverLifetime<T> &over_lifetime, r32 key_time)
         if(keys[i] == key_time)
         {
             memmove(&keys[i], &keys[i + 1], sizeof(r32) * (over_lifetime.count - i));
-            memmove(&values[i], &values[i + 1], sizeof(r64) * (over_lifetime.count - i));
-            memmove(&recip_keys[i], &recip_keys[i + 1], sizeof(r64) * (over_lifetime.count - i));
+            memmove(&values[i], &values[i + 1], sizeof(T) * (over_lifetime.count - i));
             over_lifetime.count--;
             break;
         }

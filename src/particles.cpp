@@ -173,13 +173,19 @@ T get_value_by_time(ParticleSystemInfo& particle_system, i32 index, r32_4x time_
     for(i32 i = 0; i < value_count; i++)
     {
         r32_4x mask = le_mask(time_spent, end_key);
+		i32 index = MIN(i + 1, value_count - 1);
         
         start_value = mask_conditional(mask, start_value, end_value);
-        end_value = mask_conditional(mask, end_value, T(over_lifetime.values[MIN(i + 1, value_count - 1)]) * start_life);
+        end_value = mask_conditional(mask, end_value, T(over_lifetime.values[index]));
 
-        start_key = mask_conditional(mask, start_key, end_key);
-        recip = mask_conditional(mask, recip, r32_4x(over_lifetime.recip_keys[MIN(i + 1, value_count - 1)]));
-        end_key = mask_conditional(mask, end_key, r32_4x(over_lifetime.keys[MIN(i + 1, value_count - 1)]));
+        start_key = mask_conditional(mask, start_key, end_key * start_life);
+        recip = mask_conditional(mask, recip, r32_4x(over_lifetime.recip_keys[index]));
+        end_key = mask_conditional(mask, end_key, r32_4x(over_lifetime.keys[index]) * start_life);
+
+		if (i == 2)
+		{
+			int x = 0;
+		}
 
         if(equal(prev_key, start_key))
         {
@@ -189,7 +195,7 @@ T get_value_by_time(ParticleSystemInfo& particle_system, i32 index, r32_4x time_
         prev_key = start_key;
     }
 
-    r32_4x t = get_t(time_spent, start_key, recip * start_life);
+    r32_4x t = get_t(time_spent, start_key, recip);
 	T result = math::lerp(start_value, t, end_value);
 
 	return _start_value ? (*_start_value) * result : result;
