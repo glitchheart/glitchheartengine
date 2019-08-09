@@ -11,7 +11,9 @@ namespace editor
 
     static void _update_engine_editor(InputController *input_controller, scene::SceneManager *scene_manager)
     {
-        if(KEY_DOWN(Key_Delete) || KEY_DOWN(Key_Backspace))
+        ImGuiIO &io = ImGui::GetIO();
+
+        if(!io.WantCaptureKeyboard && (KEY_DOWN(Key_Delete) || KEY_DOWN(Key_Backspace)))
         {
             if(IS_ENTITY_HANDLE_VALID(scene_manager->selected_entity))
             {
