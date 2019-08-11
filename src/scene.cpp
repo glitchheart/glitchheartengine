@@ -1769,7 +1769,7 @@ static Camera get_standard_camera(SceneManager& manager)
     static void toggle_selection_enabled(SceneManager *scene_manager)
     {
         set_selection_enabled(!scene_manager->editor.selection_enabled, scene_manager);
-    }
+   } 
 
     static Entity& get_entity(EntityHandle handle, Scene &scene)
     {
@@ -2329,11 +2329,15 @@ static Camera get_standard_camera(SceneManager& manager)
         {
             if(scene_manager->mode == SceneMode::EDITING)
             {
-                scene_manager->editor_camera = register_entity(COMP_TRANSFORM | COMP_CAMERA, handle, false);
-                CameraComponent &camera_comp = get_camera_comp(scene_manager->editor_camera, handle);
+                if(!IS_ENTITY_HANDLE_VALID(scene->editor_camera))
+                    scene->editor_camera = register_entity(COMP_TRANSFORM | COMP_CAMERA, handle, false);
+                    
+                scene_manager->editor_camera = scene->editor_camera;
+                
+                CameraComponent &camera_comp = get_camera_comp(scene->editor_camera, handle);
                 camera_comp.camera.far_plane = 500.0f;
-                scene::set_hide_in_ui(scene_manager->editor_camera, true, handle);
-				scene::set_entity_name(scene_manager->editor_camera, "Editor Camera", handle);
+                scene::set_hide_in_ui(scene->editor_camera, true, handle);
+				scene::set_entity_name(scene->editor_camera, "Editor Camera", handle);
             }
             
             if(scene_manager->callbacks.on_scene_will_load)
@@ -2354,6 +2358,8 @@ static Camera get_standard_camera(SceneManager& manager)
             allocate_instance_buffers(*scene);
             scene->loaded = true;
         }
+        else
+            scene_manager->editor_camera = scene->editor_camera;
 
         if(scene_manager->callbacks.on_scene_loaded)
             scene_manager->callbacks.on_scene_loaded(handle, first_load);        
@@ -2741,6 +2747,7 @@ static Camera get_standard_camera(SceneManager& manager)
         i32 new_handle = list::add(&scene.entities, new_entity);
         
         EntityHandle handle = { new_handle };
+        handle.scene_handle = scene.handle;
         Entity& entity = list::get(&scene.entities, handle.handle);
         entity.handle = handle;
         
@@ -2766,7 +2773,7 @@ static Camera get_standard_camera(SceneManager& manager)
 
         return(handle);
     }
-    
+
     static EntityHandle register_entity(u64 comp_flags, SceneHandle scene_handle, b32 savable = false)
     {
         Scene &scene = get_scene(scene_handle);
@@ -3851,7 +3858,7 @@ static Camera get_standard_camera(SceneManager& manager)
             }
         }
     }
-
+    
     static void unregister_entity(EntityHandle handle, SceneHandle scene_handle)
     {
         Scene &scene = get_scene(scene_handle);
@@ -3869,6 +3876,11 @@ static Camera get_standard_camera(SceneManager& manager)
         }
         
         entity.child_count = 0;
+    }
+
+    static void unregister_entity(EntityHandle handle)
+    {
+        unregister_entity(handle, handle.scene_handle);
     }
 
     static EntityHandle place_entity_from_template(math::Vec3 position, const char* path, SceneHandle scene, b32 savable = true, b32 select = false)

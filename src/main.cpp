@@ -1006,8 +1006,6 @@ int main(int argc, char **args)
 
         if(scene_manager->scene_loaded)
         {
-            scene::Scene &current_scene = scene::get_scene(scene_manager->loaded_scene);
-            
             #ifdef EDITOR
             if(scene_manager->mode == scene::SceneMode::RUNNING)
             {
@@ -1022,6 +1020,8 @@ int main(int argc, char **args)
 
                 if(editor_state.mode == editor::EditorMode::BUILT_IN)
                 {
+                    scene::Scene &current_scene = scene::get_scene(scene_manager->loaded_scene);
+            
                     editor::_render_hierarchy(current_scene, &editor_state, &input_controller, delta_time);
                     editor::_render_inspector(current_scene, &editor_state, &input_controller, delta_time);
                     editor::_render_resources(project_state, &editor_state, scene_manager, delta_time);

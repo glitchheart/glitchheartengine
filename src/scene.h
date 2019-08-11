@@ -17,11 +17,18 @@
 
 namespace scene
 {
+    struct SceneHandle
+    {
+        i32 handle;
+        SceneManager *manager;
+    };
+    
     // @Note(Daniel): Invalid EntityHandles have the value 0.
     // All handles besides EntityHandles are 0-indexed
     struct EntityHandle
     {
         i32 handle;
+        SceneHandle scene_handle;
     };
     
     struct TransformComponentHandle
@@ -510,12 +517,6 @@ namespace scene
         i32 max_count;
     };
 
-    struct SceneHandle
-    {
-        i32 handle;
-        SceneManager *manager;
-    };
-
     struct Settings
     {
         struct
@@ -538,6 +539,8 @@ namespace scene
         b32 valid;
         b32 loaded;
         b32 persistent; // When true the scene is not freed, when a new scene is loaded
+
+        scene::EntityHandle editor_camera;
 
         MemoryArena memory_arena;
 
