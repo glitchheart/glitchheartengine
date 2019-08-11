@@ -161,6 +161,8 @@ struct Particles
     r32_4x* start_speed;
     r32_4x* start_life;
     r32_4x* start_angle;
+
+    i32 **current_index;
     
     r32_4x *life;
 };
@@ -170,7 +172,7 @@ struct ParticleSystemHandle
     i32 handle;
 };
 
-#define MAX_LIFETIME_VALUES 16
+#define MAX_LIFETIME_VALUES 8
 
 struct WorkQueue;
 struct ThreadInfo;

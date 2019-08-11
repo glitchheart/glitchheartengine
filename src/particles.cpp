@@ -143,59 +143,61 @@ i32 find_unused_particle(ParticleSystemInfo &particle_system)
 
 r32_4x get_t(r32_4x time_spent, r32_4x start_time, r32_4x recip)
 {
-	// r32_4x diff = end_time - start_time;
 	r32_4x in_this_index = time_spent - start_time;
-
-	// r32_4x index_over_diff = in_this_index / diff;
     r32_4x index_over_diff = in_this_index * recip;
-
-	r32_4x t = simd_max(0.0, simd_min(1.0, index_over_diff));
-
+	r32_4x t = clamp(index_over_diff, 0.0f, 1.0f);
+    // r32_4x t = index_over_diff;
 	return t;
 }
 
 template<typename T, typename V>
-T get_value_by_time(ParticleSystemInfo& particle_system, i32 index, r32_4x time_spent, OverLifetime<V> over_lifetime, T* _start_value = nullptr)
+T get_value_by_time(ParticleSystemInfo& info, r32_4x start_life, i32 index, r32_4x time_spent, OverLifetime<V> over_lifetime, T* _start_value = nullptr)
 {
-	i32 value_count = over_lifetime.count;
-
-	r32_4x start_life = particle_system.particles.start_life[index];
-
-    T start_value = T(over_lifetime.values[0]);
-    T end_value = T(over_lifetime.values[1]);
-
-    r32_4x start_key = r32_4x(over_lifetime.keys[0]) * start_life;
-    r32_4x end_key = r32_4x(over_lifetime.keys[1]) * start_life;
+    i32 value_count = over_lifetime.count;
     r32_4x recip = r32_4x(over_lifetime.recip_keys[0]);
 
-    r32_4x prev_key = start_key;
+    i32 *_current_indices = info.particles.current_index[index];
 
-    for(i32 i = 0; i < value_count; i++)
-    {
-        r32_4x mask = le_mask(time_spent, end_key);
-		i32 index = MIN(i + 1, value_count - 1);
-        
-        start_value = mask_conditional(mask, start_value, end_value);
-        end_value = mask_conditional(mask, end_value, T(over_lifetime.values[index]));
+    i32 current_indices[4] = {_current_indices[0], _current_indices[1], _current_indices[2], _current_indices[3]};
+    i32 end_indices[4] = {MIN(_current_indices[0] + 1, value_count - 1), MIN(_current_indices[1] + 1, value_count - 1),
+                              MIN(_current_indices[2] + 1, value_count - 1),MIN(_current_indices[3] + 1, value_count - 1)};
+    i32 next_indices[4] = {MIN(_current_indices[0] + 2, value_count - 1), MIN(_current_indices[1] + 2, value_count - 1),
+                              MIN(_current_indices[2] + 2, value_count - 1),MIN(_current_indices[3] + 2, value_count - 1)};
 
-        start_key = mask_conditional(mask, start_key, end_key * start_life);
-        recip = mask_conditional(mask, recip, r32_4x(over_lifetime.recip_keys[index]));
-        end_key = mask_conditional(mask, end_key, r32_4x(over_lifetime.keys[index]) * start_life);
+    assert(end_indices[0] < value_count);
 
-		if (i == 2)
-		{
-			int x = 0;
-		}
+    r32_4x start_key = r32_4x(over_lifetime.keys[current_indices[0]], over_lifetime.keys[current_indices[1]],
+                              over_lifetime.keys[current_indices[2]], over_lifetime.keys[current_indices[3]]);
+    r32_4x end_key = r32_4x(over_lifetime.keys[end_indices[0]], over_lifetime.keys[end_indices[1]],
+                            over_lifetime.keys[end_indices[2]], over_lifetime.keys[end_indices[3]]);
 
-        if(equal(prev_key, start_key))
-        {
-            break;
-        }
+    r32_4x start_recip = r32_4x(over_lifetime.recip_keys[current_indices[0]], over_lifetime.recip_keys[current_indices[1]],
+                              over_lifetime.recip_keys[current_indices[2]], over_lifetime.recip_keys[current_indices[3]]);
+    r32_4x end_recip = r32_4x(over_lifetime.recip_keys[end_indices[0]], over_lifetime.recip_keys[end_indices[1]],
+                            over_lifetime.recip_keys[end_indices[2]], over_lifetime.recip_keys[end_indices[3]]);
 
-        prev_key = start_key;
-    }
+    T start_value = T(over_lifetime.values[current_indices[0]], over_lifetime.values[current_indices[1]],
+                              over_lifetime.values[current_indices[2]], over_lifetime.values[current_indices[3]]);
+    T end_value = T(over_lifetime.values[end_indices[0]], over_lifetime.values[end_indices[1]],
+                            over_lifetime.values[end_indices[2]], over_lifetime.values[end_indices[3]]);
+    T next_value = T(over_lifetime.values[next_indices[0]], over_lifetime.values[next_indices[1]],
+                            over_lifetime.values[next_indices[2]], over_lifetime.values[next_indices[3]]);
+    
+    r32_4x mask = le_mask(time_spent, end_key);
 
-    r32_4x t = get_t(time_spent, start_key, recip);
+    start_key = mask_conditional(mask, start_key, end_key);
+    start_value = mask_conditional(mask, start_value, end_value);
+    end_value = mask_conditional(mask, end_value, next_value);
+    recip = mask_conditional(mask, start_recip, end_recip);
+
+    r32_4x current = r32_4x(current_indices);
+    r32_4x next = min(current + 1.0f, r32_4x(value_count - 1));
+
+    current = mask_conditional(mask, current, next);
+
+    _mm_store_si128((__m128i*)info.particles.current_index[index], _mm_cvtps_epi32(current.p));
+
+    r32_4x t = get_t(time_spent, start_key * start_life, recip);
 	T result = math::lerp(start_value, t, end_value);
 
 	return _start_value ? (*_start_value) * result : result;
@@ -242,20 +244,16 @@ static void update_particles(ParticleWorkData &work_data)
 
             __m128i alive = _mm_castps_si128(alive_mask.p);
 
-            __m128i i1 = _mm_shuffle_epi32(alive, 0);
-            __m128i i2 = _mm_shuffle_epi32(alive, 1);
-            __m128i i3 = _mm_shuffle_epi32(alive, 2);
-            __m128i i4 = _mm_shuffle_epi32(alive, 3);
+            i32 count = 0;
+            i32 v1 = _mm_extract_epi32(alive, 0);
+            i32 v2 = _mm_extract_epi32(alive, 1);
+            i32 v3 = _mm_extract_epi32(alive, 2);
+            i32 v4 = _mm_extract_epi32(alive, 3);
+            count -= v1 + v2 + v3 + v4;
 
-            __m128i count = _mm_set1_epi32(0);
-            count = _mm_sub_epi32(count, i1);
-            count = _mm_sub_epi32(count, i2);
-            count = _mm_sub_epi32(count, i3);
-            count = _mm_sub_epi32(count, i4);
+            assert(active_particle_count == count);
 
-            assert(active_particle_count == _mm_cvtsi128_si32(count));
-
-            active_particle_count = _mm_cvtsi128_si32(count);
+            active_particle_count = count;
         }
         else
         {
@@ -275,7 +273,7 @@ static void update_particles(ParticleWorkData &work_data)
 
         if(size_value_count > 0)
         {
-            size = get_value_by_time<Vec2_4x, math::Vec2>(info, main_index, time_spent, info.size_over_lifetime, &info.particles.start_size[main_index]);
+            size = get_value_by_time<Vec2_4x, math::Vec2>(info, start_life, main_index, time_spent, info.size_over_lifetime, &info.particles.start_size[main_index]);
         }
         else
         {
@@ -284,7 +282,7 @@ static void update_particles(ParticleWorkData &work_data)
 
         if(angle_value_count > 0)
         {
-            angle = get_value_by_time<r32_4x, r32>(info, main_index, time_spent, info.angle_over_lifetime, &info.particles.start_angle[main_index]);
+            angle = get_value_by_time<r32_4x, r32>(info, start_life, main_index, time_spent, info.angle_over_lifetime, &info.particles.start_angle[main_index]);
         }
         else
         {
@@ -293,7 +291,7 @@ static void update_particles(ParticleWorkData &work_data)
 
         if(color_value_count > 0)
         {
-            color = get_value_by_time<Rgba_4x, math::Rgba>(info, main_index, time_spent, info.color_over_lifetime);
+            color = get_value_by_time<Rgba_4x, math::Rgba>(info, start_life, main_index, time_spent, info.color_over_lifetime);
         }
         else
         {
@@ -302,7 +300,7 @@ static void update_particles(ParticleWorkData &work_data)
 
         if(speed_value_count > 0)
         {
-            r32_4x speed = get_value_by_time<r32_4x, r32>(info, main_index, time_spent, info.speed_over_lifetime, &info.particles.start_speed[main_index]);
+            r32_4x speed = get_value_by_time<r32_4x, r32>(info, start_life, main_index, time_spent, info.speed_over_lifetime, &info.particles.start_speed[main_index]);
             info.particles.position[main_index] += info.particles.direction[main_index] * speed * (r32)work_data.delta_time;
         }
         else
@@ -480,8 +478,6 @@ void update_particles(Renderer *renderer, ParticleSystemInfo &particle_system, r
         particle_system.particle_count += work_data.particle_count;
     }
 
-    
-    
 	*emitted_this_frame = 0;
 }
 
@@ -615,10 +611,15 @@ void emit_particle(Renderer *renderer, ParticleSystemInfo &particle_system, i32*
     break;
     }
     
-	/// @Note(Niels): Generate emission info based on the emitter function
-
 	particle_system.particles.position[original_index] = spawn_info.position;
 	Vec3_4x new_direction = spawn_info.direction;
+
+    //for(i32 i = 0; i < 4; i++)
+    //{
+    //    particle_system.particles.current_index[original_index][i] = 0;
+    //}
+
+	memset(particle_system.particles.current_index[original_index], 0, sizeof(i32) * 4);
 
 	// @Note(Niels): Now compute the direction based on the direction given in the attributes and the randomly geneerated one
 	particle_system.particles.direction[original_index] = math::normalize(particle_system.attributes.direction

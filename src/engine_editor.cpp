@@ -393,7 +393,7 @@ namespace editor
                                 core.renderer->particles.api->pause_particle_system(ps_handle, core.renderer, paused);
                             }
 
-                            ImGui::DragScalar("Duration", ImGuiDataType_Double, &attributes.duration, delta_time);
+                            ImGui::DragScalar("Duration", ImGuiDataType_Float, &attributes.duration, delta_time);
 
                             if(ImGui::Checkbox("Prewarm", &prewarm))
                             {
@@ -438,7 +438,7 @@ namespace editor
                                 
                             if(attributes.start_life_time_type == StartParameterType::CONSTANT)
                             {
-                                ImGui::DragScalar("Start lifetime", ImGuiDataType_Double, &attributes.life.constant.life_time, delta_time);
+                                ImGui::DragScalar("Start lifetime", ImGuiDataType_Float, &attributes.life.constant.life_time, delta_time);
                             }
                             else
                             {
@@ -546,7 +546,7 @@ namespace editor
                                 
                                 if(ps->color_over_lifetime.values)
                                 {
-                                    ImGui::DragScalar("Selected key", ImGuiDataType_Double, &ps->color_over_lifetime.keys[selected_color_index], delta_time);
+                                    ImGui::DragScalar("Selected key", ImGuiDataType_Float, &ps->color_over_lifetime.keys[selected_color_index], delta_time);
                                     ImGui::ColorEdit4("Selected color", ps->color_over_lifetime.values[selected_color_index].e);
                                 }
                                 else
@@ -555,7 +555,7 @@ namespace editor
                                     // math::clamp(0.0, ui::field_r64(global_state->ui_state, 0.0, "Selected key"), 1.0);
                                 }
 
-                                ImGui::DragScalar("New key", ImGuiDataType_Double, &new_color_key, delta_time);
+                                ImGui::DragScalar("New key", ImGuiDataType_Float, &new_color_key, delta_time);
                                 ImGui::ColorEdit4("New color", new_color.e);
 
                                 if(ImGui::Button("Add"))
@@ -613,7 +613,7 @@ namespace editor
 
                                 if(ps->size_over_lifetime.values)
                                 {
-                                    ImGui::DragScalar("Selected key", ImGuiDataType_Double, &ps->size_over_lifetime.keys[selected_size_index], delta_time);
+                                    ImGui::DragScalar("Selected key", ImGuiDataType_Float, &ps->size_over_lifetime.keys[selected_size_index], delta_time);
                                     ImGui::DragFloat2("Selected size", ps->size_over_lifetime.values[selected_size_index].e);
                                 }
                                 else
@@ -625,7 +625,7 @@ namespace editor
                                 static r64 new_size_key = 0.0;
                                 static math::Vec2 new_size;
                                 
-                                ImGui::DragScalar("New key", ImGuiDataType_Double, &new_size_key, delta_time);
+                                ImGui::DragScalar("New key", ImGuiDataType_Float, &new_size_key, delta_time);
                                 ImGui::DragFloat2("New size", new_size.e);
                             
                                 if(ImGui::Button("Add"))
@@ -684,7 +684,7 @@ namespace editor
 
                                 if(ps->speed_over_lifetime.values)
                                 {
-                                    ImGui::DragScalar("Selected key", ImGuiDataType_Double, &ps->speed_over_lifetime.keys[selected_speed_index], delta_time);
+                                    ImGui::DragScalar("Selected key", ImGuiDataType_Float, &ps->speed_over_lifetime.keys[selected_speed_index], delta_time);
                                     ImGui::DragFloat("Selected speed", &ps->speed_over_lifetime.values[selected_speed_index]);
                                 }
                                 else
@@ -696,7 +696,7 @@ namespace editor
                                 static r64 new_speed_key = 0.0;
                                 static r32 new_speed = 0.0f;
 
-                                ImGui::DragScalar("New key", ImGuiDataType_Double, &new_speed_key, delta_time);
+                                ImGui::DragScalar("New key", ImGuiDataType_Float, &new_speed_key, delta_time);
                                 ImGui::DragFloat("New speed", &new_speed);
 
                                 if(ImGui::Button("Add"))

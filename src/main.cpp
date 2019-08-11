@@ -374,7 +374,7 @@ static void check_shader_files(WorkQueue *queue, void *data)
     }
 }
 
-static void init_renderer(GameCode &game, Renderer *renderer, WorkQueue *reload_queue, ThreadInfo *reload_thread, ParticleApi particle_api)
+static void init_renderer(GameCode &game, Renderer *renderer, WorkQueue *reload_queue, ThreadInfo *reload_thread, ParticleApi& particle_api)
 {
     renderer->pixels_per_unit = global_pixels_per_unit;
     renderer->frame_lock = 0;

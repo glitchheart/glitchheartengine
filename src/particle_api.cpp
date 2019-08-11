@@ -119,6 +119,12 @@ static void _allocate_particle_system(Renderer *renderer, ParticleSystemInfo& sy
     
     system_info.particles.position = push_array_simd(simd_arena, max_over_four, Vec3_4x);
     system_info.particles.direction = push_array_simd(simd_arena, max_over_four, Vec3_4x);
+    system_info.particles.current_index = push_array(simd_arena, max_over_four * 4, i32*);
+
+    for(i32 i = 0; i < max_over_four; i++)
+    {
+        system_info.particles.current_index[i] = push_array(simd_arena, 4, i32);
+    }
     
     system_info.particles.start_size = push_array_simd(simd_arena, max_over_four, Vec2_4x);
     system_info.particles.start_life = push_array_simd(simd_arena, max_over_four, r32_4x);
@@ -410,7 +416,16 @@ static i32 add_key(OverLifetime<T> &over_lifetime, r32 key_time, T value, Memory
 
     for(i32 i = 0; i < over_lifetime.count - 1; i++)
     {
-        recip_keys[i] = 1 / (keys[i + 1] - keys[i]);
+        recip_keys[i] = 1.0f / (keys[i + 1] - keys[i]);
+    }
+
+    if(keys[over_lifetime.count - 1] >= 0.99f)
+    {
+        recip_keys[over_lifetime.count - 1] = 1.0f;
+    }
+    else
+    {
+        recip_keys[over_lifetime.count - 1] = 1.0f / (1.0f - keys[over_lifetime.count - 1]);
     }
 
     return new_index;

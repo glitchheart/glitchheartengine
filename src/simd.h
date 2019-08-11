@@ -3,16 +3,6 @@
 
 #include "check_intrinsics.h"
 
-#if defined(__APPLE__ ) || defined(__linux)
-#define SSE41 os::HW_SSE41
-/* #include "smmintrin.h" */
-#include "immintrin.h"
-#include "emmintrin.h"
-#elif defined(_WIN32)
-#define AVX os::HW_AVX
-#define AVX512 os::HW_AVX512F
-#endif
-
 union r32_4x
 {
     __m128 p;
@@ -39,6 +29,24 @@ union r32_4x
     explicit r32_4x(r64 _a, r64 _b, r64 _c, r64 _d)
     {
         p = _mm_setr_ps(_a, _b, _c, _d);
+    }
+
+    explicit r32_4x(i32 a, i32 b, i32 c, i32 d)
+    {
+        p = _mm_setr_ps((r32)a, (r32)b, (r32)c, (r32)d);
+    }
+
+    explicit r32_4x(i32 v)
+    {
+        p = _mm_set1_ps((r32)v);
+    }
+
+    explicit r32_4x(i32* v)
+    {
+        p = _mm_setr_ps(*(r32*)&v[0],
+                        *(r32*)&v[1],
+                        *(r32*)&v[2],
+                        *(r32*)&v[3]);
     }
     
     explicit r32_4x(u32 _a, u32 _b, u32 _c, u32 _d)
@@ -226,9 +234,11 @@ inline r32_4x le_mask(r32_4x a, r32 b)
 
 inline __m128 mask_conditional(__m128 mask, __m128 a, __m128 b)
 {
-    __m128 a_cond = _mm_and_ps(mask, a);
-    __m128 b_cond = _mm_andnot_ps(mask, b);
-    __m128 res = _mm_or_ps(a_cond, b_cond);
+
+    /* __m128 a_cond = _mm_and_ps(mask, a); */
+    /* __m128 b_cond = _mm_andnot_ps(mask, b); */
+    /* __m128 res = _mm_or_ps(a_cond, b_cond); */
+    __m128 res = _mm_blendv_ps(b, a, mask);
     return res;
 }
 
@@ -662,21 +672,55 @@ inline r32_4x operator/(r32_4x a, r32 b)
     return res;
 }
 
-
-
-inline r32_4x simd_min(r32 left, r32_4x right)
+inline __m128 min(__m128 left, __m128 right)
 {
-    __m128 min = _mm_min_ps(_mm_set1_ps(left), right.p);
-    return r32_4x(min);
+    return (_mm_min_ps(left, right));
 }
 
-inline r32_4x simd_max(r32 left, r32_4x right)
+inline __m128 min(r32 left, __m128 right)
 {
-    __m128 max = _mm_max_ps(_mm_set1_ps(left), right.p);
-    return r32_4x(max);
+    return (_mm_min_ps(_mm_set1_ps(left), right));
 }
 
+inline __m128 max(__m128 left, __m128 right)
+{
+    return (_mm_max_ps(left, right));
+}
 
+inline __m128 max(r32 left, __m128 right)
+{
+    return (_mm_max_ps(_mm_set1_ps(left), right));
+}
+
+inline r32_4x min(r32_4x left, r32_4x right)
+{
+    return r32_4x(min(left.p, right.p));
+}
+
+inline r32_4x min(r32 left, r32_4x right)
+{
+    return r32_4x(min(left, right.p));
+}
+
+inline r32_4x max(r32_4x left, r32_4x right)
+{
+    return r32_4x(max(left.p, right.p));
+}
+
+inline r32_4x max(r32 left, r32_4x right)
+{
+    return r32_4x(max(left, right.p));
+}
+
+inline __m128 clamp(__m128 v, r32 _min, r32 _max)
+{
+    return max(_min, min(_max, v));
+}
+
+inline r32_4x clamp(r32_4x v, r32 _min, r32 _max)
+{
+    return r32_4x(clamp(v.p, _min, _max));
+}
 
 inline r32_4x operator^(r32_4x a, r32_4x b)
 {
@@ -1490,8 +1534,8 @@ namespace math
     {
         r32_4x res(0.0f);
         
-        r32_4x min = simd_min(1.0, t);
-        r32_4x inverse_min = 1.0f - min;
+        r32_4x m = min(1.0, t);
+        r32_4x inverse_min = 1.0f - m;
         r32_4x a_times_inverse = inverse_min * a;
         
         res = a_times_inverse + (t * b);
