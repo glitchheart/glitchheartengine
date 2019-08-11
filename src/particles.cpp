@@ -146,7 +146,6 @@ r32_4x get_t(r32_4x time_spent, r32_4x start_time, r32_4x recip)
 	r32_4x in_this_index = time_spent - start_time;
     r32_4x index_over_diff = in_this_index * recip;
 	r32_4x t = clamp(index_over_diff, 0.0f, 1.0f);
-    // r32_4x t = index_over_diff;
 	return t;
 }
 
@@ -197,7 +196,7 @@ T get_value_by_time(ParticleSystemInfo& info, r32_4x start_life, i32 index, r32_
 
     _mm_store_si128((__m128i*)info.particles.current_index[index], _mm_cvtps_epi32(current.p));
 
-    r32_4x t = get_t(time_spent, start_key * start_life, recip);
+    r32_4x t = get_t(time_spent, start_key * start_life, recip * start_life);
 	T result = math::lerp(start_value, t, end_value);
 
 	return _start_value ? (*_start_value) * result : result;
@@ -500,47 +499,47 @@ void emit_particle(Renderer *renderer, ParticleSystemInfo &particle_system, i32*
 	}
 
 	// @Note(Niels): Init particle to the init values saved in the particle system
-	if (particle_system.attributes.start_life_time_type == StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
+	if (particle_system.attributes.lifetime.type == StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
 	{
-		r32_4x v = random_between_4x(entropy, particle_system.attributes.life.random_between_two_constants.l0, particle_system.attributes.life.random_between_two_constants.l1);
+		r32_4x v = random_between_4x(entropy, particle_system.attributes.lifetime.random_between_two_constants.v0, particle_system.attributes.lifetime.random_between_two_constants.v1);
 		particle_system.particles.life[original_index] = v;
 		particle_system.particles.start_life[original_index] = v;
 	}
 	else
 	{
-		particle_system.particles.life[original_index] = particle_system.attributes.life.constant.life_time;
-		particle_system.particles.start_life[original_index] = particle_system.attributes.life.constant.life_time;
+		particle_system.particles.life[original_index] = particle_system.attributes.lifetime.constant.value;
+		particle_system.particles.start_life[original_index] = particle_system.attributes.lifetime.constant.value;
 	}
 
-	if (particle_system.attributes.start_speed_type == StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
+	if (particle_system.attributes.speed.type == StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
 	{
-		r32_4x v = random_between_4x(entropy, particle_system.attributes.speed.random_between_two_constants.s0, particle_system.attributes.speed.random_between_two_constants.s1);
+		r32_4x v = random_between_4x(entropy, particle_system.attributes.speed.random_between_two_constants.v0, particle_system.attributes.speed.random_between_two_constants.v1);
 		particle_system.particles.start_speed[original_index] = v;
 	}
 	else
 	{
-		particle_system.particles.start_speed[original_index] = particle_system.attributes.speed.constant.start_speed;
+		particle_system.particles.start_speed[original_index] = particle_system.attributes.speed.constant.value;
 	}
 
-	if (particle_system.attributes.start_size_type == StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
+	if (particle_system.attributes.size.type == StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
 	{
-		r32_4x v = random_between_4x(entropy, particle_system.attributes.size.random_between_two_constants.s0, particle_system.attributes.size.random_between_two_constants.s1);
+		r32_4x v = random_between_4x(entropy, particle_system.attributes.size.random_between_two_constants.v0, particle_system.attributes.size.random_between_two_constants.v1);
 		Vec2_4x size_val = Vec2_4x(v, v) * tex_size;
 		particle_system.particles.start_size[original_index] = size_val;
 	}
 	else
 	{
-		particle_system.particles.start_size[original_index] = Vec2_4x(particle_system.attributes.size.constant.start_size) * tex_size;
+		particle_system.particles.start_size[original_index] = Vec2_4x(particle_system.attributes.size.constant.value) * tex_size;
 	}
 
-	if (particle_system.attributes.start_angle_type == StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
+	if (particle_system.attributes.angle.type == StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
 	{
-		r32_4x v = random_between_4x(entropy, particle_system.attributes.angle.random_between_two_constants.a0, particle_system.attributes.angle.random_between_two_constants.a1);
+		r32_4x v = random_between_4x(entropy, particle_system.attributes.angle.random_between_two_constants.v0, particle_system.attributes.angle.random_between_two_constants.v1);
 		particle_system.particles.start_angle[original_index] = v;
 	}
 	else
 	{
-		particle_system.particles.start_angle[original_index] = particle_system.attributes.angle.constant.start_angle;
+		particle_system.particles.start_angle[original_index] = particle_system.attributes.angle.constant.value;
 	}
 
 	particle_system.particles.relative_position[original_index] = Vec3_4x(0.0f);
@@ -614,12 +613,7 @@ void emit_particle(Renderer *renderer, ParticleSystemInfo &particle_system, i32*
 	particle_system.particles.position[original_index] = spawn_info.position;
 	Vec3_4x new_direction = spawn_info.direction;
 
-    //for(i32 i = 0; i < 4; i++)
-    //{
-    //    particle_system.particles.current_index[original_index][i] = 0;
-    //}
-
-	memset(particle_system.particles.current_index[original_index], 0, sizeof(i32) * 4);
+ 	memset(particle_system.particles.current_index[original_index], 0, sizeof(i32) * 4);
 
 	// @Note(Niels): Now compute the direction based on the direction given in the attributes and the randomly geneerated one
 	particle_system.particles.direction[original_index] = math::normalize(particle_system.attributes.direction

@@ -412,65 +412,65 @@ namespace editor
                             // Start size
                             char* start_param_types[] = {"Constant", "Random Between Two Constants"};
 
-                            i32 start_size_type = (i32)attributes.start_size_type;
+                            i32 start_size_type = (i32)attributes.size.type;
                             
                             ImGui::Combo("Start size type", &start_size_type, start_param_types, IM_ARRAYSIZE(start_param_types));
-                            attributes.start_size_type = (StartParameterType)start_size_type;
+                            attributes.size.type = (StartParameterType)start_size_type;
                             
-                            if(attributes.start_size_type == StartParameterType::CONSTANT)
+                            if(attributes.size.type == StartParameterType::CONSTANT)
                             {
-                                ImGui::DragFloat("Start size", &attributes.size.constant.start_size);
+                                ImGui::DragFloat("Start size", &attributes.size.constant.value);
                             }
                             else
                             {
-                                math::Vec2 constants(attributes.size.random_between_two_constants.s0, attributes.size.random_between_two_constants.s1);
+                                math::Vec2 constants(attributes.size.random_between_two_constants.v0, attributes.size.random_between_two_constants.v1);
                                 ImGui::DragFloat2("Start size", constants.e);
                             
-                                attributes.size.random_between_two_constants.s0 = constants.x;
-                                attributes.size.random_between_two_constants.s1 = constants.y;
+                                attributes.size.random_between_two_constants.v0 = constants.x;
+                                attributes.size.random_between_two_constants.v1 = constants.y;
                             }
                             // End start size
 
                             // Start lifetime
-                            i32 start_life_time_type = (i32)attributes.start_life_time_type;
+                            i32 start_life_time_type = (i32)attributes.lifetime.type;
                             
                             ImGui::Combo("Start lifetime type", &start_life_time_type, start_param_types, IM_ARRAYSIZE(start_param_types));
 
-                            attributes.start_life_time_type = (StartParameterType)start_life_time_type;
+                            attributes.lifetime.type = (StartParameterType)start_life_time_type;
                                 
-                            if(attributes.start_life_time_type == StartParameterType::CONSTANT)
+                            if(attributes.lifetime.type == StartParameterType::CONSTANT)
                             {
-                                ImGui::DragScalar("Start lifetime", ImGuiDataType_Float, &attributes.life.constant.life_time, delta_time);
+                                ImGui::DragScalar("Start lifetime", ImGuiDataType_Float, &attributes.lifetime.constant.value, delta_time);
                             }
                             else
                             {
-                                math::Vec2 constants(attributes.life.random_between_two_constants.l0, attributes.life.random_between_two_constants.l1);
+                                math::Vec2 constants(attributes.lifetime.random_between_two_constants.v0, attributes.lifetime.random_between_two_constants.v1);
                                 ImGui::DragFloat2("Start lifetime", constants.e);
                             
-                                attributes.life.random_between_two_constants.l0 = constants.x;
-                                attributes.life.random_between_two_constants.l1 = constants.y;
+                                attributes.lifetime.random_between_two_constants.v0 = constants.x;
+                                attributes.lifetime.random_between_two_constants.v1 = constants.y;
                             }
                 
                             // End start lifetime
                 
                             // // Start speed
-                            i32 start_speed_type = (i32)attributes.start_speed_type;
+                            i32 start_speed_type = (i32)attributes.speed.type;
                             
                             ImGui::Combo("Start speed type", &start_speed_type, start_param_types, IM_ARRAYSIZE(start_param_types));
 
-                            attributes.start_speed_type = (StartParameterType)start_speed_type;
+                            attributes.speed.type = (StartParameterType)start_speed_type;
                             
-                            if(attributes.start_speed_type == StartParameterType::CONSTANT)
+                            if(attributes.speed.type == StartParameterType::CONSTANT)
                             {
-                                ImGui::DragFloat("Start speed", &attributes.speed.constant.start_speed);
+                                ImGui::DragFloat("Start speed", &attributes.speed.constant.value);
                             }
                             else
                             {
-                                math::Vec2 constants(attributes.speed.random_between_two_constants.s0, attributes.speed.random_between_two_constants.s1);
+                                math::Vec2 constants(attributes.speed.random_between_two_constants.v0, attributes.speed.random_between_two_constants.v1);
                                 ImGui::DragFloat2("Start speed", constants.e);
                             
-                                attributes.speed.random_between_two_constants.s0 = constants.x;
-                                attributes.speed.random_between_two_constants.s1 = constants.y;
+                                attributes.speed.random_between_two_constants.v0 = constants.x;
+                                attributes.speed.random_between_two_constants.v1 = constants.y;
                             }
 
                             // End start speed

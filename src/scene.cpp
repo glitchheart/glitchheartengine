@@ -3236,16 +3236,16 @@ static Camera get_standard_camera(SceneManager& manager)
                         }
                         else if(starts_with(buffer, "start_size"))
                         {
-                            if(attributes.start_size_type != StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
+                            if(attributes.size.type != StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
                             {
-                                sscanf(buffer, "start_size: %f", &attributes.size.constant.start_size);
-                                attributes.start_size_type = StartParameterType::CONSTANT;
+                                sscanf(buffer, "start_size: %f", &attributes.size.constant.value);
+                                attributes.size.type = StartParameterType::CONSTANT;
                             }
                         }
                         else if(starts_with(buffer, "random_start_size"))
                         {
-                            sscanf(buffer, "random_start_size: %f %f", &attributes.size.random_between_two_constants.s0, &attributes.size.random_between_two_constants.s1);
-                            attributes.start_size_type = StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS;
+                            sscanf(buffer, "random_start_size: %f %f", &attributes.size.random_between_two_constants.v0, &attributes.size.random_between_two_constants.v1);
+                            attributes.size.type = StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS;
                         }
                         else if(starts_with(buffer, "start_color"))
                         {
@@ -3253,29 +3253,29 @@ static Camera get_standard_camera(SceneManager& manager)
                         }
                         else if(starts_with(buffer, "start_speed"))
                         {
-                            if(attributes.start_speed_type != StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
+                            if(attributes.speed.type != StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
                             {
-                                sscanf(buffer, "start_speed: %f", &attributes.speed.constant.start_speed);
-                                attributes.start_speed_type = StartParameterType::CONSTANT;
+                                sscanf(buffer, "start_speed: %f", &attributes.speed.constant.value);
+                                attributes.speed.type = StartParameterType::CONSTANT;
                             }
                         }
                         else if(starts_with(buffer, "random_start_speed"))
                         {
-                            sscanf(buffer, "random_start_speed: %f %f", &attributes.speed.random_between_two_constants.s0, &attributes.speed.random_between_two_constants.s1);
-                            attributes.start_speed_type = StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS;
+                            sscanf(buffer, "random_start_speed: %f %f", &attributes.speed.random_between_two_constants.v0, &attributes.speed.random_between_two_constants.v0);
+                            attributes.speed.type = StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS;
                         }
                         else if(starts_with(buffer, "life_time"))
                         {
-                            if(attributes.start_life_time_type != StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
+                            if(attributes.lifetime.type != StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
                             {
-                                sscanf(buffer, "life_time: %f", &attributes.life.constant.life_time);
-                                attributes.start_life_time_type = StartParameterType::CONSTANT;
+                                sscanf(buffer, "life_time: %f", &attributes.lifetime.constant.value);
+                                attributes.lifetime.type = StartParameterType::CONSTANT;
                             }
                         }
                         else if(starts_with(buffer, "random_life_time"))
                         {
-                            sscanf(buffer, "random_life_time: %f %f", &attributes.life.random_between_two_constants.l0, &attributes.life.random_between_two_constants.l1);
-                            attributes.start_life_time_type = StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS;
+                            sscanf(buffer, "random_life_time: %f %f", &attributes.lifetime.random_between_two_constants.v0, &attributes.lifetime.random_between_two_constants.v1);
+                            attributes.lifetime.type = StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS;
                         }
                         else if(starts_with(buffer, "per_second"))
                         {

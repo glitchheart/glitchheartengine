@@ -69,6 +69,24 @@ struct EmissionModule
     EmissionFuncType emitter_func_type;
 };
 
+template<typename T>
+struct InitValues
+{
+    StartParameterType type;
+    union
+    {
+        struct
+        {
+            T v0;
+            T v1;
+        } random_between_two_constants;
+        struct
+        {
+            T value;
+        } constant;
+    };
+};
+
 struct ParticleSystemAttributes
 {
     b32 looping;
@@ -81,67 +99,14 @@ struct ParticleSystemAttributes
     rendering::BufferHandle buffer;
 
     math::Rgba start_color;
-    
-    StartParameterType start_size_type;
-    union
-    {
-        struct
-        {
-            // @Note: Right now, one value makes more sense than x,y
-            r32 s0;
-            r32 s1;
-        } random_between_two_constants;
-        struct
-        {
-            r32 start_size;            
-        } constant;
-    } size;
 
-    StartParameterType start_angle_type;
-    union
-    {
-        struct
-        {
-            r32 a0;
-            r32 a1;
-        } random_between_two_constants;
-        struct
-        {
-            r32 start_angle;            
-        } constant;
-    } angle;
-    
+    InitValues<r32> size;
+    InitValues<r32> angle;
+    InitValues<r32> lifetime;
+    InitValues<r32> speed;
+        
     math::Vec3 direction;
     math::Vec3 base_position;
-    
-    StartParameterType start_life_time_type;
-    union
-    {
-        struct
-        {
-            r32 l0;
-            r32 l1;
-        } random_between_two_constants;
-        struct
-        {
-            r32 life_time;            
-        } constant;
-    } life;
-
-    StartParameterType start_speed_type;
-    union
-    {
-        struct
-        {
-            r32 s0;
-            r32 s1;
-        } random_between_two_constants;
-        struct
-        {
-            r32 start_speed;            
-        } constant;
-    } speed;
-
     r32 spread;
     i32 particles_per_second;
     rendering::TextureHandle texture_handle;
