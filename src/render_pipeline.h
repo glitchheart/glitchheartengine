@@ -4,7 +4,6 @@
 namespace rendering
 {
     
-#define MAX_INSTANCE_BUFFERS 1024
 #define Z_LAYERS 251
     
     struct ShaderHandle

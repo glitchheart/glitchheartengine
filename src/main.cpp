@@ -610,6 +610,12 @@ static void init_renderer(GameCode &game, Renderer *renderer, WorkQueue *reload_
     renderer->render.instancing.internal_float4_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
     renderer->render.instancing.internal_mat4_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
 
+    renderer->render.instancing.float_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, r32*);
+    renderer->render.instancing.float2_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, math::Vec2*);
+    renderer->render.instancing.float3_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, math::Vec3*);
+    renderer->render.instancing.float4_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, math::Vec4*);
+    renderer->render.instancing.mat4_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, math::Mat4*);
+
     renderer->render.instancing.dirty_float_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);
     renderer->render.instancing.dirty_float2_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);
     renderer->render.instancing.dirty_float3_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);

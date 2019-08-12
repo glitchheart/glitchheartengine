@@ -3,6 +3,7 @@
 
 #define UI_COORD_DIMENSION 1000.0f
 #define MAX_MATERIAL_INSTANCE_ARRAYS 8
+#define MAX_INSTANCE_BUFFERS 1024
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #ifdef _WIN32
@@ -705,11 +706,11 @@ struct Renderer
             b32 *dirty_mat4_buffers;
             
             // All instance buffers
-            r32 *float_buffers[MAX_INSTANCE_BUFFERS];
-            math::Vec2 *float2_buffers[MAX_INSTANCE_BUFFERS];
-            math::Vec3 *float3_buffers[MAX_INSTANCE_BUFFERS];
-            math::Vec4 *float4_buffers[MAX_INSTANCE_BUFFERS];
-            math::Mat4 *mat4_buffers[MAX_INSTANCE_BUFFERS];
+            r32 **float_buffers;;
+            math::Vec2 **float2_buffers;
+            math::Vec3 **float3_buffers;
+            math::Vec4 **float4_buffers;;
+            math::Mat4 **mat4_buffers;;
 
             // All internal instance buffers (API specific)
             Buffer **internal_float_buffers;
