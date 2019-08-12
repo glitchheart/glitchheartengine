@@ -66,6 +66,7 @@ static MemoryState memory_state;
 #include "rendering.cpp"
 #include "fade.cpp"
 #include "assets.cpp"
+#include "bezier.cpp"
 #include "particles.cpp"
 #include "particle_api.cpp"
 
@@ -373,7 +374,7 @@ static void check_shader_files(WorkQueue *queue, void *data)
     }
 }
 
-static void init_renderer(GameCode &game, Renderer *renderer, WorkQueue *reload_queue, ThreadInfo *reload_thread, ParticleApi particle_api)
+static void init_renderer(GameCode &game, Renderer *renderer, WorkQueue *reload_queue, ThreadInfo *reload_thread, ParticleApi& particle_api)
 {
     renderer->pixels_per_unit = global_pixels_per_unit;
     renderer->frame_lock = 0;
@@ -574,6 +575,8 @@ static void init_renderer(GameCode &game, Renderer *renderer, WorkQueue *reload_
     renderer->render.textured_ui_quad_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/ui_texture_quad.shd");
     renderer->render.ui.material = rendering::create_material(renderer, renderer->render.ui_quad_shader);
     renderer->render.ui.textured_material = rendering::create_material(renderer, renderer->render.textured_ui_quad_shader);
+    renderer->render.gradient_ui_quad_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/ui_gradient.shd");
+    renderer->render.ui.gradient_material = rendering::create_material(renderer, renderer->render.gradient_ui_quad_shader);
     
     // Initialize font material
     renderer->render.font_shader = rendering::load_shader(renderer, "../engine_assets/standard_shaders/font.shd");
@@ -606,6 +609,12 @@ static void init_renderer(GameCode &game, Renderer *renderer, WorkQueue *reload_
     renderer->render.instancing.internal_float3_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
     renderer->render.instancing.internal_float4_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
     renderer->render.instancing.internal_mat4_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, Buffer*);
+
+    renderer->render.instancing.float_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, r32*);
+    renderer->render.instancing.float2_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, math::Vec2*);
+    renderer->render.instancing.float3_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, math::Vec3*);
+    renderer->render.instancing.float4_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, math::Vec4*);
+    renderer->render.instancing.mat4_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, math::Mat4*);
 
     renderer->render.instancing.dirty_float_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);
     renderer->render.instancing.dirty_float2_buffers = push_array(&renderer->buffer_arena, MAX_INSTANCE_BUFFERS, b32);
@@ -851,15 +860,15 @@ int main(int argc, char **args)
     particle_api.update_particle_system = &update_particle_system;
 
     particle_api.add_burst_over_time_key = &add_burst_over_time_key;
-    particle_api.add_angle_key = &add_angle_key;
-    particle_api.remove_angle_key = &remove_angle_key;
-    particle_api.add_color_key = &add_color_key;
-    particle_api.remove_color_key = &remove_color_key;
-    particle_api.add_size_key = &add_size_key;
-    particle_api.remove_size_key = &remove_size_key;
+    particle_api.add_angle_key = &(add_key<r32>);
+    particle_api.remove_angle_key = &remove_key<r32>;
+    particle_api.add_color_key = &add_key<math::Rgba>;
+    particle_api.remove_color_key = &remove_key<math::Rgba>;
+    particle_api.add_size_key = &add_key<math::Vec2>;
+    particle_api.remove_size_key = &remove_key<math::Vec2>;
 
-    particle_api.add_speed_key = &add_speed_key;
-    particle_api.remove_speed_key = &remove_speed_key;
+    particle_api.add_speed_key = &add_key<r32>;
+    particle_api.remove_speed_key = &remove_key<r32>;
 
     GameCode game = {};
     game.is_valid = false;
@@ -1003,8 +1012,6 @@ int main(int argc, char **args)
 
         if(scene_manager->scene_loaded)
         {
-            scene::Scene &current_scene = scene::get_scene(scene_manager->loaded_scene);
-            
             #ifdef EDITOR
             if(scene_manager->mode == scene::SceneMode::RUNNING)
             {
@@ -1019,6 +1026,8 @@ int main(int argc, char **args)
 
                 if(editor_state.mode == editor::EditorMode::BUILT_IN)
                 {
+                    scene::Scene &current_scene = scene::get_scene(scene_manager->loaded_scene);
+            
                     editor::_render_hierarchy(current_scene, &editor_state, &input_controller, delta_time);
                     editor::_render_inspector(current_scene, &editor_state, &input_controller, delta_time);
                     editor::_render_resources(project_state, &editor_state, scene_manager, delta_time);

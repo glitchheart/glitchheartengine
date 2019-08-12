@@ -1166,7 +1166,7 @@ namespace rendering
         rendering::set_light_space_matrices(renderer, projection, light_view_matrix);
     }
         
-    static inline Material &get_material_instance(MaterialInstanceHandle handle, Renderer *renderer)
+    static inline Material& get_material_instance(MaterialInstanceHandle handle, Renderer *renderer)
     {
         i32 real_handle = renderer->render._internal_material_instance_handles[handle.handle - 1];
         return renderer->render.material_instances[real_handle];
@@ -1175,7 +1175,6 @@ namespace rendering
     static UniformValue *get_array_variable_mapping(MaterialInstanceHandle handle, const char *array_name, UniformMappingType type, Renderer *renderer)
     {
         Material &material = get_material_instance(handle, renderer);
-        ;
 
         for (i32 i = 0; i < material.array_count; i++)
         {
@@ -5876,24 +5875,28 @@ namespace rendering
         command.buffer = {pass.ui.text_command_count++};
     }
 
-    static void push_buffer_to_ui_pass(Renderer *renderer, BufferHandle buffer_handle, ShaderHandle shader, CreateUICommandInfo info)
+    static void push_buffer_to_ui_pass(Renderer *renderer, BufferHandle buffer_handle, CreateUICommandInfo info)
     {
         UIRenderCommand render_command = {};
-        render_command.material = {};        
+        render_command.material =
+            (info.custom_material.handle != 0) ? renderer->render.materials[info.custom_material.handle] : Material{};
         render_command.material.array_count = 0;
         render_command.material.lighting.receives_light = false;
         render_command.buffer = buffer_handle;
 
-        if (info.texture_handle.handle != 0)
+        if(info.custom_material.handle == 0)
         {
-            render_command.material = renderer->render.materials[renderer->render.ui.textured_material.handle];
-            set_uniform_value(renderer, render_command.material, "tex0", info.texture_handle);
-            set_uniform_value(renderer, render_command.material, "color", info.color);
-        }
-        else
-        {
-            render_command.material = renderer->render.materials[renderer->render.ui.material.handle];
-            set_uniform_value(renderer, render_command.material, "color", info.color);
+            if (info.texture_handle.handle != 0)
+            {
+                render_command.material = renderer->render.materials[renderer->render.ui.textured_material.handle];
+                set_uniform_value(renderer, render_command.material, "tex0", info.texture_handle);
+                set_uniform_value(renderer, render_command.material, "color", info.color);
+            }
+            else
+            {
+                render_command.material = renderer->render.materials[renderer->render.ui.material.handle];
+                set_uniform_value(renderer, render_command.material, "color", info.color);
+            }
         }
 
         set_uniform_value(renderer, render_command.material, "position", info.transform.position);
@@ -6027,7 +6030,6 @@ namespace rendering
         u64 anchor = info.anchor_flag;
 
         BufferHandle buffer = {};
-        ShaderHandle shader = {};
 
         if (anchor & UIAlignment::TOP)
         {
@@ -6080,6 +6082,6 @@ namespace rendering
             }
         }
 
-        push_buffer_to_ui_pass(renderer, buffer, shader, scaled_info);
+        push_buffer_to_ui_pass(renderer, buffer, scaled_info);
     }
 }

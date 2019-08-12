@@ -4,7 +4,6 @@
 namespace rendering
 {
     
-#define MAX_INSTANCE_BUFFERS 512
 #define Z_LAYERS 251
     
     struct ShaderHandle
@@ -686,6 +685,8 @@ namespace rendering
         i32 z_layer;
         
         math::Rgba color;
+
+        MaterialHandle custom_material;
 
         TextureHandle texture_handle;
 

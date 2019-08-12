@@ -15,9 +15,16 @@ void cpuid(int info[4], int InfoType)
 
 #endif
 
+#if defined(__APPLE__ ) || defined(__linux)
+#include "immintrin.h"
+#include "emmintrin.h"
+#define SSE41 false
+#elif defined(_WIN32)
+#define SSE41 true
+#endif
+
 namespace os
 {
-    
 //  Misc.
     bool HW_MMX;
     bool HW_x64;
@@ -119,5 +126,4 @@ namespace os
         }
     }
 }
-
 #endif

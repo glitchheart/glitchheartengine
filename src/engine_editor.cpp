@@ -13,7 +13,7 @@ namespace editor
     {
         ImGuiIO &io = ImGui::GetIO();
 
-        if(!io.WantCaptureKeyboard && (KEY_DOWN(Key_Delete) || KEY_DOWN(Key_Backspace)))
+        if(!io.WantCaptureKeyboard && (KEY_DOWN(Key_Delete)))
         {
             if(IS_ENTITY_HANDLE_VALID(scene_manager->selected_entity))
             {
@@ -395,7 +395,7 @@ namespace editor
                                 core.renderer->particles.api->pause_particle_system(ps_handle, core.renderer, paused);
                             }
 
-                            ImGui::DragScalar("Duration", ImGuiDataType_Double, &attributes.duration, delta_time);
+                            ImGui::DragScalar("Duration", ImGuiDataType_Float, &attributes.duration, delta_time);
 
                             if(ImGui::Checkbox("Prewarm", &prewarm))
                             {
@@ -412,65 +412,65 @@ namespace editor
                             // Start size
                             char* start_param_types[] = {"Constant", "Random Between Two Constants"};
 
-                            i32 start_size_type = (i32)attributes.start_size_type;
+                            i32 start_size_type = (i32)attributes.size.type;
                             
                             ImGui::Combo("Start size type", &start_size_type, start_param_types, IM_ARRAYSIZE(start_param_types));
-                            attributes.start_size_type = (StartParameterType)start_size_type;
+                            attributes.size.type = (StartParameterType)start_size_type;
                             
-                            if(attributes.start_size_type == StartParameterType::CONSTANT)
+                            if(attributes.size.type == StartParameterType::CONSTANT)
                             {
-                                ImGui::DragFloat("Start size", &attributes.size.constant.start_size);
+                                ImGui::DragFloat("Start size", &attributes.size.constant.value);
                             }
                             else
                             {
-                                math::Vec2 constants(attributes.size.random_between_two_constants.s0, attributes.size.random_between_two_constants.s1);
+                                math::Vec2 constants(attributes.size.random_between_two_constants.v0, attributes.size.random_between_two_constants.v1);
                                 ImGui::DragFloat2("Start size", constants.e);
                             
-                                attributes.size.random_between_two_constants.s0 = constants.x;
-                                attributes.size.random_between_two_constants.s1 = constants.y;
+                                attributes.size.random_between_two_constants.v0 = constants.x;
+                                attributes.size.random_between_two_constants.v1 = constants.y;
                             }
                             // End start size
 
                             // Start lifetime
-                            i32 start_life_time_type = (i32)attributes.start_life_time_type;
+                            i32 start_life_time_type = (i32)attributes.lifetime.type;
                             
                             ImGui::Combo("Start lifetime type", &start_life_time_type, start_param_types, IM_ARRAYSIZE(start_param_types));
 
-                            attributes.start_life_time_type = (StartParameterType)start_life_time_type;
+                            attributes.lifetime.type = (StartParameterType)start_life_time_type;
                                 
-                            if(attributes.start_life_time_type == StartParameterType::CONSTANT)
+                            if(attributes.lifetime.type == StartParameterType::CONSTANT)
                             {
-                                ImGui::DragScalar("Start lifetime", ImGuiDataType_Double, &attributes.life.constant.life_time, delta_time);
+                                ImGui::DragScalar("Start lifetime", ImGuiDataType_Float, &attributes.lifetime.constant.value, delta_time);
                             }
                             else
                             {
-                                math::Vec2 constants(attributes.life.random_between_two_constants.l0, attributes.life.random_between_two_constants.l1);
+                                math::Vec2 constants(attributes.lifetime.random_between_two_constants.v0, attributes.lifetime.random_between_two_constants.v1);
                                 ImGui::DragFloat2("Start lifetime", constants.e);
                             
-                                attributes.life.random_between_two_constants.l0 = constants.x;
-                                attributes.life.random_between_two_constants.l1 = constants.y;
+                                attributes.lifetime.random_between_two_constants.v0 = constants.x;
+                                attributes.lifetime.random_between_two_constants.v1 = constants.y;
                             }
                 
                             // End start lifetime
                 
                             // // Start speed
-                            i32 start_speed_type = (i32)attributes.start_speed_type;
+                            i32 start_speed_type = (i32)attributes.speed.type;
                             
                             ImGui::Combo("Start speed type", &start_speed_type, start_param_types, IM_ARRAYSIZE(start_param_types));
 
-                            attributes.start_speed_type = (StartParameterType)start_speed_type;
+                            attributes.speed.type = (StartParameterType)start_speed_type;
                             
-                            if(attributes.start_speed_type == StartParameterType::CONSTANT)
+                            if(attributes.speed.type == StartParameterType::CONSTANT)
                             {
-                                ImGui::DragFloat("Start speed", &attributes.speed.constant.start_speed);
+                                ImGui::DragFloat("Start speed", &attributes.speed.constant.value);
                             }
                             else
                             {
-                                math::Vec2 constants(attributes.speed.random_between_two_constants.s0, attributes.speed.random_between_two_constants.s1);
+                                math::Vec2 constants(attributes.speed.random_between_two_constants.v0, attributes.speed.random_between_two_constants.v1);
                                 ImGui::DragFloat2("Start speed", constants.e);
                             
-                                attributes.speed.random_between_two_constants.s0 = constants.x;
-                                attributes.speed.random_between_two_constants.s1 = constants.y;
+                                attributes.speed.random_between_two_constants.v0 = constants.x;
+                                attributes.speed.random_between_two_constants.v1 = constants.y;
                             }
 
                             // End start speed
@@ -506,7 +506,7 @@ namespace editor
 
                                 static i32 selected_color_index = 0;
                                 
-                                for(i32 i = 0; i < ps->color_over_lifetime.value_count; i++)
+                                for(i32 i = 0; i < ps->color_over_lifetime.count; i++)
                                 {
                                     math::Rgba color = ps->color_over_lifetime.values[i];
                                     r64 key = ps->color_over_lifetime.keys[i];
@@ -516,7 +516,7 @@ namespace editor
                                     if(ImGui::Selectable(buf, selected_color_index == i))
                                     {
                                         selected_color_index = i;
-                                        if(KEY_DOWN(Key_Backspace) || KEY_DOWN(Key_Delete))
+                                        if(KEY_DOWN(Key_Delete))
                                         {
                                             deleted_index = selected_color_index;
                                         }
@@ -527,18 +527,18 @@ namespace editor
 
                                 if(deleted_index != -1)
                                 {
-                                    core.renderer->particles.api->remove_color_key(*ps, ps->color_over_lifetime.keys[deleted_index]);
+                                    core.renderer->particles.api->remove_color_key(ps->color_over_lifetime, ps->color_over_lifetime.keys[deleted_index]);
                                 }
                 
-                                for(i32 i = 0; i < ps->color_over_lifetime.value_count - 1; i++)
+                                for(i32 i = 0; i < ps->color_over_lifetime.count - 1; i++)
                                 {
                                     if(ps->color_over_lifetime.keys[i] > ps->color_over_lifetime.keys[i + 1])
                                     {
                                         r64 current_key = ps->color_over_lifetime.keys[i];
                                         math::Rgba current_value = ps->color_over_lifetime.values[i];
 
-                                        scene_manager->renderer->particles.api->remove_color_key(*ps, current_key);
-                                        selected_color_index = core.renderer->particles.api->add_color_key(*ps, current_key, current_value);
+                                        scene_manager->renderer->particles.api->remove_color_key(ps->color_over_lifetime, current_key);
+                                        selected_color_index = core.renderer->particles.api->add_color_key(ps->color_over_lifetime, current_key, current_value, &ps->arena);
                                         break;
                                     }
                                 }
@@ -548,7 +548,7 @@ namespace editor
                                 
                                 if(ps->color_over_lifetime.values)
                                 {
-                                    ImGui::DragScalar("Selected key", ImGuiDataType_Double, &ps->color_over_lifetime.keys[selected_color_index], delta_time);
+                                    ImGui::DragScalar("Selected key", ImGuiDataType_Float, &ps->color_over_lifetime.keys[selected_color_index], delta_time);
                                     ImGui::ColorEdit4("Selected color", ps->color_over_lifetime.values[selected_color_index].e);
                                 }
                                 else
@@ -557,12 +557,12 @@ namespace editor
                                     // math::clamp(0.0, ui::field_r64(global_state->ui_state, 0.0, "Selected key"), 1.0);
                                 }
 
-                                ImGui::DragScalar("New key", ImGuiDataType_Double, &new_color_key, delta_time);
+                                ImGui::DragScalar("New key", ImGuiDataType_Float, &new_color_key, delta_time);
                                 ImGui::ColorEdit4("New color", new_color.e);
 
                                 if(ImGui::Button("Add"))
                                 {
-                                    core.renderer->particles.api->add_color_key(*ps, new_color_key, new_color);
+                                    core.renderer->particles.api->add_color_key(ps->color_over_lifetime, new_color_key, new_color, &ps->arena);
                                 }
 
                             }
@@ -575,7 +575,7 @@ namespace editor
                             
                                 ImGui::ListBoxHeader("Values");
                             
-                                for(i32 i = 0; i < ps->size_over_lifetime.value_count; i++)
+                                for(i32 i = 0; i < ps->size_over_lifetime.count; i++)
                                 {
                                     math::Vec2 size = ps->size_over_lifetime.values[i];
                                     r64 key = ps->size_over_lifetime.keys[i];
@@ -586,7 +586,7 @@ namespace editor
                                     {
                                         selected_size_index = i;
                                     
-                                        if(KEY_DOWN(Key_Backspace) || KEY_DOWN(Key_Delete))
+                                        if(KEY_DOWN(Key_Delete))
                                         {
                                             deleted_index = selected_size_index;
                                         }
@@ -597,25 +597,25 @@ namespace editor
                             
                                 if(deleted_index != -1)
                                 {
-                                    core.renderer->particles.api->remove_size_key(*ps, ps->size_over_lifetime.keys[deleted_index]);
+                                    core.renderer->particles.api->remove_size_key(ps->size_over_lifetime, ps->size_over_lifetime.keys[deleted_index]);
                                 }
 
-                                for(i32 i = 0; i < ps->size_over_lifetime.value_count - 1; i++)
+                                for(i32 i = 0; i < ps->size_over_lifetime.count - 1; i++)
                                 {
                                     if(ps->size_over_lifetime.keys[i] > ps->size_over_lifetime.keys[i + 1])
                                     {
                                         r64 current_key = ps->size_over_lifetime.keys[i];
                                         math::Vec2 current_value = ps->size_over_lifetime.values[i];
 
-                                        scene_manager->renderer->particles.api->remove_size_key(*ps, current_key);
-                                        selected_size_index = core.renderer->particles.api->add_size_key(*ps, current_key, current_value);
+                                        scene_manager->renderer->particles.api->remove_size_key(ps->size_over_lifetime, current_key);
+                                        selected_size_index = core.renderer->particles.api->add_size_key(ps->size_over_lifetime, current_key, current_value, &ps->arena);
                                         break;
                                     }
                                 }
 
                                 if(ps->size_over_lifetime.values)
                                 {
-                                    ImGui::DragScalar("Selected key", ImGuiDataType_Double, &ps->size_over_lifetime.keys[selected_size_index], delta_time);
+                                    ImGui::DragScalar("Selected key", ImGuiDataType_Float, &ps->size_over_lifetime.keys[selected_size_index], delta_time);
                                     ImGui::DragFloat2("Selected size", ps->size_over_lifetime.values[selected_size_index].e);
                                 }
                                 else
@@ -627,16 +627,16 @@ namespace editor
                                 static r64 new_size_key = 0.0;
                                 static math::Vec2 new_size;
                                 
-                                ImGui::DragScalar("New key", ImGuiDataType_Double, &new_size_key, delta_time);
+                                ImGui::DragScalar("New key", ImGuiDataType_Float, &new_size_key, delta_time);
                                 ImGui::DragFloat2("New size", new_size.e);
                             
                                 if(ImGui::Button("Add"))
                                 {
-                                    core.renderer->particles.api->add_size_key(*ps, new_size_key, new_size);
+                                    core.renderer->particles.api->add_size_key(ps->size_over_lifetime, new_size_key, new_size, &ps->arena);
                                 }
                             }
                         
-                            if(ImGui::CollapsingHeader("Size over time"))
+                            if(ImGui::CollapsingHeader("Speed over time"))
                             {
                                 i32 deleted_index = -1;
 
@@ -644,7 +644,7 @@ namespace editor
                                 
                                 ImGui::ListBoxHeader("Values");
                             
-                                for(i32 i = 0; i < ps->speed_over_lifetime.value_count; i++)
+                                for(i32 i = 0; i < ps->speed_over_lifetime.count; i++)
                                 {
                                     r32 speed = ps->speed_over_lifetime.values[i];
                                     r64 key = ps->speed_over_lifetime.keys[i];
@@ -655,7 +655,7 @@ namespace editor
                                     {
                                         selected_speed_index = i;
                                     
-                                        if(KEY_DOWN(Key_Backspace) || KEY_DOWN(Key_Delete))
+                                        if(KEY_DOWN(Key_Delete))
                                         {
                                             deleted_index = selected_speed_index;
                                         }
@@ -666,27 +666,27 @@ namespace editor
                                 
                                 if(deleted_index != -1)
                                 {
-                                    core.renderer->particles.api->remove_speed_key(*ps, ps->speed_over_lifetime.keys[deleted_index]);
+                                    core.renderer->particles.api->remove_speed_key(ps->speed_over_lifetime, ps->speed_over_lifetime.keys[deleted_index]);
                                 }
 
                                 deleted_index = -1;
 
-                                for(i32 i = 0; i < ps->speed_over_lifetime.value_count - 1; i++)
+                                for(i32 i = 0; i < ps->speed_over_lifetime.count - 1; i++)
                                 {
                                     if(ps->speed_over_lifetime.keys[i] > ps->speed_over_lifetime.keys[i + 1])
                                     {
                                         r64 current_key = ps->speed_over_lifetime.keys[i];
                                         r32 current_value = ps->speed_over_lifetime.values[i];
 
-                                        scene_manager->renderer->particles.api->remove_speed_key(*ps, current_key);
-                                        selected_speed_index = core.renderer->particles.api->add_speed_key(*ps, current_key, current_value);
+                                        scene_manager->renderer->particles.api->remove_speed_key(ps->speed_over_lifetime, current_key);
+                                        selected_speed_index = core.renderer->particles.api->add_speed_key(ps->speed_over_lifetime, current_key, current_value, &ps->arena);
                                         break;
                                     }
                                 }
 
                                 if(ps->speed_over_lifetime.values)
                                 {
-                                    ImGui::DragScalar("Selected key", ImGuiDataType_Double, &ps->speed_over_lifetime.keys[selected_speed_index], delta_time);
+                                    ImGui::DragScalar("Selected key", ImGuiDataType_Float, &ps->speed_over_lifetime.keys[selected_speed_index], delta_time);
                                     ImGui::DragFloat("Selected speed", &ps->speed_over_lifetime.values[selected_speed_index]);
                                 }
                                 else
@@ -698,12 +698,12 @@ namespace editor
                                 static r64 new_speed_key = 0.0;
                                 static r32 new_speed = 0.0f;
 
-                                ImGui::DragScalar("New key", ImGuiDataType_Double, &new_speed_key, delta_time);
+                                ImGui::DragScalar("New key", ImGuiDataType_Float, &new_speed_key, delta_time);
                                 ImGui::DragFloat("New speed", &new_speed);
 
                                 if(ImGui::Button("Add"))
                                 {
-                                    core.renderer->particles.api->add_speed_key(*ps, new_speed_key, new_speed);
+                                    core.renderer->particles.api->add_speed_key(ps->speed_over_lifetime, new_speed_key, new_speed, &ps->arena);
                                 }
                             }
                         }

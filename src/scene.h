@@ -17,11 +17,18 @@
 
 namespace scene
 {
+    struct SceneHandle
+    {
+        i32 handle;
+        SceneManager *manager;
+    };
+    
     // @Note(Daniel): Invalid EntityHandles have the value 0.
     // All handles besides EntityHandles are 0-indexed
     struct EntityHandle
     {
         i32 handle;
+        SceneHandle scene_handle;
     };
     
     struct TransformComponentHandle
@@ -439,19 +446,19 @@ namespace scene
             struct
             {
                 math::Rgba values[32];
-                r64 keys[32];
+                r32 keys[32];
                 i32 value_count;
             } color_over_lifetime;
             struct 
             {
                 math::Vec2 values[32];
-                r64 keys[32];
+                r32 keys[32];
                 i32 value_count;
             } size_over_lifetime;
             struct
             {
                 r32 values[32];
-                r64 keys[32];
+                r32 keys[32];
                 i32 value_count;
             } speed_over_lifetime;
         } particles;
@@ -510,12 +517,6 @@ namespace scene
         i32 max_count;
     };
 
-    struct SceneHandle
-    {
-        i32 handle;
-        SceneManager *manager;
-    };
-
     struct Settings
     {
         struct
@@ -538,6 +539,8 @@ namespace scene
         b32 valid;
         b32 loaded;
         b32 persistent; // When true the scene is not freed, when a new scene is loaded
+
+        scene::EntityHandle editor_camera;
 
         MemoryArena memory_arena;
 
@@ -817,7 +820,8 @@ namespace scene
     static void add_child(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene);
     static b32 has_tag(const char* tag_name, EntityHandle entity_handle, SceneHandle scene_handle);
     static void set_entity_tag(const char *tag, EntityHandle entity_handle, SceneHandle scene_handle);
-    
+	static void deactivate_particle_systems(SceneHandle handle);
+
 // @Deprecated
     static RenderComponent& _add_render_component(Scene &scene, EntityHandle entity_handle, b32 cast_shadows);
     static TransformComponent& _add_transform_component(Scene &scene, EntityHandle entity_handle);

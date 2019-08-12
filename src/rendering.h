@@ -3,6 +3,7 @@
 
 #define UI_COORD_DIMENSION 1000.0f
 #define MAX_MATERIAL_INSTANCE_ARRAYS 8
+#define MAX_INSTANCE_BUFFERS 1024
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #ifdef _WIN32
@@ -653,6 +654,7 @@ struct Renderer
         rendering::ShaderHandle blur_shader;
         rendering::ShaderHandle hdr_shader;
         rendering::ShaderHandle ui_quad_shader;
+        rendering::ShaderHandle gradient_ui_quad_shader;
         rendering::ShaderHandle textured_ui_quad_shader;
         rendering::ShaderHandle font_shader;
         rendering::ShaderHandle font3d_shader;
@@ -704,11 +706,11 @@ struct Renderer
             b32 *dirty_mat4_buffers;
             
             // All instance buffers
-            r32 *float_buffers[MAX_INSTANCE_BUFFERS];
-            math::Vec2 *float2_buffers[MAX_INSTANCE_BUFFERS];
-            math::Vec3 *float3_buffers[MAX_INSTANCE_BUFFERS];
-            math::Vec4 *float4_buffers[MAX_INSTANCE_BUFFERS];
-            math::Mat4 *mat4_buffers[MAX_INSTANCE_BUFFERS];
+            r32 **float_buffers;;
+            math::Vec2 **float2_buffers;
+            math::Vec3 **float3_buffers;
+            math::Vec4 **float4_buffers;;
+            math::Mat4 **mat4_buffers;;
 
             // All internal instance buffers (API specific)
             Buffer **internal_float_buffers;
@@ -771,6 +773,7 @@ struct Renderer
             rendering::BufferHandle centered_textured_quad_buffer;
             rendering::RenderPass pass;
             rendering::MaterialHandle material;
+            rendering::MaterialHandle gradient_material;
             rendering::MaterialHandle textured_material;
 
             rendering::MaterialHandle font_material;
