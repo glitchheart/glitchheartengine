@@ -2603,6 +2603,20 @@ namespace math
         Vec3 min;
         Vec3 max;
     };
+
+    inline b32 line_plane_intersection(Ray ray, math::Vec3 normal, math::Vec3 coord, math::Vec3 *intersection_point)
+    {
+        r32 d = dot(normal, coord);
+
+        if(dot(normal, ray.direction) == 0)
+        {
+            return false;
+        }
+
+        float x = (d - dot(normal, ray.origin)) / dot(normal, ray.direction);
+        *intersection_point = ray.origin + normalize(ray.direction) * x;
+        return true;
+    }
     
     inline b32 aabb_ray_intersection(Ray r, BoundingBox b, Vec3* intersection_point)
     {
@@ -2752,7 +2766,6 @@ namespace math
 #define COLOR_BLUE math::Rgba(0, 0, 1, 1)
 #define COLOR_BLACK math::Rgba(0, 0, 0, 1)
 #define COLOR_WHITE math::Rgba(1, 1, 1, 1)
-    
     
     struct Rect
     {
