@@ -93,7 +93,8 @@ namespace scene
         VEC3,
         VEC4,
         STRING,
-        COLOR
+        COLOR_RGB,
+        COLOR_RGBA
     };
     
     struct Field
@@ -677,6 +678,9 @@ namespace scene
         rendering::Material debug_material_instance_2;
         rendering::MaterialHandle debug_material;
         rendering::ShaderHandle debug_shader_handle;
+
+
+        b32 show_wireframe;
         
         struct
         {

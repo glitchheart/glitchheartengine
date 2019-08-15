@@ -42,10 +42,11 @@ namespace scene
                 sscanf(data_buffer, "%f %f", &((math::Vec2*)ptr)->x, &((math::Vec2*)ptr)->y);
                 break;
                 case FieldType::VEC3:
+                case FieldType::COLOR_RGB:
                 sscanf(data_buffer, "%f %f %f", &((math::Vec3*)ptr)->x, &((math::Vec3*)ptr)->y, &((math::Vec3*)ptr)->z);
                 break;
                 case FieldType::VEC4:
-                case FieldType::COLOR:
+                case FieldType::COLOR_RGBA:
                 sscanf(data_buffer, "%f %f %f %f", &((math::Vec4*)ptr)->x, &((math::Vec4*)ptr)->y, &((math::Vec4*)ptr)->z, &((math::Vec4*)ptr)->w);
                 break;
                 case FieldType::STRING:
@@ -471,13 +472,14 @@ namespace scene
                             }
                             break;
                             case FieldType::VEC3:
+                            case FieldType::COLOR_RGB:
                             {
                                 math::Vec3* vec = (math::Vec3*)(ptr);
                                 fprintf(file, "%f %f %f\n", vec->x, vec->y, vec->z);
                             }
                             break;
                             case FieldType::VEC4:
-                            case FieldType::COLOR:
+                            case FieldType::COLOR_RGBA:
                             {
                                 math::Vec4* vec = (math::Vec4*)(ptr);
                                 fprintf(file, "%f %f %f %f\n", vec->x, vec->y, vec->z, vec->w);
@@ -1915,12 +1917,16 @@ static Camera get_standard_camera(SceneManager& manager)
         {
             // Deselect the previously selected entity
             if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
-                scene::set_wireframe_enabled(false, manager->selected_entity, manager->loaded_scene);                 
+            {
+                scene::set_wireframe_enabled(false, manager->selected_entity, manager->loaded_scene);
+            }
+
             
             manager->selected_entity = entity;
             manager->gizmos.active = true;
 
             scene::set_wireframe_enabled(true, entity, manager->loaded_scene);
+            manager->show_wireframe = true;
             manager->callbacks.on_entity_selected(entity, manager->loaded_scene);
         }
     }

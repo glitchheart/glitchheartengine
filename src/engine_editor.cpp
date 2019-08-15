@@ -163,6 +163,14 @@ namespace editor
                     {
                         scene::set_bounding_box_enabled(show_bounding_box, scene_manager->selected_entity, scene_manager->loaded_scene);
                     }
+
+                    bool show_wireframe =  scene_manager->show_wireframe;
+                    
+                    if(ImGui::Checkbox("Show wireframe", &show_wireframe))
+                    {
+                        scene_manager->show_wireframe = show_wireframe;
+                        scene::set_wireframe_enabled(show_wireframe, scene_manager->selected_entity, scene_manager->loaded_scene);
+                    }
                     ImGui::TreePop();
                 }
             
@@ -350,6 +358,16 @@ namespace editor
                         case scene::FieldType::VEC3:
                         {
                             ImGui::DragFloat2(field.name, ((math::Vec3*)ptr)->e, delta_time);
+                        }
+                        break;
+                        case scene::FieldType::COLOR_RGB:
+                        {
+                            ImGui::ColorEdit3(field.name, ((math::Vec3*)ptr)->e);
+                        }
+                        break;
+                        case scene::FieldType::COLOR_RGBA:
+                        {
+                            ImGui::ColorEdit4(field.name, ((math::Vec4*)ptr)->e);
                         }
                         break;
                         default:
