@@ -28,6 +28,7 @@ namespace scene
     struct EntityHandle
     {
         i32 handle;
+        i32 generation;
         SceneHandle scene_handle;
     };
     
@@ -822,6 +823,7 @@ namespace scene
     static b32 has_transform_component(EntityHandle entity_handle, SceneHandle& scene);
     static b32 has_camera_component(EntityHandle entity_handle, SceneHandle scene);
     static void add_child(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene);
+    static void remove_parent(EntityHandle child_handle, SceneHandle scene);
     static b32 has_tag(const char* tag_name, EntityHandle entity_handle, SceneHandle scene_handle);
     static void set_entity_tag(const char *tag, EntityHandle entity_handle, SceneHandle scene_handle);
 	static void deactivate_particle_systems(SceneHandle handle);

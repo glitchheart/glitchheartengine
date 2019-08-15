@@ -1941,8 +1941,12 @@ static Camera get_standard_camera(SceneManager& manager)
     static void editor_setup(SceneManager *manager)
     {
         TransformComponent &main_cam_transform = get_main_camera_transform(manager->loaded_scene);
+        CameraComponent &main_cam = get_main_camera_comp(manager->loaded_scene);
         TransformComponent &editor_cam_transform = get_transform_comp(manager->editor_camera, manager->loaded_scene);
+        CameraComponent &editor_cam = get_camera_comp(manager->editor_camera, manager->loaded_scene);
 
+        editor_cam.camera.fov = main_cam.camera.fov;
+        
         scene::set_position(editor_cam_transform, main_cam_transform.transform.position);
         scene::set_rotation(editor_cam_transform, main_cam_transform.transform.euler_angles);
         // Register all debug entities
@@ -3775,6 +3779,20 @@ static Camera get_standard_camera(SceneManager& manager)
         return -1;
     }
 
+    i32 _pack_animator_components(Entity &entity, Scene &scene)
+    {
+        if(entity.comp_flags & COMP_ANIMATOR)
+        {
+            for(i32 index = entity.animator_handle.handle; index < scene.animator_component_count - 1; index++)
+            {
+                scene.animator_components[index] = scene.animator_components[index + 1];
+            }
+            scene.animator_component_count--;
+            return entity.animator_handle.handle;
+        }
+        return -1;
+    }
+
     i32 _pack_particle_system_components(Entity &entity, Scene &scene)
     {
         if(entity.comp_flags & COMP_PARTICLES)
@@ -3793,6 +3811,9 @@ static Camera get_standard_camera(SceneManager& manager)
     
     static void _unregister_entity(EntityHandle handle, Scene &scene)
     {
+        if(IS_ENTITY_HANDLE_VALID(handle))
+            remove_parent(handle, scene.handle);
+        
         i32 removed_handle = handle.handle;
         
         // Invalidate handle
@@ -3816,6 +3837,7 @@ static Camera get_standard_camera(SceneManager& manager)
             i32 render_handle = _pack_render_components(entity, scene);
             i32 particle_system_handle = _pack_particle_system_components(entity, scene);
             i32 light_component_handle = _pack_light_components(entity, scene);
+            i32 animator_component_handle = _pack_animator_components(entity, scene);
                         
             // Run through all existing entities and pack the array to remove the unregistered one. All component handles affected by the removal are decremented.
 
@@ -3840,6 +3862,11 @@ static Camera get_standard_camera(SceneManager& manager)
                 }
 
                 if(light_component_handle != -1 && scene.entities[index].light_handle.handle > light_component_handle)
+                {
+                    scene.entities[index].light_handle.handle--;
+                }
+
+                if(animator_component_handle != -1 && scene.entities[index].animator_handle.handle > animator_component_handle)
                 {
                     scene.entities[index].light_handle.handle--;
                 }
@@ -3878,6 +3905,8 @@ static Camera get_standard_camera(SceneManager& manager)
 
         for(i32 i = 0; i < entity.child_count; i++)
         {
+            Entity &child = get_entity(entity.children[i], scene_handle);
+            child.parent = {0};
             unregister_entity(entity.children[i], scene_handle);
         }
         
@@ -4280,10 +4309,20 @@ static Camera get_standard_camera(SceneManager& manager)
         return entity.child_count;
     }
 
+    static i32 get_child_count(EntityHandle handle)
+    {
+        return get_child_count(handle, handle.scene_handle);
+    }
+
     static EntityHandle get_child_handle(EntityHandle handle, i32 index, SceneHandle scene)
     {
         Entity& entity = get_entity(handle, scene);
         return entity.children[index];
+    }
+
+    static EntityHandle get_child_handle(EntityHandle handle, i32 index)
+    {
+        return get_child_handle(handle, index, handle.scene_handle);
     }
 
     static void add_child(EntityHandle parent_handle, EntityHandle child_handle, SceneHandle& scene)
