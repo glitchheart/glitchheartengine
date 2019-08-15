@@ -2442,6 +2442,159 @@ namespace math
         return -c/2.0f * (t *( t - 2.0f) - 1.0f) + b;
     }
 
+    inline r32 ease_in_cubic(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        return c * t * t * t + b;
+    }
+
+    inline r32 ease_out_cubic(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        t--;
+        return c * (t * t * t + 1.0f) + b;
+    }
+
+    inline r32 ease_in_out_cubic(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        t *= 2.0f;
+        if(t < 1.0f)
+        {
+            return (c / 2.0f) * (t * t * t) + b;
+        }
+
+        t -= 2;
+        return c/2.0f * (t * t * t + 2.0f) + b;
+    }
+
+    inline r32 ease_in_quart(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        return c * t * t * t * t + b;
+    }
+
+    inline r32 ease_out_quart(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        t--;
+        return -c * (t * t * t * t - 1.0f) + b;;
+    }
+
+    inline r32 ease_in_out_quart(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        t *= 2.0f;
+        if(t < 1.0f)
+        {
+            return (c / 2.0f) * (t * t * t * t) + b;
+        }
+        t -= 2;
+        return -c/2.0f * (t * t * t * t - 2.0f) + b;
+    }
+
+    inline r32 ease_in_quint(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        return c * t * t * t * t * t + b;
+    }
+
+    inline r32 ease_out_quint(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        t--;
+        return c * (t * t * t * t * t + 1.0f) + b;
+    }
+
+    inline r32 ease_in_out_quint(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        t *= 2.0f;
+        if(t < 1.0f)
+        {
+            return (c / 2.0f) * (t * t * t * t * t) + b;
+        }
+        t -= 2;
+        return c/2.0f * (t * t * t * t * t + 2.0f) + b;
+    }
+
+    inline r32 ease_in_sin(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        return -c * cos(t * (PI/2.0f)) + c + b;
+    }
+
+    inline r32 ease_out_sin(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        return c * sin(t * (PI/2.0f)) + b;
+    }
+
+    inline r32 ease_in_out_sin(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        return -c/2 * (cos(t * PI) - 1.0f) + b;
+    }
+
+    inline r32 ease_in_exponential(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        return c * (pow(2.0f, 10.0f * (t - 1.0f))) + b;
+    }
+
+    inline r32 ease_out_exponential(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        return c * (-pow(2.0f, -10.0f * t) + 1.0f) + b;
+    }
+
+    inline r32 ease_in_out_exponential(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        if(t < 1.0f)
+        {
+            return c/2.0f * pow(2, 10 * (t - 1.0f)) + b;
+        }
+        t--;
+        return c/2.0f * (-pow(2, -10 * t) + 2) + b;
+    }
+
+    inline r32 ease_in_circular(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        return -c * (sqrt(1 - t * t) - 1.0f) + b;
+    }
+
+    inline r32 ease_out_circular(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        return c * sqrt(1 - t * t) + b;
+    }
+
+    inline r32 ease_in_out_circular(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        t *= 2.0f;
+        if(t < 1.0f)
+        {
+            return -c/2.0f * (sqrt(1.0f - t * t) - 1.0f) + b;
+        }
+        t--;
+        return c/2.0f * (sqrt(1.0f - t * t) + 1.0f) + b;
+    }
+
+    using easing_function = r32 (*)(r32, r32, r32);
+    easing_function easing_table[] =
+        {
+            ease_in_quad, ease_out_quad, ease_in_out_quad,
+            ease_in_cubic, ease_out_cubic, ease_in_out_cubic,
+            ease_in_quart, ease_out_quart, ease_in_out_quart,
+            ease_in_quint, ease_out_quint, ease_in_out_quint,
+            ease_in_sin, ease_out_sin, ease_in_out_sin,
+            ease_in_exponential, ease_out_exponential, ease_in_out_exponential,
+            ease_in_circular, ease_out_circular, ease_in_out_circular
+        };
+
     inline Vec3 linear_tween(Vec3 b, r32 t, Vec3 _c)
     {
         return Vec3(linear_tween(b.x, t, _c.x), linear_tween(b.y, t, _c.y), linear_tween(b.z, t, _c.z));
@@ -2462,29 +2615,64 @@ namespace math
         return Vec3(ease_in_out_quad(b.x, t, _c.x), ease_in_out_quad(b.y, t, _c.y), ease_in_out_quad(b.z, t, _c.z));
     }
 
-    inline r32 ease_in_cubic(r32 b, r32 t, r32 _c)
+    inline Vec3 ease_in_cubic(Vec3 b, r32 t, Vec3 _c)
     {
-        r32 c = _c - b;
-        return c * t * t * t + b;
+        return Vec3(ease_in_cubic(b.x, t, _c.x), ease_in_cubic(b.y, t, _c.y), ease_in_cubic(b.z, t, _c.z));
     }
 
-    inline r32 ease_out_cubic(r32 b, r32 t, r32 _c)
+    inline Vec3 ease_out_cubic(Vec3 b, r32 t, Vec3 _c)
     {
-        r32 c = _c - b;
-        return -c * (t * t * t + 1.0f) + b;
+        return Vec3(ease_out_cubic(b.x, t, _c.x), ease_out_cubic(b.y, t, _c.y), ease_out_cubic(b.z, t, _c.z));
     }
 
-    inline r32 ease_in_out_cubic(r32 b, r32 t, r32 _c)
+    inline Vec3 ease_in_out_cubic(Vec3 b, r32 t, Vec3 _c)
     {
-        r32 c = _c - b;
-        t *= 2.0f;
-        if(t < 1.0f)
-        {
-            return (c / 2.0f) * (t * t * t) + b;
-        }
+        return Vec3(ease_in_out_cubic(b.x, t, _c.x), ease_in_out_cubic(b.y, t, _c.y), ease_in_out_cubic(b.z, t, _c.z));
+    }
 
-        t -= 2;
-        return c/2.0f * (t * t * t + 2.0f) + b;
+    inline Vec3 ease_in_quart(Vec3 b, r32 t, Vec3 _c)
+    {
+        return Vec3(ease_in_quart(b.x, t, _c.x), ease_in_quart(b.y, t, _c.y), ease_in_quart(b.z, t, _c.z));
+    }
+
+    inline Vec3 ease_out_quart(Vec3 b, r32 t, Vec3 _c)
+    {
+        return Vec3(ease_out_quart(b.x, t, _c.x), ease_out_quart(b.y, t, _c.y), ease_out_quart(b.z, t, _c.z));
+    }
+
+    inline Vec3 ease_in_out_quart(Vec3 b, r32 t, Vec3 _c)
+    {
+        return Vec3(ease_in_out_quart(b.x, t, _c.x), ease_in_out_quart(b.y, t, _c.y), ease_in_out_quart(b.z, t, _c.z));
+    }
+
+    inline Vec3 ease_in_quint(Vec3 b, r32 t, Vec3 _c)
+    {
+        return Vec3(ease_in_quint(b.x, t, _c.x), ease_in_quint(b.y, t, _c.y), ease_in_quint(b.z, t, _c.z));
+    }
+
+    inline Vec3 ease_out_quint(Vec3 b, r32 t, Vec3 _c)
+    {
+        return Vec3(ease_out_quint(b.x, t, _c.x), ease_out_quint(b.y, t, _c.y), ease_out_quint(b.z, t, _c.z));
+    }
+
+    inline Vec3 ease_in_out_quint(Vec3 b, r32 t, Vec3 _c)
+    {
+        return Vec3(ease_in_out_quint(b.x, t, _c.x), ease_in_out_quint(b.y, t, _c.y), ease_in_out_quint(b.z, t, _c.z));
+    }
+
+    inline Vec3 ease_in_sin(Vec3 b, r32 t, Vec3 _c)
+    {
+        return Vec3(ease_in_sin(b.x, t, _c.x), ease_in_sin(b.y, t, _c.y), ease_in_sin(b.z, t, _c.z));
+    }
+
+    inline Vec3 ease_out_sin(Vec3 b, r32 t, Vec3 _c)
+    {
+        return Vec3(ease_out_sin(b.x, t, _c.x), ease_out_sin(b.y, t, _c.y), ease_out_sin(b.z, t, _c.z));
+    }
+
+    inline Vec3 ease_in_out_sin(Vec3 b, r32 t, Vec3 _c)
+    {
+        return Vec3(ease_in_out_sin(b.x, t, _c.x), ease_in_out_sin(b.y, t, _c.y), ease_in_out_sin(b.z, t, _c.z));
     }
 
     inline Vec2 lerp(Vec2 a, r32 t, Vec2 b)
