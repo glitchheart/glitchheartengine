@@ -232,6 +232,38 @@ inline r32_4x le_mask(r32_4x a, r32 b)
     return r32_4x(le_mask(a.p, _mm_set1_ps(b)));
 }
 
+inline __m128 lt_mask(__m128 a, __m128 b)
+{
+    __m128 lt = _mm_cmplt_ps(a, b);
+    return lt;
+}
+
+inline r32_4x lt_mask(r32_4x a, r32_4x b)
+{
+    return r32_4x(lt_mask(a.p, b.p));
+}
+
+inline r32_4x lt_mask(r32_4x a, r32 b)
+{
+    return r32_4x(lt_mask(a.p, _mm_set1_ps(b)));
+}
+
+inline __m128 gt_mask(__m128 a, __m128 b)
+{
+    __m128 gt = _mm_cmpgt_ps(a, b);
+    return gt;
+}
+
+inline r32_4x gt_mask(r32_4x a, r32_4x b)
+{
+    return r32_4x(gt_mask(a.p, b.p));
+}
+
+inline r32_4x gt_mask(r32_4x a, r32 b)
+{
+    return r32_4x(gt_mask(a.p, _mm_set1_ps(b)));
+}
+
 inline __m128 mask_conditional(__m128 mask, __m128 a, __m128 b)
 {
 
@@ -376,7 +408,6 @@ inline r32_4x u32_to_r32(r32_4x a)
     return(result);
 }
 
-
 #if defined(AVX)
 union r64_4x
 {
@@ -518,7 +549,7 @@ inline r32_4x operator+(r64_4x a, r32_4x b)
 {
     r32_4x res(0.0f);
     
-    double *_v = (double*)&b.p;
+    double *_v = (double*)&a.p;
     
     res = r32_4x((r32)_v[0], (r32)_v[1], (r32)_v[2], (r32)_v[3]) + b;
     
@@ -550,46 +581,40 @@ inline r32_4x operator*(r64_4x a, r32_4x b)
 inline r32_4x operator/(r32_4x a, r64_4x b)
 {
     r32_4x res(0.0f);
-    
     double *_v = (double*)&b.p;
-    
     res = a / r32_4x((r32)_v[0], (r32)_v[1], (r32)_v[2], (r32)_v[3]);
-    
     return res;
 }
 
 inline r32_4x operator/(r64_4x a, r32_4x b)
 {
     r32_4x res(0.0f);
-    
     double *_v = (double*)&a.p;
-    
     res = r32_4x((r32)_v[0], (r32)_v[1], (r32)_v[2], (r32)_v[3]) / b;
-    
     return res;
 }
 
-inline r64_4x simd_min(r64_4x left, r64_4x right)
+inline r64_4x min(r64_4x left, r64_4x right)
 {
-    __m256d min = _mm256_min_pd(left.p, right.p);
+    __m256d _min = _mm256_min_pd(left.p, right.p);
     return r64_4x(min);
 }
 
-inline r64_4x simd_min(r64 left, r64_4x right)
+inline r64_4x min(r64 left, r64_4x right)
 {
-    __m256d min = _mm256_min_pd(_mm256_set1_pd(left), right.p);
+    __m256d _min = _mm256_min_pd(_mm256_set1_pd(left), right.p);
     return r64_4x(min);
 }
 
-inline r64_4x simd_max(r64 left, r64_4x right)
+inline r64_4x max(r64 left, r64_4x right)
 {
-    __m256d max = _mm256_max_pd(_mm256_set1_pd(left), right.p);
+    __m256d _max = _mm256_max_pd(_mm256_set1_pd(left), right.p);
     return r64_4x(max);
 }
 
-inline r64_4x simd_max(r64_4x left, r64_4x right)
+inline r64_4x max(r64_4x left, r64_4x right)
 {
-    __m256d max = _mm256_max_pd(left.p, right.p);
+    __m256d _max = _mm256_max_pd(left.p, right.p);
     return r64_4x(max);
 }
 
@@ -658,6 +683,242 @@ r32_4x operator-(r32 left, r64_4x right)
 namespace math
 {
 
+}
+
+#else
+union r64_4x
+{
+    struct
+    {
+        __m128d p1;
+        __m128d p2;
+    };
+    r64 e[4];
+
+    explicit r64_4x(r64 v)
+    {
+        p1 = _mm_set1_pd(v);
+        p2 = _mm_set1_pd(v);
+    }
+    
+    explicit r64_4x(r64 v1, r64 v2, r64 v3, r64 v4)
+    {
+        p1 = _mm_set_pd(v1, v2);
+        p2 = _mm_set_pd(v3, v4);
+    }
+    
+    explicit r64_4x(__m128d v1, __m128d v2)
+    {
+        double *_v1 = (double*)&v1;
+        double *_v2 = (double*)&v2;
+        p1 = _mm_set_pd(_v1[0], _v1[1]);
+        p2 = _mm_set_pd(_v2[0], _v2[1]);
+    }
+
+    explicit r64_4x(const r32_4x& other)
+    {
+        p1 = _mm_set_pd(other.e[0]
+                        , other.e[1]);
+        p2 = _mm_set_pd(other.e[2]
+                        , other.e[3]);
+    }
+    
+    inline r64_4x& operator=(const r64_4x& v)
+    {
+        p1 = _mm_set_pd(v.e[0], v.e[1]);
+        p2 = _mm_set_pd(v.e[2], v.e[3]);
+        return *this;
+    }
+    
+    inline r64_4x& operator=(const r64& v)
+    {
+        p1 = _mm_set1_pd(v);
+        p2 = _mm_set1_pd(v);
+        return *this;
+    }
+    
+    inline r64_4x operator+ (r64_4x b)
+    {
+        r64_4x res(0.0);
+        
+        res.p1 = _mm_add_pd(p1, b.p1);
+        res.p2 = _mm_add_pd(p2, b.p2);
+        return res;
+    }
+    
+    inline r64_4x& operator+= (r64_4x b)
+    {
+        p1 = _mm_add_pd(p1, b.p1);
+        p2 = _mm_add_pd(p2, b.p2);
+        return *this;
+    }
+    
+    inline r64_4x operator- (r64_4x b)
+    {
+        r64_4x res(0.0);
+        
+        res.p1 = _mm_sub_pd(p1, b.p1);
+        res.p2 = _mm_sub_pd(p2, b.p2);
+        
+        return res;
+    }
+    
+    inline r64_4x operator-= (r64_4x b)
+    {
+        p1 = _mm_sub_pd(p1, b.p1);
+        p2 = _mm_sub_pd(p2, b.p2);
+        
+        return *this;
+    }
+    
+    inline r64_4x operator* (r64_4x b)
+    {
+        r64_4x res(0.0);
+        
+        res.p1 = _mm_mul_pd(p1, b.p1);
+        res.p2 = _mm_mul_pd(p2, b.p2);
+        
+        return res;
+    }
+    
+    inline r64_4x operator* (r32 b)
+    {
+        r64_4x res(0.0);
+        
+        res.p1 = _mm_mul_pd(p1, _mm_set1_pd(b));
+        res.p2 = _mm_mul_pd(p2, _mm_set1_pd(b));
+        return res;
+    }
+    
+    inline r64_4x operator* (r64 b)
+    {
+        r64_4x res(0.0);
+        
+        res.p1 = _mm_mul_pd(p1, _mm_set1_pd(b));
+        res.p2 = _mm_mul_pd(p2, _mm_set1_pd(b));
+        
+        return res;
+    }
+    
+    inline r64_4x& operator*= (r64_4x b)
+    {
+        p1 = _mm_mul_pd(p1, b.p1);
+        p2 = _mm_mul_pd(p2, b.p2);
+        
+        return *this;
+    }
+    
+    inline r64_4x operator/ (r64_4x b)
+    {
+        r64_4x res(0.0);
+        
+        res.p1 = _mm_div_pd(p1, b.p1);
+        res.p2 = _mm_div_pd(p2, b.p2);
+        
+        return res;
+    }
+    
+    inline r64_4x& operator/= (r64_4x b)
+    {
+        p1 = _mm_div_pd(p1, b.p1);
+        p2 = _mm_div_pd(p2, b.p2);
+        return *this;
+    }
+};
+
+
+inline r32_4x operator+(r32_4x a, r64_4x b)
+{
+    r32_4x res(0.0f);
+    
+    double *_v1 = (double*)&b.p1;
+    double *_v2 = (double*)&b.p2;
+    
+    res = a + r32_4x((r32)_v1[0], (r32)_v1[1], (r32)_v2[2], (r32)_v2[3]);
+    
+    return res;
+}
+
+inline r32_4x operator+(r64_4x a, r32_4x b)
+{
+    r32_4x res(0.0f);
+    
+    double *_v1 = (double*)&a.p1;
+    double *_v2 = (double*)&a.p2;
+    
+    res = r32_4x((r32)_v1[0], (r32)_v1[1], (r32)_v2[2], (r32)_v2[3]) + b;
+    
+    return res;
+}
+
+inline r32_4x operator*(r32_4x a, r64_4x b)
+{
+    r32_4x res(0.0f);
+    
+    double *_v1 = (double*)&b.p1;
+    double *_v2 = (double*)&b.p2;
+    
+    res = a * r32_4x((r32)_v1[0], (r32)_v1[1], (r32)_v2[2], (r32)_v2[3]);
+    
+    return res;
+}
+
+inline r32_4x operator*(r64_4x a, r32_4x b)
+{
+    r32_4x res(0.0f);
+    
+    double *_v1 = (double*)&a.p1;
+    double *_v2 = (double*)&a.p2;
+    
+    res = r32_4x((r32)_v1[0], (r32)_v1[1], (r32)_v2[2], (r32)_v2[3]) * b;
+    
+    return res;
+}
+
+inline r32_4x operator/(r32_4x a, r64_4x b)
+{
+    r32_4x res(0.0f);
+    double *_v1 = (double*)&b.p1;
+    double *_v2 = (double*)&b.p2;
+    res = a / r32_4x((r32)_v1[0], (r32)_v1[1], (r32)_v2[2], (r32)_v2[3]);
+    return res;
+}
+
+inline r32_4x operator/(r64_4x a, r32_4x b)
+{
+    r32_4x res(0.0f);
+    double *_v1 = (double*)&a.p1;
+    double *_v2 = (double*)&a.p2;
+    res = r32_4x((r32)_v1[0], (r32)_v1[1], (r32)_v2[2], (r32)_v2[3]) / b;
+    return res;
+}
+
+inline r64_4x min(r64_4x left, r64_4x right)
+{
+    __m128d min1 = _mm_min_pd(left.p1, right.p1);
+    __m128d min2 = _mm_min_pd(left.p2, right.p2);
+    return r64_4x(min1, min2);
+}
+
+inline r64_4x min(r64 left, r64_4x right)
+{
+    __m128d min1 = _mm_min_pd(_mm_set1_pd(left), right.p1);
+    __m128d min2 = _mm_min_pd(_mm_set1_pd(left), right.p2);
+    return r64_4x(min1, min2);
+}
+
+inline r64_4x max(r64 left, r64_4x right)
+{
+    __m128d max1 = _mm_max_pd(_mm_set1_pd(left), right.p1);
+    __m128d max2 = _mm_max_pd(_mm_set1_pd(left), right.p2);
+    return r64_4x(max1, max2);
+}
+
+inline r64_4x max(r64_4x left, r64_4x right)
+{
+    __m128d max1 = _mm_max_pd(left.p1, right.p1);
+    __m128d max2 = _mm_max_pd(left.p2, right.p2);
+    return r64_4x(max1, max2);
 }
 
 #endif
@@ -1576,19 +1837,9 @@ namespace math
 
         r32_4x t_else = t - 1.0f;
         res_else = ((-c) / 2.0f) * (t_else * (t_else - 2.0f) - 1.0f) + b;
-        
-        for(i32 i = 0; i < 4; i++)
-        {
-            r32 l_t = t.e[i];
-            if(l_t < 1.0)
-            {
-                res.e[i] = res_lt.e[i];
-            }
-            else
-            {
-                res.e[i] = res_else.e[i];
-            }
-        }
+
+        r32_4x mask = lt_mask(t, 1.0f);
+        res = mask_conditional(mask, res_lt, res_else);
 
         return res;
     }
@@ -1620,19 +1871,9 @@ namespace math
         r32_4x t_else = t - 2.0f;
         
         res_else = (c / 2.0f) * (t_else * t_else * t_else + 2.0f) + b;
-        
-        for(i32 i = 0; i < 4; i++)
-        {
-            r32 l_t = t.e[i];
-            if(l_t < 1.0)
-            {
-                res.e[i] = res_lt.e[i];
-            }
-            else
-            {
-                res.e[i] = res_else.e[i];
-            }
-        }
+
+        r32_4x mask = lt_mask(t, 1.0f);
+        res = mask_conditional(mask, res_lt, res_else);
 
         return res;
     }       
