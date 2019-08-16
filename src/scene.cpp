@@ -4557,7 +4557,6 @@ static Camera get_standard_camera(SceneManager& manager)
     SET_MAT_ARRAY_VALUE(math::Mat4)
     SET_MAT_ARRAY_VALUE(rendering::TextureHandle)
 
-
     static void recompute_transforms(TransformComponent& root, Scene& scene)
     {
         rendering::recompute_transform(root.transform);
@@ -4608,6 +4607,11 @@ static Camera get_standard_camera(SceneManager& manager)
 
         Entity& parent = get_entity(parent_handle, scene);
         Entity& child = get_entity(child_handle, scene);
+
+        if(IS_ENTITY_HANDLE_VALID(child.parent))
+        {
+            remove_parent(child_handle, scene);
+        }
         
         TransformComponent &parent_transform = get_transform_comp(parent_handle, scene);
         TransformComponent &child_transform = get_transform_comp(child_handle, scene);
@@ -4617,7 +4621,7 @@ static Camera get_standard_camera(SceneManager& manager)
         
         parent.children[parent.child_count++] = child_handle;
         child.parent = parent_handle;
-        
+
         child_transform.transform.position -= parent_transform.transform.position;
         child_transform.transform.position /= parent_transform.transform.scale;
         child_transform.transform.euler_angles -= parent_transform.transform.euler_angles;
@@ -4638,10 +4642,19 @@ static Camera get_standard_camera(SceneManager& manager)
             {
                 child.parent = EMPTY_ENTITY_HANDLE;
 
-                child_transform.transform.position += parent_transform.transform.position;
-                child_transform.transform.position *= parent_transform.transform.scale;
-                child_transform.transform.euler_angles += parent_transform.transform.euler_angles;
-                child_transform.transform.scale *= parent_transform.transform.scale;
+                Scene &s = get_scene(scene);
+                EntityHandle root = get_root_entity(parent_handle, s);
+                TransformComponent &transform = get_transform_comp(root, scene);
+                recompute_transforms(transform, s);
+
+                math::Vec3 translation = math::translation(parent_transform.transform.model);
+                math::Vec3 scale = math::scale(parent_transform.transform.model);
+                math::Vec3 euler_angles = math::euler_angles(parent_transform.transform.model);
+
+                child_transform.transform.position += translation;
+                //child_transform.transform.position *= scale;
+                child_transform.transform.euler_angles += euler_angles;
+                child_transform.transform.scale *= scale;
                 child_transform.transform.dirty = true;
                 
                 parent.children[i] = parent.children[parent.child_count - 1];
