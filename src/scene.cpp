@@ -1295,26 +1295,116 @@ static Camera get_standard_camera(SceneManager& manager)
     {
         list.handles[list.entity_count++] = entity;
     }
+
+    static rendering::Transform get_transform_in_current_space(rendering::Transform transform, b32 with_scale = false)
+    {
+        SceneManager *manager = core.scene_manager;
+        rendering::Transform result;
+        switch(manager->gizmos.space)
+        {
+        case TransformationSpace::WORLD:
+        {
+            result = transform;
+            result.model = math::Mat4();
+
+            if(with_scale)
+            {
+                result.model = math::scale(result.model, math::scale(transform.model));
+            }
+            result.model = math::translate(result.model, math::translation(transform.model));
+        }
+        break;
+        case TransformationSpace::LOCAL:
+        {
+            rendering::Transform local = transform;
+            result = rendering::create_transform(math::translation(local.model), with_scale ? local.scale : math::Vec3(1.0f), local.euler_angles);
+        }
+        break;
+        }
+        return result;
+    }
+
+    static EntityHandle pick_scale_cube(TranslationConstraint constraint, TransformComponent selected_transform, i32 mouse_x, i32 mouse_y)
+    {
+        SceneManager* manager = core.scene_manager;
+        math::Vec3 direction;
+        EntityHandle cube_handle = { 0 };
+
+        cube_handle = manager->gizmos.scale_cubes[(i32)constraint];
+        TransformComponent& t_comp = get_transform_comp(cube_handle, core.scene_manager->loaded_scene);
+
+        rendering::Transform transform = get_transform_in_current_space(selected_transform.transform);
+
+        switch(constraint)
+        {
+        case TranslationConstraint::X:
+        {
+            direction = math::normalize(math::right(transform.model));
+        }
+        break;
+        case TranslationConstraint::Y:
+        {
+            direction = math::normalize(math::up(transform.model));
+        }
+        break;
+        case TranslationConstraint::Z:
+        {
+            direction = math::normalize(math::forward(transform.model));
+        }
+        break;
+        }
+
+        math::Ray ray = cast_ray(manager->loaded_scene, mouse_x, mouse_y);
+        math::BoundingBox box;
+        math::Vec3 real_scale = math::Vec3(1, 1, 1) * manager->gizmos.current_distance_to_camera * SCALE_CUBE_SIZE;
+
+        math::Vec3 world_pos = math::translation(selected_transform.transform.model) + direction * manager->gizmos.current_distance_to_camera;
+            
+        box.min = math::Vec3(world_pos.x - real_scale.x * 0.5f, world_pos.y - real_scale.y * 0.5f, world_pos.z - real_scale.z * 0.5f);
+        box.max = math::Vec3(world_pos.x + real_scale.x * 0.5f, world_pos.y + real_scale.y * 0.5f, world_pos.z + real_scale.z * 0.5f);
+
+        math::Vec3 intersection_point;
+        if(aabb_ray_intersection(ray, box, &intersection_point))
+        {
+            return cube_handle;
+        }
+
+        return { -1 };
+    }
+    
     static EntityHandle pick_entity(SceneHandle handle, i32 mouse_x, i32 mouse_y)
     {
         Scene &scene = get_scene(handle);
 
-        math::Ray ray = cast_ray(scene, mouse_x, mouse_y);       
+        math::Ray ray = cast_ray(scene, mouse_x, mouse_y);
         
         if(IS_ENTITY_HANDLE_VALID(handle.manager->selected_entity))
         {
             TransformComponent &selected_transform = get_transform_comp(handle.manager->selected_entity, handle);
             math::BoundingBox box;
-            math::Vec3 real_scale = math::Vec3(1, 1, 1) * handle.manager->gizmos.current_distance_to_camera;
+            math::Vec3 real_scale = math::Vec3(1, 1, 1) * handle.manager->gizmos.current_distance_to_camera * SCALE_CUBE_SIZE;
+
+            math::Vec3 world_pos = math::translation(selected_transform.transform.model);
             
-            box.min = math::Vec3(selected_transform.transform.position.x - real_scale.x * 0.5f, selected_transform.transform.position.y - real_scale.y * 0.5f, selected_transform.transform.position.z - real_scale.z * 0.5f);
-            box.max = math::Vec3(selected_transform.transform.position.x + real_scale.x * 0.5f, selected_transform.transform.position.y + real_scale.y * 0.5f, selected_transform.transform.position.z + real_scale.z * 0.5f);
+            box.min = math::Vec3(world_pos.x - real_scale.x * 0.5f, world_pos.y - real_scale.y * 0.5f, world_pos.z - real_scale.z * 0.5f);
+            box.max = math::Vec3(world_pos.x + real_scale.x * 0.5f, world_pos.y + real_scale.y * 0.5f, world_pos.z + real_scale.z * 0.5f);
 
             math::Vec3 intersection_point;
             if(aabb_ray_intersection(ray, box, &intersection_point))
             {
                 return handle.manager->gizmos.scale_cubes[3];
             }
+
+            for(i32 i = 0; i < 3; i++)
+            {
+                EntityHandle handle = pick_scale_cube((TranslationConstraint)i, selected_transform, mouse_x, mouse_y);
+            
+                if(IS_ENTITY_HANDLE_VALID(handle))
+                {
+                    return handle;
+                }
+            }
+
         }
 
         EntityList entity_list = {};
@@ -1521,8 +1611,41 @@ static Camera get_standard_camera(SceneManager& manager)
 
     static void _register_gizmos(SceneHandle scene)
     {
-        SceneManager *manager = scene.manager;
-        manager->gizmos.active = true;
+        core.scene_manager->gizmos.active = true;
+    }
+    
+    static void set_transformation_space(TransformationSpace space)
+    {
+        if(core.scene_manager->gizmos.transformation_type == TransformationType::SCALE &&
+           space == TransformationSpace::WORLD)
+        {
+            return;
+        }
+        core.scene_manager->gizmos.space = space;
+    }
+
+    static void toggle_transformation_space()
+    {
+        SceneManager *manager = core.scene_manager;
+        
+        if(manager->gizmos.transformation_type == TransformationType::SCALE)
+        {
+            return;
+        }
+        
+        switch(manager->gizmos.space)
+        {
+        case TransformationSpace::WORLD:
+        {
+            manager->gizmos.space = TransformationSpace::LOCAL;
+        }
+        break;
+        case TransformationSpace::LOCAL:
+        {
+            manager->gizmos.space = TransformationSpace::WORLD;
+        }
+        break;
+        }
     }
 
     static void draw_gizmos(SceneManager *manager)
@@ -1533,35 +1656,52 @@ static Camera get_standard_camera(SceneManager& manager)
             r32 unit = manager->gizmos.current_distance_to_camera;
             
             TransformComponent &transform_comp = get_transform_comp(manager->selected_entity, manager->loaded_scene);
-            rendering::Transform t = rendering::create_transform(transform_comp.transform.position, math::Vec3(1.0f), math::Vec3(0.0f));
+
+            TransformationSpace old_space = manager->gizmos.space;
+            
+            if(manager->gizmos.transformation_type == TransformationType::SCALE)
+            {
+                set_transformation_space(TransformationSpace::LOCAL);
+            }
+            
+            rendering::Transform t = get_transform_in_current_space(transform_comp.transform);
+            
             math::Vec3 yellow(RGB_FLOAT(189), RGB_FLOAT(183), RGB_FLOAT(107));
 
             if(manager->gizmos.transformation_type == TransformationType::SCALE)
             {
-                r32 scale_cube_size = 0.2f;
+                math::Vec3 right = math::normalize(math::right(t.model));
+                math::Vec3 forward = math::normalize(math::forward(t.model));
+                math::Vec3 up = math::normalize(math::up(t.model));
                 
                 set_uniform_value(manager->gizmos.scale_cubes[0], "color", c == TranslationConstraint::X ? yellow : math::Vec3(1.0f, 0.0f, 0.0f), manager->loaded_scene);
                 set_uniform_value(manager->gizmos.scale_cubes[1], "color", c == TranslationConstraint::Y ? yellow : math::Vec3(0.0f, 1.0f, 0.0f), manager->loaded_scene);
                 set_uniform_value(manager->gizmos.scale_cubes[2], "color", c == TranslationConstraint::Z ? yellow : math::Vec3(0.0f, 0.0f, 1.0f), manager->loaded_scene);
                 set_uniform_value(manager->gizmos.scale_cubes[3], "color", manager->gizmos.scaling_mode == ScalingMode::ALL_AXIS ? yellow : math::Vec3(1.0f, 1.0f, 1.0f), manager->loaded_scene);
+
+                math::Vec3 world_pos = math::translation(t.model);
                 
                 TransformComponent &x_t = get_transform_comp(manager->gizmos.scale_cubes[0], manager->loaded_scene);
-                set_position(x_t, transform_comp.transform.position + math::Vec3(unit, 0, 0));
-                set_scale(x_t, math::Vec3(unit * scale_cube_size, unit * scale_cube_size, unit * scale_cube_size));
+                set_position(x_t, world_pos + right * unit);
+                set_scale(x_t, math::Vec3(unit * SCALE_CUBE_SIZE * 0.5f));
+                set_rotation(x_t, t.euler_angles);
 
                 TransformComponent &y_t = get_transform_comp(manager->gizmos.scale_cubes[1], manager->loaded_scene);
-                set_position(y_t, transform_comp.transform.position + math::Vec3(0, unit, 0));
-                set_scale(y_t, math::Vec3(unit * scale_cube_size, unit * scale_cube_size, unit * scale_cube_size));
+                set_position(y_t, world_pos + up * unit);
+                set_scale(y_t, math::Vec3(unit * SCALE_CUBE_SIZE * 0.5f));
+                set_rotation(y_t, t.euler_angles);
 
                 TransformComponent &z_t = get_transform_comp(manager->gizmos.scale_cubes[2], manager->loaded_scene);
-                set_position(z_t, transform_comp.transform.position + math::Vec3(0, 0, unit));
-                set_scale(z_t, math::Vec3(unit * scale_cube_size, unit * scale_cube_size, unit * scale_cube_size));
+                set_position(z_t, world_pos + forward * unit);
+                set_scale(z_t, math::Vec3(unit * SCALE_CUBE_SIZE * 0.5f));
+                set_rotation(z_t, t.euler_angles);
                 
                 TransformComponent &center_t = get_transform_comp(manager->gizmos.scale_cubes[3], manager->loaded_scene);
-                set_position(center_t, transform_comp.transform.position);
-                set_scale(center_t, math::Vec3(unit * scale_cube_size, unit * scale_cube_size, unit * scale_cube_size));
+                set_position(center_t, world_pos);
+                set_scale(center_t, math::Vec3(unit * SCALE_CUBE_SIZE * 0.5f));
+                set_rotation(center_t, t.euler_angles);
             }
-                
+
             // Draw transform manipulators
             math::Vec3 v1 = math::Vec3(0.0f, 0.0f, 0.0f);
             math::Vec3 v2 = math::Vec3(manager->gizmos.current_distance_to_camera, 0.0f, 0.0f);
@@ -1589,6 +1729,8 @@ static Camera get_standard_camera(SceneManager& manager)
             color = c == TranslationConstraint::Z ? math::Rgba(yellow, 1.0f) : math::Rgba(0.0f, 0.0f, 1.0f, 1.0f);
 
             rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.z_material, manager->renderer->render.standard_opaque_pass, rendering::CommandType::NO_DEPTH);
+
+            set_transformation_space(old_space);
         }
     }
 
@@ -1661,13 +1803,109 @@ static Camera get_standard_camera(SceneManager& manager)
     {
         if(manager->dragging)
         {
-            if(manager->gizmos.transformation_type == TransformationType::SCALE && manager->gizmos.scaling_mode == ScalingMode::ALL_AXIS)
+            if(manager->gizmos.transformation_type == TransformationType::SCALE)
             {
                 math::Vec2 mouse_position = math::Vec2(input_controller->mouse_x, manager->renderer->window_height - input_controller->mouse_y);
-                math::Vec2 mouse_offset = manager->gizmos.scale_mouse_offset - mouse_position;
+                math::Vec2 mouse_offset = mouse_position - manager->gizmos.scale_mouse_offset;
                 r32 diff = (mouse_offset.x + mouse_offset.y) * SCALE_SENSITIVITY;
-                
-                rendering::set_scale(transform.transform, manager->gizmos.initial_scale + math::Vec3(diff, diff, diff));
+
+                if(manager->gizmos.scaling_mode == ScalingMode::ALL_AXIS)
+                {
+                    rendering::set_scale(transform.transform, manager->gizmos.initial_scale + math::Vec3(diff, diff, diff));
+                }
+                else if(manager->gizmos.scaling_mode == ScalingMode::SINGLE_AXIS)
+                {
+                    math::Vec3 direction;
+                    rendering::Transform local = get_transform_in_current_space(transform.transform);
+
+                    switch(manager->gizmos.constraint)
+                    {
+                    case TranslationConstraint::X:
+                    {
+                        math::Vec3 right = math::normalize(math::right(local.model));
+                        for(i32 i = 0; i < 3; i++)
+                        {
+                            if(ABS(right.e[i]) > 0.5f)
+                            {
+                                right = math::normalize(right);
+                                direction = math::Vec3(right.e[i], 0.0f, 0.0f);
+                                break;
+                            }
+                        }
+                    }
+                    break;
+                    case TranslationConstraint::Y:
+                    {
+                        math::Vec3 up = math::normalize(math::up(local.model));
+                        for(i32 i = 0; i < 3; i++)
+                        {
+                            if(ABS(up.e[i]) > 0.5f)
+                            {
+                                up = math::normalize(up);
+                                direction = math::Vec3(0.0f, up.e[i], 0.0f);
+                                break;
+                            }
+                        }
+                    }
+                    break;
+                    case TranslationConstraint::Z:
+                    {
+                        math::Vec3 forward = math::normalize(math::forward(local.model));
+                        for(i32 i = 0; i < 3; i++)
+                        {
+                            if(ABS(forward.e[i]) > 0.5f)
+                            {
+                                forward = math::normalize(forward);
+                                direction = math::Vec3(0.0f, 0.0f, forward.e[i]);
+                                break;
+                            }
+                        }
+                    }
+                    break;
+                    }
+
+                    if(manager->gizmos.constraint != TranslationConstraint::NONE)
+                    {
+                        rendering::set_scale(transform.transform, manager->gizmos.initial_scale + direction * diff);
+                    }
+                }
+                else
+                {
+                    math::Vec3 points[2];
+                    Scene &scene = get_scene(manager->loaded_scene);
+                    math::Ray ray = cast_ray(scene, (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
+            
+                    Line l1 = line_from_ray(ray);
+            
+                    line_vs_line(l1, manager->gizmos.current_line, points);
+                    math::Vec3 scale = transform.transform.scale;
+                    math::Vec3 diff = points[1] - manager->gizmos.initial_offset;
+
+                    switch(manager->gizmos.constraint)
+                    {
+                    case TranslationConstraint::X:
+                    {
+                        debug("x: %f\n", diff.x);
+                        rendering::set_scale_x(transform.transform, scale.x + diff.x);
+                        manager->gizmos.initial_offset = points[1];
+                    }
+                    break;
+                    case TranslationConstraint::Y:
+                    {
+                        debug("y: %f\n", diff.y);
+                        rendering::set_scale_y(transform.transform, scale.y + diff.y);
+                        manager->gizmos.initial_offset = points[1];
+                    }
+                    break;
+                    case TranslationConstraint::Z:
+                    {
+                        debug("z: %f\n", diff.z);
+                        rendering::set_scale_z(transform.transform, scale.z + diff.z);
+                        manager->gizmos.initial_offset = points[1];
+                    }
+                    break;
+                    }
+                }
             }
             else
             {
@@ -1685,11 +1923,15 @@ static Camera get_standard_camera(SceneManager& manager)
                 {
                     if(manager->gizmos.transformation_type == TransformationType::POSITION)
                     {
-                        rendering::set_position_x(transform.transform, points[1].x - manager->gizmos.initial_offset.x);
+                        rendering::translate(transform.transform, (points[1] - manager->gizmos.initial_offset));
+                        manager->gizmos.initial_offset = points[1];
                     }
                     else if(manager->gizmos.transformation_type == TransformationType::SCALE)
                     {
-                        rendering::set_scale_x(transform.transform, points[1].x - manager->gizmos.initial_offset.x);
+                        // math::Vec3 scale = transform.transform.scale;
+                        // math::Vec3 diff = points[1] - manager->gizmos.initial_offset;
+                        // rendering::set_scale_x(transform.transform, diff.x);
+                        // manager->gizmos.initial_offset = points[1];
                     }
                     else if(manager->gizmos.transformation_type == TransformationType::ROTATION)
                     {
@@ -1701,11 +1943,15 @@ static Camera get_standard_camera(SceneManager& manager)
                 {
                     if(manager->gizmos.transformation_type == TransformationType::POSITION)
                     {
-                        rendering::set_position_y(transform.transform, points[1].y - manager->gizmos.initial_offset.y);
+                        rendering::translate(transform.transform, points[1] - manager->gizmos.initial_offset);
+                        manager->gizmos.initial_offset = points[1];                        
                     }
                     else if(manager->gizmos.transformation_type == TransformationType::SCALE)
                     {
-                        rendering::set_scale_y(transform.transform, points[1].y - manager->gizmos.initial_offset.y);
+                        // math::Vec3 scale = transform.transform.scale;
+                        // math::Vec3 diff = points[1] - manager->gizmos.initial_offset;
+                        // rendering::set_scale_y(transform.transform, diff.y);
+                        // manager->gizmos.initial_offset = points[1];
                     }
                     else if(manager->gizmos.transformation_type == TransformationType::ROTATION)
                     {
@@ -1717,11 +1963,15 @@ static Camera get_standard_camera(SceneManager& manager)
                 {
                     if(manager->gizmos.transformation_type == TransformationType::POSITION)
                     {
-                        rendering::set_position_z(transform.transform, points[1].z - manager->gizmos.initial_offset.z);
+                        rendering::translate(transform.transform, points[1] - manager->gizmos.initial_offset);
+                        manager->gizmos.initial_offset = points[1];
                     }
                     else if(manager->gizmos.transformation_type == TransformationType::SCALE)
                     {
-                        rendering::set_scale_z(transform.transform, points[1].z - manager->gizmos.initial_offset.z);
+                        // math::Vec3 scale = transform.transform.scale;
+                        // math::Vec3 diff = points[1] - manager->gizmos.initial_offset;
+                        // rendering::set_scale_z(transform.transform, diff.z);
+                        // manager->gizmos.initial_offset = points[1];
                     }
                     else if(manager->gizmos.transformation_type == TransformationType::ROTATION)
                     {
@@ -1957,6 +2207,7 @@ static Camera get_standard_camera(SceneManager& manager)
             TransformComponent &transform = get_transform_comp(manager->gizmos.scale_cubes[i], manager->loaded_scene);
             set_position(transform, math::Vec3(0, 1 + i, 0));
             set_hide_in_ui(manager->gizmos.scale_cubes[i], true, manager->loaded_scene);
+            set_entity_selection_enabled(manager->gizmos.scale_cubes[i], false, manager->loaded_scene);
         }
     }
 
@@ -2122,7 +2373,7 @@ static Camera get_standard_camera(SceneManager& manager)
                 TransformComponent &t = get_transform_comp(manager->selected_entity, handle);
                 
                 update_transform(t, manager, input_controller, delta_time);
-                manager->gizmos.current_distance_to_camera = math::distance(camera_transform.transform.position, t.transform.position) * 0.1f;
+                manager->gizmos.current_distance_to_camera = math::distance(camera_transform.transform.position, math::translation(t.transform.model)) * 0.1f;
                 
                 if(KEY_DOWN(Key_F))
                 {
@@ -2159,6 +2410,8 @@ static Camera get_standard_camera(SceneManager& manager)
                         //}
                 }
             }
+
+            r32 max_distance = GIZMO_TOLERANCE * manager->gizmos.current_distance_to_camera;
             
             if(MOUSE_DOWN(Mouse_Left))
             {
@@ -2168,29 +2421,21 @@ static Camera get_standard_camera(SceneManager& manager)
                 {
                     if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
                     {
+                        TransformationSpace old_space = manager->gizmos.space;
+
+                        if(manager->gizmos.transformation_type == TransformationType::SCALE)
+                        {
+                            manager->gizmos.space = TransformationSpace::LOCAL;
+                        }
+
                         TransformComponent &t = get_transform_comp(manager->selected_entity, handle);
-
-                        math::Vec3 pos = t.transform.position;
-                        math::Vec3 start;
-
-                        switch(manager->gizmos.transformation_type)
-                        {
-                        case TransformationType::POSITION:
-                        {
-                            start = t.transform.position;
-                        }
-                        break;
-                        case TransformationType::SCALE:
-                        {
-                            start = t.transform.scale;
-                        }
-                        break;
-                        case TransformationType::ROTATION:
-                        assert(false);
-                        break;
-                        }
+                        manager->gizmos.scaling_mode = ScalingMode::NO_AXIS;
                         
-                        manager->gizmos.initial_scale = t.transform.scale;
+                        rendering::Transform current_transform = get_transform_in_current_space(t.transform);
+
+                        math::Vec3 pos = math::translation(current_transform.model);
+                        
+                        manager->gizmos.initial_scale = current_transform.scale;
                     
                         TranslationConstraint constraint = TranslationConstraint::NONE;
 
@@ -2198,72 +2443,101 @@ static Camera get_standard_camera(SceneManager& manager)
                     
                         math::Ray ray = cast_ray(scene, (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
 
-                        r32 max_distance = GIZMO_TOLERANCE * manager->gizmos.current_distance_to_camera;
                         r32 gizmo_size = manager->gizmos.current_distance_to_camera;
                         r32 current_distance = 1000.0f;
                         Line l1 = line_from_ray(ray);
+                        l1.start = l1.start;
+                        l1.end = l1.end;
 
+                        math::Vec3 right = math::normalize(math::right(current_transform.model));
+                        math::Vec3 up = math::normalize(math::up(current_transform.model));
+                        math::Vec3 forward = math::normalize(math::forward(current_transform.model));
+                        
                         // Check X axis
                         Line l2;
                         l2.start = pos;
-                        l2.end = pos + math::Vec3(gizmo_size, 0, 0);
+                        l2.end = pos + gizmo_size * right;
                 
                         if(line_vs_line(l1, l2, points))
                         {
                             r32 transform_dist = math::distance(points[1], pos);
                             r32 x_dist = math::distance(points[0], points[1]);
-                            if(x_dist < max_distance && points[1].x > pos.x && points[0].x > pos.x && transform_dist < gizmo_size)
+                            if(x_dist < max_distance && transform_dist < gizmo_size)
                             {
                                 current_distance = x_dist;
                                 constraint = TranslationConstraint::X;
                                 manager->gizmos.current_line = l2;
-                                manager->gizmos.initial_offset = points[1] - start;
+                                manager->gizmos.initial_offset = points[1];
                             }
                         }
 
                         // Check Y axis
-                        l2.end = pos + math::Vec3(0, gizmo_size, 0);
+                        l2.end = pos + gizmo_size * up;
                 
                         if(line_vs_line(l1, l2, points))
                         {
                             r32 transform_dist = math::distance(points[1], pos);
                             r32 y_dist = math::distance(points[0], points[1]);
-                            if(y_dist < max_distance && points[1].y > pos.y && points[0].y > pos.y && transform_dist < gizmo_size)
+                            if(y_dist < max_distance && y_dist < current_distance && transform_dist < gizmo_size)
                             {
                                 current_distance = y_dist;
                                 constraint = TranslationConstraint::Y;
                                 manager->gizmos.current_line = l2;
-                                manager->gizmos.initial_offset = points[1] - start;
+                                manager->gizmos.initial_offset = points[1];
                             }
                         }
 
                         // Check Z axis
-                        l2.end = pos + math::Vec3(0, 0, gizmo_size);
+                        l2.end = pos + gizmo_size * forward;
 
                         if(line_vs_line(l1, l2, points))
                         {
                             r32 transform_dist = math::distance(points[1], pos);
                             r32 z_dist = math::distance(points[0], points[1]);
-                            if(z_dist < max_distance && points[1].z > pos.z && points[0].z > pos.z && transform_dist < gizmo_size)
+                            if(z_dist < max_distance && z_dist < current_distance && transform_dist < gizmo_size)
                             {
                                 current_distance = z_dist;
                                 constraint = TranslationConstraint::Z;
                                 manager->gizmos.current_line = l2;
-                                manager->gizmos.initial_offset = points[1] - start;
+                                manager->gizmos.initial_offset = points[1];
                             }
                         }
 
                         manager->gizmos.constraint = constraint;
+
+                        set_transformation_space(old_space);
                     }
 
                     scene::EntityHandle entity = scene::pick_entity(handle, (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
                     
                     if(HANDLES_EQUAL(entity, manager->gizmos.scale_cubes[3]))
                     {
+                        TransformComponent &t = get_transform_comp(manager->selected_entity, handle);
                         manager->gizmos.scaling_mode = ScalingMode::ALL_AXIS;
                         manager->gizmos.scale_mouse_offset = math::Vec2((r32)input_controller->mouse_x, (r32)manager->renderer->window_height - input_controller->mouse_y);
+                        manager->gizmos.initial_scale = t.transform.scale;
+                        return;
                     }
-                    else if(manager->gizmos.constraint == TranslationConstraint::NONE)
+                    else
+                    {
+                        if(IS_ENTITY_HANDLE_VALID(manager->selected_entity))
+                        {
+                            TransformComponent &t = get_transform_comp(manager->selected_entity, handle);
+                            for(i32 i = 0; i < 3; i++)
+                            {
+                                if(HANDLES_EQUAL(entity, manager->gizmos.scale_cubes[i]))
+                                {
+                                    manager->gizmos.scaling_mode = ScalingMode::SINGLE_AXIS;
+                                    manager->gizmos.constraint = (TranslationConstraint)i;
+                                    manager->gizmos.scale_mouse_offset = math::Vec2((r32)input_controller->mouse_x, (r32)manager->renderer->window_height - input_controller->mouse_y);
+                                    manager->gizmos.initial_scale = t.transform.scale;
+                                    return;
+                                }
+                            }
+                        }
+                    }
+
+                    if(manager->gizmos.constraint == TranslationConstraint::NONE)
                     {
                         select_entity(entity, manager);
                     }

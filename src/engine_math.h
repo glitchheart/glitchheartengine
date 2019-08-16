@@ -2127,7 +2127,6 @@ namespace math
         result.m11 = scale.x * result.m11;
         result.m22 = scale.y * result.m22;
         result.m33 = scale.z * result.m33;
-        
         return result;
     }
     

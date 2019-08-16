@@ -1071,7 +1071,7 @@ namespace editor
                         {
                             char full_path[64];
                             sprintf(full_path, "%s/%s", current_structure.path, current_structure.files[i].name);
-
+                            
                             scene::TransformComponent &transform_comp = scene::get_transform_comp(scene_manager->editor_camera, scene_manager->loaded_scene);
                             
                             place_entity_from_template(transform_comp.transform.position + transform_comp.transform.forward * 15.0f, full_path, scene_manager->loaded_scene, true, true);

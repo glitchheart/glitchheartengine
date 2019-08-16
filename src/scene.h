@@ -531,7 +531,8 @@ namespace scene
         } shadows;
     };
 
-    #define GIZMO_TOLERANCE 0.07f
+    #define GIZMO_TOLERANCE 0.03f
+    #define SCALE_CUBE_SIZE 0.2f
     struct Scene
     {
         SceneHandle handle;
@@ -619,10 +620,16 @@ namespace scene
 
     enum class TranslationConstraint
     {
-        NONE,
         X,
         Y,
-        Z
+        Z,
+        NONE
+    };
+
+    enum class TransformationSpace
+    {
+        WORLD,
+        LOCAL
     };
 
     enum class TransformationType
@@ -634,6 +641,7 @@ namespace scene
 
     enum class ScalingMode
     {
+        NO_AXIS,
         SINGLE_AXIS,
         ALL_AXIS
     };
@@ -688,6 +696,7 @@ namespace scene
             b32 active;
             Gizmos selected_gizmo;
             TranslationConstraint constraint;
+            TransformationSpace space;
 
             rendering::ShaderHandle line_shader;
             rendering::MaterialHandle line_material;
