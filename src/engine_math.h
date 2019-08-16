@@ -1337,8 +1337,11 @@ namespace math
     Vec3 right(Mat4 m);
     Vec3 up(Mat4 m);
     Vec3 forward(Mat4 m);
+
     Vec3 translation(Mat4 m);
     Vec3 scale(Mat4 m);
+    Vec3 euler_angles(Mat4 m);
+    
     Vec3 project(Vec3 in, Mat4 m, Mat4 p, Vec4 viewport);
     Vec3 cross(Vec3 a, Vec3 b);
     Mat4 ortho(r32 left, r32 right, r32 bottom, r32 top, r32 near, r32 far);
@@ -2283,6 +2286,32 @@ namespace math
         result.x = length(right(m));
         result.y = length(up(m));
         result.z = length(forward(m));
+        return result;
+    }
+
+    inline Vec3 euler_angles(Mat4 m)
+    {
+        math::Vec3 result;
+
+        if(m[0][0] == 1.0f)
+        {
+            result.y = atan2f(m[0][2], m[2][3]);
+            result.x = 0;
+            result.z = 0;
+        }
+        else if (m[0][0] == -1.0f)
+        {
+            result.y = atan2f(m[0][2], m[2][3]);
+            result.x = 0;
+            result.z = 0;
+        }
+        else 
+        {
+
+            result.y = atan2(-m[2][0], m[0][0]);
+            result.x = asin(m[1][0]);
+            result.z = atan2(-m[1][2], m[1][1]);
+        }
         return result;
     }
     
