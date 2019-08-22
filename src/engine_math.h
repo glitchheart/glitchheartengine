@@ -2281,16 +2281,26 @@ namespace math
     
     inline Vec3 scale(Mat4 m)
     {
-        math::Vec3 result;
+        Vec3 result;
         result.x = length(right(m));
         result.y = length(up(m));
         result.z = length(forward(m));
         return result;
     }
 
+    inline Mat4 rotation(Mat4 m)
+    {
+        Vec3 s = scale(m);
+        Mat4 result;
+        result.v1 = Vec4(right(m) / s.x, 0.0f);
+        result.v2 = Vec4(up(m) / s.y, 0.0f);
+        result.v3 = Vec4(forward(m) / s.z, 0.0f);
+        return result;
+    }
+
     inline Vec3 euler_angles(Mat4 m)
     {
-        math::Vec3 result;
+        Vec3 result;
 
         if(m[0][0] == 1.0f)
         {

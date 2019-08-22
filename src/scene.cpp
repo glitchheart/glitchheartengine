@@ -817,20 +817,20 @@ namespace scene
         scene::set_active(handle, active, scene);
     }
 
-static Camera get_standard_camera(SceneManager& manager)
-{
-    Camera camera = {};
-    math::Vec3 position = math::Vec3(0.0f, 15.0f, -2.0f);
-    math::Vec3 target = math::Vec3(0.0f, 0.0f, 2.0f);
-    r32 fov = 90 * DEGREE_IN_RADIANS;
-    r32 z_near = 0.1f;
-    r32 z_far = 200.0f;
+    static Camera get_standard_camera(SceneManager& manager)
+    {
+        Camera camera = {};
+        math::Vec3 position = math::Vec3(0.0f, 15.0f, -2.0f);
+        math::Vec3 target = math::Vec3(0.0f, 0.0f, 2.0f);
+        r32 fov = 90 * DEGREE_IN_RADIANS;
+        r32 z_near = 0.1f;
+        r32 z_far = 200.0f;
 
-    math::Mat4 projection = math::perspective((r32)manager.renderer->window_width / (r32)manager.renderer->window_height, fov, z_near, z_far);
+        math::Mat4 projection = math::perspective((r32)manager.renderer->window_width / (r32)manager.renderer->window_height, fov, z_near, z_far);
 
-    camera = create_camera(position, target, projection);
-    return camera;
-}
+        camera = create_camera(position, target, projection);
+        return camera;
+    }
 
     static void parse_scene_settings(FILE* file, SceneHandle handle)
     {
@@ -842,12 +842,6 @@ static Camera get_standard_camera(SceneManager& manager)
         settings.shadows.fov = 110.0f;
         settings.shadows.map_width = 1024;
         settings.shadows.map_height = 1024;
-
-        // settings.camera.position = math::Vec3(0.0f, 15.0f, -2.0f);
-        // settings.camera.target = math::Vec3(0.0f, 0.0f, 2.0f);
-        // settings.camera.fov = 90 * DEGREE_IN_RADIANS;
-        // settings.camera.z_near = 0.1f;
-        // settings.camera.z_far = 50.0f;
 
         scene::EntityHandle camera_handle = EMPTY_ENTITY_HANDLE;
         
@@ -924,13 +918,6 @@ static Camera get_standard_camera(SceneManager& manager)
         settings.shadows.fov = 110.0f;
         settings.shadows.map_width = 1024;
         settings.shadows.map_height = 1024;
-        
-        // settings.camera.position = math::Vec3(0.0f, 15.0f, -2.0f);
-        // settings.camera.target = math::Vec3(0.0f, 0.0f, 2.0f);
-        
-        // settings.camera.fov = 90 * DEGREE_IN_RADIANS;
-        // settings.camera.z_near = 0.1f;
-        // settings.camera.z_far = 50.0f;
         
         FILE *file = fopen(scene_file_path, "r");
         
@@ -1296,7 +1283,7 @@ static Camera get_standard_camera(SceneManager& manager)
         list.handles[list.entity_count++] = entity;
     }
 
-    static rendering::Transform get_transform_in_current_space(rendering::Transform transform, b32 with_scale = false)
+    static rendering::Transform get_normalized_transform_in_current_space(rendering::Transform transform)
     {
         SceneManager *manager = core.scene_manager;
         rendering::Transform result;
@@ -1305,19 +1292,26 @@ static Camera get_standard_camera(SceneManager& manager)
         case TransformationSpace::WORLD:
         {
             result = transform;
-            result.model = math::Mat4();
 
-            if(with_scale)
-            {
-                result.model = math::scale(result.model, math::scale(transform.model));
-            }
+            result.model = math::Mat4();
             result.model = math::translate(result.model, math::translation(transform.model));
+
+            result.scale = math::Vec3(1.0f);
+            result.position = transform.position;
         }
         break;
         case TransformationSpace::LOCAL:
         {
-            rendering::Transform local = transform;
-            result = rendering::create_transform(math::translation(local.model), with_scale ? local.scale : math::Vec3(1.0f), local.euler_angles);
+            result = transform;
+
+            result.model = math::Mat4();            
+            result.model = math::inverse(math::rotation(transform.model)) * result.model;
+            result.model = math::translate(result.model, math::translation(transform.model));
+
+            result.scale = math::Vec3(1.0f);
+            result.position = transform.position;
+            result.orientation = transform.orientation;
+            result.euler_angles = transform.euler_angles;
         }
         break;
         }
@@ -1333,7 +1327,7 @@ static Camera get_standard_camera(SceneManager& manager)
         cube_handle = manager->gizmos.scale_cubes[(i32)constraint];
         TransformComponent& t_comp = get_transform_comp(cube_handle, core.scene_manager->loaded_scene);
 
-        rendering::Transform transform = get_transform_in_current_space(selected_transform.transform);
+        rendering::Transform transform = get_normalized_transform_in_current_space(selected_transform.transform);
 
         switch(constraint)
         {
@@ -1658,13 +1652,13 @@ static Camera get_standard_camera(SceneManager& manager)
             TransformComponent &transform_comp = get_transform_comp(manager->selected_entity, manager->loaded_scene);
 
             TransformationSpace old_space = manager->gizmos.space;
-            
+
             if(manager->gizmos.transformation_type == TransformationType::SCALE)
             {
                 set_transformation_space(TransformationSpace::LOCAL);
             }
-            
-            rendering::Transform t = get_transform_in_current_space(transform_comp.transform);
+
+            rendering::Transform t = get_normalized_transform_in_current_space(transform_comp.transform);
             
             math::Vec3 yellow(RGB_FLOAT(189), RGB_FLOAT(183), RGB_FLOAT(107));
 
@@ -1730,7 +1724,7 @@ static Camera get_standard_camera(SceneManager& manager)
 
             rendering::push_line_to_render_pass(manager->renderer, v1, v2, line_thickness, color, t, manager->gizmos.z_material, manager->renderer->render.standard_opaque_pass, rendering::CommandType::NO_DEPTH);
 
-            set_transformation_space(old_space);
+            manager->gizmos.space = old_space;
         }
     }
 
@@ -1816,7 +1810,7 @@ static Camera get_standard_camera(SceneManager& manager)
                 else if(manager->gizmos.scaling_mode == ScalingMode::SINGLE_AXIS)
                 {
                     math::Vec3 direction;
-                    rendering::Transform local = get_transform_in_current_space(transform.transform);
+                    rendering::Transform local = get_normalized_transform_in_current_space(transform.transform);
 
                     switch(manager->gizmos.constraint)
                     {
@@ -1885,21 +1879,18 @@ static Camera get_standard_camera(SceneManager& manager)
                     {
                     case TranslationConstraint::X:
                     {
-                        debug("x: %f\n", diff.x);
                         rendering::set_scale_x(transform.transform, scale.x + diff.x);
                         manager->gizmos.initial_offset = points[1];
                     }
                     break;
                     case TranslationConstraint::Y:
                     {
-                        debug("y: %f\n", diff.y);
                         rendering::set_scale_y(transform.transform, scale.y + diff.y);
                         manager->gizmos.initial_offset = points[1];
                     }
                     break;
                     case TranslationConstraint::Z:
                     {
-                        debug("z: %f\n", diff.z);
                         rendering::set_scale_z(transform.transform, scale.z + diff.z);
                         manager->gizmos.initial_offset = points[1];
                     }
@@ -1912,76 +1903,22 @@ static Camera get_standard_camera(SceneManager& manager)
                 math::Vec3 points[2];
                 Scene &scene = get_scene(manager->loaded_scene);
                 math::Ray ray = cast_ray(scene, (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
-            
+                
                 Line l1 = line_from_ray(ray);
             
                 line_vs_line(l1, manager->gizmos.current_line, points);
-                
-                switch(manager->gizmos.constraint)
+
+                rendering::Transform current_transform = get_normalized_transform_in_current_space(transform.transform);
+                math::Vec3 diff = points[1] - manager->gizmos.initial_offset;
+                Entity& e = get_entity(transform.entity, manager->loaded_scene);
+                if(IS_ENTITY_HANDLE_VALID(e.parent))
                 {
-                case TranslationConstraint::X:
-                {
-                    if(manager->gizmos.transformation_type == TransformationType::POSITION)
-                    {
-                        rendering::translate(transform.transform, (points[1] - manager->gizmos.initial_offset));
-                        manager->gizmos.initial_offset = points[1];
-                    }
-                    else if(manager->gizmos.transformation_type == TransformationType::SCALE)
-                    {
-                        // math::Vec3 scale = transform.transform.scale;
-                        // math::Vec3 diff = points[1] - manager->gizmos.initial_offset;
-                        // rendering::set_scale_x(transform.transform, diff.x);
-                        // manager->gizmos.initial_offset = points[1];
-                    }
-                    else if(manager->gizmos.transformation_type == TransformationType::ROTATION)
-                    {
-                        // @Incomplete
-                    }
+                    rendering::Transform parent_transform = get_transform_comp(e.parent, manager->loaded_scene).transform;
+                    math::Mat4 parent_model = math::rotation(parent_transform.model);
+                    diff = parent_model * diff;
                 }
-                break;
-                case TranslationConstraint::Y:
-                {
-                    if(manager->gizmos.transformation_type == TransformationType::POSITION)
-                    {
-                        rendering::translate(transform.transform, points[1] - manager->gizmos.initial_offset);
-                        manager->gizmos.initial_offset = points[1];                        
-                    }
-                    else if(manager->gizmos.transformation_type == TransformationType::SCALE)
-                    {
-                        // math::Vec3 scale = transform.transform.scale;
-                        // math::Vec3 diff = points[1] - manager->gizmos.initial_offset;
-                        // rendering::set_scale_y(transform.transform, diff.y);
-                        // manager->gizmos.initial_offset = points[1];
-                    }
-                    else if(manager->gizmos.transformation_type == TransformationType::ROTATION)
-                    {
-                        // @Incomplete
-                    }
-                }
-                break;
-                case TranslationConstraint::Z:
-                {
-                    if(manager->gizmos.transformation_type == TransformationType::POSITION)
-                    {
-                        rendering::translate(transform.transform, points[1] - manager->gizmos.initial_offset);
-                        manager->gizmos.initial_offset = points[1];
-                    }
-                    else if(manager->gizmos.transformation_type == TransformationType::SCALE)
-                    {
-                        // math::Vec3 scale = transform.transform.scale;
-                        // math::Vec3 diff = points[1] - manager->gizmos.initial_offset;
-                        // rendering::set_scale_z(transform.transform, diff.z);
-                        // manager->gizmos.initial_offset = points[1];
-                    }
-                    else if(manager->gizmos.transformation_type == TransformationType::ROTATION)
-                    {
-                        // @Incomplete
-                    }
-                }
-                break;
-                default:
-                break;
-                }
+                rendering::translate(transform.transform, diff);
+                manager->gizmos.initial_offset = points[1];
             }
         }
     }
@@ -2374,7 +2311,6 @@ static Camera get_standard_camera(SceneManager& manager)
                 
                 update_transform(t, manager, input_controller, delta_time);
                 manager->gizmos.current_distance_to_camera = math::distance(camera_transform.transform.position, math::translation(t.transform.model)) * 0.1f;
-                
                 if(KEY_DOWN(Key_F))
                 {
                     // @Incomplete
@@ -2431,11 +2367,11 @@ static Camera get_standard_camera(SceneManager& manager)
                         TransformComponent &t = get_transform_comp(manager->selected_entity, handle);
                         manager->gizmos.scaling_mode = ScalingMode::NO_AXIS;
                         
-                        rendering::Transform current_transform = get_transform_in_current_space(t.transform);
+                        rendering::Transform current_transform = get_normalized_transform_in_current_space(t.transform);
 
                         math::Vec3 pos = math::translation(current_transform.model);
                         
-                        manager->gizmos.initial_scale = current_transform.scale;
+                        manager->gizmos.initial_scale = t.transform.scale;
                     
                         TranslationConstraint constraint = TranslationConstraint::NONE;
 
@@ -2452,7 +2388,7 @@ static Camera get_standard_camera(SceneManager& manager)
                         math::Vec3 right = math::normalize(math::right(current_transform.model));
                         math::Vec3 up = math::normalize(math::up(current_transform.model));
                         math::Vec3 forward = math::normalize(math::forward(current_transform.model));
-                        
+                       
                         // Check X axis
                         Line l2;
                         l2.start = pos;
