@@ -4036,6 +4036,8 @@ namespace scene
             scene.transform_component_count = 0;
             scene.render_component_count = 0;
             scene.particle_system_component_count = 0;
+            scene.animator_component_count = 0;
+            scene.light_component_count = 0;
         }
         else
         {
@@ -4078,7 +4080,7 @@ namespace scene
 
                 if(animator_component_handle != -1 && scene.entities[index].animator_handle.handle > animator_component_handle)
                 {
-                    scene.entities[index].light_handle.handle--;
+                    scene.entities[index].animator_handle.handle--;
                 }
                 
                 scene.active_entities[index] = scene.active_entities[index + 1];
