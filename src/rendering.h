@@ -390,7 +390,7 @@ struct QueuedRenderCommand
     rendering::MaterialHandle original_material;
     b32 ignore_depth;
 
-    CombinedCommand commands[1024];
+    CombinedCommand commands[2048];
     i32 count;
 };
 
@@ -531,7 +531,7 @@ struct ParticleApi;
 struct Pass
 {
     rendering::RenderPassHandle pass_handle;
-    QueuedRenderCommand queued_commands[64];
+    QueuedRenderCommand queued_commands[128];
     i32 command_count;
 };
 

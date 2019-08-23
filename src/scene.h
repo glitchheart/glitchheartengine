@@ -506,7 +506,8 @@ namespace scene
         FREE_CURRENT_SCENE = 1 << 1
     };
 
-    #define MAX_INSTANCE_BUFFER_HANDLES 256
+    #define MAX_INSTANCE_BUFFER_HANDLES 512
+#define MAX_INSTANCE_BUFFERS 512
     struct InstanceBufferData
     {
         rendering::BufferHandle buffer_handle;
@@ -547,7 +548,7 @@ namespace scene
 
         MemoryArena memory_arena;
 
-        InstanceBufferData instance_buffer_data[MAX_INSTANCE_BUFFER_HANDLES];
+        InstanceBufferData *instance_buffer_data;
         i32 instance_buffer_data_count;
 
         list::SwapList<Entity> entities;

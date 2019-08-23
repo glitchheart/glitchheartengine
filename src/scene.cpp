@@ -295,6 +295,7 @@ namespace scene
         scene.camera_components = push_array(&memory_arena, initial_entity_array_size, CameraComponent);
         scene.particle_system_components = push_array(&memory_arena, initial_entity_array_size, ParticleSystemComponent);
         scene.animator_components = push_array(&memory_arena, initial_entity_array_size, AnimatorComponent*);
+        scene.instance_buffer_data = push_array(&memory_arena, MAX_INSTANCE_BUFFERS, InstanceBufferData);
 
         if(scene_manager->debug_cube.handle == 0)
         {
@@ -987,7 +988,8 @@ namespace scene
     
     static void allocate_instance_buffers(Scene &scene)
     {
-        InstancePair *instance_pairs = (InstancePair*)malloc(sizeof(InstancePair) * 256);
+		const i32 max_instance_pairs = 512;
+        InstancePair *instance_pairs = (InstancePair*)malloc(sizeof(InstancePair) * max_instance_pairs);
         i32 pair_count = 0;
         
         Renderer *renderer = scene.renderer;
@@ -1019,6 +1021,7 @@ namespace scene
 
                     if(!found)
                     {
+						assert(pair_count < max_instance_pairs);
                         InstancePair &pair = instance_pairs[pair_count++];
                         pair.attribute_count = 0;
                         pair.count = 0;
@@ -1081,7 +1084,9 @@ namespace scene
         {
             InstanceBufferData data = scene.instance_buffer_data[i];
             for(i32 j = 0; j < data.instance_buffer_count; j++)
+            {
                 rendering::free_instance_buffer(data.instance_buffer_handles[j], scene.renderer);
+            }
         }
         scene.instance_buffer_data_count = 0;
     }
@@ -1105,6 +1110,8 @@ namespace scene
 			scene.valid = false;
             scene.loaded = false;
 
+            free_instance_buffers(scene);
+
 			if (scene.entities.count > 0)
             {
                 for(i32 i = 0; i < scene.render_component_count; i++)
@@ -1127,10 +1134,9 @@ namespace scene
                 
                 scene.particle_system_component_count = 0;
                 scene.light_component_count = 0;
-                clear(&scene.memory_arena);
             }
 
-            free_instance_buffers(scene);
+            clear(&scene.memory_arena);
 
             if(invalidate_handle)
             {
@@ -5255,6 +5261,8 @@ namespace scene
                         batch_command.material_handle = render.material_handles[pass_index];
                         batch_command.casts_shadows = render.casts_shadows;
                         batch_command.material_handle = render.material_handles[pass_index];
+
+                        assert(render.material_handles[pass_index].handle < global_max_material_instances);
                         
                         command->count++;
                     }
