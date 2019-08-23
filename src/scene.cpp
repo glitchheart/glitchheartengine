@@ -1898,8 +1898,18 @@ namespace scene
                     }
                 }
             }
-            else
+            else if(manager->gizmos.transformation_type == TransformationType::POSITION)
             {
+                if(!manager->dragging)
+                {
+                    return;
+                }
+
+                if(manager->gizmos.constraint == TranslationConstraint::NONE)
+                {
+                    return;
+                }
+                
                 math::Vec3 points[2];
                 Scene &scene = get_scene(manager->loaded_scene);
                 math::Ray ray = cast_ray(scene, (i32)input_controller->mouse_x, (i32)input_controller->mouse_y);
@@ -1917,6 +1927,7 @@ namespace scene
                     math::Mat4 parent_model = math::rotation(parent_transform.model);
                     diff = parent_model * diff;
                 }
+                
                 rendering::translate(transform.transform, diff);
                 manager->gizmos.initial_offset = points[1];
             }
