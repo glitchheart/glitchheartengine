@@ -315,9 +315,9 @@ namespace editor
                         assert(false);
                         }
 
-                        ImGui::SliderFloat3("Ambient", ambient->e, 0.0f, 1.0f);
-                        ImGui::SliderFloat3("Diffuse", diffuse->e, 0.0f, 1.0f);
-                        ImGui::SliderFloat3("Specular", specular->e, 0.0f, 1.0f);
+                        ImGui::ColorEdit3("Ambient", ambient->e);
+                        ImGui::ColorEdit3("Diffuse", diffuse->e);
+                        ImGui::ColorEdit3("Specular", specular->e);
                     }
                 }
                 
