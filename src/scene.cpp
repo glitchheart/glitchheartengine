@@ -2734,6 +2734,12 @@ namespace scene
 
     static void add_to_render_pass(rendering::RenderPassHandle render_pass_handle, rendering::MaterialInstanceHandle material, RenderComponent &comp, Renderer *renderer)
     {
+        for(i32 i = 0; i < comp.render_pass_count; i++)
+        {
+            if(comp.render_passes[i].handle == render_pass_handle.handle)
+                return;
+        }
+        
         comp.render_passes[comp.render_pass_count] = render_pass_handle;
         rendering::Material &instance = get_material_instance(material, renderer);
         comp.original_materials[comp.render_pass_count] = instance.source_material;
