@@ -1619,15 +1619,7 @@ static Buffer &get_internal_buffer(Renderer *renderer, RenderState &render_state
 
 static void update_vertex_buffer(Buffer *buffer, r32 *data, size_t count, size_t size, rendering::BufferUsage buffer_usage, RenderState *render_state, Renderer *renderer)
 {
-    bind_vertex_array(buffer->vao, render_state);
     glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-    buffer->vertex_count = (i32)count;
-    buffer->vertex_buffer_size = (i32)size;
-
-    glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW);
-
-    bind_vertex_array(0, render_state);
-
     GLenum usage = get_usage(buffer_usage);
 
     bind_vertex_array(buffer->vao, render_state);

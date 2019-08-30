@@ -3569,6 +3569,51 @@ namespace rendering
             }
         }
     }
+
+    // static BufferHandle create_plane(Renderer *renderer, r32 subdivisions)
+    // {
+    //     LoadedMeshHandle handle = {};
+    //     Mesh &mesh = create_new_mesh(renderer, handle);
+    //     mesh.vertices = push_array(&renderer->mesh_arena, sizeof(r32) * (subdivisions + 1) * (subdivisions + 1), Vertex);
+    //     mesh.faces = push_array(&renderer->mesh_arena, sizeof(u16) * subdivisions * subdivisions * 2);
+    //     mesh.vertex_count = (subdivisions + 1) * (subdivisions + 1);
+
+    //     for(i32 i = 0, y = 0; y < subdivisions; y++)
+    //     {
+    //         for(i32 x = 0; x < subdivisions; x++, i++)
+    //         {
+    //             mesh.vertices[i] = math::Vec3((r32)x, (r32)y, 1.0f);
+    //         }
+    //     }
+
+    //     // @Incomplete: Fix this!!
+    //     mesh.face_count = subdivisions * subdivisions * 2;
+
+    //     for(i32 i = 0; i < subdivisions; i += 2)
+    //     {
+    //         Face &face = mesh.faces[i];
+    //         face.indices[0] = 0;
+    //         face.indices[1] = 1;
+    //         face.indices[2] = subdivisions + 1;
+
+    //         Face &f2 = mesh.faces[i + 1];
+    //         f2.indices[0] = 1;
+    //         f2.indices[1] = subdivisions + 2;
+    //         f2.indices[2] = subdivisions + 1;
+
+    //         Face &f3 = mesh.faces[i + 2];
+    //         f3.indices[0] = 2;
+    //         f3.indices[1] = 3;
+    //         f3.indices[2] = subdivisions + 2;
+            
+    //         Face &f4 = mesh.faces[i + 3];
+    //         f4.indices[0] = 3;
+    //         f4.indices[1] = subdivisions + 3;
+    //         f4.indices[2] = subdivisions + 2;
+    //     }
+        
+        
+    // }
     
     static BufferHandle create_plane(Renderer *renderer, math::Vec3 *scale = nullptr, math::BoundingBox *box = nullptr)
     {
@@ -5699,7 +5744,8 @@ namespace rendering
         return scaled_clip_rect;
     }
 
-    static void generate_text_coordinates(Renderer* renderer, const char *text, TrueTypeFontInfo &font_info, math::Vec3 position, u64 alignment_flags, FramebufferInfo &framebuffer, CharacterData **coords)
+    // @Note: Returns the length of the text without escaped characters
+    static i32 generate_text_coordinates(Renderer* renderer, const char *text, TrueTypeFontInfo &font_info, math::Vec3 position, u64 alignment_flags, FramebufferInfo &framebuffer, CharacterData **coords)
     {
         // @Note: Compute the coord buffer
         i32 n = 0;
@@ -5766,6 +5812,8 @@ namespace rendering
             i32 kerning = stbtt_GetCodepointKernAdvance(&font_info.info, text[i] - font_info.first_char, text[i + 1] - font_info.first_char);
             x += (r32)kerning * font_info.scale;
         }
+
+        return n / 6;
     }
 
     static void push_text(Renderer *renderer, CreateTextCommandInfo info, const char *text)
@@ -5833,7 +5881,6 @@ namespace rendering
 
         command.clip = info.clip;
         command.clip_rect = scaled_clip_rect;
-        command.text_length = strlen(text);
 
         assert(info.z_layer < Z_LAYERS);
 
@@ -5870,7 +5917,9 @@ namespace rendering
         if(info.has_world_position)
             pos = math::Vec2(0.0f);
         
-        generate_text_coordinates(renderer, text, font_info, pos, info.alignment_flags, *framebuffer, &coords);
+        command.text_length = generate_text_coordinates(renderer, text, font_info, pos, info.alignment_flags, *framebuffer, &coords);
+
+        assert(command.text_length != 0);
 
         command.buffer = {pass.ui.text_command_count++};
     }
