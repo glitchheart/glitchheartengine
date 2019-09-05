@@ -2922,7 +2922,7 @@ static void render_pass(RenderState &render_state, Renderer *renderer, rendering
         glBindFramebuffer(GL_READ_FRAMEBUFFER, read_framebuffer.buffer_handle);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, draw_framebuffer.buffer_handle);
 
-        for(i32 i = 0; i < 1; i++)
+        for(i32 i = 0; i < draw_framebuffer.tex_color_buffer_count; i++)
         {
             glReadBuffer(GL_COLOR_ATTACHMENT0 + i);
             glDrawBuffer(GL_COLOR_ATTACHMENT0 + i);
