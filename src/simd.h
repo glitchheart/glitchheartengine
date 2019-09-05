@@ -43,18 +43,14 @@ union r32_4x
 
     explicit r32_4x(i32* v)
     {
-        p = _mm_setr_ps(*(r32*)&v[0],
-                        *(r32*)&v[1],
-                        *(r32*)&v[2],
-                        *(r32*)&v[3]);
+        r32 _v[4] = {(r32)v[0], (r32)v[1], (r32)v[2], (r32)v[3]};
+        p = _mm_load_ps(_v);
     }
     
     explicit r32_4x(u32 _a, u32 _b, u32 _c, u32 _d)
     {
-        p = _mm_setr_ps(*(r32*)&_a, 
-                        *(r32*)&_b, 
-                        *(r32*)&_c, 
-                        *(r32*)&_d);
+        r32 v[4] = {(r32)_a, (r32)_b, (r32)_c, (r32)_d};
+        p = _mm_load_ps(v);
     }
     
     explicit r32_4x(u32 _a)

@@ -141,19 +141,21 @@ i32 find_unused_particle(ParticleSystemInfo &particle_system)
 	return -1;
 }
 
-r32_4x get_t(r32_4x time_spent, r32_4x start_time, r32_4x recip)
+r32_4x get_t(r32_4x time_spent, r32_4x start_time, r32_4x end_time)
 {
+    r32_4x diff = end_time - start_time;
 	r32_4x in_this_index = time_spent - start_time;
-    r32_4x index_over_diff = in_this_index * recip;
-	r32_4x t = clamp(index_over_diff, 0.0f, 1.0f);
+	r32_4x index_over_diff = in_this_index / diff;
+	r32_4x t = max(0.0, min(1.0, index_over_diff));
+
 	return t;
+    
 }
 
 template<typename T, typename V>
 T get_value_by_time(ParticleSystemInfo& info, r32_4x start_life, i32 index, r32_4x time_spent, OverLifetime<V> over_lifetime, T* _start_value = nullptr)
 {
     i32 value_count = over_lifetime.count;
-    r32_4x recip = r32_4x(over_lifetime.recip_keys[0]);
 
     i32 *_current_indices = info.particles.current_index[index];
 
@@ -170,11 +172,6 @@ T get_value_by_time(ParticleSystemInfo& info, r32_4x start_life, i32 index, r32_
     r32_4x end_key = r32_4x(over_lifetime.keys[end_indices[0]], over_lifetime.keys[end_indices[1]],
                             over_lifetime.keys[end_indices[2]], over_lifetime.keys[end_indices[3]]);
 
-    r32_4x start_recip = r32_4x(over_lifetime.recip_keys[current_indices[0]], over_lifetime.recip_keys[current_indices[1]],
-                              over_lifetime.recip_keys[current_indices[2]], over_lifetime.recip_keys[current_indices[3]]);
-    r32_4x end_recip = r32_4x(over_lifetime.recip_keys[end_indices[0]], over_lifetime.recip_keys[end_indices[1]],
-                            over_lifetime.recip_keys[end_indices[2]], over_lifetime.recip_keys[end_indices[3]]);
-
     T start_value = T(over_lifetime.values[current_indices[0]], over_lifetime.values[current_indices[1]],
                               over_lifetime.values[current_indices[2]], over_lifetime.values[current_indices[3]]);
     T end_value = T(over_lifetime.values[end_indices[0]], over_lifetime.values[end_indices[1]],
@@ -182,12 +179,11 @@ T get_value_by_time(ParticleSystemInfo& info, r32_4x start_life, i32 index, r32_
     T next_value = T(over_lifetime.values[next_indices[0]], over_lifetime.values[next_indices[1]],
                             over_lifetime.values[next_indices[2]], over_lifetime.values[next_indices[3]]);
     
-    r32_4x mask = le_mask(time_spent, end_key);
+    r32_4x mask = le_mask(time_spent, end_key * start_life);
 
     start_key = mask_conditional(mask, start_key, end_key);
     start_value = mask_conditional(mask, start_value, end_value);
     end_value = mask_conditional(mask, end_value, next_value);
-    recip = mask_conditional(mask, start_recip, end_recip);
 
     r32_4x current = r32_4x(current_indices);
     r32_4x next = min(current + 1.0f, r32_4x(value_count - 1));
@@ -196,7 +192,7 @@ T get_value_by_time(ParticleSystemInfo& info, r32_4x start_life, i32 index, r32_
 
     _mm_store_si128((__m128i*)info.particles.current_index[index], _mm_cvtps_epi32(current.p));
 
-    r32_4x t = get_t(time_spent, start_key * start_life, recip * start_life);
+    r32_4x t = get_t(time_spent, start_key * start_life, end_key * start_life);
 	T result = math::lerp(start_value, t, end_value);
 
 	return _start_value ? (*_start_value) * result : result;

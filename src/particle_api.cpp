@@ -379,13 +379,11 @@ static i32 add_key(OverLifetime<T> &over_lifetime, r32 key_time, T value, Memory
     {
        over_lifetime.values = push_array(arena, MAX_LIFETIME_VALUES, T);
        over_lifetime.keys = push_array(arena, MAX_LIFETIME_VALUES, r32);
-       over_lifetime.recip_keys = push_array(arena, MAX_LIFETIME_VALUES, r32);
     }
 
     assert(over_lifetime.count + 1 < MAX_LIFETIME_VALUES);
     auto &values = over_lifetime.values;
     auto &keys = over_lifetime.keys;
-    auto &recip_keys = over_lifetime.recip_keys;
     
     b32 replaced = false;
     i32 new_index = -1;
@@ -414,20 +412,6 @@ static i32 add_key(OverLifetime<T> &over_lifetime, r32 key_time, T value, Memory
     
     over_lifetime.count++;
 
-    for(i32 i = 0; i < over_lifetime.count - 1; i++)
-    {
-        recip_keys[i] = 1.0f / (keys[i + 1] - keys[i]);
-    }
-
-    if(keys[over_lifetime.count - 1] >= 0.99f)
-    {
-        recip_keys[over_lifetime.count - 1] = 1.0f;
-    }
-    else
-    {
-        recip_keys[over_lifetime.count - 1] = 1.0f / (1.0f - keys[over_lifetime.count - 1]);
-    }
-
     return new_index;
 }
 
@@ -436,7 +420,6 @@ static void remove_key(OverLifetime<T> &over_lifetime, r32 key_time)
 {
     auto& values = over_lifetime.values;
     auto& keys = over_lifetime.keys;
-    auto& recip_keys = over_lifetime.recip_keys;
     
     for(i32 i = 0; i < over_lifetime.count; i++)
     {
@@ -447,11 +430,6 @@ static void remove_key(OverLifetime<T> &over_lifetime, r32 key_time)
             over_lifetime.count--;
             break;
         }
-    }
-
-    for(i32 i = 0; i < over_lifetime.count - 1; i++)
-    {
-        recip_keys[i] = 1 / (keys[i + 1] - keys[i]);
     }
 }
 
