@@ -1395,16 +1395,18 @@ namespace scene
                 return handle.manager->gizmos.scale_cubes[3];
             }
 
-            for(i32 i = 0; i < 3; i++)
+            if(core.scene_manager->gizmos.transformation_type == TransformationType::SCALE)
             {
-                EntityHandle handle = pick_scale_cube((TranslationConstraint)i, selected_transform, mouse_x, mouse_y);
-            
-                if(IS_ENTITY_HANDLE_VALID(handle))
+                for(i32 i = 0; i < 3; i++)
                 {
-                    return handle;
-                }
+                    EntityHandle handle = pick_scale_cube((TranslationConstraint)i, selected_transform, mouse_x, mouse_y);
+            
+                    if(IS_ENTITY_HANDLE_VALID(handle))
+                    {
+                        return handle;
+                    }
+                }                
             }
-
         }
 
         EntityList entity_list = {};
