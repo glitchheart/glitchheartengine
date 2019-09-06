@@ -463,8 +463,10 @@ struct Core
     sound::SoundSystem* sound_system;
     scene::SceneManager *scene_manager;
     project::ProjectState *project_state;
-    
+
+#ifdef EDITOR
     editor::EditorState *editor_state;
+#endif
     
     ImGuiContext *imgui_context;
 
@@ -487,9 +489,6 @@ struct GameMemory
     Core core;
     struct LogState* log_state;
     struct MemoryArena* temp_arena;
-#if ENABLE_ANALYTICS
-    struct AnalyticsEventState *analytics_state;
-#endif
     struct GameState* game_state;
 };
 
@@ -506,6 +505,12 @@ typedef UPDATE_EDITOR(UpdateEditor);
 UPDATE_EDITOR(update_editor_stub)
 {
 }
+
+#ifndef EDITOR
+extern "C" UPDATE_EDITOR(update_editor)
+{
+}
+#endif
 
 #define BUILD_RENDER_PIPELINE(name) void name(PlatformApi &platform_api, Renderer *renderer)
 typedef BUILD_RENDER_PIPELINE(BuildRenderPipeline);

@@ -3,21 +3,19 @@
 #define VC_EXTRA_LEAN
 #endif
 
-#include "imgui/imgui.h"
-#include "shared.h"
-
 #if DEBUG
 #define EDITOR
 #endif
+
+#include "imgui/imgui.h"
+#include "shared.h"
 
 #if DEBUG
 #include "debug.h"
 #endif
 
-#ifdef EDITOR
 #include "project.h"
 #include "project.cpp"
-#endif
 
 #include <glad/glad.h>
 #include "fmod.h"
@@ -971,11 +969,11 @@ int main(int argc, char **args)
     core.asset_state = &asset_state;
     core.project_state = project_state;
 
-    #ifdef EDITOR
+#ifdef EDITOR
     editor::EditorState editor_state = {};
     editor::_init(&editor_state);
     core.editor_state = &editor_state;
-    #endif
+#endif
     
 	ImGuiContext* context = ImGui::GetCurrentContext();
 	core.imgui_context = context;
@@ -1012,7 +1010,7 @@ int main(int argc, char **args)
 
         if(scene_manager->scene_loaded)
         {
-            #ifdef EDITOR
+#ifdef EDITOR
             if(scene_manager->mode == scene::SceneMode::RUNNING)
             {
                 editor::_render_stats(&editor_state, scene_manager, &input_controller, &sound_system, delta_time);
@@ -1037,12 +1035,13 @@ int main(int argc, char **args)
                     editor::_update_engine_editor(&input_controller, scene_manager);
                 }
             }
-            #else
+#else
             game.update(&game_memory);
-            #endif
+#endif
 
             if(scene_manager->scene_loaded) // Check again, since there could be a call to unload_current_scene() in game.update()
             {
+                update_scene_settings(scene_manager->loaded_scene);
 #ifdef EDITOR
                 update_scene_editor(scene_manager->loaded_scene, &input_controller, render_state, delta_time);
 #endif
@@ -1058,7 +1057,6 @@ int main(int argc, char **args)
         {
             if(project_state->project_settings.startup_scene_path != nullptr && !project_state->startup_scene_loaded)
             {
-
                 project_state->startup_scene_loaded = true;
                 scene::SceneHandle startup_scene = scene::create_scene_from_file(project_state->project_settings.startup_scene_path, core.scene_manager, false, 1024);
                 scene::load_scene(startup_scene);
@@ -1077,7 +1075,9 @@ int main(int argc, char **args)
         if(sound_system.update)
             update_sound_commands(&sound_device, &sound_system, delta_time, &do_save_config);
 
-        render_fades(&fade_state, renderer);
+        io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+                
+        render_fades(&fade_state, renderer);        
         render(render_state, renderer, delta_time);
         
         if (do_save_config)

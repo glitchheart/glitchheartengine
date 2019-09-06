@@ -14,7 +14,7 @@ static void error_callback(int error, const char *description)
 
 static void show_mouse_cursor(b32 show, RenderState *render_state)
 {
-    if (show)
+    if(show)
     {
         glfwSetInputMode(render_state->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
