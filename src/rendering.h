@@ -616,8 +616,6 @@ struct Renderer
     
 	math::Rgba clear_color;
     
-	b32 show_mouse_cursor;
-    
 	TrueTypeFontInfo *tt_font_infos;
 	i32 tt_font_count;
     

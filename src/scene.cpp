@@ -2258,8 +2258,6 @@ namespace scene
         Scene &scene = get_scene(handle);
         
         SceneManager *manager = handle.manager;
-
-        update_scene_settings(handle);
         
         if(KEY_DOWN(Key_E) && KEY(Key_LeftCtrl))
         {
