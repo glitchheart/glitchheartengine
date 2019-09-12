@@ -1075,7 +1075,9 @@ int main(int argc, char **args)
         if(sound_system.update)
             update_sound_commands(&sound_device, &sound_system, delta_time, &do_save_config);
 
+        #if !DEBUG
         io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+        #endif
                 
         render_fades(&fade_state, renderer);        
         render(render_state, renderer, delta_time);
