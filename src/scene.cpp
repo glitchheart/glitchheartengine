@@ -4721,6 +4721,12 @@ namespace scene
         _set_animation_playing(false, animation_handle, scene_handle);
     }
 
+    static void stop_animator(EntityHandle entity_handle, SceneHandle scene_handle)
+    {
+        AnimatorComponent &animator = get_animator_comp(entity_handle, scene_handle);
+        animator.running = false;
+    }
+
     static AnimationHandle add_uniform_value_animation(AnimatorComponent &animator, RootAnimationHandle root_handle, EntityHandle entity, AnimationType type, const char *value_name)
     {
         Animation &root = animator.animations[root_handle.handle - 1];
